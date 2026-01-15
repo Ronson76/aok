@@ -9,6 +9,15 @@ interface NotificationResult {
 let connectionSettings: any;
 
 async function getResendCredentials() {
+  // First try environment variable (user's own API key)
+  if (process.env.RESEND_API_KEY) {
+    return { 
+      apiKey: process.env.RESEND_API_KEY, 
+      fromEmail: 'CheckMate <onboarding@resend.dev>' 
+    };
+  }
+  
+  // Fallback to Replit connector
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY 
     ? 'repl ' + process.env.REPL_IDENTITY 

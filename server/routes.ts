@@ -432,34 +432,14 @@ export async function registerRoutes(
       
       const { Resend } = await import('resend');
       
-      // Get Resend credentials
-      const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-      const xReplitToken = process.env.REPL_IDENTITY 
-        ? 'repl ' + process.env.REPL_IDENTITY 
-        : process.env.WEB_REPL_RENEWAL 
-        ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-        : null;
-
-      if (!xReplitToken) {
-        return res.status(500).json({ error: 'X_REPLIT_TOKEN not found' });
+      // Use RESEND_API_KEY secret first
+      const apiKey = process.env.RESEND_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: 'RESEND_API_KEY not set' });
       }
 
-      const connectionSettings = await fetch(
-        'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
-        {
-          headers: {
-            'Accept': 'application/json',
-            'X_REPLIT_TOKEN': xReplitToken
-          }
-        }
-      ).then(r => r.json()).then(data => data.items?.[0]);
-
-      if (!connectionSettings || !connectionSettings.settings.api_key) {
-        return res.status(500).json({ error: 'Resend not connected', details: connectionSettings });
-      }
-
-      const resend = new Resend(connectionSettings.settings.api_key);
-      const fromEmail = connectionSettings.settings.from_email || 'CheckMate <onboarding@resend.dev>';
+      const resend = new Resend(apiKey);
+      const fromEmail = 'CheckMate <onboarding@resend.dev>';
       
       console.log(`[TEST EMAIL] Sending to ${email} from ${fromEmail}`);
       
