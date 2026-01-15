@@ -236,7 +236,8 @@ This is an automated notification confirming their safety. No action is required
 
 export async function sendEmergencyAlert(
   contacts: Contact[],
-  user: User
+  user: User,
+  gpsLocation?: { latitude: number; longitude: number }
 ): Promise<{ emailsSent: number; emailsFailed: number }> {
   const isOrganization = user.accountType === "organization";
   const identifier = isOrganization 
@@ -253,8 +254,18 @@ export async function sendEmergencyAlert(
     const emailSubject = `EMERGENCY ALERT: ${subjectIdentifier} needs help!`;
     
     let locationInfo = "";
-    if (user.addressLine1) {
+    
+    if (gpsLocation) {
+      const mapsUrl = `https://www.google.com/maps?q=${gpsLocation.latitude},${gpsLocation.longitude}`;
       locationInfo = `
+CURRENT GPS LOCATION:
+Coordinates: ${gpsLocation.latitude.toFixed(6)}, ${gpsLocation.longitude.toFixed(6)}
+View on map: ${mapsUrl}
+`;
+    }
+    
+    if (user.addressLine1) {
+      locationInfo += `
 Registered address:
 ${user.addressLine1}
 ${user.addressLine2 ? user.addressLine2 + '\n' : ''}${user.city || ""}, ${user.postalCode || ""}
