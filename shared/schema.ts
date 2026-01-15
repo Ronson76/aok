@@ -76,7 +76,7 @@ export type CheckIn = typeof checkIns.$inferSelect;
 // Settings table (per-user settings)
 export const settings = pgTable("settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   frequency: text("frequency").notNull().$type<CheckInFrequency>().default("daily"),
   lastCheckIn: timestamp("last_check_in"),
   nextCheckInDue: timestamp("next_check_in_due"),
