@@ -1,10 +1,10 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
+import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
-import { sendContactAddedNotification, sendPasswordResetEmail } from "./notifications";
+import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification } from "./notifications";
 
 // Extend Express Request type
 declare global {
@@ -353,7 +353,7 @@ export async function registerRoutes(
   app.patch("/api/contacts/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const parsed = insertContactSchema.partial().safeParse(req.body);
+      const parsed = updateContactSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ error: parsed.error.message });
       }
@@ -364,6 +364,20 @@ export async function registerRoutes(
       res.json(contact);
     } catch (error) {
       res.status(500).json({ error: "Failed to update contact" });
+    }
+  });
+
+  // Set a contact as the primary contact (receives notifications for every check-in)
+  app.post("/api/contacts/:id/primary", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const contact = await storage.setPrimaryContact(req.userId!, id);
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      res.json(contact);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to set primary contact" });
     }
   });
 
@@ -393,6 +407,16 @@ export async function registerRoutes(
   app.post("/api/checkins", async (req, res) => {
     try {
       const checkIn = await storage.createCheckIn(req.userId!);
+      
+      // Notify primary contact if one exists
+      const primaryContact = await storage.getPrimaryContact(req.userId!);
+      if (primaryContact && req.user) {
+        // Send notification asynchronously (don't wait for it)
+        sendSuccessfulCheckInNotification(primaryContact, req.user as any).catch(err => {
+          console.error('[CHECK-IN] Failed to notify primary contact:', err);
+        });
+      }
+      
       res.status(201).json(checkIn);
     } catch (error) {
       res.status(500).json({ error: "Failed to create check-in" });
