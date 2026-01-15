@@ -51,7 +51,7 @@ export default function Register() {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast({
         title: "Account Created",
-        description: "Welcome to CheckMate! Your account has been created successfully.",
+        description: "Welcome to CheckMate24! Your account has been created successfully.",
       });
       setLocation("/app");
     },
