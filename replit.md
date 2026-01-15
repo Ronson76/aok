@@ -37,7 +37,7 @@ The server handles API routes through a central `registerRoutes` function. In de
 The storage interface defines operations for contacts, check-ins, and settings. This abstraction allows swapping between in-memory storage and database-backed storage.
 
 ### Data Models
-- **Contact**: Emergency contacts with name, email, optional phone, and relationship
+- **Contact**: Emergency contacts with name, email, optional phone, relationship, and isPrimary flag
 - **CheckIn**: Timestamped records with success/missed status
 - **Settings**: Check-in frequency (daily/every_two_days), last check-in time, next due time, alerts toggle
 - **AlertLog**: Records of alerts sent to contacts when check-ins are missed
@@ -50,9 +50,18 @@ The app implements missed check-in detection and email notifications:
 - An alert log is generated listing which contacts were notified
 - Each overdue period is only processed once to prevent duplicate alerts
 
+### Primary Contact Feature
+Users can designate one contact as their "primary" contact:
+- Primary contact receives notifications for EVERY successful check-in
+- All contacts receive notifications only when check-ins are missed
+- Only one contact can be primary at a time (enforced at storage layer)
+- Setting a new primary contact automatically demotes the previous one
+- Managed through dedicated `/api/contacts/:id/primary` endpoint
+
 ### Email Notifications (Resend Integration)
 The app uses Resend for all email notifications:
 - **Contact Added Notification**: When a user adds an emergency contact, the contact receives an email explaining their role
+- **Successful Check-in Notification**: Primary contact receives notification for each successful check-in
 - **Missed Check-in Alerts**: When a check-in is missed, all emergency contacts receive alert emails with the user's registered address
 - **Password Reset**: Password reset links are sent via email
 - The Resend connector is configured via Replit's integration system (credentials managed automatically)

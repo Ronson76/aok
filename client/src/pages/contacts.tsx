@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Mail, Phone, Trash2, Users, Loader2, UserPlus } from "lucide-react";
+import { Plus, Mail, Phone, Trash2, Users, Loader2, UserPlus, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -116,6 +116,24 @@ export default function Contacts() {
     onError: () => {
       toast({
         title: "Failed to delete contact",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const setPrimaryMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("POST", `/api/contacts/${id}/primary`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      toast({
+        title: "Primary contact set",
+        description: "This contact will now receive notifications for every check-in.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Failed to set primary contact",
         description: "Please try again.",
         variant: "destructive",
       });
@@ -227,7 +245,8 @@ export default function Contacts() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        These people will be notified if you miss a check-in.
+        These people will be notified if you miss a check-in. Your primary contact 
+        (marked with a star) will also receive notifications for every successful check-in.
       </p>
 
       {contacts.length === 0 ? (
@@ -263,6 +282,12 @@ export default function Contacts() {
                     <Badge variant="secondary" className="text-xs">
                       {contact.relationship}
                     </Badge>
+                    {contact.isPrimary && (
+                      <Badge variant="default" className="text-xs">
+                        <Star className="h-3 w-3 mr-1 fill-current" />
+                        Primary
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1 truncate">
@@ -278,14 +303,28 @@ export default function Contacts() {
                   </div>
                 </div>
 
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => setDeleteId(contact.id)}
-                  data-testid={`button-delete-contact-${contact.id}`}
-                >
-                  <Trash2 className="h-4 w-4 text-muted-foreground" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  {!contact.isPrimary && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setPrimaryMutation.mutate(contact.id)}
+                      disabled={setPrimaryMutation.isPending}
+                      title="Set as primary contact"
+                      data-testid={`button-set-primary-${contact.id}`}
+                    >
+                      <Star className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  )}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setDeleteId(contact.id)}
+                    data-testid={`button-delete-contact-${contact.id}`}
+                  >
+                    <Trash2 className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

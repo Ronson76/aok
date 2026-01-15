@@ -102,12 +102,12 @@ export const insertContactSchema = createInsertSchema(contacts).omit({ id: true,
 export type InsertContact = z.infer<typeof insertContactSchema>;
 export type Contact = typeof contacts.$inferSelect;
 
+// Note: isPrimary is managed through dedicated setPrimaryContact endpoint, not general updates
 export const updateContactSchema = z.object({
   name: z.string().min(1).optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
   relationship: z.string().optional(),
-  isPrimary: z.boolean().optional(),
 });
 export type UpdateContact = z.infer<typeof updateContactSchema>;
 
