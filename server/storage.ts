@@ -257,7 +257,7 @@ class DatabaseStorage implements IStorage {
     }).returning();
 
     const userSettings = await this.getSettings(userId);
-    const hoursToAdd = userSettings.frequency === "daily" ? 24 : 48;
+    const hoursToAdd = userSettings.intervalHours || 24;
     const nextDue = new Date(Date.now() + hoursToAdd * 60 * 60 * 1000);
 
     await getDb().update(settings)
@@ -298,6 +298,7 @@ class DatabaseStorage implements IStorage {
       await getDb().insert(settings).values({
         userId,
         frequency: "daily",
+        intervalHours: "24",
         alertsEnabled: true,
       });
     }
@@ -310,6 +311,7 @@ class DatabaseStorage implements IStorage {
       await this.initializeSettings(userId);
       return {
         frequency: "daily",
+        intervalHours: 24,
         lastCheckIn: null,
         nextCheckInDue: null,
         alertsEnabled: true,
@@ -319,6 +321,7 @@ class DatabaseStorage implements IStorage {
     const row = result[0];
     return {
       frequency: row.frequency as "daily" | "every_two_days",
+      intervalHours: parseInt(row.intervalHours) || 24,
       lastCheckIn: row.lastCheckIn?.toISOString() || null,
       nextCheckInDue: row.nextCheckInDue?.toISOString() || null,
       alertsEnabled: row.alertsEnabled,
@@ -326,8 +329,13 @@ class DatabaseStorage implements IStorage {
   }
 
   async updateSettings(userId: string, updates: UpdateSettings): Promise<Settings> {
+    const dbUpdates: any = {};
+    if (updates.frequency !== undefined) dbUpdates.frequency = updates.frequency;
+    if (updates.intervalHours !== undefined) dbUpdates.intervalHours = String(updates.intervalHours);
+    if (updates.alertsEnabled !== undefined) dbUpdates.alertsEnabled = updates.alertsEnabled;
+    
     await getDb().update(settings)
-      .set(updates)
+      .set(dbUpdates)
       .where(eq(settings.userId, userId));
     return this.getSettings(userId);
   }
@@ -372,7 +380,7 @@ class DatabaseStorage implements IStorage {
 
     await this.createMissedCheckIn(userId);
 
-    const hoursToAdd = currentSettings.frequency === "daily" ? 24 : 48;
+    const hoursToAdd = currentSettings.intervalHours || 24;
     const nextDue = new Date(dueDate.getTime() + hoursToAdd * 60 * 60 * 1000);
     await getDb().update(settings)
       .set({ nextCheckInDue: nextDue })

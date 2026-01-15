@@ -5,17 +5,30 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Slider } from "@/components/ui/slider";
 import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
-import type { Settings as SettingsType, CheckInFrequency } from "@shared/schema";
+import type { Settings as SettingsType } from "@shared/schema";
+import { useState, useEffect } from "react";
+
+function formatInterval(hours: number): string {
+  if (hours === 1) return "1 hour";
+  if (hours < 24) return `${hours} hours`;
+  if (hours === 24) return "1 day";
+  if (hours === 48) return "2 days";
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+  if (remainingHours === 0) return `${days} days`;
+  return `${days} day${days > 1 ? 's' : ''} ${remainingHours} hour${remainingHours > 1 ? 's' : ''}`;
+}
 
 export default function Settings() {
   const { toast } = useToast();
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
+  const [localInterval, setLocalInterval] = useState<number>(24);
 
   const handleLogout = async () => {
     await logout();
@@ -26,8 +39,14 @@ export default function Settings() {
     queryKey: ["/api/settings"],
   });
 
+  useEffect(() => {
+    if (settings?.intervalHours) {
+      setLocalInterval(settings.intervalHours);
+    }
+  }, [settings?.intervalHours]);
+
   const updateMutation = useMutation({
-    mutationFn: (data: { frequency?: CheckInFrequency; alertsEnabled?: boolean }) =>
+    mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean }) =>
       apiRequest("PATCH", "/api/settings", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
@@ -45,6 +64,14 @@ export default function Settings() {
       });
     },
   });
+
+  const handleIntervalChange = (value: number[]) => {
+    setLocalInterval(value[0]);
+  };
+
+  const handleIntervalCommit = (value: number[]) => {
+    updateMutation.mutate({ intervalHours: value[0] });
+  };
 
   if (isLoading) {
     return (
@@ -69,37 +96,39 @@ export default function Settings() {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            Check-In Frequency
+            Check-In Interval
           </CardTitle>
           <CardDescription>
-            How often do you want to check in?
+            How long between check-ins before an alert is sent?
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <RadioGroup
-            value={settings?.frequency || "daily"}
-            onValueChange={(value: CheckInFrequency) => updateMutation.mutate({ frequency: value })}
-            className="space-y-3"
-          >
-            <div className="flex items-center space-x-3 p-3 rounded-md border hover-elevate cursor-pointer">
-              <RadioGroupItem value="daily" id="daily" data-testid="radio-daily" />
-              <Label htmlFor="daily" className="flex-1 cursor-pointer">
-                <div className="font-medium">Daily</div>
-                <p className="text-sm text-muted-foreground">
-                  Check in every 24 hours
-                </p>
-              </Label>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">1 hour</span>
+              <span className="text-lg font-semibold text-primary">
+                {formatInterval(localInterval)}
+              </span>
+              <span className="text-sm text-muted-foreground">48 hours</span>
             </div>
-            <div className="flex items-center space-x-3 p-3 rounded-md border hover-elevate cursor-pointer">
-              <RadioGroupItem value="every_two_days" id="every_two_days" data-testid="radio-every-two-days" />
-              <Label htmlFor="every_two_days" className="flex-1 cursor-pointer">
-                <div className="font-medium">Every Two Days</div>
-                <p className="text-sm text-muted-foreground">
-                  Check in every 48 hours
-                </p>
-              </Label>
-            </div>
-          </RadioGroup>
+            <Slider
+              value={[localInterval]}
+              onValueChange={handleIntervalChange}
+              onValueCommit={handleIntervalCommit}
+              min={1}
+              max={48}
+              step={1}
+              className="w-full"
+              data-testid="slider-interval"
+            />
+          </div>
+          
+          <div className="flex items-start gap-2 p-3 rounded-md bg-muted/50">
+            <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              If you don't check in within {formatInterval(localInterval)}, your emergency contacts will be notified.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
