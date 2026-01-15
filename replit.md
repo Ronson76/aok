@@ -84,6 +84,17 @@ Organizations can receive subscription bundles that allocate a specific number o
 - **Status Management**: Bundles can be active, expired, or cancelled
 - **Expiry Support**: Optional expiry date can be set for time-limited subscriptions
 
+### Organization Dashboard
+Organizations with bundles can monitor their clients' check-in status:
+- **Client Management**: Add individual users as clients by email, assign to bundles
+- **Status Monitoring**: View real-time status (Safe/Pending/Overdue) for each client
+- **Dashboard Stats**: Overview of total clients, seat usage, and status distribution
+- **Emergency Alerts**: Track emergency alerts from monitored clients
+- **Security**: Bundle ownership verification prevents cross-organization access
+- **Separate Navigation**: Organization users have distinct navigation from individual users
+
+Organization API endpoints are prefixed with `/api/org/` and require organization account type.
+
 ### Key Design Decisions
 
 **Monorepo Structure**: Client, server, and shared code coexist in one repository with path aliases (`@/` for client, `@shared/` for shared code).
