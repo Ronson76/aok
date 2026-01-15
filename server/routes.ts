@@ -430,7 +430,9 @@ export async function registerRoutes(
   // Emergency alert endpoint
   app.post("/api/emergency", async (req, res) => {
     try {
+      console.log('[EMERGENCY] Request from userId:', req.userId);
       const contacts = await storage.getContacts(req.userId!);
+      console.log('[EMERGENCY] Found contacts:', contacts.length, contacts.map(c => c.name));
       
       if (contacts.length === 0) {
         return res.status(400).json({ error: "No emergency contacts configured" });
