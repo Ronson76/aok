@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
-import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification } from "./notifications";
+import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 
 // Extend Express Request type
@@ -424,6 +424,40 @@ export async function registerRoutes(
       res.status(201).json(checkIn);
     } catch (error) {
       res.status(500).json({ error: "Failed to create check-in" });
+    }
+  });
+
+  // Emergency alert endpoint
+  app.post("/api/emergency", async (req, res) => {
+    try {
+      const contacts = await storage.getContacts(req.userId!);
+      
+      if (contacts.length === 0) {
+        return res.status(400).json({ error: "No emergency contacts configured" });
+      }
+
+      const user = await storage.getUserById(req.userId!);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const result = await sendEmergencyAlert(contacts, user);
+      
+      // Log the emergency alert
+      await storage.createAlertLog(
+        req.userId!, 
+        contacts.map(c => c.email),
+        `EMERGENCY ALERT triggered - ${result.emailsSent} contacts notified`
+      );
+
+      res.json({ 
+        success: true, 
+        contactsNotified: result.emailsSent,
+        message: `Emergency alert sent to ${result.emailsSent} contact(s)` 
+      });
+    } catch (error) {
+      console.error('[EMERGENCY] Failed to send emergency alert:', error);
+      res.status(500).json({ error: "Failed to send emergency alert" });
     }
   });
 

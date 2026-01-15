@@ -3,10 +3,12 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, AlertTriangle, Shield, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CheckCircle, Clock, AlertTriangle, Shield, Loader2, AlertOctagon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { StatusData } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
+import { useState } from "react";
 
 function getStatusIcon(status: StatusData["status"]) {
   switch (status) {
@@ -32,6 +34,7 @@ function getStatusLabel(status: StatusData["status"]) {
 
 export default function Dashboard() {
   const { toast } = useToast();
+  const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
 
   const { data: status, isLoading } = useQuery<StatusData>({
     queryKey: ["/api/status"],
@@ -51,6 +54,27 @@ export default function Dashboard() {
       toast({
         title: "Check-in failed",
         description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const emergencyMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/emergency"),
+    onSuccess: (data: any) => {
+      setShowEmergencyDialog(false);
+      toast({
+        title: "Emergency alert sent!",
+        description: data.message || "All your contacts have been notified.",
+      });
+    },
+    onError: (error: any) => {
+      const message = error?.message || "Failed to send emergency alert";
+      toast({
+        title: "Alert failed",
+        description: message.includes("No emergency contacts") 
+          ? "Please add emergency contacts first." 
+          : message,
         variant: "destructive",
       });
     },
@@ -155,6 +179,72 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-destructive/50 bg-destructive/5">
+        <CardContent className="py-6">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <AlertOctagon className="h-8 w-8 text-destructive" />
+            <div className="space-y-1">
+              <h3 className="font-semibold">Emergency Alert</h3>
+              <p className="text-sm text-muted-foreground">
+                Immediately notify all your contacts if you need help
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              size="lg"
+              className="w-full max-w-xs"
+              onClick={() => setShowEmergencyDialog(true)}
+              data-testid="button-emergency"
+            >
+              <AlertOctagon className="h-5 w-5 mr-2" />
+              Emergency Alert
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={showEmergencyDialog} onOpenChange={setShowEmergencyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertOctagon className="h-5 w-5" />
+              Send Emergency Alert?
+            </DialogTitle>
+            <DialogDescription>
+              This will immediately send an urgent alert to ALL your emergency contacts. 
+              They will be notified that you need immediate help.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Only use this in a real emergency. Your contacts will receive an urgent email asking them to contact you immediately.
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowEmergencyDialog(false)}
+              data-testid="button-cancel-emergency"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => emergencyMutation.mutate()}
+              disabled={emergencyMutation.isPending}
+              data-testid="button-confirm-emergency"
+            >
+              {emergencyMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <AlertOctagon className="h-4 w-4 mr-2" />
+              )}
+              Yes, Send Alert
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
