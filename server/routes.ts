@@ -5,6 +5,7 @@ import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertU
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification } from "./notifications";
+import { registerAdminRoutes } from "./adminRoutes";
 
 // Extend Express Request type
 declare global {
@@ -44,6 +45,9 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  // Register admin routes
+  registerAdminRoutes(app);
 
   // Auth routes (public)
   app.post("/api/auth/register", async (req, res) => {
