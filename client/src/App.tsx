@@ -7,7 +7,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/bottom-nav";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
-import { Loader2 } from "lucide-react";
+import { Loader2, Shield } from "lucide-react";
+import { Link } from "wouter";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
@@ -110,6 +111,16 @@ function AppRoutes() {
 function AppLayout() {
   return (
     <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-40 bg-background border-b">
+        <div className="max-w-md mx-auto px-4 py-3">
+          <Link href="/">
+            <div className="flex items-center gap-2 cursor-pointer w-fit" data-testid="link-home-logo">
+              <Shield className="h-6 w-6 text-primary" />
+              <span className="font-bold text-lg">CheckMate</span>
+            </div>
+          </Link>
+        </div>
+      </header>
       <main className="pb-16">
         <AppRoutes />
       </main>
