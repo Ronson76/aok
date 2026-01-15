@@ -62,8 +62,10 @@ export default function Dashboard() {
   });
 
   const emergencyMutation = useMutation({
-    mutationFn: (location?: { latitude: number; longitude: number }) => 
-      apiRequest("POST", "/api/emergency", { location }),
+    mutationFn: async (location?: { latitude: number; longitude: number }) => {
+      const response = await apiRequest("POST", "/api/emergency", { location });
+      return response.json();
+    },
     onSuccess: (data: any) => {
       setShowEmergencyDialog(false);
       toast({
