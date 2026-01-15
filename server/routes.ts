@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
+import { sendContactAddedNotification } from "./notifications";
 
 // Extend Express Request type
 declare global {
@@ -320,6 +321,16 @@ export async function registerRoutes(
         return res.status(400).json({ error: parsed.error.message });
       }
       const contact = await storage.createContact(req.userId!, parsed.data);
+      
+      // Send notification to the new contact (email and SMS)
+      const user = await storage.getUserById(req.userId!);
+      if (user) {
+        // Fire and forget - don't block the response
+        sendContactAddedNotification(contact, user).catch(err => {
+          console.error("Failed to send contact notification:", err);
+        });
+      }
+      
       res.status(201).json(contact);
     } catch (error) {
       res.status(500).json({ error: "Failed to create contact" });
