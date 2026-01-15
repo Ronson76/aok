@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, date } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, date, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -211,3 +211,121 @@ export interface StatusData {
 
 // User profile (safe to send to frontend, without password)
 export type UserProfile = Omit<User, "passwordHash">;
+
+// ==================== ADMIN SYSTEM ====================
+
+// Admin role options
+export const adminRoles = ["super_admin", "analyst"] as const;
+export type AdminRole = typeof adminRoles[number];
+
+// Admin users table (separate from regular users)
+export const adminUsers = pgTable("admin_users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  name: text("name").notNull(),
+  role: text("role").notNull().$type<AdminRole>().default("analyst"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  lastLoginAt: timestamp("last_login_at"),
+});
+
+export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
+  id: true,
+  passwordHash: true,
+  createdAt: true,
+  lastLoginAt: true,
+}).extend({
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  role: z.enum(adminRoles).optional(),
+});
+
+export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
+export type AdminUser = typeof adminUsers.$inferSelect;
+export type AdminUserProfile = Omit<AdminUser, "passwordHash">;
+
+// Admin sessions table
+export const adminSessions = pgTable("admin_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").notNull().references(() => adminUsers.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type AdminSession = typeof adminSessions.$inferSelect;
+
+// Admin login schema
+export const adminLoginSchema = z.object({
+  email: z.string().email("Please enter a valid email"),
+  password: z.string().min(1, "Password is required"),
+});
+
+export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
+
+// Bundle status options
+export const bundleStatuses = ["active", "expired", "cancelled"] as const;
+export type BundleStatus = typeof bundleStatuses[number];
+
+// Organization bundles table (subscription packages for organizations)
+export const organizationBundles = pgTable("organization_bundles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  seatLimit: integer("seat_limit").notNull(),
+  seatsUsed: integer("seats_used").notNull().default(0),
+  status: text("status").notNull().$type<BundleStatus>().default("active"),
+  startsAt: timestamp("starts_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdBy: varchar("created_by").references(() => adminUsers.id),
+});
+
+export const insertOrganizationBundleSchema = createInsertSchema(organizationBundles).omit({
+  id: true,
+  seatsUsed: true,
+  createdAt: true,
+  createdBy: true,
+}).extend({
+  seatLimit: z.number().min(1, "Seat limit must be at least 1"),
+  name: z.string().min(1, "Bundle name is required"),
+  expiresAt: z.string().optional(),
+});
+
+export type InsertOrganizationBundle = z.infer<typeof insertOrganizationBundleSchema>;
+export type OrganizationBundle = typeof organizationBundles.$inferSelect;
+
+// Bundle usage tracking (tracks each seat used)
+export const bundleUsage = pgTable("bundle_usage", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bundleId: varchar("bundle_id").notNull().references(() => organizationBundles.id, { onDelete: "cascade" }),
+  referenceId: text("reference_id").notNull(),
+  usedAt: timestamp("used_at").notNull().defaultNow(),
+});
+
+export type BundleUsage = typeof bundleUsage.$inferSelect;
+
+// Admin audit logs (track admin actions)
+export const adminAuditLogs = pgTable("admin_audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").notNull().references(() => adminUsers.id),
+  action: text("action").notNull(),
+  entityType: text("entity_type").notNull(),
+  entityId: text("entity_id"),
+  details: text("details"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type AdminAuditLog = typeof adminAuditLogs.$inferSelect;
+
+// Dashboard statistics type (computed, not stored)
+export interface DashboardStats {
+  totalUsers: number;
+  totalOrganizations: number;
+  totalIndividuals: number;
+  totalCheckIns: number;
+  totalMissedCheckIns: number;
+  activeBundles: number;
+  totalSeatsAllocated: number;
+  totalSeatsUsed: number;
+  recentUsers: UserProfile[];
+  dailyRegistrations: { date: string; count: number }[];
+}

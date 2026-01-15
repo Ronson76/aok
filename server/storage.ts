@@ -1,9 +1,11 @@
 import { 
   contacts, checkIns, settings, alertLogs, users, sessions, passwordResetTokens,
-  Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken
+  adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs,
+  Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
+  AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile
 } from "@shared/schema";
 import { ensureDb } from "./db";
-import { eq, desc, and, isNull, lt } from "drizzle-orm";
+import { eq, desc, and, isNull, lt, count, sql } from "drizzle-orm";
 import { randomUUID, randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
 import { sendMissedCheckInAlert } from "./notifications";
@@ -445,3 +447,240 @@ class DatabaseStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
+
+// ==================== ADMIN STORAGE ====================
+
+export interface IAdminStorage {
+  // Admin users
+  createAdminUser(data: { email: string; passwordHash: string; name: string; role?: "super_admin" | "analyst" }): Promise<AdminUser>;
+  getAdminByEmail(email: string): Promise<AdminUser | undefined>;
+  getAdminById(id: string): Promise<AdminUser | undefined>;
+  updateAdminLastLogin(adminId: string): Promise<void>;
+  
+  // Admin sessions
+  createAdminSession(adminId: string): Promise<AdminSession>;
+  getAdminSession(sessionId: string): Promise<AdminSession | undefined>;
+  deleteAdminSession(sessionId: string): Promise<void>;
+  
+  // Dashboard statistics
+  getDashboardStats(): Promise<DashboardStats>;
+  
+  // User management
+  getAllUsers(): Promise<UserProfile[]>;
+  deleteUser(userId: string): Promise<boolean>;
+  
+  // Organization bundles
+  createBundle(userId: string, name: string, seatLimit: number, adminId: string, expiresAt?: Date): Promise<OrganizationBundle>;
+  getAllBundles(): Promise<(OrganizationBundle & { userName: string })[]>;
+  getBundle(bundleId: string): Promise<OrganizationBundle | undefined>;
+  getBundlesByUser(userId: string): Promise<OrganizationBundle[]>;
+  updateBundleStatus(bundleId: string, status: "active" | "expired" | "cancelled"): Promise<OrganizationBundle | undefined>;
+  deleteBundle(bundleId: string): Promise<boolean>;
+  
+  // Audit logs
+  createAuditLog(adminId: string, action: string, entityType: string, entityId?: string, details?: string): Promise<AdminAuditLog>;
+  getAuditLogs(limit?: number): Promise<AdminAuditLog[]>;
+}
+
+class AdminStorage implements IAdminStorage {
+  // Admin users
+  async createAdminUser(data: { email: string; passwordHash: string; name: string; role?: "super_admin" | "analyst" }): Promise<AdminUser> {
+    const result = await getDb().insert(adminUsers).values({
+      email: data.email.toLowerCase(),
+      passwordHash: data.passwordHash,
+      name: data.name,
+      role: data.role || "analyst",
+    }).returning();
+    return result[0];
+  }
+
+  async getAdminByEmail(email: string): Promise<AdminUser | undefined> {
+    const result = await getDb().select().from(adminUsers).where(eq(adminUsers.email, email.toLowerCase()));
+    return result[0];
+  }
+
+  async getAdminById(id: string): Promise<AdminUser | undefined> {
+    const result = await getDb().select().from(adminUsers).where(eq(adminUsers.id, id));
+    return result[0];
+  }
+
+  async updateAdminLastLogin(adminId: string): Promise<void> {
+    await getDb().update(adminUsers).set({ lastLoginAt: new Date() }).where(eq(adminUsers.id, adminId));
+  }
+
+  // Admin sessions
+  async createAdminSession(adminId: string): Promise<AdminSession> {
+    const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000); // 12 hours
+    const result = await getDb().insert(adminSessions).values({
+      adminId,
+      expiresAt,
+    }).returning();
+    return result[0];
+  }
+
+  async getAdminSession(sessionId: string): Promise<AdminSession | undefined> {
+    const result = await getDb().select().from(adminSessions).where(eq(adminSessions.id, sessionId));
+    const session = result[0];
+    if (session && new Date(session.expiresAt) < new Date()) {
+      await this.deleteAdminSession(sessionId);
+      return undefined;
+    }
+    return session;
+  }
+
+  async deleteAdminSession(sessionId: string): Promise<void> {
+    await getDb().delete(adminSessions).where(eq(adminSessions.id, sessionId));
+  }
+
+  // Dashboard statistics
+  async getDashboardStats(): Promise<DashboardStats> {
+    const db = getDb();
+    
+    // Get total users count
+    const totalUsersResult = await db.select({ count: count() }).from(users);
+    const totalUsers = totalUsersResult[0]?.count || 0;
+
+    // Get organizations count
+    const orgsResult = await db.select({ count: count() }).from(users).where(eq(users.accountType, "organization"));
+    const totalOrganizations = orgsResult[0]?.count || 0;
+
+    // Get individuals count
+    const totalIndividuals = totalUsers - totalOrganizations;
+
+    // Get check-ins stats
+    const checkInsResult = await db.select({ count: count() }).from(checkIns);
+    const totalCheckIns = checkInsResult[0]?.count || 0;
+
+    const missedCheckInsResult = await db.select({ count: count() }).from(checkIns).where(eq(checkIns.status, "missed"));
+    const totalMissedCheckIns = missedCheckInsResult[0]?.count || 0;
+
+    // Get bundles stats
+    const activeBundlesResult = await db.select({ count: count() }).from(organizationBundles).where(eq(organizationBundles.status, "active"));
+    const activeBundles = activeBundlesResult[0]?.count || 0;
+
+    const seatsResult = await db.select({
+      totalSeats: sql<number>`COALESCE(SUM(${organizationBundles.seatLimit}), 0)`,
+      usedSeats: sql<number>`COALESCE(SUM(${organizationBundles.seatsUsed}), 0)`,
+    }).from(organizationBundles).where(eq(organizationBundles.status, "active"));
+    const totalSeatsAllocated = seatsResult[0]?.totalSeats || 0;
+    const totalSeatsUsed = seatsResult[0]?.usedSeats || 0;
+
+    // Get recent users (last 10)
+    const recentUsersData = await db.select().from(users).orderBy(desc(users.createdAt)).limit(10);
+    const recentUsers: UserProfile[] = recentUsersData.map(u => {
+      const { passwordHash, ...profile } = u;
+      return profile;
+    });
+
+    // Get daily registrations for last 30 days
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const dailyRegsResult = await db.select({
+      date: sql<string>`DATE(${users.createdAt})`,
+      count: count(),
+    }).from(users)
+      .where(sql`${users.createdAt} >= ${thirtyDaysAgo}`)
+      .groupBy(sql`DATE(${users.createdAt})`)
+      .orderBy(sql`DATE(${users.createdAt})`);
+
+    const dailyRegistrations = dailyRegsResult.map(r => ({
+      date: String(r.date),
+      count: r.count,
+    }));
+
+    return {
+      totalUsers,
+      totalOrganizations,
+      totalIndividuals,
+      totalCheckIns,
+      totalMissedCheckIns,
+      activeBundles,
+      totalSeatsAllocated,
+      totalSeatsUsed,
+      recentUsers,
+      dailyRegistrations,
+    };
+  }
+
+  // User management
+  async getAllUsers(): Promise<UserProfile[]> {
+    const result = await getDb().select().from(users).orderBy(desc(users.createdAt));
+    return result.map(u => {
+      const { passwordHash, ...profile } = u;
+      return profile;
+    });
+  }
+
+  async deleteUser(userId: string): Promise<boolean> {
+    const result = await getDb().delete(users).where(eq(users.id, userId)).returning();
+    return result.length > 0;
+  }
+
+  // Organization bundles
+  async createBundle(userId: string, name: string, seatLimit: number, adminId: string, expiresAt?: Date): Promise<OrganizationBundle> {
+    const result = await getDb().insert(organizationBundles).values({
+      userId,
+      name,
+      seatLimit,
+      status: "active",
+      expiresAt: expiresAt || null,
+      createdBy: adminId,
+    }).returning();
+    return result[0];
+  }
+
+  async getAllBundles(): Promise<(OrganizationBundle & { userName: string })[]> {
+    const result = await getDb()
+      .select({
+        bundle: organizationBundles,
+        userName: users.name,
+      })
+      .from(organizationBundles)
+      .leftJoin(users, eq(organizationBundles.userId, users.id))
+      .orderBy(desc(organizationBundles.createdAt));
+    
+    return result.map(r => ({
+      ...r.bundle,
+      userName: r.userName || "Unknown",
+    }));
+  }
+
+  async getBundle(bundleId: string): Promise<OrganizationBundle | undefined> {
+    const result = await getDb().select().from(organizationBundles).where(eq(organizationBundles.id, bundleId));
+    return result[0];
+  }
+
+  async getBundlesByUser(userId: string): Promise<OrganizationBundle[]> {
+    return await getDb().select().from(organizationBundles).where(eq(organizationBundles.userId, userId));
+  }
+
+  async updateBundleStatus(bundleId: string, status: "active" | "expired" | "cancelled"): Promise<OrganizationBundle | undefined> {
+    const result = await getDb().update(organizationBundles)
+      .set({ status })
+      .where(eq(organizationBundles.id, bundleId))
+      .returning();
+    return result[0];
+  }
+
+  async deleteBundle(bundleId: string): Promise<boolean> {
+    const result = await getDb().delete(organizationBundles).where(eq(organizationBundles.id, bundleId)).returning();
+    return result.length > 0;
+  }
+
+  // Audit logs
+  async createAuditLog(adminId: string, action: string, entityType: string, entityId?: string, details?: string): Promise<AdminAuditLog> {
+    const result = await getDb().insert(adminAuditLogs).values({
+      adminId,
+      action,
+      entityType,
+      entityId: entityId || null,
+      details: details || null,
+    }).returning();
+    return result[0];
+  }
+
+  async getAuditLogs(limit: number = 100): Promise<AdminAuditLog[]> {
+    return await getDb().select().from(adminAuditLogs).orderBy(desc(adminAuditLogs.createdAt)).limit(limit);
+  }
+}
+
+export const adminStorage = new AdminStorage();

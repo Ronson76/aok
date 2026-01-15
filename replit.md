@@ -66,6 +66,24 @@ The app uses Resend for all email notifications:
 - **Password Reset**: Password reset links are sent via email
 - The Resend connector is configured via Replit's integration system (credentials managed automatically)
 
+### Admin Dashboard
+The app includes a separate admin system for platform management:
+- **Separate Authentication**: Admin users have their own login system at `/admin/login` with 12-hour session TTL
+- **Role-Based Access**: Two roles - `super_admin` (full access) and `analyst` (read-only)
+- **Dashboard Statistics**: Overview of total users, organizations, individuals, check-ins, missed check-ins, and active bundles
+- **User Management**: View all registered users, delete users (super_admin only)
+- **Organization Bundles**: Create subscription bundles to allocate seats to organizations for monitoring users
+- **Audit Logging**: All admin actions are logged for security and accountability
+
+Admin API endpoints are prefixed with `/api/admin/` and use separate cookies for session management.
+
+### Organization Bundles
+Organizations can receive subscription bundles that allocate a specific number of seats:
+- **Bundle Creation**: Super admins can create bundles for any organization user
+- **Seat Tracking**: Each bundle has a seat limit and tracks seats used
+- **Status Management**: Bundles can be active, expired, or cancelled
+- **Expiry Support**: Optional expiry date can be set for time-limited subscriptions
+
 ### Key Design Decisions
 
 **Monorepo Structure**: Client, server, and shared code coexist in one repository with path aliases (`@/` for client, `@shared/` for shared code).

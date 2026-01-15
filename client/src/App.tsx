@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/bottom-nav";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
+import { AdminProvider, useAdmin } from "@/contexts/admin-context";
 import { Loader2 } from "lucide-react";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
@@ -17,6 +18,10 @@ import Contacts from "@/pages/contacts";
 import History from "@/pages/history";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
+import AdminLogin from "@/pages/admin/login";
+import AdminDashboard from "@/pages/admin/dashboard";
+import AdminUsers from "@/pages/admin/users";
+import AdminBundles from "@/pages/admin/bundles";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -54,6 +59,42 @@ function AuthRoute({ component: Component }: { component: React.ComponentType })
   return <Component />;
 }
 
+function AdminProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const { isAuthenticated, isLoading } = useAdmin();
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect to="/admin/login" />;
+  }
+
+  return <Component />;
+}
+
+function AdminAuthRoute({ component: Component }: { component: React.ComponentType }) {
+  const { isAuthenticated, isLoading } = useAdmin();
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Redirect to="/admin" />;
+  }
+
+  return <Component />;
+}
+
 function AppRoutes() {
   return (
     <Switch>
@@ -74,6 +115,17 @@ function AppLayout() {
       </main>
       <BottomNav />
     </div>
+  );
+}
+
+function AdminRoutes() {
+  return (
+    <Switch>
+      <Route path="/admin" component={() => <AdminProtectedRoute component={AdminDashboard} />} />
+      <Route path="/admin/users" component={() => <AdminProtectedRoute component={AdminUsers} />} />
+      <Route path="/admin/bundles" component={() => <AdminProtectedRoute component={AdminBundles} />} />
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
@@ -98,6 +150,22 @@ function Router() {
 
   if (location.startsWith("/reset-password")) {
     return <ResetPassword />;
+  }
+
+  if (location === "/admin/login") {
+    return (
+      <AdminProvider>
+        <AdminAuthRoute component={AdminLogin} />
+      </AdminProvider>
+    );
+  }
+
+  if (location.startsWith("/admin")) {
+    return (
+      <AdminProvider>
+        <AdminRoutes />
+      </AdminProvider>
+    );
   }
 
   return <AppLayout />;
