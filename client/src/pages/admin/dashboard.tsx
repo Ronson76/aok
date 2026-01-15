@@ -8,8 +8,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Users, Building2, User, CheckCircle, XCircle, Package, 
-  LogOut, Shield, TrendingUp, Calendar
+  LogOut, Shield, TrendingUp, Calendar, AlertOctagon
 } from "lucide-react";
+import { format } from "date-fns";
 import type { DashboardStats } from "@shared/schema";
 
 export default function AdminDashboard() {
@@ -196,9 +197,21 @@ export default function AdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+                  <CardTitle className="text-sm font-medium">Emergency Alerts</CardTitle>
+                  <AlertOctagon className="w-4 h-4 text-red-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-500" data-testid="stat-emergency-alerts">
+                    {stats.totalEmergencyAlerts}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Recent Users</CardTitle>
@@ -251,6 +264,45 @@ export default function AdminDashboard() {
                         >
                           <span className="text-sm">{formatDate(day.date)}</span>
                           <Badge variant="secondary">{day.count} users</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertOctagon className="w-5 h-5 text-red-500" />
+                    Recent Emergency Alerts
+                  </CardTitle>
+                  <CardDescription>Users who triggered emergency alerts</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {stats.recentEmergencyAlerts.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-4">No emergency alerts</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {stats.recentEmergencyAlerts.slice(0, 5).map((alert) => (
+                        <div 
+                          key={alert.id} 
+                          className="flex items-start justify-between p-3 rounded-lg bg-red-500/10 border border-red-500/20"
+                          data-testid={`emergency-alert-${alert.id}`}
+                        >
+                          <div className="space-y-1">
+                            <p className="font-medium">{alert.userName}</p>
+                            <p className="text-sm text-muted-foreground">{alert.userEmail}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Notified: {alert.contactsNotified.join(", ")}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant="destructive" className="bg-red-500">Emergency</Badge>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {format(new Date(alert.timestamp), "MMM d, h:mm a")}
+                            </p>
+                          </div>
                         </div>
                       ))}
                     </div>
