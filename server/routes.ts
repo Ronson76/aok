@@ -128,6 +128,11 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
+      // Check if user is disabled
+      if (user.disabled) {
+        return res.status(403).json({ error: "Your account has been disabled. Please contact support." });
+      }
+
       // Create session
       const session = await storage.createSession(user.id);
 
@@ -171,6 +176,13 @@ export async function registerRoutes(
     const user = await storage.getUserById(session.userId);
     if (!user) {
       return res.status(401).json({ error: "User not found" });
+    }
+
+    // Check if user is disabled
+    if (user.disabled) {
+      await storage.deleteSession(sessionId);
+      res.clearCookie("session");
+      return res.status(403).json({ error: "Your account has been disabled. Please contact support." });
     }
 
     const { passwordHash, ...userProfile } = user;
