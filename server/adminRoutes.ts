@@ -45,6 +45,17 @@ function requireSuperAdmin(req: Request, res: Response, next: NextFunction) {
 }
 
 export function registerAdminRoutes(app: Express) {
+  // Check if admin exists (public endpoint for setup flow)
+  app.get("/api/admin/status", async (req, res) => {
+    try {
+      const hasAdmin = await adminStorage.hasAnyAdmin();
+      res.json({ hasAdmin });
+    } catch (error) {
+      console.error("Admin status check error:", error);
+      res.status(500).json({ error: "Failed to check admin status" });
+    }
+  });
+
   // Admin login
   app.post("/api/admin/auth/login", async (req, res) => {
     try {
