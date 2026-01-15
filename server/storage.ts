@@ -15,7 +15,20 @@ function getDb() {
 
 export interface IStorage {
   // Users
-  createUser(email: string, passwordHash: string, name: string, dateOfBirth: string, address: { line1: string; line2?: string; city: string; postalCode: string; country: string }): Promise<User>;
+  createUser(data: {
+    email: string;
+    passwordHash: string;
+    accountType: "individual" | "organization";
+    name: string;
+    referenceId?: string;
+    dateOfBirth?: string;
+    mobileNumber?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+  }): Promise<User>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserById(id: string): Promise<User | undefined>;
   updateUserPassword(userId: string, passwordHash: string): Promise<void>;
@@ -62,17 +75,33 @@ class DatabaseStorage implements IStorage {
   private lastProcessedOverdue: { [userId: string]: string | null } = {};
 
   // Users
-  async createUser(email: string, passwordHash: string, name: string, dateOfBirth: string, address: { line1: string; line2?: string; city: string; postalCode: string; country: string }): Promise<User> {
+  async createUser(data: {
+    email: string;
+    passwordHash: string;
+    accountType: "individual" | "organization";
+    name: string;
+    referenceId?: string;
+    dateOfBirth?: string;
+    mobileNumber?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+  }): Promise<User> {
     const result = await getDb().insert(users).values({
-      email,
-      passwordHash,
-      name,
-      dateOfBirth,
-      addressLine1: address.line1,
-      addressLine2: address.line2 || null,
-      city: address.city,
-      postalCode: address.postalCode,
-      country: address.country,
+      email: data.email,
+      passwordHash: data.passwordHash,
+      accountType: data.accountType,
+      name: data.name,
+      referenceId: data.referenceId || null,
+      dateOfBirth: data.dateOfBirth || null,
+      mobileNumber: data.mobileNumber || null,
+      addressLine1: data.addressLine1 || null,
+      addressLine2: data.addressLine2 || null,
+      city: data.city || null,
+      postalCode: data.postalCode || null,
+      country: data.country || null,
     }).returning();
     return result[0];
   }

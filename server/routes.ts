@@ -53,7 +53,10 @@ export async function registerRoutes(
         return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
       }
 
-      const { email, password, name, dateOfBirth, addressLine1, addressLine2, city, postalCode, country } = parsed.data;
+      const { 
+        email, password, accountType, name, referenceId, dateOfBirth, 
+        mobileNumber, addressLine1, addressLine2, city, postalCode, country 
+      } = parsed.data;
 
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(email.toLowerCase());
@@ -65,19 +68,20 @@ export async function registerRoutes(
       const passwordHash = await bcrypt.hash(password, 10);
 
       // Create user
-      const user = await storage.createUser(
-        email.toLowerCase(),
+      const user = await storage.createUser({
+        email: email.toLowerCase(),
         passwordHash,
+        accountType,
         name,
+        referenceId,
         dateOfBirth,
-        {
-          line1: addressLine1,
-          line2: addressLine2 || undefined,
-          city,
-          postalCode,
-          country,
-        }
-      );
+        mobileNumber,
+        addressLine1,
+        addressLine2,
+        city,
+        postalCode,
+        country,
+      });
 
       // Initialize settings for new user
       await storage.initializeSettings(user.id);

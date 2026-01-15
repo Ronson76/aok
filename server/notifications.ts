@@ -76,23 +76,42 @@ export async function sendContactAddedNotification(
     sms: { sent: false },
   };
 
-  const userName = user.name;
+  const isOrganization = user.accountType === "organization";
+  const identifier = isOrganization 
+    ? `${user.name} (Reference ID: ${user.referenceId})`
+    : user.name;
   const contactName = contact.name;
 
   const emailSubject = `You've been added as an emergency contact on CheckMate`;
-  const emailBody = `Hi ${contactName},
+  const emailBody = isOrganization 
+    ? `Hi ${contactName},
 
-${userName} has added you as their emergency contact on CheckMate.
+${user.name} has added you as an emergency contact for a person they are monitoring on CheckMate.
 
-CheckMate is a personal safety check-in app. If ${userName} misses a check-in, you will be notified automatically.
+Reference ID: ${user.referenceId}
 
-This means ${userName} trusts you to help ensure their safety. You don't need to do anything right now - you'll only be contacted if they miss a scheduled check-in.
+CheckMate is a personal safety check-in app. If this person misses a check-in, you will be notified automatically.
 
-Thank you for being there for ${userName}.
+You don't need to do anything right now - you'll only be contacted if they miss a scheduled check-in.
+
+Thank you for your support.
+
+- The CheckMate Team`
+    : `Hi ${contactName},
+
+${user.name} has added you as their emergency contact on CheckMate.
+
+CheckMate is a personal safety check-in app. If ${user.name} misses a check-in, you will be notified automatically.
+
+This means ${user.name} trusts you to help ensure their safety. You don't need to do anything right now - you'll only be contacted if they miss a scheduled check-in.
+
+Thank you for being there for ${user.name}.
 
 - The CheckMate Team`;
 
-  const smsBody = `Hi ${contactName}, ${userName} has added you as their emergency contact on CheckMate. You'll be notified if they miss a check-in.`;
+  const smsBody = isOrganization
+    ? `Hi ${contactName}, you've been added as an emergency contact for Reference ${user.referenceId} on CheckMate. You'll be notified if they miss a check-in.`
+    : `Hi ${contactName}, ${user.name} has added you as their emergency contact on CheckMate. You'll be notified if they miss a check-in.`;
 
   try {
     await sendEmail(contact.email, emailSubject, emailBody);
@@ -119,24 +138,40 @@ export async function sendMissedCheckInAlert(
   contacts: Contact[],
   user: User
 ): Promise<{ emailsSent: number; emailsFailed: number }> {
-  const userName = user.name;
+  const isOrganization = user.accountType === "organization";
+  const identifier = isOrganization 
+    ? `Reference ID: ${user.referenceId}` 
+    : user.name;
+  const subjectIdentifier = isOrganization 
+    ? `Reference ${user.referenceId}` 
+    : user.name;
+  
   let emailsSent = 0;
   let emailsFailed = 0;
   
   for (const contact of contacts) {
-    const emailSubject = `ALERT: ${userName} missed their CheckMate check-in`;
+    const emailSubject = `ALERT: ${subjectIdentifier} missed their CheckMate check-in`;
+    
+    let locationInfo = "";
+    if (user.addressLine1) {
+      locationInfo = `
+Registered address:
+${user.addressLine1}
+${user.addressLine2 ? user.addressLine2 + '\n' : ''}${user.city || ""}, ${user.postalCode || ""}
+${user.country || ""}`;
+    } else if (user.mobileNumber) {
+      locationInfo = `
+Mobile number: ${user.mobileNumber}`;
+    }
+    
     const emailBody = `Hi ${contact.name},
 
 This is an automated alert from CheckMate.
 
-${userName} has missed their scheduled check-in. This may indicate they need assistance.
+${identifier} has missed their scheduled check-in. This may indicate they need assistance.
+${locationInfo}
 
-${userName}'s registered address:
-${user.addressLine1}
-${user.addressLine2 ? user.addressLine2 + '\n' : ''}${user.city}, ${user.postalCode}
-${user.country}
-
-Please try to reach out to ${userName} to ensure their safety.
+Please try to reach out to ensure their safety.
 
 - The CheckMate Team`;
 
