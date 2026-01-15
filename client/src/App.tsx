@@ -23,6 +23,7 @@ import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminBundles from "@/pages/admin/bundles";
+import OrganizationDashboard from "@/pages/org/dashboard";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -97,9 +98,13 @@ function AdminAuthRoute({ component: Component }: { component: React.ComponentTy
 }
 
 function AppRoutes() {
+  const { user } = useAuth();
+  const isOrganization = user?.accountType === "organization";
+
   return (
     <Switch>
-      <Route path="/app" component={() => <ProtectedRoute component={Dashboard} />} />
+      <Route path="/app" component={() => <ProtectedRoute component={isOrganization ? OrganizationDashboard : Dashboard} />} />
+      <Route path="/app/org" component={() => <ProtectedRoute component={OrganizationDashboard} />} />
       <Route path="/app/contacts" component={() => <ProtectedRoute component={Contacts} />} />
       <Route path="/app/history" component={() => <ProtectedRoute component={History} />} />
       <Route path="/app/settings" component={() => <ProtectedRoute component={Settings} />} />
