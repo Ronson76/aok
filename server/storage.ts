@@ -2,10 +2,15 @@ import {
   contacts, checkIns, settings, alertLogs, users, sessions, passwordResetTokens,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken
 } from "@shared/schema";
-import { db } from "./db";
+import { ensureDb } from "./db";
 import { eq, desc, and, isNull, lt } from "drizzle-orm";
 import { randomUUID, randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
+
+// Get database instance at runtime (not at import time)
+function getDb() {
+  return ensureDb();
+}
 
 export interface IStorage {
   // Users
@@ -57,7 +62,7 @@ class DatabaseStorage implements IStorage {
 
   // Users
   async createUser(email: string, passwordHash: string, name: string, dateOfBirth: string, address: { line1: string; line2?: string; city: string; postalCode: string; country: string }): Promise<User> {
-    const result = await db.insert(users).values({
+    const result = await getDb().insert(users).values({
       email,
       passwordHash,
       name,
@@ -72,19 +77,19 @@ class DatabaseStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.email, email.toLowerCase()));
+    const result = await getDb().select().from(users).where(eq(users.email, email.toLowerCase()));
     return result[0];
   }
 
   async getUserById(id: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id));
+    const result = await getDb().select().from(users).where(eq(users.id, id));
     return result[0];
   }
 
   // Sessions
   async createSession(userId: string): Promise<Session> {
     const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days
-    const result = await db.insert(sessions).values({
+    const result = await getDb().insert(sessions).values({
       userId,
       expiresAt,
     }).returning();
@@ -92,7 +97,7 @@ class DatabaseStorage implements IStorage {
   }
 
   async getSession(sessionId: string): Promise<Session | undefined> {
-    const result = await db.select().from(sessions).where(eq(sessions.id, sessionId));
+    const result = await getDb().select().from(sessions).where(eq(sessions.id, sessionId));
     const session = result[0];
     if (session && new Date(session.expiresAt) < new Date()) {
       await this.deleteSession(sessionId);
@@ -102,21 +107,21 @@ class DatabaseStorage implements IStorage {
   }
 
   async deleteSession(sessionId: string): Promise<void> {
-    await db.delete(sessions).where(eq(sessions.id, sessionId));
+    await getDb().delete(sessions).where(eq(sessions.id, sessionId));
   }
 
   async deleteAllUserSessions(userId: string): Promise<void> {
-    await db.delete(sessions).where(eq(sessions.userId, userId));
+    await getDb().delete(sessions).where(eq(sessions.userId, userId));
   }
 
   // Password reset
   async updateUserPassword(userId: string, passwordHash: string): Promise<void> {
-    await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+    await getDb().update(users).set({ passwordHash }).where(eq(users.id, userId));
   }
 
   async createPasswordResetToken(userId: string): Promise<string> {
     // Invalidate any existing tokens for this user
-    await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+    await getDb().delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
 
     // Generate a secure random token
     const rawToken = randomBytes(32).toString("hex");
@@ -127,7 +132,7 @@ class DatabaseStorage implements IStorage {
     // Token expires in 1 hour
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
-    await db.insert(passwordResetTokens).values({
+    await getDb().insert(passwordResetTokens).values({
       userId,
       tokenHash,
       expiresAt,
@@ -141,7 +146,7 @@ class DatabaseStorage implements IStorage {
     // Hash the provided token to compare
     const tokenHash = createHash("sha256").update(token).digest("hex");
 
-    const result = await db.select().from(passwordResetTokens).where(
+    const result = await getDb().select().from(passwordResetTokens).where(
       and(
         eq(passwordResetTokens.tokenHash, tokenHash),
         isNull(passwordResetTokens.usedAt)
@@ -162,31 +167,31 @@ class DatabaseStorage implements IStorage {
   }
 
   async markPasswordResetTokenUsed(tokenId: string): Promise<void> {
-    await db.update(passwordResetTokens)
+    await getDb().update(passwordResetTokens)
       .set({ usedAt: new Date() })
       .where(eq(passwordResetTokens.id, tokenId));
   }
 
   async cleanupExpiredTokens(): Promise<void> {
-    await db.delete(passwordResetTokens).where(
+    await getDb().delete(passwordResetTokens).where(
       lt(passwordResetTokens.expiresAt, new Date())
     );
   }
 
   // Contacts
   async getContacts(userId: string): Promise<Contact[]> {
-    return await db.select().from(contacts).where(eq(contacts.userId, userId));
+    return await getDb().select().from(contacts).where(eq(contacts.userId, userId));
   }
 
   async getContact(userId: string, id: string): Promise<Contact | undefined> {
-    const result = await db.select().from(contacts).where(
+    const result = await getDb().select().from(contacts).where(
       and(eq(contacts.id, id), eq(contacts.userId, userId))
     );
     return result[0];
   }
 
   async createContact(userId: string, contact: InsertContact): Promise<Contact> {
-    const result = await db.insert(contacts).values({
+    const result = await getDb().insert(contacts).values({
       ...contact,
       userId,
     }).returning();
@@ -194,7 +199,7 @@ class DatabaseStorage implements IStorage {
   }
 
   async updateContact(userId: string, id: string, updates: Partial<InsertContact>): Promise<Contact | undefined> {
-    const result = await db.update(contacts)
+    const result = await getDb().update(contacts)
       .set(updates)
       .where(and(eq(contacts.id, id), eq(contacts.userId, userId)))
       .returning();
@@ -202,7 +207,7 @@ class DatabaseStorage implements IStorage {
   }
 
   async deleteContact(userId: string, id: string): Promise<boolean> {
-    const result = await db.delete(contacts).where(
+    const result = await getDb().delete(contacts).where(
       and(eq(contacts.id, id), eq(contacts.userId, userId))
     ).returning();
     return result.length > 0;
@@ -210,13 +215,13 @@ class DatabaseStorage implements IStorage {
 
   // Check-ins
   async getCheckIns(userId: string): Promise<CheckIn[]> {
-    return await db.select().from(checkIns)
+    return await getDb().select().from(checkIns)
       .where(eq(checkIns.userId, userId))
       .orderBy(desc(checkIns.timestamp));
   }
 
   async createCheckIn(userId: string): Promise<CheckIn> {
-    const result = await db.insert(checkIns).values({
+    const result = await getDb().insert(checkIns).values({
       userId,
       status: "success",
     }).returning();
@@ -225,7 +230,7 @@ class DatabaseStorage implements IStorage {
     const hoursToAdd = userSettings.frequency === "daily" ? 24 : 48;
     const nextDue = new Date(Date.now() + hoursToAdd * 60 * 60 * 1000);
 
-    await db.update(settings)
+    await getDb().update(settings)
       .set({ 
         lastCheckIn: new Date(),
         nextCheckInDue: nextDue,
@@ -236,7 +241,7 @@ class DatabaseStorage implements IStorage {
   }
 
   async createMissedCheckIn(userId: string): Promise<CheckIn> {
-    const result = await db.insert(checkIns).values({
+    const result = await getDb().insert(checkIns).values({
       userId,
       status: "missed",
     }).returning();
@@ -258,9 +263,9 @@ class DatabaseStorage implements IStorage {
 
   // Settings
   async initializeSettings(userId: string): Promise<void> {
-    const existing = await db.select().from(settings).where(eq(settings.userId, userId));
+    const existing = await getDb().select().from(settings).where(eq(settings.userId, userId));
     if (existing.length === 0) {
-      await db.insert(settings).values({
+      await getDb().insert(settings).values({
         userId,
         frequency: "daily",
         alertsEnabled: true,
@@ -269,7 +274,7 @@ class DatabaseStorage implements IStorage {
   }
 
   async getSettings(userId: string): Promise<Settings> {
-    const result = await db.select().from(settings).where(eq(settings.userId, userId));
+    const result = await getDb().select().from(settings).where(eq(settings.userId, userId));
     
     if (result.length === 0) {
       await this.initializeSettings(userId);
@@ -291,7 +296,7 @@ class DatabaseStorage implements IStorage {
   }
 
   async updateSettings(userId: string, updates: UpdateSettings): Promise<Settings> {
-    await db.update(settings)
+    await getDb().update(settings)
       .set(updates)
       .where(eq(settings.userId, userId));
     return this.getSettings(userId);
@@ -299,13 +304,13 @@ class DatabaseStorage implements IStorage {
 
   // Alerts
   async getAlertLogs(userId: string): Promise<AlertLog[]> {
-    return await db.select().from(alertLogs)
+    return await getDb().select().from(alertLogs)
       .where(eq(alertLogs.userId, userId))
       .orderBy(desc(alertLogs.timestamp));
   }
 
   async createAlertLog(userId: string, contactsNotified: string[], message: string): Promise<AlertLog> {
-    const result = await db.insert(alertLogs).values({
+    const result = await getDb().insert(alertLogs).values({
       userId,
       contactsNotified,
       message,
@@ -339,7 +344,7 @@ class DatabaseStorage implements IStorage {
 
     const hoursToAdd = currentSettings.frequency === "daily" ? 24 : 48;
     const nextDue = new Date(dueDate.getTime() + hoursToAdd * 60 * 60 * 1000);
-    await db.update(settings)
+    await getDb().update(settings)
       .set({ nextCheckInDue: nextDue })
       .where(eq(settings.userId, userId));
 
