@@ -12,8 +12,8 @@ export default function Landing() {
             <Shield className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold">CheckMate</span>
           </div>
-          <Link href="/app">
-            <Button data-testid="button-open-app">Open App</Button>
+          <Link href="/login">
+            <Button data-testid="button-open-app">Sign In</Button>
           </Link>
         </div>
       </header>
