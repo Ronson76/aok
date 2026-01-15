@@ -113,7 +113,7 @@ function AppLayout() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background border-b">
         <div className="max-w-md mx-auto px-4 py-3">
-          <Link href="/">
+          <Link href="/app">
             <div className="flex items-center gap-2 cursor-pointer w-fit" data-testid="link-home-logo">
               <Shield className="h-6 w-6 text-primary" />
               <span className="font-bold text-lg">CheckMate</span>
