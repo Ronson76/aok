@@ -146,6 +146,7 @@ export const updateSettingsSchema = z.object({
   frequency: z.enum(checkInFrequencies).optional(),
   intervalHours: z.number().min(1).max(48).optional(),
   alertsEnabled: z.boolean().optional(),
+  password: z.string().optional(),
 });
 
 export type UpdateSettings = z.infer<typeof updateSettingsSchema>;

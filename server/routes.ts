@@ -443,7 +443,27 @@ export async function registerRoutes(
       if (!parsed.success) {
         return res.status(400).json({ error: parsed.error.message });
       }
-      const settings = await storage.updateSettings(req.userId!, parsed.data);
+
+      const { password, ...settingsData } = parsed.data;
+
+      // If trying to disable alerts, require password verification
+      if (settingsData.alertsEnabled === false) {
+        if (!password) {
+          return res.status(400).json({ error: "Password required to disable alerts" });
+        }
+
+        const user = await storage.getUserById(req.userId!);
+        if (!user) {
+          return res.status(404).json({ error: "User not found" });
+        }
+
+        const isValid = await bcrypt.compare(password, user.passwordHash);
+        if (!isValid) {
+          return res.status(401).json({ error: "Incorrect password" });
+        }
+      }
+
+      const settings = await storage.updateSettings(req.userId!, settingsData);
       res.json(settings);
     } catch (error) {
       res.status(500).json({ error: "Failed to update settings" });

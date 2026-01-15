@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
@@ -29,6 +31,8 @@ export default function Settings() {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [localInterval, setLocalInterval] = useState<number>(24);
+  const [showDisableDialog, setShowDisableDialog] = useState(false);
+  const [disablePassword, setDisablePassword] = useState("");
 
   const handleLogout = async () => {
     await logout();
@@ -46,24 +50,47 @@ export default function Settings() {
   }, [settings?.intervalHours]);
 
   const updateMutation = useMutation({
-    mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean }) =>
+    mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean; password?: string }) =>
       apiRequest("PATCH", "/api/settings", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
       queryClient.invalidateQueries({ queryKey: ["/api/status"] });
+      setShowDisableDialog(false);
+      setDisablePassword("");
       toast({
         title: "Settings updated",
         description: "Your preferences have been saved.",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      const message = error?.message || "Please try again.";
       toast({
         title: "Failed to update settings",
-        description: "Please try again.",
+        description: message.includes("password") ? "Incorrect password" : message,
         variant: "destructive",
       });
     },
   });
+
+  const handleAlertsToggle = (checked: boolean) => {
+    if (checked) {
+      updateMutation.mutate({ alertsEnabled: true });
+    } else {
+      setShowDisableDialog(true);
+    }
+  };
+
+  const handleConfirmDisable = () => {
+    if (!disablePassword.trim()) {
+      toast({
+        title: "Password required",
+        description: "Please enter your password to disable alerts.",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateMutation.mutate({ alertsEnabled: false, password: disablePassword });
+  };
 
   const handleIntervalChange = (value: number[]) => {
     setLocalInterval(value[0]);
@@ -155,7 +182,7 @@ export default function Settings() {
             <Switch
               id="alerts-enabled"
               checked={settings?.alertsEnabled ?? true}
-              onCheckedChange={(checked) => updateMutation.mutate({ alertsEnabled: checked })}
+              onCheckedChange={handleAlertsToggle}
               data-testid="switch-alerts-enabled"
             />
           </div>
@@ -208,6 +235,63 @@ export default function Settings() {
           </Button>
         </CardContent>
       </Card>
+
+      <Dialog open={showDisableDialog} onOpenChange={(open) => {
+        setShowDisableDialog(open);
+        if (!open) setDisablePassword("");
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-destructive" />
+              Disable Safety Alerts?
+            </DialogTitle>
+            <DialogDescription>
+              This will stop your emergency contacts from being notified if you miss a check-in. 
+              For your safety, please enter your password to confirm this change.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                placeholder="Enter your password"
+                value={disablePassword}
+                onChange={(e) => setDisablePassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleConfirmDisable();
+                }}
+                data-testid="input-disable-password"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDisableDialog(false);
+                setDisablePassword("");
+              }}
+              data-testid="button-cancel-disable"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDisable}
+              disabled={updateMutation.isPending}
+              data-testid="button-confirm-disable"
+            >
+              {updateMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Disable Alerts
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
