@@ -190,7 +190,7 @@ export default function Contacts() {
                     <FormItem>
                       <FormLabel>Phone (optional)</FormLabel>
                       <FormControl>
-                        <Input type="tel" placeholder="+1 234 567 8900" {...field} data-testid="input-contact-phone" />
+                        <Input type="tel" placeholder="+1 234 567 8900" {...field} value={field.value || ""} data-testid="input-contact-phone" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
