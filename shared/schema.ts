@@ -307,6 +307,39 @@ export const bundleUsage = pgTable("bundle_usage", {
 
 export type BundleUsage = typeof bundleUsage.$inferSelect;
 
+// Organization clients table (links organizations to individual users they monitor)
+export const organizationClients = pgTable("organization_clients", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  clientId: varchar("client_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  bundleId: varchar("bundle_id").references(() => organizationBundles.id, { onDelete: "set null" }),
+  nickname: text("nickname"),
+  addedAt: timestamp("added_at").notNull().defaultNow(),
+});
+
+export const insertOrganizationClientSchema = createInsertSchema(organizationClients).omit({
+  id: true,
+  addedAt: true,
+});
+
+export type InsertOrganizationClient = z.infer<typeof insertOrganizationClientSchema>;
+export type OrganizationClient = typeof organizationClients.$inferSelect;
+
+// Organization client with user details (for dashboard display)
+export interface OrganizationClientWithDetails {
+  id: string;
+  clientId: string;
+  nickname: string | null;
+  addedAt: Date;
+  client: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  status: StatusData;
+  lastAlert: AlertLog | null;
+}
+
 // Admin audit logs (track admin actions)
 export const adminAuditLogs = pgTable("admin_audit_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -344,4 +377,16 @@ export interface DashboardStats {
   dailyRegistrations: { date: string; count: number }[];
   totalEmergencyAlerts: number;
   recentEmergencyAlerts: EmergencyAlertInfo[];
+}
+
+// Organization dashboard statistics type
+export interface OrganizationDashboardStats {
+  totalClients: number;
+  totalSeats: number;
+  seatsUsed: number;
+  clientsSafe: number;
+  clientsPending: number;
+  clientsOverdue: number;
+  totalEmergencyAlerts: number;
+  bundles: OrganizationBundle[];
 }

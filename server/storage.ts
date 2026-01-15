@@ -1,8 +1,9 @@
 import { 
   contacts, checkIns, settings, alertLogs, users, sessions, passwordResetTokens,
-  adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs,
+  adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs, organizationClients,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
-  AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo
+  AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo,
+  OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, desc, and, isNull, lt, count, sql } from "drizzle-orm";
@@ -736,3 +737,300 @@ class AdminStorage implements IAdminStorage {
 }
 
 export const adminStorage = new AdminStorage();
+
+// ==================== ORGANIZATION STORAGE ====================
+
+export interface IOrganizationStorage {
+  // Organization clients
+  getClients(organizationId: string): Promise<OrganizationClient[]>;
+  getClientsWithDetails(organizationId: string): Promise<OrganizationClientWithDetails[]>;
+  addClient(organizationId: string, clientId: string, bundleId?: string, nickname?: string): Promise<OrganizationClient>;
+  removeClient(organizationId: string, clientId: string): Promise<boolean>;
+  isClientOfOrganization(organizationId: string, clientId: string): Promise<boolean>;
+  
+  // Dashboard
+  getOrganizationDashboardStats(organizationId: string): Promise<OrganizationDashboardStats>;
+  
+  // Client details
+  getClientStatus(clientId: string): Promise<StatusData>;
+  getClientAlertLogs(clientId: string): Promise<AlertLog[]>;
+}
+
+class OrganizationStorage implements IOrganizationStorage {
+  // Get all clients for an organization
+  async getClients(organizationId: string): Promise<OrganizationClient[]> {
+    return await getDb()
+      .select()
+      .from(organizationClients)
+      .where(eq(organizationClients.organizationId, organizationId))
+      .orderBy(desc(organizationClients.addedAt));
+  }
+
+  // Get clients with their user details and status
+  async getClientsWithDetails(organizationId: string): Promise<OrganizationClientWithDetails[]> {
+    const clients = await getDb()
+      .select({
+        orgClient: organizationClients,
+        client: users,
+      })
+      .from(organizationClients)
+      .leftJoin(users, eq(organizationClients.clientId, users.id))
+      .where(eq(organizationClients.organizationId, organizationId))
+      .orderBy(desc(organizationClients.addedAt));
+
+    const results: OrganizationClientWithDetails[] = [];
+    
+    for (const row of clients) {
+      if (!row.client) continue;
+      
+      const status = await this.getClientStatus(row.client.id);
+      const alertLogs = await this.getClientAlertLogs(row.client.id);
+      const lastAlert = alertLogs.length > 0 ? alertLogs[0] : null;
+      
+      results.push({
+        id: row.orgClient.id,
+        clientId: row.orgClient.clientId,
+        nickname: row.orgClient.nickname,
+        addedAt: row.orgClient.addedAt,
+        client: {
+          id: row.client.id,
+          name: row.client.name,
+          email: row.client.email,
+        },
+        status,
+        lastAlert,
+      });
+    }
+    
+    return results;
+  }
+
+  // Add a client to an organization
+  async addClient(organizationId: string, clientId: string, bundleId?: string, nickname?: string): Promise<OrganizationClient> {
+    // Check if the client is already assigned
+    const existing = await getDb()
+      .select()
+      .from(organizationClients)
+      .where(and(
+        eq(organizationClients.organizationId, organizationId),
+        eq(organizationClients.clientId, clientId)
+      ));
+    
+    if (existing.length > 0) {
+      throw new Error("Client is already assigned to this organization");
+    }
+
+    // Check seat availability if bundleId is provided
+    if (bundleId) {
+      const bundle = await getDb()
+        .select()
+        .from(organizationBundles)
+        .where(eq(organizationBundles.id, bundleId));
+      
+      if (bundle.length === 0) {
+        throw new Error("Bundle not found");
+      }
+
+      // SECURITY: Verify the bundle belongs to this organization
+      if (bundle[0].userId !== organizationId) {
+        throw new Error("You can only use bundles assigned to your organization");
+      }
+      
+      if (bundle[0].seatsUsed >= bundle[0].seatLimit) {
+        throw new Error("No seats available in this bundle");
+      }
+      
+      // Increment seats used
+      await getDb()
+        .update(organizationBundles)
+        .set({ seatsUsed: bundle[0].seatsUsed + 1 })
+        .where(eq(organizationBundles.id, bundleId));
+    }
+
+    const result = await getDb()
+      .insert(organizationClients)
+      .values({
+        organizationId,
+        clientId,
+        bundleId: bundleId || null,
+        nickname: nickname || null,
+      })
+      .returning();
+    
+    return result[0];
+  }
+
+  // Remove a client from an organization
+  async removeClient(organizationId: string, clientId: string): Promise<boolean> {
+    // Get the client record first to check bundle
+    const clientRecord = await getDb()
+      .select()
+      .from(organizationClients)
+      .where(and(
+        eq(organizationClients.organizationId, organizationId),
+        eq(organizationClients.clientId, clientId)
+      ));
+    
+    if (clientRecord.length === 0) {
+      return false;
+    }
+
+    // Decrement seats used if bundleId exists
+    if (clientRecord[0].bundleId) {
+      const bundle = await getDb()
+        .select()
+        .from(organizationBundles)
+        .where(eq(organizationBundles.id, clientRecord[0].bundleId));
+      
+      if (bundle.length > 0 && bundle[0].seatsUsed > 0) {
+        await getDb()
+          .update(organizationBundles)
+          .set({ seatsUsed: bundle[0].seatsUsed - 1 })
+          .where(eq(organizationBundles.id, clientRecord[0].bundleId));
+      }
+    }
+
+    const result = await getDb()
+      .delete(organizationClients)
+      .where(and(
+        eq(organizationClients.organizationId, organizationId),
+        eq(organizationClients.clientId, clientId)
+      ))
+      .returning();
+    
+    return result.length > 0;
+  }
+
+  // Check if a client belongs to an organization
+  async isClientOfOrganization(organizationId: string, clientId: string): Promise<boolean> {
+    const result = await getDb()
+      .select({ id: organizationClients.id })
+      .from(organizationClients)
+      .where(and(
+        eq(organizationClients.organizationId, organizationId),
+        eq(organizationClients.clientId, clientId)
+      ));
+    
+    return result.length > 0;
+  }
+
+  // Get organization dashboard statistics
+  async getOrganizationDashboardStats(organizationId: string): Promise<OrganizationDashboardStats> {
+    const clients = await this.getClientsWithDetails(organizationId);
+    
+    const bundles = await getDb()
+      .select()
+      .from(organizationBundles)
+      .where(eq(organizationBundles.userId, organizationId));
+    
+    const totalSeats = bundles.reduce((sum, b) => sum + b.seatLimit, 0);
+    const seatsUsed = bundles.reduce((sum, b) => sum + b.seatsUsed, 0);
+    
+    let clientsSafe = 0;
+    let clientsPending = 0;
+    let clientsOverdue = 0;
+    let totalEmergencyAlerts = 0;
+    
+    for (const client of clients) {
+      if (client.status.status === "safe") clientsSafe++;
+      else if (client.status.status === "pending") clientsPending++;
+      else if (client.status.status === "overdue") clientsOverdue++;
+      
+      // Count emergency alerts for this client
+      const alerts = await getDb()
+        .select({ count: count() })
+        .from(alertLogs)
+        .where(and(
+          eq(alertLogs.userId, client.clientId),
+          sql`${alertLogs.message} LIKE '%EMERGENCY%'`
+        ));
+      totalEmergencyAlerts += alerts[0]?.count || 0;
+    }
+    
+    return {
+      totalClients: clients.length,
+      totalSeats,
+      seatsUsed,
+      clientsSafe,
+      clientsPending,
+      clientsOverdue,
+      totalEmergencyAlerts,
+      bundles,
+    };
+  }
+
+  // Get status for a specific client
+  async getClientStatus(clientId: string): Promise<StatusData> {
+    // Get settings for the client
+    const settingsResult = await getDb()
+      .select()
+      .from(settings)
+      .where(eq(settings.userId, clientId));
+    
+    const clientSettings = settingsResult[0];
+    
+    // Get last check-in
+    const lastCheckInResult = await getDb()
+      .select()
+      .from(checkIns)
+      .where(and(
+        eq(checkIns.userId, clientId),
+        eq(checkIns.status, "success")
+      ))
+      .orderBy(desc(checkIns.timestamp))
+      .limit(1);
+    
+    const lastCheckIn = lastCheckInResult[0];
+    
+    // Calculate streak
+    const allCheckIns = await getDb()
+      .select()
+      .from(checkIns)
+      .where(eq(checkIns.userId, clientId))
+      .orderBy(desc(checkIns.timestamp));
+    
+    let streak = 0;
+    for (const ci of allCheckIns) {
+      if (ci.status === "success") streak++;
+      else break;
+    }
+    
+    // Determine status
+    const now = new Date();
+    const nextDue = clientSettings?.nextCheckInDue ? new Date(clientSettings.nextCheckInDue) : null;
+    const lastCheckInTime = lastCheckIn?.timestamp ? new Date(lastCheckIn.timestamp) : null;
+    
+    let status: "safe" | "pending" | "overdue" = "pending";
+    let hoursUntilDue: number | null = null;
+    
+    if (nextDue) {
+      hoursUntilDue = Math.round((nextDue.getTime() - now.getTime()) / (1000 * 60 * 60));
+      
+      if (now > nextDue) {
+        status = "overdue";
+      } else if (lastCheckInTime) {
+        status = "safe";
+      }
+    }
+    
+    return {
+      status,
+      lastCheckIn: lastCheckInTime?.toISOString() || null,
+      nextCheckInDue: nextDue?.toISOString() || null,
+      streak,
+      hoursUntilDue,
+    };
+  }
+
+  // Get alert logs for a specific client
+  async getClientAlertLogs(clientId: string): Promise<AlertLog[]> {
+    return await getDb()
+      .select()
+      .from(alertLogs)
+      .where(eq(alertLogs.userId, clientId))
+      .orderBy(desc(alertLogs.timestamp))
+      .limit(10);
+  }
+}
+
+export const organizationStorage = new OrganizationStorage();

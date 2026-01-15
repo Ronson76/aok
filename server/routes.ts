@@ -6,6 +6,7 @@ import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
+import { registerOrganizationRoutes } from "./organizationRoutes";
 
 // Extend Express Request type
 declare global {
@@ -48,6 +49,10 @@ export async function registerRoutes(
 
   // Register admin routes
   registerAdminRoutes(app);
+
+  // Register organization routes (requires auth middleware for all /api/org/* routes)
+  app.use("/api/org", authMiddleware);
+  registerOrganizationRoutes(app);
 
   // Auth routes (public)
   app.post("/api/auth/register", async (req, res) => {
