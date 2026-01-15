@@ -36,6 +36,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [cachedLocation, setCachedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const { data: status, isLoading } = useQuery<StatusData>({
     queryKey: ["/api/status"],
@@ -82,13 +83,17 @@ export default function Dashboard() {
     },
   });
 
-  const handleEmergencyAlert = () => {
+  // Start getting location when dialog opens
+  const handleOpenEmergencyDialog = () => {
+    setShowEmergencyDialog(true);
+    setCachedLocation(null);
+    
     if ("geolocation" in navigator) {
       setGettingLocation(true);
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setGettingLocation(false);
-          emergencyMutation.mutate({
+          setCachedLocation({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
           });
@@ -96,14 +101,15 @@ export default function Dashboard() {
         (error) => {
           console.log('[GPS] Location error:', error.message);
           setGettingLocation(false);
-          // Location denied or unavailable, send without it
-          emergencyMutation.mutate(undefined);
         },
         { timeout: 10000, enableHighAccuracy: true, maximumAge: 60000 }
       );
-    } else {
-      emergencyMutation.mutate(undefined);
     }
+  };
+
+  // Send alert with cached location (or without if not available)
+  const handleEmergencyAlert = () => {
+    emergencyMutation.mutate(cachedLocation || undefined);
   };
 
   if (isLoading) {
@@ -220,7 +226,7 @@ export default function Dashboard() {
               variant="destructive"
               size="lg"
               className="w-full max-w-xs"
-              onClick={() => setShowEmergencyDialog(true)}
+              onClick={handleOpenEmergencyDialog}
               data-testid="button-emergency"
             >
               <AlertOctagon className="h-5 w-5 mr-2" />
@@ -242,10 +248,28 @@ export default function Dashboard() {
               They will be notified that you need immediate help.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 space-y-3">
             <p className="text-sm text-muted-foreground">
               Only use this in a real emergency. Your contacts will receive an urgent email asking them to contact you immediately.
             </p>
+            <div className="flex items-center gap-2 text-sm">
+              {gettingLocation ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <span className="text-muted-foreground">Getting your location...</span>
+                </>
+              ) : cachedLocation ? (
+                <>
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-green-600 dark:text-green-400">Location ready to send</span>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                  <span className="text-yellow-600 dark:text-yellow-400">Location unavailable - will send without</span>
+                </>
+              )}
+            </div>
           </div>
           <DialogFooter className="gap-2">
             <Button
@@ -258,15 +282,10 @@ export default function Dashboard() {
             <Button
               variant="destructive"
               onClick={handleEmergencyAlert}
-              disabled={emergencyMutation.isPending || gettingLocation}
+              disabled={emergencyMutation.isPending}
               data-testid="button-confirm-emergency"
             >
-              {gettingLocation ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Getting Location...
-                </>
-              ) : emergencyMutation.isPending ? (
+              {emergencyMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Sending Alert...
