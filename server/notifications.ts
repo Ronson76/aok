@@ -198,6 +198,42 @@ Please try to reach out to ensure their safety.
   return { emailsSent, emailsFailed };
 }
 
+export async function sendSuccessfulCheckInNotification(
+  primaryContact: Contact,
+  user: User
+): Promise<boolean> {
+  const isOrganization = user.accountType === "organization";
+  const identifier = isOrganization 
+    ? `Reference ${user.referenceId}` 
+    : user.name;
+  
+  const now = new Date();
+  const checkInTime = now.toLocaleString('en-US', { 
+    dateStyle: 'medium', 
+    timeStyle: 'short' 
+  });
+  
+  const subject = `CheckMate: ${identifier} checked in successfully`;
+  const body = `Hi ${primaryContact.name},
+
+Good news! ${identifier} has completed their scheduled check-in on CheckMate.
+
+Check-in time: ${checkInTime}
+
+This is an automated notification confirming their safety. No action is required from you.
+
+- The CheckMate Team`;
+
+  try {
+    await sendEmail(primaryContact.email, subject, body);
+    console.log(`[CHECK-IN NOTIFICATION] Sent to primary contact ${primaryContact.name} (${primaryContact.email})`);
+    return true;
+  } catch (error) {
+    console.error(`[CHECK-IN NOTIFICATION] Failed to send to ${primaryContact.email}:`, error);
+    return false;
+  }
+}
+
 export async function sendPasswordResetEmail(
   email: string,
   resetUrl: string,
