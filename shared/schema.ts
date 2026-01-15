@@ -317,6 +317,16 @@ export const adminAuditLogs = pgTable("admin_audit_logs", {
 
 export type AdminAuditLog = typeof adminAuditLogs.$inferSelect;
 
+// Emergency alert info for admin dashboard
+export interface EmergencyAlertInfo {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  timestamp: Date;
+  contactsNotified: string[];
+}
+
 // Dashboard statistics type (computed, not stored)
 export interface DashboardStats {
   totalUsers: number;
@@ -329,4 +339,6 @@ export interface DashboardStats {
   totalSeatsUsed: number;
   recentUsers: UserProfile[];
   dailyRegistrations: { date: string; count: number }[];
+  totalEmergencyAlerts: number;
+  recentEmergencyAlerts: EmergencyAlertInfo[];
 }

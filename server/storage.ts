@@ -2,7 +2,7 @@ import {
   contacts, checkIns, settings, alertLogs, users, sessions, passwordResetTokens,
   adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
-  AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile
+  AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, desc, and, isNull, lt, count, sql } from "drizzle-orm";
@@ -593,6 +593,36 @@ class AdminStorage implements IAdminStorage {
       count: r.count,
     }));
 
+    // Get emergency alerts count (alerts with "EMERGENCY" in message)
+    const emergencyAlertsResult = await db.select({ count: count() })
+      .from(alertLogs)
+      .where(sql`${alertLogs.message} LIKE '%EMERGENCY%'`);
+    const totalEmergencyAlerts = emergencyAlertsResult[0]?.count || 0;
+
+    // Get recent emergency alerts with user info (last 10)
+    const recentEmergencyData = await db.select({
+      id: alertLogs.id,
+      userId: alertLogs.userId,
+      timestamp: alertLogs.timestamp,
+      contactsNotified: alertLogs.contactsNotified,
+      userName: users.name,
+      userEmail: users.email,
+    })
+      .from(alertLogs)
+      .leftJoin(users, eq(alertLogs.userId, users.id))
+      .where(sql`${alertLogs.message} LIKE '%EMERGENCY%'`)
+      .orderBy(desc(alertLogs.timestamp))
+      .limit(10);
+
+    const recentEmergencyAlerts: EmergencyAlertInfo[] = recentEmergencyData.map(r => ({
+      id: r.id,
+      userId: r.userId,
+      userName: r.userName || "Unknown",
+      userEmail: r.userEmail || "Unknown",
+      timestamp: r.timestamp,
+      contactsNotified: r.contactsNotified,
+    }));
+
     return {
       totalUsers,
       totalOrganizations,
@@ -604,6 +634,8 @@ class AdminStorage implements IAdminStorage {
       totalSeatsUsed,
       recentUsers,
       dailyRegistrations,
+      totalEmergencyAlerts,
+      recentEmergencyAlerts,
     };
   }
 
