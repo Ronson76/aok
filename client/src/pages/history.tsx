@@ -118,7 +118,7 @@ function AlertsTab({ alerts }: { alerts: AlertLog[] }) {
           </div>
           <h3 className="text-lg font-medium mb-2">No alerts sent</h3>
           <p className="text-sm text-muted-foreground max-w-xs">
-            When you miss a check-in, alerts sent to your contacts will appear here.
+            When you miss a check-in or trigger an emergency, alerts sent to your contacts will appear here.
           </p>
         </CardContent>
       </Card>
@@ -127,31 +127,40 @@ function AlertsTab({ alerts }: { alerts: AlertLog[] }) {
 
   return (
     <div className="space-y-3">
-      {alerts.map((alert) => (
-        <Card key={alert.id}>
-          <CardContent className="py-4">
-            <div className="flex items-start gap-3">
-              <div className="rounded-full bg-destructive/10 p-2 flex-shrink-0">
-                <AlertTriangle className="h-4 w-4 text-destructive" />
-              </div>
-              <div className="flex-1 min-w-0 space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium">Alert Sent</span>
-                  <Badge variant="destructive" className="text-xs">
-                    Missed Check-In
-                  </Badge>
+      {alerts.map((alert) => {
+        const isEmergency = alert.message.includes("EMERGENCY");
+        
+        return (
+          <Card key={alert.id}>
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <div className={`rounded-full p-2 flex-shrink-0 ${isEmergency ? "bg-red-500/20" : "bg-destructive/10"}`}>
+                  <AlertTriangle className={`h-4 w-4 ${isEmergency ? "text-red-500" : "text-destructive"}`} />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Notified: {alert.contactsNotified.join(", ")}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {format(new Date(alert.timestamp), "MMMM d, yyyy 'at' h:mm a")}
-                </p>
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium">
+                      {isEmergency ? "Emergency Alert" : "Alert Sent"}
+                    </span>
+                    <Badge 
+                      variant="destructive" 
+                      className={`text-xs ${isEmergency ? "bg-red-500 hover:bg-red-600" : ""}`}
+                    >
+                      {isEmergency ? "Emergency" : "Missed Check-In"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Notified: {alert.contactsNotified.join(", ")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(alert.timestamp), "MMMM d, yyyy 'at' h:mm a")}
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
