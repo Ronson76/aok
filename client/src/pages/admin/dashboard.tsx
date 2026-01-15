@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAdmin } from "@/contexts/admin-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,9 +39,11 @@ export default function AdminDashboard() {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-              <Shield className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <Link href="/">
+              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity" data-testid="link-home-logo">
+                <Shield className="w-5 h-5 text-primary-foreground" />
+              </div>
+            </Link>
             <div>
               <h1 className="text-xl font-semibold">Admin Dashboard</h1>
               <p className="text-sm text-muted-foreground">Welcome, {admin?.name}</p>
