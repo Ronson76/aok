@@ -40,3 +40,8 @@ waitForPort = 5000
 
 [agent]
 integrations = ["resend:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+RESEND_API_KEY = "re_CvWGZtpF_HwRSetj8RaLWj9vzbv5hLBsH"

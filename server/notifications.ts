@@ -10,9 +10,10 @@ let connectionSettings: any;
 
 async function getResendCredentials() {
   // First try environment variable (user's own API key)
-  if (process.env.RESEND_API_KEY) {
+  const apiKey = process.env.RESEND_API_KEY2 || process.env.RESEND_API_KEY;
+  if (apiKey) {
     return { 
-      apiKey: process.env.RESEND_API_KEY, 
+      apiKey, 
       fromEmail: 'CheckMate <onboarding@resend.dev>' 
     };
   }
