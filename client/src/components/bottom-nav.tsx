@@ -2,10 +2,10 @@ import { Link, useLocation } from "wouter";
 import { Home, Users, History, Settings } from "lucide-react";
 
 const navItems = [
-  { path: "/", icon: Home, label: "Home" },
-  { path: "/contacts", icon: Users, label: "Contacts" },
-  { path: "/history", icon: History, label: "History" },
-  { path: "/settings", icon: Settings, label: "Settings" },
+  { path: "/app", icon: Home, label: "Home" },
+  { path: "/app/contacts", icon: Users, label: "Contacts" },
+  { path: "/app/history", icon: History, label: "History" },
+  { path: "/app/settings", icon: Settings, label: "Settings" },
 ];
 
 export function BottomNav() {
