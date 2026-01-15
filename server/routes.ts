@@ -432,8 +432,8 @@ export async function registerRoutes(
       
       const { Resend } = await import('resend');
       
-      // Use RESEND_API_KEY secret first
-      const apiKey = process.env.RESEND_API_KEY;
+      // Use RESEND_API_KEY2 or RESEND_API_KEY secret
+      const apiKey = process.env.RESEND_API_KEY2 || process.env.RESEND_API_KEY;
       if (!apiKey) {
         return res.status(500).json({ error: 'RESEND_API_KEY not set' });
       }
