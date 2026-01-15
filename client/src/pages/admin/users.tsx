@@ -18,7 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { 
-  Users, LogOut, Shield, Trash2, ArrowLeft, Building2, User
+  Users, LogOut, Shield, Trash2, ArrowLeft, Building2, User, Ban, CheckCircle
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { UserProfile } from "@shared/schema";
@@ -50,6 +50,28 @@ export default function AdminUsers() {
         variant: "destructive",
         title: "Delete failed",
         description: error.message || "Could not delete user",
+      });
+    },
+  });
+
+  const toggleDisabledMutation = useMutation({
+    mutationFn: async ({ userId, disabled }: { userId: string; disabled: boolean }) => {
+      await apiRequest("PATCH", `/api/admin/users/${userId}/disabled`, { disabled });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: variables.disabled ? "User disabled" : "User enabled",
+        description: variables.disabled 
+          ? "The user can no longer log in." 
+          : "The user can now log in again.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: error.message || "Could not update user status",
       });
     },
   });
@@ -178,9 +200,31 @@ export default function AdminUsers() {
                       <Badge variant={user.accountType === "organization" ? "default" : "secondary"}>
                         {user.accountType}
                       </Badge>
+                      {user.disabled && (
+                        <Badge variant="destructive">Disabled</Badge>
+                      )}
                       <span className="text-xs text-muted-foreground">
                         {formatDate(user.createdAt?.toString() || "")}
                       </span>
+                      {isSuperAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => toggleDisabledMutation.mutate({ 
+                            userId: user.id, 
+                            disabled: !user.disabled 
+                          })}
+                          disabled={toggleDisabledMutation.isPending}
+                          title={user.disabled ? "Enable user" : "Disable user"}
+                          data-testid={`button-toggle-user-${user.id}`}
+                        >
+                          {user.disabled ? (
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <Ban className="w-4 h-4 text-amber-600" />
+                          )}
+                        </Button>
+                      )}
                       {isSuperAdmin && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
