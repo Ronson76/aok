@@ -182,7 +182,12 @@ export default function Landing() {
             <Shield className="h-5 w-5" />
             <span className="font-semibold">CheckMate</span>
           </div>
-          <p className="text-sm">Your personal safety check-in companion</p>
+          <p className="text-sm mb-4">Your personal safety check-in companion</p>
+          <Link href="/admin/login">
+            <span className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors cursor-pointer" data-testid="link-admin">
+              Admin
+            </span>
+          </Link>
         </div>
       </footer>
     </div>
