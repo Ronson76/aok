@@ -35,6 +35,7 @@ function getStatusLabel(status: StatusData["status"]) {
 export default function Dashboard() {
   const { toast } = useToast();
   const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   const { data: status, isLoading } = useQuery<StatusData>({
     queryKey: ["/api/status"],
@@ -83,18 +84,22 @@ export default function Dashboard() {
 
   const handleEmergencyAlert = () => {
     if ("geolocation" in navigator) {
+      setGettingLocation(true);
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          setGettingLocation(false);
           emergencyMutation.mutate({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
           });
         },
-        () => {
+        (error) => {
+          console.log('[GPS] Location error:', error.message);
+          setGettingLocation(false);
           // Location denied or unavailable, send without it
           emergencyMutation.mutate(undefined);
         },
-        { timeout: 5000, enableHighAccuracy: true }
+        { timeout: 10000, enableHighAccuracy: true, maximumAge: 60000 }
       );
     } else {
       emergencyMutation.mutate(undefined);
@@ -253,15 +258,25 @@ export default function Dashboard() {
             <Button
               variant="destructive"
               onClick={handleEmergencyAlert}
-              disabled={emergencyMutation.isPending}
+              disabled={emergencyMutation.isPending || gettingLocation}
               data-testid="button-confirm-emergency"
             >
-              {emergencyMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              {gettingLocation ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Getting Location...
+                </>
+              ) : emergencyMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Sending Alert...
+                </>
               ) : (
-                <AlertOctagon className="h-4 w-4 mr-2" />
+                <>
+                  <AlertOctagon className="h-4 w-4 mr-2" />
+                  Yes, Send Alert
+                </>
               )}
-              Yes, Send Alert
             </Button>
           </DialogFooter>
         </DialogContent>
