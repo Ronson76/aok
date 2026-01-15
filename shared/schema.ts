@@ -95,11 +95,21 @@ export const contacts = pgTable("contacts", {
   email: text("email").notNull(),
   phone: text("phone"),
   relationship: text("relationship").notNull(),
+  isPrimary: boolean("is_primary").notNull().default(false),
 });
 
-export const insertContactSchema = createInsertSchema(contacts).omit({ id: true, userId: true });
+export const insertContactSchema = createInsertSchema(contacts).omit({ id: true, userId: true, isPrimary: true });
 export type InsertContact = z.infer<typeof insertContactSchema>;
 export type Contact = typeof contacts.$inferSelect;
+
+export const updateContactSchema = z.object({
+  name: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  relationship: z.string().optional(),
+  isPrimary: z.boolean().optional(),
+});
+export type UpdateContact = z.infer<typeof updateContactSchema>;
 
 // Check-ins table
 export const checkIns = pgTable("check_ins", {

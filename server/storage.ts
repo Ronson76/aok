@@ -48,8 +48,10 @@ export interface IStorage {
   // Contacts
   getContacts(userId: string): Promise<Contact[]>;
   getContact(userId: string, id: string): Promise<Contact | undefined>;
+  getPrimaryContact(userId: string): Promise<Contact | undefined>;
   createContact(userId: string, contact: InsertContact): Promise<Contact>;
-  updateContact(userId: string, id: string, updates: Partial<InsertContact>): Promise<Contact | undefined>;
+  updateContact(userId: string, id: string, updates: Partial<InsertContact> & { isPrimary?: boolean }): Promise<Contact | undefined>;
+  setPrimaryContact(userId: string, contactId: string): Promise<Contact | undefined>;
   deleteContact(userId: string, id: string): Promise<boolean>;
 
   // Check-ins
@@ -220,6 +222,13 @@ class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async getPrimaryContact(userId: string): Promise<Contact | undefined> {
+    const result = await getDb().select().from(contacts).where(
+      and(eq(contacts.userId, userId), eq(contacts.isPrimary, true))
+    );
+    return result[0];
+  }
+
   async createContact(userId: string, contact: InsertContact): Promise<Contact> {
     const result = await getDb().insert(contacts).values({
       ...contact,
@@ -228,10 +237,31 @@ class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async updateContact(userId: string, id: string, updates: Partial<InsertContact>): Promise<Contact | undefined> {
+  async updateContact(userId: string, id: string, updates: Partial<InsertContact> & { isPrimary?: boolean }): Promise<Contact | undefined> {
+    // If setting this contact as primary, first unset all other primary contacts
+    if (updates.isPrimary === true) {
+      await getDb().update(contacts)
+        .set({ isPrimary: false })
+        .where(eq(contacts.userId, userId));
+    }
+    
     const result = await getDb().update(contacts)
       .set(updates)
       .where(and(eq(contacts.id, id), eq(contacts.userId, userId)))
+      .returning();
+    return result[0];
+  }
+
+  async setPrimaryContact(userId: string, contactId: string): Promise<Contact | undefined> {
+    // First, unset all primary contacts for this user
+    await getDb().update(contacts)
+      .set({ isPrimary: false })
+      .where(eq(contacts.userId, userId));
+    
+    // Then set the specified contact as primary
+    const result = await getDb().update(contacts)
+      .set({ isPrimary: true })
+      .where(and(eq(contacts.id, contactId), eq(contacts.userId, userId)))
       .returning();
     return result[0];
   }
