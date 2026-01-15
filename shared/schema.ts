@@ -30,13 +30,16 @@ export const users = pgTable("users", {
   city: text("city"),
   postalCode: text("postal_code"),
   country: text("country"),
+  // Admin can disable users to prevent them from logging in
+  disabled: boolean("disabled").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ 
   id: true, 
   passwordHash: true, 
-  createdAt: true 
+  createdAt: true,
+  disabled: true,
 }).extend({
   accountType: z.enum(accountTypes),
   password: z.string().min(6, "Password must be at least 6 characters"),
