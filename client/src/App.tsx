@@ -10,6 +10,8 @@ import { Loader2 } from "lucide-react";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
 import Dashboard from "@/pages/dashboard";
 import Contacts from "@/pages/contacts";
 import History from "@/pages/history";
@@ -88,6 +90,14 @@ function Router() {
 
   if (location === "/register") {
     return <AuthRoute component={Register} />;
+  }
+
+  if (location === "/forgot-password") {
+    return <ForgotPassword />;
+  }
+
+  if (location.startsWith("/reset-password")) {
+    return <ResetPassword />;
   }
 
   return <AppLayout />;

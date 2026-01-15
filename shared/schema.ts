@@ -108,6 +108,18 @@ export const alertLogs = pgTable("alert_logs", {
 
 export type AlertLog = typeof alertLogs.$inferSelect;
 
+// Password reset tokens table (stores hashed tokens for security)
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+
 // Login schema
 export const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -115,6 +127,25 @@ export const loginSchema = z.object({
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
+
+// Forgot password schema
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email"),
+});
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+// Reset password schema
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Reset token is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 // Status display data (not persisted, computed)
 export interface StatusData {
