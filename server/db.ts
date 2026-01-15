@@ -4,12 +4,16 @@ import * as schema from "@shared/schema";
 
 const { Pool } = pg;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is required");
+// Only create pool if DATABASE_URL exists (deferred for build time)
+const pool = process.env.DATABASE_URL
+  ? new Pool({ connectionString: process.env.DATABASE_URL })
+  : null;
+
+export const db = pool ? drizzle(pool, { schema }) : null!;
+
+export function ensureDb() {
+  if (!db) {
+    throw new Error("DATABASE_URL environment variable is required");
+  }
+  return db;
 }
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-export const db = drizzle(pool, { schema });
