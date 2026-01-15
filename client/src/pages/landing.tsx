@@ -10,7 +10,7 @@ export default function Landing() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">CheckMate</span>
+            <span className="text-xl font-bold">CheckMate24</span>
           </div>
           <Link href="/login">
             <Button data-testid="button-open-app">Sign In</Button>
@@ -44,7 +44,7 @@ export default function Landing() {
 
       <section id="features" className="py-16 px-4 bg-muted/50">
         <div className="container mx-auto max-w-5xl">
-          <h2 className="text-3xl font-bold text-center mb-12">Why CheckMate?</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Why CheckMate24?</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <Card>
               <CardContent className="pt-6 text-center">

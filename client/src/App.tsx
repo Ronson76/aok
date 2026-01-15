@@ -116,7 +116,7 @@ function AppLayout() {
           <Link href="/app">
             <div className="flex items-center gap-2 cursor-pointer w-fit" data-testid="link-home-logo">
               <Shield className="h-6 w-6 text-primary" />
-              <span className="font-bold text-lg">CheckMate</span>
+              <span className="font-bold text-lg">CheckMate24</span>
             </div>
           </Link>
         </div>

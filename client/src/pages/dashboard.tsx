@@ -115,7 +115,7 @@ export default function Dashboard() {
     <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">
       <div className="flex items-center gap-3 pt-2">
         <Shield className="h-8 w-8 text-primary" />
-        <h1 className="text-2xl font-semibold">CheckMate</h1>
+        <h1 className="text-2xl font-semibold">CheckMate24</h1>
       </div>
 
       <Card className="border-2">

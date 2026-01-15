@@ -116,7 +116,7 @@ export default function Settings() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Customize how CheckMate works for you.
+        Customize how CheckMate24 works for you.
       </p>
 
       <Card>

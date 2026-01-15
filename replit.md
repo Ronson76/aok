@@ -1,8 +1,8 @@
-# CheckMate
+# CheckMate24
 
 ## Overview
 
-CheckMate is a personal safety check-in application that helps users stay connected with their loved ones through regular check-ins. Users set a check-in frequency, and if they miss a check-in, their emergency contacts can be automatically alerted. The app provides a dashboard showing check-in status, streak tracking, contact management, history viewing, and settings configuration.
+CheckMate24 is a personal safety check-in application that helps users stay connected with their loved ones through regular check-ins. Users set a check-in frequency, and if they miss a check-in, their emergency contacts can be automatically alerted. The app provides a dashboard showing check-in status, streak tracking, contact management, history viewing, and settings configuration.
 
 ## User Preferences
 

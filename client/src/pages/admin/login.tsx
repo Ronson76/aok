@@ -94,7 +94,7 @@ export default function AdminLogin() {
           </CardTitle>
           <CardDescription>
             {needsSetup 
-              ? "Set up the first administrator account for CheckMate"
+              ? "Set up the first administrator account for CheckMate24"
               : "Sign in to access the admin dashboard"
             }
           </CardDescription>
