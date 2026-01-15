@@ -469,6 +469,7 @@ export interface IAdminStorage {
   // User management
   getAllUsers(): Promise<UserProfile[]>;
   deleteUser(userId: string): Promise<boolean>;
+  setUserDisabled(userId: string, disabled: boolean): Promise<UserProfile | undefined>;
   
   // Organization bundles
   createBundle(userId: string, name: string, seatLimit: number, adminId: string, expiresAt?: Date): Promise<OrganizationBundle>;
@@ -651,6 +652,19 @@ class AdminStorage implements IAdminStorage {
   async deleteUser(userId: string): Promise<boolean> {
     const result = await getDb().delete(users).where(eq(users.id, userId)).returning();
     return result.length > 0;
+  }
+
+  async setUserDisabled(userId: string, disabled: boolean): Promise<UserProfile | undefined> {
+    const result = await getDb()
+      .update(users)
+      .set({ disabled })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (result.length === 0) return undefined;
+    
+    const { passwordHash, ...profile } = result[0];
+    return profile;
   }
 
   // Organization bundles

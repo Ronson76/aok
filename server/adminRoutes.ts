@@ -152,6 +152,37 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  // Toggle user disabled status (super admin only)
+  app.patch("/api/admin/users/:id/disabled", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { disabled } = req.body;
+
+      if (typeof disabled !== "boolean") {
+        return res.status(400).json({ error: "disabled must be a boolean" });
+      }
+
+      const user = await adminStorage.setUserDisabled(id, disabled);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        disabled ? "disable" : "enable",
+        "user",
+        id,
+        `${disabled ? "Disabled" : "Enabled"} user ${user.email}`
+      );
+
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user disabled status:", error);
+      res.status(500).json({ error: "Failed to update user status" });
+    }
+  });
+
   // Get all bundles
   app.get("/api/admin/bundles", adminAuthMiddleware, async (req, res) => {
     try {
