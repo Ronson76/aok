@@ -234,6 +234,72 @@ This is an automated notification confirming their safety. No action is required
   }
 }
 
+export async function sendEmergencyAlert(
+  contacts: Contact[],
+  user: User
+): Promise<{ emailsSent: number; emailsFailed: number }> {
+  const isOrganization = user.accountType === "organization";
+  const identifier = isOrganization 
+    ? `Reference ID: ${user.referenceId}` 
+    : user.name;
+  const subjectIdentifier = isOrganization 
+    ? `Reference ${user.referenceId}` 
+    : user.name;
+  
+  let emailsSent = 0;
+  let emailsFailed = 0;
+  
+  for (const contact of contacts) {
+    const emailSubject = `EMERGENCY ALERT: ${subjectIdentifier} needs help!`;
+    
+    let locationInfo = "";
+    if (user.addressLine1) {
+      locationInfo = `
+Registered address:
+${user.addressLine1}
+${user.addressLine2 ? user.addressLine2 + '\n' : ''}${user.city || ""}, ${user.postalCode || ""}
+${user.country || ""}`;
+    }
+    
+    if (user.mobileNumber) {
+      locationInfo += `
+Mobile number: ${user.mobileNumber}`;
+    }
+    
+    const now = new Date();
+    const alertTime = now.toLocaleString('en-US', { 
+      dateStyle: 'full', 
+      timeStyle: 'long' 
+    });
+    
+    const emailBody = `URGENT - EMERGENCY ALERT
+
+Hi ${contact.name},
+
+${identifier} has triggered an EMERGENCY ALERT on CheckMate at ${alertTime}.
+
+This is NOT a routine missed check-in. They have manually pressed the emergency button indicating they need immediate assistance.
+${locationInfo}
+
+PLEASE CONTACT THEM IMMEDIATELY.
+
+If you cannot reach them, consider contacting local emergency services.
+
+- The CheckMate Team`;
+
+    try {
+      await sendEmail(contact.email, emailSubject, emailBody);
+      emailsSent++;
+      console.log(`[EMERGENCY ALERT] Email sent to ${contact.name} (${contact.email})`);
+    } catch (error) {
+      emailsFailed++;
+      console.error(`[EMERGENCY ALERT] Failed to send email to ${contact.email}:`, error);
+    }
+  }
+
+  return { emailsSent, emailsFailed };
+}
+
 export async function sendPasswordResetEmail(
   email: string,
   resetUrl: string,
