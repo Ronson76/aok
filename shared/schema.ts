@@ -7,18 +7,29 @@ import { z } from "zod";
 export const checkInFrequencies = ["daily", "every_two_days"] as const;
 export type CheckInFrequency = typeof checkInFrequencies[number];
 
+// Account type options
+export const accountTypes = ["individual", "organization"] as const;
+export type AccountType = typeof accountTypes[number];
+
 // Users table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  accountType: text("account_type").notNull().$type<AccountType>().default("individual"),
+  // For individuals: personal name, for organizations: organization name
   name: text("name").notNull(),
-  dateOfBirth: date("date_of_birth").notNull(),
-  addressLine1: text("address_line1").notNull(),
+  // For organizations only: reference ID for the vulnerable person
+  referenceId: text("reference_id"),
+  dateOfBirth: date("date_of_birth"),
+  // Mobile number (required for individuals, optional for organizations)
+  mobileNumber: text("mobile_number"),
+  // Address fields (optional for individuals, may be needed for organizations)
+  addressLine1: text("address_line1"),
   addressLine2: text("address_line2"),
-  city: text("city").notNull(),
-  postalCode: text("postal_code").notNull(),
-  country: text("country").notNull(),
+  city: text("city"),
+  postalCode: text("postal_code"),
+  country: text("country"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -27,11 +38,40 @@ export const insertUserSchema = createInsertSchema(users).omit({
   passwordHash: true, 
   createdAt: true 
 }).extend({
+  accountType: z.enum(accountTypes),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string(),
+  name: z.string().min(1, "Name is required"),
+  referenceId: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  mobileNumber: z.string().optional(),
+  addressLine1: z.string().optional(),
+  addressLine2: z.string().optional(),
+  city: z.string().optional(),
+  postalCode: z.string().optional(),
+  country: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
+}).refine((data) => {
+  // Organizations must have a reference ID
+  if (data.accountType === "organization") {
+    return !!data.referenceId && data.referenceId.length > 0;
+  }
+  return true;
+}, {
+  message: "Reference ID is required for organizations",
+  path: ["referenceId"],
+}).refine((data) => {
+  // Individuals must have a valid mobile number (at least 10 characters after trimming)
+  if (data.accountType === "individual") {
+    const trimmed = data.mobileNumber?.trim() || "";
+    return trimmed.length >= 10;
+  }
+  return true;
+}, {
+  message: "Please enter a valid mobile number",
+  path: ["mobileNumber"],
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

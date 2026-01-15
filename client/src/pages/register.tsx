@@ -5,10 +5,11 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PasswordInput } from "@/components/password-input";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Loader2 } from "lucide-react";
+import { Shield, Loader2, User, Building2 } from "lucide-react";
 import { insertUserSchema, type InsertUser } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -19,9 +20,12 @@ export default function Register() {
   const form = useForm<InsertUser>({
     resolver: zodResolver(insertUserSchema),
     defaultValues: {
+      accountType: "individual",
       name: "",
       email: "",
+      referenceId: "",
       dateOfBirth: "",
+      mobileNumber: "",
       addressLine1: "",
       addressLine2: "",
       city: "",
@@ -31,6 +35,8 @@ export default function Register() {
       confirmPassword: "",
     },
   });
+
+  const accountType = form.watch("accountType");
 
   const registerMutation = useMutation({
     mutationFn: async (data: InsertUser) => {
@@ -79,12 +85,46 @@ export default function Register() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="name"
+                name="accountType"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                  <FormItem className="space-y-3">
+                    <FormLabel>Account Type</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Smith" {...field} data-testid="input-name" />
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="grid grid-cols-2 gap-4"
+                        data-testid="radio-account-type"
+                      >
+                        <label
+                          className={`flex flex-col items-center justify-center rounded-md border-2 p-4 cursor-pointer transition-colors ${
+                            field.value === "individual"
+                              ? "border-primary bg-primary/5"
+                              : "border-muted hover-elevate"
+                          }`}
+                        >
+                          <RadioGroupItem value="individual" className="sr-only" />
+                          <User className="h-6 w-6 mb-2" />
+                          <span className="text-sm font-medium">Individual</span>
+                          <span className="text-xs text-muted-foreground text-center mt-1">
+                            Lone worker or traveller
+                          </span>
+                        </label>
+                        <label
+                          className={`flex flex-col items-center justify-center rounded-md border-2 p-4 cursor-pointer transition-colors ${
+                            field.value === "organization"
+                              ? "border-primary bg-primary/5"
+                              : "border-muted hover-elevate"
+                          }`}
+                        >
+                          <RadioGroupItem value="organization" className="sr-only" />
+                          <Building2 className="h-6 w-6 mb-2" />
+                          <span className="text-sm font-medium">Organisation</span>
+                          <span className="text-xs text-muted-foreground text-center mt-1">
+                            On behalf of vulnerable person
+                          </span>
+                        </label>
+                      </RadioGroup>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -105,60 +145,16 @@ export default function Register() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="dateOfBirth"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Date of Birth</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} data-testid="input-dob" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="space-y-4 border-t pt-4">
-                <h3 className="font-medium text-sm text-muted-foreground">Address</h3>
-                
-                <FormField
-                  control={form.control}
-                  name="addressLine1"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address Line 1</FormLabel>
-                      <FormControl>
-                        <Input placeholder="123 Main Street" {...field} data-testid="input-address1" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="addressLine2"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address Line 2 (optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Apartment, suite, etc." {...field} value={field.value || ""} data-testid="input-address2" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
+              {accountType === "organization" ? (
+                <>
                   <FormField
                     control={form.control}
-                    name="city"
+                    name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>City</FormLabel>
+                        <FormLabel>Organisation Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="London" {...field} data-testid="input-city" />
+                          <Input placeholder="Care Home Ltd" {...field} data-testid="input-name" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -167,33 +163,167 @@ export default function Register() {
 
                   <FormField
                     control={form.control}
-                    name="postalCode"
+                    name="referenceId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Postal Code</FormLabel>
+                        <FormLabel>Reference ID</FormLabel>
                         <FormControl>
-                          <Input placeholder="SW1A 1AA" {...field} data-testid="input-postcode" />
+                          <Input 
+                            placeholder="Client/Patient ID" 
+                            {...field} 
+                            value={field.value || ""}
+                            data-testid="input-reference-id" 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          A unique identifier for the vulnerable person you're monitoring
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="space-y-4 border-t pt-4">
+                    <h3 className="font-medium text-sm text-muted-foreground">Location (Optional)</h3>
+                    
+                    <FormField
+                      control={form.control}
+                      name="addressLine1"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Address Line 1</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="123 Main Street" 
+                              {...field} 
+                              value={field.value || ""}
+                              data-testid="input-address1" 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="city"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>City</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="London" 
+                                {...field} 
+                                value={field.value || ""}
+                                data-testid="input-city" 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="postalCode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Postal Code</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="SW1A 1AA" 
+                                {...field} 
+                                value={field.value || ""}
+                                data-testid="input-postcode" 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="country"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Country</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="United Kingdom" 
+                              {...field} 
+                              value={field.value || ""}
+                              data-testid="input-country" 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John Smith" {...field} data-testid="input-name" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
 
-                <FormField
-                  control={form.control}
-                  name="country"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Country</FormLabel>
-                      <FormControl>
-                        <Input placeholder="United Kingdom" {...field} data-testid="input-country" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                  <FormField
+                    control={form.control}
+                    name="mobileNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mobile Number</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="tel" 
+                            placeholder="+44 7700 900000" 
+                            {...field} 
+                            value={field.value || ""}
+                            data-testid="input-mobile" 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          We'll use this to contact you if needed
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="dateOfBirth"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Date of Birth (Optional)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="date" 
+                            {...field} 
+                            value={field.value || ""}
+                            data-testid="input-dob" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
 
               <div className="space-y-4 border-t pt-4">
                 <h3 className="font-medium text-sm text-muted-foreground">Password</h3>
