@@ -259,6 +259,7 @@ export async function registerRoutes(
   app.use("/api/contacts", authMiddleware);
   app.use("/api/checkins", authMiddleware);
   app.use("/api/settings", authMiddleware);
+  app.use("/api/emergency", authMiddleware);
 
   // Get status data for dashboard
   app.get("/api/status", async (req, res) => {
