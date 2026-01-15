@@ -1,8 +1,70 @@
 import type { Contact, User } from "@shared/schema";
+import { Resend } from 'resend';
 
 interface NotificationResult {
   email: { sent: boolean; error?: string };
   sms: { sent: boolean; error?: string };
+}
+
+let connectionSettings: any;
+
+async function getResendCredentials() {
+  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+  const xReplitToken = process.env.REPL_IDENTITY 
+    ? 'repl ' + process.env.REPL_IDENTITY 
+    : process.env.WEB_REPL_RENEWAL 
+    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
+    : null;
+
+  if (!xReplitToken) {
+    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
+  }
+
+  connectionSettings = await fetch(
+    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
+    {
+      headers: {
+        'Accept': 'application/json',
+        'X_REPLIT_TOKEN': xReplitToken
+      }
+    }
+  ).then(res => res.json()).then(data => data.items?.[0]);
+
+  if (!connectionSettings || (!connectionSettings.settings.api_key)) {
+    throw new Error('Resend not connected');
+  }
+  return { apiKey: connectionSettings.settings.api_key, fromEmail: connectionSettings.settings.from_email };
+}
+
+async function getResendClient() {
+  const { apiKey, fromEmail } = await getResendCredentials();
+  return {
+    client: new Resend(apiKey),
+    fromEmail
+  };
+}
+
+async function sendEmail(to: string, subject: string, body: string): Promise<void> {
+  try {
+    const { client, fromEmail } = await getResendClient();
+    
+    await client.emails.send({
+      from: fromEmail || 'CheckMate <onboarding@resend.dev>',
+      to: [to],
+      subject: subject,
+      text: body,
+    });
+    
+    console.log(`[EMAIL] Successfully sent email to ${to}`);
+  } catch (error) {
+    console.error(`[EMAIL] Failed to send email to ${to}:`, error);
+    throw error;
+  }
+}
+
+async function sendSMS(to: string, body: string): Promise<void> {
+  console.log(`[SMS] SMS not configured. Would send to ${to}: ${body.substring(0, 50)}...`);
+  throw new Error("SMS service not configured");
 }
 
 export async function sendContactAddedNotification(
@@ -17,7 +79,6 @@ export async function sendContactAddedNotification(
   const userName = user.name;
   const contactName = contact.name;
 
-  // Email notification
   const emailSubject = `You've been added as an emergency contact on CheckMate`;
   const emailBody = `Hi ${contactName},
 
@@ -31,74 +92,36 @@ Thank you for being there for ${userName}.
 
 - The CheckMate Team`;
 
-  // SMS notification (shorter message)
   const smsBody = `Hi ${contactName}, ${userName} has added you as their emergency contact on CheckMate. You'll be notified if they miss a check-in.`;
 
-  // Try to send email
   try {
     await sendEmail(contact.email, emailSubject, emailBody);
     result.email.sent = true;
     console.log(`[NOTIFICATION] Email sent to ${contact.email} for contact ${contactName}`);
   } catch (error) {
     result.email.error = error instanceof Error ? error.message : "Failed to send email";
-    console.log(`[NOTIFICATION] Email would be sent to ${contact.email}:`);
-    console.log(`  Subject: ${emailSubject}`);
-    console.log(`  Body: ${emailBody.substring(0, 100)}...`);
+    console.log(`[NOTIFICATION] Email failed for ${contact.email}: ${result.email.error}`);
   }
 
-  // Try to send SMS if phone number provided
   if (contact.phone) {
     try {
       await sendSMS(contact.phone, smsBody);
       result.sms.sent = true;
-      console.log(`[NOTIFICATION] SMS sent to ${contact.phone} for contact ${contactName}`);
     } catch (error) {
       result.sms.error = error instanceof Error ? error.message : "Failed to send SMS";
-      console.log(`[NOTIFICATION] SMS would be sent to ${contact.phone}:`);
-      console.log(`  Body: ${smsBody}`);
     }
   }
 
   return result;
 }
 
-async function sendEmail(to: string, subject: string, body: string): Promise<void> {
-  // TODO: Integrate with SendGrid, Resend, or other email service
-  // For now, we log the email and throw to indicate it wasn't actually sent
-  if (process.env.SENDGRID_API_KEY) {
-    // SendGrid integration would go here
-    throw new Error("SendGrid integration not yet implemented");
-  }
-  
-  if (process.env.RESEND_API_KEY) {
-    // Resend integration would go here
-    throw new Error("Resend integration not yet implemented");
-  }
-
-  throw new Error("No email service configured");
-}
-
-async function sendSMS(to: string, body: string): Promise<void> {
-  // TODO: Integrate with Twilio
-  // Check for Twilio credentials
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const fromPhone = process.env.TWILIO_PHONE_NUMBER;
-
-  if (accountSid && authToken && fromPhone) {
-    // Twilio integration would go here
-    // For now, just log that credentials exist but integration isn't complete
-    throw new Error("Twilio integration not yet implemented");
-  }
-
-  throw new Error("No SMS service configured");
-}
-
 export async function sendMissedCheckInAlert(
   contacts: Contact[],
   user: User
-): Promise<void> {
+): Promise<{ emailsSent: number; emailsFailed: number }> {
   const userName = user.name;
+  let emailsSent = 0;
+  let emailsFailed = 0;
   
   for (const contact of contacts) {
     const emailSubject = `ALERT: ${userName} missed their CheckMate check-in`;
@@ -113,18 +136,47 @@ ${user.addressLine1}
 ${user.addressLine2 ? user.addressLine2 + '\n' : ''}${user.city}, ${user.postalCode}
 ${user.country}
 
-Please try to reach out to ${userName} to ensure they are safe.
+Please try to reach out to ${userName} to ensure their safety.
 
 - The CheckMate Team`;
 
-    const smsBody = `ALERT: ${userName} missed their CheckMate check-in. Address: ${user.addressLine1}, ${user.city}, ${user.postalCode}. Please check on them.`;
-
-    // Log notifications (would be sent via email/SMS services)
-    console.log(`[ALERT] Would send to ${contact.name} (${contact.email}):`);
-    console.log(`  Email Subject: ${emailSubject}`);
-    
-    if (contact.phone) {
-      console.log(`[ALERT] Would send SMS to ${contact.phone}: ${smsBody}`);
+    try {
+      await sendEmail(contact.email, emailSubject, emailBody);
+      emailsSent++;
+      console.log(`[ALERT] Email sent to ${contact.name} (${contact.email})`);
+    } catch (error) {
+      emailsFailed++;
+      console.error(`[ALERT] Failed to send email to ${contact.email}:`, error);
     }
+  }
+
+  return { emailsSent, emailsFailed };
+}
+
+export async function sendPasswordResetEmail(
+  email: string,
+  resetUrl: string,
+  userName: string
+): Promise<boolean> {
+  const subject = "Reset your CheckMate password";
+  const body = `Hi ${userName},
+
+You requested to reset your CheckMate password. Click the link below to set a new password:
+
+${resetUrl}
+
+This link will expire in 1 hour.
+
+If you didn't request this, you can safely ignore this email.
+
+- The CheckMate Team`;
+
+  try {
+    await sendEmail(email, subject, body);
+    console.log(`[PASSWORD RESET] Email sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error(`[PASSWORD RESET] Failed to send email to ${email}:`, error);
+    return false;
   }
 }

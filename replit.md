@@ -43,12 +43,19 @@ The storage interface defines operations for contacts, check-ins, and settings. 
 - **AlertLog**: Records of alerts sent to contacts when check-ins are missed
 
 ### Alert System
-The app implements missed check-in detection and alert simulation:
+The app implements missed check-in detection and email notifications:
 - When status is checked via `/api/status`, the system evaluates if the check-in is overdue
 - If overdue and not yet processed, a "missed" check-in record is created
-- An alert log is generated listing which contacts would be notified
-- Console logs simulate email notifications (real email/SMS can be added via SendGrid/Twilio integrations)
+- Email alerts are sent to all emergency contacts via Resend integration
+- An alert log is generated listing which contacts were notified
 - Each overdue period is only processed once to prevent duplicate alerts
+
+### Email Notifications (Resend Integration)
+The app uses Resend for all email notifications:
+- **Contact Added Notification**: When a user adds an emergency contact, the contact receives an email explaining their role
+- **Missed Check-in Alerts**: When a check-in is missed, all emergency contacts receive alert emails with the user's registered address
+- **Password Reset**: Password reset links are sent via email
+- The Resend connector is configured via Replit's integration system (credentials managed automatically)
 
 ### Key Design Decisions
 
