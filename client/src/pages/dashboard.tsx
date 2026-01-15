@@ -60,7 +60,8 @@ export default function Dashboard() {
   });
 
   const emergencyMutation = useMutation({
-    mutationFn: () => apiRequest("POST", "/api/emergency"),
+    mutationFn: (location?: { latitude: number; longitude: number }) => 
+      apiRequest("POST", "/api/emergency", { location }),
     onSuccess: (data: any) => {
       setShowEmergencyDialog(false);
       toast({
@@ -79,6 +80,26 @@ export default function Dashboard() {
       });
     },
   });
+
+  const handleEmergencyAlert = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          emergencyMutation.mutate({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        () => {
+          // Location denied or unavailable, send without it
+          emergencyMutation.mutate(undefined);
+        },
+        { timeout: 5000, enableHighAccuracy: true }
+      );
+    } else {
+      emergencyMutation.mutate(undefined);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -231,7 +252,7 @@ export default function Dashboard() {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => emergencyMutation.mutate()}
+              onClick={handleEmergencyAlert}
               disabled={emergencyMutation.isPending}
               data-testid="button-confirm-emergency"
             >

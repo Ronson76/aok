@@ -441,7 +441,8 @@ export async function registerRoutes(
         return res.status(404).json({ error: "User not found" });
       }
 
-      const result = await sendEmergencyAlert(contacts, user);
+      const location = req.body?.location as { latitude: number; longitude: number } | undefined;
+      const result = await sendEmergencyAlert(contacts, user, location);
       
       // Log the emergency alert
       await storage.createAlertLog(
