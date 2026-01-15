@@ -6,6 +6,7 @@ import { ensureDb } from "./db";
 import { eq, desc, and, isNull, lt } from "drizzle-orm";
 import { randomUUID, randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
+import { sendMissedCheckInAlert } from "./notifications";
 
 // Get database instance at runtime (not at import time)
 function getDb() {
@@ -353,16 +354,26 @@ class DatabaseStorage implements IStorage {
       return { wasMissed: true, alertSent: false };
     }
 
+    const user = await this.getUserById(userId);
+    if (!user) {
+      return { wasMissed: true, alertSent: false };
+    }
+
     const contactNames = allContacts.map(c => c.name);
-    const message = `Missed check-in alert! ${contactNames.join(", ")} would be notified via email.`;
-    await this.createAlertLog(userId, contactNames, message);
-
-    console.log(`[ALERT] Missed check-in detected for user ${userId}! Notifying: ${contactNames.join(", ")}`);
-    allContacts.forEach(contact => {
-      console.log(`[ALERT] Sending alert to ${contact.name} at ${contact.email}`);
-    });
-
-    return { wasMissed: true, alertSent: true };
+    
+    console.log(`[ALERT] Missed check-in detected for user ${userId}! Sending alerts to: ${contactNames.join(", ")}`);
+    
+    try {
+      const { emailsSent, emailsFailed } = await sendMissedCheckInAlert(allContacts, user);
+      const message = `Missed check-in alert sent! ${emailsSent} email(s) delivered${emailsFailed > 0 ? `, ${emailsFailed} failed` : ''}.`;
+      await this.createAlertLog(userId, contactNames, message);
+      return { wasMissed: true, alertSent: emailsSent > 0 };
+    } catch (error) {
+      console.error(`[ALERT] Error sending alerts:`, error);
+      const message = `Missed check-in detected. Alert delivery failed.`;
+      await this.createAlertLog(userId, contactNames, message);
+      return { wasMissed: true, alertSent: false };
+    }
   }
 }
 

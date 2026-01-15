@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { insertContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
-import { sendContactAddedNotification } from "./notifications";
+import { sendContactAddedNotification, sendPasswordResetEmail } from "./notifications";
 
 // Extend Express Request type
 declare global {
@@ -184,13 +184,22 @@ export async function registerRoutes(
         // Generate reset token
         const rawToken = await storage.createPasswordResetToken(user.id);
         
-        // In development, log the reset link
-        if (process.env.NODE_ENV !== "production") {
-          const resetUrl = `/reset-password?token=${rawToken}`;
-          console.log(`[DEV] Password reset link for ${email}: ${resetUrl}`);
-        }
+        // Build full reset URL
+        const baseUrl = process.env.NODE_ENV === "production" 
+          ? `https://${req.get('host')}`
+          : `http://${req.get('host')}`;
+        const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
         
-        // TODO: Send email with reset link when email service is configured
+        // Send password reset email
+        try {
+          await sendPasswordResetEmail(user.email, resetUrl, user.name);
+        } catch (error) {
+          console.error("Failed to send password reset email:", error);
+          // Log in development for testing
+          if (process.env.NODE_ENV !== "production") {
+            console.log(`[DEV] Password reset link for ${email}: ${resetUrl}`);
+          }
+        }
       }
 
       // Always return success to prevent email enumeration
