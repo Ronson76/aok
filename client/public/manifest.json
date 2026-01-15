@@ -1,0 +1,19 @@
+{
+  "name": "CheckMate - Stay Connected, Stay Safe",
+  "short_name": "CheckMate",
+  "description": "Personal safety check-in app that keeps you connected with loved ones",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0ea5e9",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "lifestyle", "utilities"]
+}
