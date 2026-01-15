@@ -422,5 +422,61 @@ export async function registerRoutes(
     }
   });
 
+  // Test email endpoint (temporary for debugging)
+  app.post("/api/test-email", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: "Email required" });
+      }
+      
+      const { Resend } = await import('resend');
+      
+      // Get Resend credentials
+      const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+      const xReplitToken = process.env.REPL_IDENTITY 
+        ? 'repl ' + process.env.REPL_IDENTITY 
+        : process.env.WEB_REPL_RENEWAL 
+        ? 'depl ' + process.env.WEB_REPL_RENEWAL 
+        : null;
+
+      if (!xReplitToken) {
+        return res.status(500).json({ error: 'X_REPLIT_TOKEN not found' });
+      }
+
+      const connectionSettings = await fetch(
+        'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
+        {
+          headers: {
+            'Accept': 'application/json',
+            'X_REPLIT_TOKEN': xReplitToken
+          }
+        }
+      ).then(r => r.json()).then(data => data.items?.[0]);
+
+      if (!connectionSettings || !connectionSettings.settings.api_key) {
+        return res.status(500).json({ error: 'Resend not connected', details: connectionSettings });
+      }
+
+      const resend = new Resend(connectionSettings.settings.api_key);
+      const fromEmail = connectionSettings.settings.from_email || 'CheckMate <onboarding@resend.dev>';
+      
+      console.log(`[TEST EMAIL] Sending to ${email} from ${fromEmail}`);
+      
+      const result = await resend.emails.send({
+        from: fromEmail,
+        to: [email],
+        subject: 'CheckMate Test Email',
+        text: `This is a test email from CheckMate to verify the email system is working correctly.\n\nSent at: ${new Date().toISOString()}`,
+      });
+      
+      console.log(`[TEST EMAIL] Result:`, result);
+      res.json({ success: true, result, fromEmail });
+    } catch (error: any) {
+      console.error('[TEST EMAIL] Error:', error);
+      res.status(500).json({ error: error.message, stack: error.stack });
+    }
+  });
+
   return httpServer;
 }
