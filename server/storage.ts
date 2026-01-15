@@ -1,10 +1,10 @@
 import { 
-  contacts, checkIns, settings, alertLogs, users, sessions,
-  Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session
+  contacts, checkIns, settings, alertLogs, users, sessions, passwordResetTokens,
+  Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
-import { randomUUID } from "crypto";
+import { eq, desc, and, isNull, lt } from "drizzle-orm";
+import { randomUUID, randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
 
 export interface IStorage {
@@ -12,11 +12,19 @@ export interface IStorage {
   createUser(email: string, passwordHash: string, name: string, dateOfBirth: string, address: { line1: string; line2?: string; city: string; postalCode: string; country: string }): Promise<User>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserById(id: string): Promise<User | undefined>;
+  updateUserPassword(userId: string, passwordHash: string): Promise<void>;
 
   // Sessions
   createSession(userId: string): Promise<Session>;
   getSession(sessionId: string): Promise<Session | undefined>;
   deleteSession(sessionId: string): Promise<void>;
+  deleteAllUserSessions(userId: string): Promise<void>;
+
+  // Password reset
+  createPasswordResetToken(userId: string): Promise<string>;
+  validatePasswordResetToken(token: string): Promise<{ userId: string; tokenId: string } | null>;
+  markPasswordResetTokenUsed(tokenId: string): Promise<void>;
+  cleanupExpiredTokens(): Promise<void>;
 
   // Contacts
   getContacts(userId: string): Promise<Contact[]>;
@@ -95,6 +103,74 @@ class DatabaseStorage implements IStorage {
 
   async deleteSession(sessionId: string): Promise<void> {
     await db.delete(sessions).where(eq(sessions.id, sessionId));
+  }
+
+  async deleteAllUserSessions(userId: string): Promise<void> {
+    await db.delete(sessions).where(eq(sessions.userId, userId));
+  }
+
+  // Password reset
+  async updateUserPassword(userId: string, passwordHash: string): Promise<void> {
+    await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+  }
+
+  async createPasswordResetToken(userId: string): Promise<string> {
+    // Invalidate any existing tokens for this user
+    await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+
+    // Generate a secure random token
+    const rawToken = randomBytes(32).toString("hex");
+    
+    // Hash the token for storage (we only store the hash)
+    const tokenHash = createHash("sha256").update(rawToken).digest("hex");
+
+    // Token expires in 1 hour
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await db.insert(passwordResetTokens).values({
+      userId,
+      tokenHash,
+      expiresAt,
+    });
+
+    // Return the raw token (this is sent to the user, not stored)
+    return rawToken;
+  }
+
+  async validatePasswordResetToken(token: string): Promise<{ userId: string; tokenId: string } | null> {
+    // Hash the provided token to compare
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+
+    const result = await db.select().from(passwordResetTokens).where(
+      and(
+        eq(passwordResetTokens.tokenHash, tokenHash),
+        isNull(passwordResetTokens.usedAt)
+      )
+    );
+
+    const resetToken = result[0];
+    if (!resetToken) {
+      return null;
+    }
+
+    // Check if expired
+    if (new Date(resetToken.expiresAt) < new Date()) {
+      return null;
+    }
+
+    return { userId: resetToken.userId, tokenId: resetToken.id };
+  }
+
+  async markPasswordResetTokenUsed(tokenId: string): Promise<void> {
+    await db.update(passwordResetTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(passwordResetTokens.id, tokenId));
+  }
+
+  async cleanupExpiredTokens(): Promise<void> {
+    await db.delete(passwordResetTokens).where(
+      lt(passwordResetTokens.expiresAt, new Date())
+    );
   }
 
   // Contacts

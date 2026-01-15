@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { PasswordInput } from "@/components/password-input";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Loader2 } from "lucide-react";
 import { insertUserSchema, type InsertUser } from "@shared/schema";
@@ -204,7 +205,7 @@ export default function Register() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="At least 6 characters" {...field} data-testid="input-password" />
+                        <PasswordInput placeholder="At least 6 characters" {...field} data-testid="input-password" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -218,7 +219,7 @@ export default function Register() {
                     <FormItem>
                       <FormLabel>Confirm Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Re-enter your password" {...field} data-testid="input-confirm-password" />
+                        <PasswordInput placeholder="Re-enter your password" {...field} data-testid="input-confirm-password" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

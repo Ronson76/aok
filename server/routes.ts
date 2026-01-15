@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertContactSchema, updateSettingsSchema, insertUserSchema, loginSchema } from "@shared/schema";
+import { insertContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
 
@@ -166,6 +166,73 @@ export async function registerRoutes(
 
     const { passwordHash, ...userProfile } = user;
     res.json(userProfile);
+  });
+
+  // Forgot password (public) - always returns success to prevent email enumeration
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const parsed = forgotPasswordSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid email" });
+      }
+
+      const { email } = parsed.data;
+      const user = await storage.getUserByEmail(email.toLowerCase());
+
+      if (user) {
+        // Generate reset token
+        const rawToken = await storage.createPasswordResetToken(user.id);
+        
+        // In development, log the reset link
+        if (process.env.NODE_ENV !== "production") {
+          const resetUrl = `/reset-password?token=${rawToken}`;
+          console.log(`[DEV] Password reset link for ${email}: ${resetUrl}`);
+        }
+        
+        // TODO: Send email with reset link when email service is configured
+      }
+
+      // Always return success to prevent email enumeration
+      res.json({ success: true, message: "If an account with that email exists, a reset link has been sent." });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ error: "Failed to process request" });
+    }
+  });
+
+  // Reset password (public)
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const parsed = resetPasswordSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
+      }
+
+      const { token, password } = parsed.data;
+
+      // Validate token
+      const tokenData = await storage.validatePasswordResetToken(token);
+      if (!tokenData) {
+        return res.status(400).json({ error: "Invalid or expired reset link. Please request a new one." });
+      }
+
+      // Hash new password
+      const passwordHash = await bcrypt.hash(password, 10);
+
+      // Update password
+      await storage.updateUserPassword(tokenData.userId, passwordHash);
+
+      // Mark token as used
+      await storage.markPasswordResetTokenUsed(tokenData.tokenId);
+
+      // Invalidate all existing sessions for this user
+      await storage.deleteAllUserSessions(tokenData.userId);
+
+      res.json({ success: true, message: "Password reset successfully. Please log in with your new password." });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ error: "Failed to reset password" });
+    }
   });
 
   // Protected routes - all require authentication
