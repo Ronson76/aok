@@ -455,6 +455,7 @@ export interface IAdminStorage {
   createAdminUser(data: { email: string; passwordHash: string; name: string; role?: "super_admin" | "analyst" }): Promise<AdminUser>;
   getAdminByEmail(email: string): Promise<AdminUser | undefined>;
   getAdminById(id: string): Promise<AdminUser | undefined>;
+  hasAnyAdmin(): Promise<boolean>;
   updateAdminLastLogin(adminId: string): Promise<void>;
   
   // Admin sessions
@@ -502,6 +503,11 @@ class AdminStorage implements IAdminStorage {
   async getAdminById(id: string): Promise<AdminUser | undefined> {
     const result = await getDb().select().from(adminUsers).where(eq(adminUsers.id, id));
     return result[0];
+  }
+
+  async hasAnyAdmin(): Promise<boolean> {
+    const result = await getDb().select({ id: adminUsers.id }).from(adminUsers).limit(1);
+    return result.length > 0;
   }
 
   async updateAdminLastLogin(adminId: string): Promise<void> {
