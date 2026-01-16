@@ -1,6 +1,6 @@
 {
-  "name": "CheckMate24 - Stay Connected, Stay Safe",
-  "short_name": "CheckMate24",
+  "name": "aok - Stay Connected, Stay Safe",
+  "short_name": "aok",
   "description": "Personal safety check-in app that keeps you connected with loved ones",
   "start_url": "/",
   "display": "standalone",
