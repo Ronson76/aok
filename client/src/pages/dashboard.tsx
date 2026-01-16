@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCheckInNotifications } from "@/hooks/use-check-in-notifications";
 import type { StatusData } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function getStatusIcon(status: StatusData["status"]) {
   switch (status) {
@@ -38,13 +38,27 @@ export default function Dashboard() {
   const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [cachedLocation, setCachedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isFlashing, setIsFlashing] = useState(false);
 
   const { data: status, isLoading } = useQuery<StatusData>({
     queryKey: ["/api/status"],
-    refetchInterval: 60000,
+    refetchInterval: 10000,
   });
 
   useCheckInNotifications(status);
+
+  const isUrgent = status?.status === 'pending' || status?.status === 'overdue';
+
+  useEffect(() => {
+    if (!isUrgent) {
+      setIsFlashing(false);
+      return;
+    }
+    const interval = setInterval(() => {
+      setIsFlashing(prev => !prev);
+    }, 500);
+    return () => clearInterval(interval);
+  }, [isUrgent]);
 
   const checkInMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/checkins"),
@@ -127,6 +141,53 @@ export default function Dashboard() {
   }
 
   const statusInfo = status ? getStatusLabel(status.status) : { text: "Loading", variant: "secondary" as const };
+
+  if (isUrgent) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background p-8">
+        <div className="flex flex-col items-center gap-8 text-center max-w-sm">
+          <ShieldCheck className="h-20 w-20 text-primary" />
+          
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold">
+              {status?.status === 'overdue' ? 'Check-In Overdue!' : 'Time to Check In'}
+            </h1>
+            <p className="text-muted-foreground">
+              {status?.status === 'overdue' 
+                ? 'Your contacts may have been notified. Check in now to confirm you\'re safe.'
+                : 'Let your loved ones know you\'re safe.'}
+            </p>
+          </div>
+
+          <button
+            onClick={() => checkInMutation.mutate()}
+            disabled={checkInMutation.isPending}
+            className={`w-64 h-64 rounded-full text-white text-3xl font-bold shadow-2xl transition-all duration-300 flex flex-col items-center justify-center gap-2 ${
+              isFlashing 
+                ? 'bg-primary scale-105' 
+                : 'bg-primary/80 scale-100'
+            } ${checkInMutation.isPending ? 'opacity-50' : 'hover:scale-110 active:scale-95'}`}
+            data-testid="button-urgent-check-in"
+          >
+            {checkInMutation.isPending ? (
+              <Loader2 className="h-16 w-16 animate-spin" />
+            ) : (
+              <>
+                <CheckCircle className="h-16 w-16" />
+                <span>CHECK IN</span>
+              </>
+            )}
+          </button>
+
+          {status?.streak !== undefined && status.streak > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {status.streak} day streak
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">
