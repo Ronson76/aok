@@ -6,9 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PasswordInput } from "@/components/password-input";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Loader2 } from "lucide-react";
+import { ShieldCheck, Loader2, MoreVertical, Mail } from "lucide-react";
 import { loginSchema, type LoginInput } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -51,7 +57,24 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
+      <div className="absolute top-4 right-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="icon" variant="ghost" data-testid="button-menu">
+              <MoreVertical className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <a href="mailto:support@aok.app" className="flex items-center gap-2" data-testid="link-contact-us">
+                <Mail className="h-4 w-4" />
+                Contact Us
+              </a>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <div className="flex flex-col items-center justify-center mb-2">

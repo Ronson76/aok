@@ -1,7 +1,13 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShieldCheck, Bell, Users, Clock, CheckCircle, Heart } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail } from "lucide-react";
 
 export default function Landing() {
   return (
@@ -12,9 +18,26 @@ export default function Landing() {
             <ShieldCheck className="h-8 w-8 text-primary" />
             <span className="text-sm font-semibold text-primary">aok</span>
           </div>
-          <Link href="/login">
-            <Button data-testid="button-open-app">Sign In</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/login">
+              <Button data-testid="button-open-app">Sign In</Button>
+            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="ghost" data-testid="button-menu">
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <a href="mailto:support@aok.app" className="flex items-center gap-2" data-testid="link-contact-us">
+                    <Mail className="h-4 w-4" />
+                    Contact Us
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
 
