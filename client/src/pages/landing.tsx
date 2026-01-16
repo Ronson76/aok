@@ -11,7 +11,6 @@ export default function Landing() {
           <div className="flex flex-col items-center">
             <ShieldCheck className="h-8 w-8 text-primary" />
             <span className="text-sm font-semibold text-primary">aok</span>
-            <span className="text-xs text-muted-foreground">&copy; Ghuman</span>
           </div>
           <Link href="/login">
             <Button data-testid="button-open-app">Sign In</Button>
