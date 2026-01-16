@@ -203,10 +203,26 @@ export default function Dashboard() {
             {status?.nextCheckInDue ? (
               <div className="space-y-1">
                 <p className="text-lg font-semibold">
-                  {formatDistanceToNow(new Date(status.nextCheckInDue), { addSuffix: true })}
+                  {(() => {
+                    try {
+                      const dueDate = new Date(status.nextCheckInDue);
+                      if (dueDate < new Date()) {
+                        return "Overdue - check in now";
+                      }
+                      return formatDistanceToNow(dueDate, { addSuffix: true });
+                    } catch {
+                      return "Check in now";
+                    }
+                  })()}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {format(new Date(status.nextCheckInDue), "MMMM d, yyyy 'at' h:mm a")}
+                  {(() => {
+                    try {
+                      return format(new Date(status.nextCheckInDue), "MMMM d, yyyy 'at' h:mm a");
+                    } catch {
+                      return "";
+                    }
+                  })()}
                 </p>
               </div>
             ) : (

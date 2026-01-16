@@ -37,16 +37,21 @@ export function useCheckInNotifications(status: StatusData | undefined) {
       oscillator.stop(ctx.currentTime + NOTIFICATION_SOUND_DURATION / 1000);
       
       setTimeout(() => {
-        const osc2 = ctx.createOscillator();
-        const gain2 = ctx.createGain();
-        osc2.connect(gain2);
-        gain2.connect(ctx.destination);
-        osc2.frequency.value = NOTIFICATION_SOUND_FREQUENCY * 1.25;
-        osc2.type = 'sine';
-        gain2.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + NOTIFICATION_SOUND_DURATION / 1000);
-        osc2.start(ctx.currentTime);
-        osc2.stop(ctx.currentTime + NOTIFICATION_SOUND_DURATION / 1000);
+        try {
+          if (!audioContextRef.current || audioContextRef.current.state === 'closed') return;
+          const osc2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          osc2.frequency.value = NOTIFICATION_SOUND_FREQUENCY * 1.25;
+          osc2.type = 'sine';
+          gain2.gain.setValueAtTime(0.3, ctx.currentTime);
+          gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + NOTIFICATION_SOUND_DURATION / 1000);
+          osc2.start(ctx.currentTime);
+          osc2.stop(ctx.currentTime + NOTIFICATION_SOUND_DURATION / 1000);
+        } catch (error) {
+          console.log('[Notification] Could not play second tone:', error);
+        }
       }, NOTIFICATION_SOUND_DURATION + 50);
     } catch (error) {
       console.log('[Notification] Could not play sound:', error);
