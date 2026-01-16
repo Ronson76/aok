@@ -3,10 +3,12 @@ import type { StatusData } from "@shared/schema";
 
 const NOTIFICATION_SOUND_FREQUENCY = 800;
 const NOTIFICATION_SOUND_DURATION = 200;
+const REMINDER_INTERVAL_MS = 2 * 60 * 1000;
 
 export function useCheckInNotifications(status: StatusData | undefined) {
   const lastNotifiedStatus = useRef<string | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const reminderIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const playNotificationSound = useCallback(() => {
     try {
@@ -79,6 +81,20 @@ export function useCheckInNotifications(status: StatusData | undefined) {
     }
   }, []);
 
+  const clearReminderInterval = useCallback(() => {
+    if (reminderIntervalRef.current) {
+      clearInterval(reminderIntervalRef.current);
+      reminderIntervalRef.current = null;
+    }
+  }, []);
+
+  const startReminderInterval = useCallback(() => {
+    clearReminderInterval();
+    reminderIntervalRef.current = setInterval(() => {
+      playNotificationSound();
+    }, REMINDER_INTERVAL_MS);
+  }, [playNotificationSound, clearReminderInterval]);
+
   useEffect(() => {
     requestNotificationPermission();
   }, [requestNotificationPermission]);
@@ -93,14 +109,23 @@ export function useCheckInNotifications(status: StatusData | undefined) {
       playNotificationSound();
       showNotification('Check-In Due Soon', 'Time to check in with aok to let your loved ones know you\'re safe.');
       lastNotifiedStatus.current = 'pending';
+      startReminderInterval();
     } else if (status.status === 'overdue' && lastNotifiedStatus.current !== 'overdue') {
       playNotificationSound();
       showNotification('Check-In Overdue!', 'Your check-in is overdue. Check in now to avoid alerting your contacts.');
       lastNotifiedStatus.current = 'overdue';
+      startReminderInterval();
     } else if (status.status === 'safe') {
       lastNotifiedStatus.current = null;
+      clearReminderInterval();
     }
-  }, [status, playNotificationSound, showNotification, updateAppBadge]);
+  }, [status, playNotificationSound, showNotification, updateAppBadge, startReminderInterval, clearReminderInterval]);
+
+  useEffect(() => {
+    return () => {
+      clearReminderInterval();
+    };
+  }, [clearReminderInterval]);
 
   return { requestNotificationPermission };
 }
