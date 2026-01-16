@@ -153,7 +153,7 @@ export default function Settings() {
         <CardContent className="space-y-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">1 min</span>
+              <span className="text-sm text-muted-foreground">2 min</span>
               <span className="text-lg font-semibold text-primary">
                 {formatInterval(localInterval)}
               </span>
