@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -8,14 +9,76 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PasswordInput } from "@/components/password-input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Loader2, User, Building2 } from "lucide-react";
+import { ShieldCheck, Loader2, User, Building2, MapPin, AlertTriangle } from "lucide-react";
 import { insertUserSchema, type InsertUser } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function Register() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [locationPermission, setLocationPermission] = useState<'pending' | 'granted' | 'denied' | 'unavailable'>('pending');
+  const [requestingLocation, setRequestingLocation] = useState(false);
+
+  // Check location permission status on mount
+  useEffect(() => {
+    if (!('geolocation' in navigator)) {
+      setLocationPermission('unavailable');
+      return;
+    }
+
+    // Check if permission is already granted
+    if ('permissions' in navigator) {
+      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+        if (result.state === 'granted') {
+          setLocationPermission('granted');
+        } else if (result.state === 'denied') {
+          setLocationPermission('denied');
+        } else {
+          setLocationPermission('pending');
+        }
+        
+        // Listen for changes
+        result.onchange = () => {
+          if (result.state === 'granted') {
+            setLocationPermission('granted');
+          } else if (result.state === 'denied') {
+            setLocationPermission('denied');
+          }
+        };
+      }).catch(() => {
+        // Fallback - will request on button click
+        setLocationPermission('pending');
+      });
+    }
+  }, []);
+
+  const requestLocationPermission = () => {
+    setRequestingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      () => {
+        setLocationPermission('granted');
+        setRequestingLocation(false);
+        toast({
+          title: "Location Access Granted",
+          description: "Your location will be shared with contacts during emergencies.",
+        });
+      },
+      (error) => {
+        setRequestingLocation(false);
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationPermission('denied');
+          toast({
+            title: "Location Access Required",
+            description: "Please enable location access in your browser settings to continue.",
+            variant: "destructive",
+          });
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const form = useForm<InsertUser>({
     resolver: zodResolver(insertUserSchema),
@@ -37,6 +100,7 @@ export default function Register() {
   });
 
   const accountType = form.watch("accountType");
+  const canSubmit = locationPermission === 'granted' || locationPermission === 'unavailable';
 
   const registerMutation = useMutation({
     mutationFn: async (data: InsertUser) => {
@@ -368,10 +432,67 @@ export default function Register() {
                 />
               </div>
 
+              {/* Location Permission Section */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <MapPin className="h-4 w-4" />
+                  Location Access (Required)
+                </div>
+                
+                {locationPermission === 'granted' ? (
+                  <Alert className="border-green-500 bg-green-50 dark:bg-green-950/20">
+                    <MapPin className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-700 dark:text-green-400">
+                      Location access granted. Your location will be shared with emergency contacts when needed.
+                    </AlertDescription>
+                  </Alert>
+                ) : locationPermission === 'denied' ? (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      Location access was denied. Please enable it in your browser settings to use aok. This is required for emergency alerts.
+                    </AlertDescription>
+                  </Alert>
+                ) : locationPermission === 'unavailable' ? (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      Location services are not available on this device. Emergency alerts will be sent without location data.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      aok needs your location to share with emergency contacts if you need help. This is essential for your safety.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={requestLocationPermission}
+                      disabled={requestingLocation}
+                      data-testid="button-grant-location"
+                    >
+                      {requestingLocation ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Requesting access...
+                        </>
+                      ) : (
+                        <>
+                          <MapPin className="mr-2 h-4 w-4" />
+                          Grant Location Access
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+
               <Button
                 type="submit"
                 className="w-full"
-                disabled={registerMutation.isPending}
+                disabled={registerMutation.isPending || !canSubmit}
                 data-testid="button-register"
               >
                 {registerMutation.isPending ? (
@@ -379,6 +500,8 @@ export default function Register() {
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Creating account...
                   </>
+                ) : !canSubmit ? (
+                  "Grant Location Access to Continue"
                 ) : (
                   "Create Account"
                 )}
