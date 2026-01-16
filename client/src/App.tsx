@@ -7,8 +7,9 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/bottom-nav";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
-import { Loader2, Shield } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Link } from "wouter";
+import logoImage from "@assets/file_00000000647471f4a7ccf7a82acadf40_1768557791378.png";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
@@ -119,9 +120,8 @@ function AppLayout() {
       <header className="sticky top-0 z-40 bg-background border-b">
         <div className="max-w-md mx-auto px-4 py-3">
           <Link href="/app">
-            <div className="flex items-center gap-2 cursor-pointer w-fit" data-testid="link-home-logo">
-              <Shield className="h-6 w-6 text-primary" />
-              <span className="font-bold text-lg">CheckMate24</span>
+            <div className="flex items-center cursor-pointer w-fit" data-testid="link-home-logo">
+              <img src={logoImage} alt="aok" className="h-8" />
             </div>
           </Link>
         </div>
