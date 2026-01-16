@@ -7,8 +7,12 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/bottom-nav";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck, Volume2, VolumeX } from "lucide-react";
 import { Link } from "wouter";
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import type { StatusData } from "@shared/schema";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
@@ -114,18 +118,135 @@ function AppRoutes() {
 }
 
 function AppLayout() {
+  const { isAuthenticated } = useAuth();
+  const [alarmPlaying, setAlarmPlaying] = useState(false);
+  const [alarmDismissed, setAlarmDismissed] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const alarmIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { data: status } = useQuery<StatusData>({
+    queryKey: ["/api/status"],
+    refetchInterval: 30000,
+    enabled: isAuthenticated,
+  });
+
+  const isOverdue = status?.status === "overdue";
+
+  const playAlarmSound = () => {
+    if (audioContextRef.current) return;
+    
+    try {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const ctx = audioContextRef.current;
+      
+      const playBeep = () => {
+        if (!audioContextRef.current) return;
+        
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        oscillator.frequency.value = 880;
+        oscillator.type = 'sine';
+        gainNode.gain.value = 0.3;
+        
+        oscillator.start();
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        oscillator.stop(ctx.currentTime + 0.5);
+      };
+      
+      playBeep();
+      alarmIntervalRef.current = setInterval(playBeep, 120000);
+      setAlarmPlaying(true);
+    } catch (e) {
+      console.log('Audio not supported');
+    }
+  };
+
+  const stopAlarmSound = () => {
+    if (alarmIntervalRef.current) {
+      clearInterval(alarmIntervalRef.current);
+      alarmIntervalRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    setAlarmPlaying(false);
+    setAlarmDismissed(true);
+  };
+
+  useEffect(() => {
+    if (isOverdue && !alarmDismissed) {
+      playAlarmSound();
+      if ('setAppBadge' in navigator) {
+        (navigator as any).setAppBadge(1);
+      }
+    } else if (!isOverdue) {
+      stopAlarmSound();
+      setAlarmDismissed(false);
+      if ('clearAppBadge' in navigator) {
+        (navigator as any).clearAppBadge();
+      }
+    }
+    
+    return () => {
+      if (alarmIntervalRef.current) {
+        clearInterval(alarmIntervalRef.current);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, [isOverdue, alarmDismissed]);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background border-b">
         <div className="max-w-md mx-auto px-4 py-3">
           <Link href="/app">
-            <div className="flex flex-col items-center cursor-pointer w-fit" data-testid="link-home-logo">
+            <div className="flex flex-col items-center cursor-pointer w-fit relative" data-testid="link-home-logo">
               <ShieldCheck className="h-6 w-6 text-primary" />
               <span className="text-xs font-semibold text-primary">aok</span>
+              {isOverdue && (
+                <span className="absolute -top-1 -right-3 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  1
+                </span>
+              )}
             </div>
           </Link>
         </div>
       </header>
+      
+      {alarmPlaying && (
+        <div className="sticky top-[52px] z-30 max-w-md mx-auto px-4 py-2">
+          <Card className="border-destructive bg-destructive/10 animate-pulse">
+            <CardContent className="py-3">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Volume2 className="h-5 w-5 text-destructive" />
+                  <div>
+                    <p className="font-semibold text-destructive text-sm">Alarm Active</p>
+                    <p className="text-xs text-muted-foreground">Your check-in is overdue</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={stopAlarmSound}
+                  data-testid="button-dismiss-alarm"
+                >
+                  <VolumeX className="h-4 w-4 mr-1" />
+                  Dismiss
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
       <main className="pb-16">
         <AppRoutes />
       </main>
