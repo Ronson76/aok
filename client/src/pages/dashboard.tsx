@@ -203,9 +203,7 @@ export default function Dashboard() {
             {status?.nextCheckInDue ? (
               <div className="space-y-1">
                 <p className="text-lg font-semibold">
-                  {status.hoursUntilDue !== null && status.hoursUntilDue > 0
-                    ? `In ${status.hoursUntilDue} hours`
-                    : "Due now"}
+                  {formatDistanceToNow(new Date(status.nextCheckInDue), { addSuffix: true })}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {format(new Date(status.nextCheckInDue), "MMMM d, yyyy 'at' h:mm a")}
