@@ -9,7 +9,36 @@ import { useToast } from "@/hooks/use-toast";
 import { useCheckInNotifications } from "@/hooks/use-check-in-notifications";
 import type { StatusData } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Component, type ReactNode } from "react";
+
+// Error boundary to catch any rendering crashes
+class DashboardErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('[Dashboard] Error caught:', error, errorInfo);
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+          <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
+          <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function getStatusIcon(status: StatusData["status"]) {
   switch (status) {
@@ -33,12 +62,11 @@ function getStatusLabel(status: StatusData["status"]) {
   }
 }
 
-export default function Dashboard() {
+function DashboardContent() {
   const { toast } = useToast();
   const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [cachedLocation, setCachedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [isFlashing, setIsFlashing] = useState(false);
 
   const { data: status, isLoading } = useQuery<StatusData>({
     queryKey: ["/api/status"],
@@ -48,17 +76,6 @@ export default function Dashboard() {
   useCheckInNotifications(status);
 
   const isUrgent = status?.status === 'pending' || status?.status === 'overdue';
-
-  useEffect(() => {
-    if (!isUrgent) {
-      setIsFlashing(false);
-      return;
-    }
-    const interval = setInterval(() => {
-      setIsFlashing(prev => !prev);
-    }, 500);
-    return () => clearInterval(interval);
-  }, [isUrgent]);
 
   const checkInMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/checkins"),
@@ -162,11 +179,8 @@ export default function Dashboard() {
           <button
             onClick={() => checkInMutation.mutate()}
             disabled={checkInMutation.isPending}
-            className={`w-64 h-64 rounded-full text-white text-3xl font-bold shadow-2xl transition-all duration-300 flex flex-col items-center justify-center gap-2 ${
-              isFlashing 
-                ? 'bg-primary scale-105' 
-                : 'bg-primary/80 scale-100'
-            } ${checkInMutation.isPending ? 'opacity-50' : 'hover:scale-110 active:scale-95'}`}
+            className={`w-64 h-64 rounded-full text-white text-3xl font-bold shadow-2xl flex flex-col items-center justify-center gap-2 bg-primary animate-pulse ${checkInMutation.isPending ? 'opacity-50' : 'hover:scale-110 active:scale-95'}`}
+            style={{ animationDuration: '1s' }}
             data-testid="button-urgent-check-in"
           >
             {checkInMutation.isPending ? (
@@ -382,5 +396,13 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <DashboardErrorBoundary>
+      <DashboardContent />
+    </DashboardErrorBoundary>
   );
 }
