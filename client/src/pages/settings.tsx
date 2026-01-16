@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert } from "lucide-react";
@@ -16,6 +15,10 @@ import type { Settings as SettingsType } from "@shared/schema";
 import { useState, useEffect } from "react";
 
 function formatInterval(hours: number): string {
+  if (hours < 1) {
+    const minutes = Math.round(hours * 60);
+    return minutes === 1 ? "1 minute" : `${minutes} minutes`;
+  }
   if (hours === 1) return "1 hour";
   if (hours < 24) return `${hours} hours`;
   if (hours === 24) return "1 day";
@@ -25,6 +28,17 @@ function formatInterval(hours: number): string {
   if (remainingHours === 0) return `${days} days`;
   return `${days} day${days > 1 ? 's' : ''} ${remainingHours} hour${remainingHours > 1 ? 's' : ''}`;
 }
+
+const INTERVAL_PRESETS = [
+  { label: "1 min", value: 1 / 60 },
+  { label: "30 min", value: 0.5 },
+  { label: "1 hour", value: 1 },
+  { label: "2 hours", value: 2 },
+  { label: "6 hours", value: 6 },
+  { label: "12 hours", value: 12 },
+  { label: "24 hours", value: 24 },
+  { label: "48 hours", value: 48 },
+];
 
 export default function Settings() {
   const { toast } = useToast();
@@ -92,14 +106,6 @@ export default function Settings() {
     updateMutation.mutate({ alertsEnabled: false, password: disablePassword });
   };
 
-  const handleIntervalChange = (value: number[]) => {
-    setLocalInterval(value[0]);
-  };
-
-  const handleIntervalCommit = (value: number[]) => {
-    updateMutation.mutate({ intervalHours: value[0] });
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -116,7 +122,7 @@ export default function Settings() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Customize how CheckMate24 works for you.
+        Customize how aok works for you.
       </p>
 
       <Card>
@@ -131,23 +137,28 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">1 hour</span>
+            <div className="text-center">
               <span className="text-lg font-semibold text-primary">
                 {formatInterval(localInterval)}
               </span>
-              <span className="text-sm text-muted-foreground">48 hours</span>
             </div>
-            <Slider
-              value={[localInterval]}
-              onValueChange={handleIntervalChange}
-              onValueCommit={handleIntervalCommit}
-              min={1}
-              max={48}
-              step={1}
-              className="w-full"
-              data-testid="slider-interval"
-            />
+            <div className="grid grid-cols-4 gap-2">
+              {INTERVAL_PRESETS.map((preset) => (
+                <Button
+                  key={preset.label}
+                  variant={Math.abs(localInterval - preset.value) < 0.01 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setLocalInterval(preset.value);
+                    updateMutation.mutate({ intervalHours: preset.value });
+                  }}
+                  disabled={updateMutation.isPending}
+                  data-testid={`button-interval-${preset.label.replace(/\s/g, '-')}`}
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
           </div>
           
           <div className="flex items-start gap-2 p-3 rounded-md bg-muted/50">
