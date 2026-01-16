@@ -550,15 +550,15 @@ export async function registerRoutes(
       }
 
       const resend = new Resend(apiKey);
-      const fromEmail = 'CheckMate <onboarding@resend.dev>';
+      const fromEmail = 'aok <onboarding@resend.dev>';
       
       console.log(`[TEST EMAIL] Sending to ${email} from ${fromEmail}`);
       
       const result = await resend.emails.send({
         from: fromEmail,
         to: [email],
-        subject: 'CheckMate Test Email',
-        text: `This is a test email from CheckMate to verify the email system is working correctly.\n\nSent at: ${new Date().toISOString()}`,
+        subject: 'aok Test Email',
+        text: `This is a test email from aok to verify the email system is working correctly.\n\nSent at: ${new Date().toISOString()}`,
       });
       
       console.log(`[TEST EMAIL] Result:`, result);

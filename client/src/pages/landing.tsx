@@ -44,7 +44,7 @@ export default function Landing() {
 
       <section id="features" className="py-16 px-4 bg-muted/50">
         <div className="container mx-auto max-w-5xl">
-          <h2 className="text-3xl font-bold text-center mb-12">Why CheckMate24?</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Why aok?</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <Card>
               <CardContent className="pt-6 text-center">
