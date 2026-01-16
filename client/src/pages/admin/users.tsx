@@ -99,8 +99,11 @@ export default function AdminUsers() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/">
-              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity" data-testid="link-home-logo">
-                <Shield className="w-5 h-5 text-primary-foreground" />
+              <div className="flex flex-col items-center cursor-pointer" data-testid="link-home-logo">
+                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center hover:opacity-90 transition-opacity">
+                  <Shield className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <span className="text-[10px] text-muted-foreground">&copy; Ghuman</span>
               </div>
             </Link>
             <div>
