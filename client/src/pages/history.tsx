@@ -2,7 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { History as HistoryIcon, CheckCircle, XCircle, Loader2, Calendar, Bell, AlertTriangle } from "lucide-react";
+import { History as HistoryIcon, CheckCircle, XCircle, Loader2, Calendar, Bell, AlertTriangle, MoreVertical, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { CheckIn, AlertLog } from "@shared/schema";
 import { format, isToday, isYesterday, formatDistanceToNow } from "date-fns";
 
@@ -184,9 +191,26 @@ export default function History() {
 
   return (
     <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">
-      <div className="flex items-center gap-3 pt-2">
-        <HistoryIcon className="h-7 w-7 text-primary" />
-        <h1 className="text-2xl font-semibold">History</h1>
+      <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center gap-3">
+          <HistoryIcon className="h-7 w-7 text-primary" />
+          <h1 className="text-2xl font-semibold">History</h1>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="icon" variant="ghost" data-testid="button-menu">
+              <MoreVertical className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <a href="mailto:support@aok.app" className="flex items-center gap-2" data-testid="link-contact-us">
+                <Mail className="h-4 w-4" />
+                Contact Us
+              </a>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <Tabs defaultValue="checkins" className="w-full">
