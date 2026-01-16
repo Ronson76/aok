@@ -24,13 +24,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Mail, Phone, Trash2, Users, Loader2, UserPlus, Star } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Mail, Phone, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import type { Contact, InsertContact } from "@shared/schema";
-import { insertContactSchema } from "@shared/schema";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import type { Contact, InsertContact, PhoneType } from "@shared/schema";
+import { insertContactSchema, phoneTypes } from "@shared/schema";
 
 function getInitials(name: string) {
   return name
@@ -75,9 +76,13 @@ export default function Contacts() {
       name: "",
       email: "",
       phone: "",
+      phoneType: undefined,
       relationship: "",
     },
   });
+
+  // Watch the phone field to conditionally show phone type selector
+  const phoneValue = useWatch({ control: form.control, name: "phone" });
 
   const { data: contacts = [], isLoading } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
@@ -214,6 +219,42 @@ export default function Contacts() {
                     </FormItem>
                   )}
                 />
+                {phoneValue && phoneValue.length > 0 && (
+                  <FormField
+                    control={form.control}
+                    name="phoneType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Type</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-phone-type">
+                              <SelectValue placeholder="Select phone type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="mobile" data-testid="option-mobile">
+                              <span className="flex items-center gap-2">
+                                <Smartphone className="h-4 w-4" />
+                                Mobile
+                              </span>
+                            </SelectItem>
+                            <SelectItem value="landline" data-testid="option-landline">
+                              <span className="flex items-center gap-2">
+                                <PhoneCall className="h-4 w-4" />
+                                Landline
+                              </span>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription className="text-xs">
+                          Landline contacts will receive automated voice calls during emergencies.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="relationship"
@@ -296,8 +337,17 @@ export default function Contacts() {
                     </span>
                     {contact.phone && (
                       <span className="flex items-center gap-1">
-                        <Phone className="h-3 w-3 flex-shrink-0" />
+                        {contact.phoneType === "landline" ? (
+                          <PhoneCall className="h-3 w-3 flex-shrink-0" />
+                        ) : (
+                          <Smartphone className="h-3 w-3 flex-shrink-0" />
+                        )}
                         <span>{contact.phone}</span>
+                        {contact.phoneType === "landline" && (
+                          <Badge variant="outline" className="text-xs ml-1 px-1 py-0">
+                            Landline
+                          </Badge>
+                        )}
                       </span>
                     )}
                   </div>

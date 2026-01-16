@@ -4,6 +4,13 @@ import { Resend } from 'resend';
 interface NotificationResult {
   email: { sent: boolean; error?: string };
   sms: { sent: boolean; error?: string };
+  voiceCall: { sent: boolean; error?: string };
+}
+
+interface VoiceCallResult {
+  success: boolean;
+  callSid?: string;
+  error?: string;
 }
 
 let connectionSettings: any;
@@ -84,6 +91,7 @@ export async function sendContactAddedNotification(
   const result: NotificationResult = {
     email: { sent: false },
     sms: { sent: false },
+    voiceCall: { sent: false },
   };
 
   const isOrganization = user.accountType === "organization";
@@ -337,4 +345,184 @@ If you didn't request this, you can safely ignore this email.
     console.error(`[PASSWORD RESET] Failed to send email to ${email}:`, error);
     return false;
   }
+}
+
+// =====================================================
+// TWILIO VOICE CALLING FOR LANDLINE EMERGENCY ALERTS
+// =====================================================
+
+interface TwilioCredentials {
+  accountSid: string;
+  authToken: string;
+  phoneNumber: string;
+}
+
+async function getTwilioCredentials(): Promise<TwilioCredentials | null> {
+  // Check for environment variables
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
+
+  if (accountSid && authToken && phoneNumber) {
+    return { accountSid, authToken, phoneNumber };
+  }
+
+  // Try Replit connector
+  try {
+    const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+    const xReplitToken = process.env.REPL_IDENTITY 
+      ? 'repl ' + process.env.REPL_IDENTITY 
+      : process.env.WEB_REPL_RENEWAL 
+      ? 'depl ' + process.env.WEB_REPL_RENEWAL 
+      : null;
+
+    if (!xReplitToken || !hostname) {
+      return null;
+    }
+
+    const response = await fetch(
+      `https://${hostname}/api/v2/connection?include_secrets=true&connector_names=twilio`,
+      {
+        headers: {
+          'Accept': 'application/json',
+          'X_REPLIT_TOKEN': xReplitToken
+        }
+      }
+    );
+
+    const data = await response.json();
+    const twilioSettings = data.items?.[0]?.settings;
+
+    if (twilioSettings?.account_sid && twilioSettings?.auth_token && twilioSettings?.phone_number) {
+      return {
+        accountSid: twilioSettings.account_sid,
+        authToken: twilioSettings.auth_token,
+        phoneNumber: twilioSettings.phone_number
+      };
+    }
+  } catch (error) {
+    console.log('[TWILIO] Failed to get credentials from connector:', error);
+  }
+
+  return null;
+}
+
+/**
+ * Make an automated voice call to a landline with a text-to-speech message
+ */
+export async function makeVoiceCall(
+  phoneNumber: string,
+  message: string
+): Promise<VoiceCallResult> {
+  const credentials = await getTwilioCredentials();
+
+  if (!credentials) {
+    console.log('[VOICE CALL] Twilio not configured - skipping voice call');
+    return { success: false, error: 'Twilio not configured' };
+  }
+
+  try {
+    // Create TwiML for text-to-speech
+    const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Pause length="1"/>
+  <Say voice="alice" language="en-GB">${escapeXml(message)}</Say>
+  <Pause length="1"/>
+  <Say voice="alice" language="en-GB">${escapeXml(message)}</Say>
+  <Pause length="2"/>
+</Response>`;
+
+    // Make API call to Twilio
+    const auth = Buffer.from(`${credentials.accountSid}:${credentials.authToken}`).toString('base64');
+    
+    const response = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${credentials.accountSid}/Calls.json`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          To: phoneNumber,
+          From: credentials.phoneNumber,
+          Twiml: twiml,
+        }).toString(),
+      }
+    );
+
+    const result = await response.json();
+
+    if (response.ok) {
+      console.log(`[VOICE CALL] Successfully initiated call to ${phoneNumber}, SID: ${result.sid}`);
+      return { success: true, callSid: result.sid };
+    } else {
+      console.error(`[VOICE CALL] Failed to call ${phoneNumber}:`, result);
+      return { success: false, error: result.message || 'Call failed' };
+    }
+  } catch (error) {
+    console.error(`[VOICE CALL] Error calling ${phoneNumber}:`, error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+}
+
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/**
+ * Make emergency voice calls to all landline contacts
+ */
+export async function sendVoiceAlerts(
+  contacts: Contact[],
+  user: User,
+  alertType: 'missed_checkin' | 'emergency'
+): Promise<{ callsMade: number; callsFailed: number }> {
+  const landlineContacts = contacts.filter(c => c.phone && c.phoneType === 'landline');
+  
+  if (landlineContacts.length === 0) {
+    console.log('[VOICE ALERT] No landline contacts to call');
+    return { callsMade: 0, callsFailed: 0 };
+  }
+
+  const credentials = await getTwilioCredentials();
+  if (!credentials) {
+    console.log('[VOICE ALERT] Twilio not configured - skipping voice calls');
+    return { callsMade: 0, callsFailed: 0 };
+  }
+
+  const isOrganization = user.accountType === "organization";
+  const identifier = isOrganization 
+    ? `Reference ${user.referenceId}` 
+    : user.name;
+
+  const message = alertType === 'emergency'
+    ? `This is an urgent emergency alert from A O K. ${identifier} has triggered an emergency alert and needs immediate assistance. Please try to contact them immediately. If you cannot reach them, consider contacting emergency services.`
+    : `This is an alert from A O K. ${identifier} has missed their scheduled safety check-in. Please try to reach out to ensure their safety.`;
+
+  let callsMade = 0;
+  let callsFailed = 0;
+
+  for (const contact of landlineContacts) {
+    if (!contact.phone) continue;
+    
+    const result = await makeVoiceCall(contact.phone, message);
+    if (result.success) {
+      callsMade++;
+      console.log(`[VOICE ALERT] Call initiated to ${contact.name} at ${contact.phone}`);
+    } else {
+      callsFailed++;
+      console.error(`[VOICE ALERT] Failed to call ${contact.name} at ${contact.phone}: ${result.error}`);
+    }
+  }
+
+  return { callsMade, callsFailed };
 }
