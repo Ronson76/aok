@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aok-v2';
+const CACHE_NAME = 'aok-v1';
 const urlsToCache = [
   '/',
   '/icon-512.png'

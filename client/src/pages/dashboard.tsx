@@ -4,9 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, Shield, Loader2, AlertOctagon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useCheckInNotifications } from "@/hooks/use-check-in-notifications";
 import type { StatusData } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
 import { useState } from "react";
@@ -39,19 +38,10 @@ export default function Dashboard() {
   const [gettingLocation, setGettingLocation] = useState(false);
   const [cachedLocation, setCachedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
-  const { data: status, isLoading, error, refetch } = useQuery<StatusData>({
+  const { data: status, isLoading } = useQuery<StatusData>({
     queryKey: ["/api/status"],
-    refetchInterval: 10000,
-    retry: 3,
-    retryDelay: 1000,
   });
 
-  // Only run notifications after we have valid status data
-  useCheckInNotifications(status?.status ? status : undefined);
-
-  const isUrgent = status?.status === 'pending' || status?.status === 'overdue';
-
-  // All hooks must be defined before any early returns
   const checkInMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/checkins"),
     onSuccess: () => {
@@ -124,35 +114,21 @@ export default function Dashboard() {
     emergencyMutation.mutate(cachedLocation || undefined);
   };
 
-  // Handle error state (all hooks must be defined before this)
-  if (error) {
+  if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center gap-4">
-        <AlertTriangle className="h-12 w-12 text-destructive" />
-        <h2 className="text-xl font-semibold">Unable to load your status</h2>
-        <p className="text-muted-foreground text-sm">There was a problem connecting to the server.</p>
-        <Button onClick={() => refetch()} data-testid="button-retry-status">Try Again</Button>
-      </div>
-    );
-  }
-
-  if (isLoading || !status) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="flex items-center justify-center h-full">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
-  const statusInfo = getStatusLabel(status.status) || { text: "Unknown", variant: "secondary" as const };
-
-  // Urgent check-in mode removed temporarily for debugging
+  const statusInfo = status ? getStatusLabel(status.status) : { text: "Loading", variant: "secondary" as const };
 
   return (
     <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">
       <div className="flex items-center gap-3 pt-2">
-        <ShieldCheck className="h-8 w-8 text-primary" />
-        <h1 className="text-2xl font-semibold">aok</h1>
+        <Shield className="h-8 w-8 text-primary" />
+        <h1 className="text-2xl font-semibold">CheckMate24</h1>
       </div>
 
       <Card className="border-2">
@@ -223,26 +199,12 @@ export default function Dashboard() {
             {status?.nextCheckInDue ? (
               <div className="space-y-1">
                 <p className="text-lg font-semibold">
-                  {(() => {
-                    try {
-                      const dueDate = new Date(status.nextCheckInDue);
-                      if (dueDate < new Date()) {
-                        return "Overdue - check in now";
-                      }
-                      return formatDistanceToNow(dueDate, { addSuffix: true });
-                    } catch {
-                      return "Check in now";
-                    }
-                  })()}
+                  {status.hoursUntilDue !== null && status.hoursUntilDue > 0
+                    ? `In ${status.hoursUntilDue} hours`
+                    : "Due now"}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {(() => {
-                    try {
-                      return format(new Date(status.nextCheckInDue), "MMMM d, yyyy 'at' h:mm a");
-                    } catch {
-                      return "";
-                    }
-                  })()}
+                  {format(new Date(status.nextCheckInDue), "MMMM d, yyyy 'at' h:mm a")}
                 </p>
               </div>
             ) : (

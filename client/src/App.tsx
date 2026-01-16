@@ -97,32 +97,17 @@ function AdminAuthRoute({ component: Component }: { component: React.ComponentTy
   return <Component />;
 }
 
-function DashboardWrapper() {
-  const { user } = useAuth();
-  if (user?.accountType === "organization") {
-    return <OrganizationDashboard />;
-  }
-  return <Dashboard />;
-}
-
 function AppRoutes() {
+  const { user } = useAuth();
+  const isOrganization = user?.accountType === "organization";
+
   return (
     <Switch>
-      <Route path="/app">
-        <ProtectedRoute component={DashboardWrapper} />
-      </Route>
-      <Route path="/app/org">
-        <ProtectedRoute component={OrganizationDashboard} />
-      </Route>
-      <Route path="/app/contacts">
-        <ProtectedRoute component={Contacts} />
-      </Route>
-      <Route path="/app/history">
-        <ProtectedRoute component={History} />
-      </Route>
-      <Route path="/app/settings">
-        <ProtectedRoute component={Settings} />
-      </Route>
+      <Route path="/app" component={() => <ProtectedRoute component={isOrganization ? OrganizationDashboard : Dashboard} />} />
+      <Route path="/app/org" component={() => <ProtectedRoute component={OrganizationDashboard} />} />
+      <Route path="/app/contacts" component={() => <ProtectedRoute component={Contacts} />} />
+      <Route path="/app/history" component={() => <ProtectedRoute component={History} />} />
+      <Route path="/app/settings" component={() => <ProtectedRoute component={Settings} />} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -162,12 +147,6 @@ function AdminRoutes() {
 
 function Router() {
   const [location] = useLocation();
-  const { isAuthenticated, isLoading } = useAuth();
-
-  // If user is authenticated and on landing page, redirect to app
-  if (location === "/" && isAuthenticated && !isLoading) {
-    return <Redirect to="/app" />;
-  }
 
   if (location === "/") {
     return <Landing />;

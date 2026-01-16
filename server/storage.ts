@@ -77,6 +77,8 @@ export interface IStorage {
 }
 
 class DatabaseStorage implements IStorage {
+  private lastProcessedOverdue: { [userId: string]: string | null } = {};
+
   // Users
   async createUser(data: {
     email: string;
@@ -295,7 +297,6 @@ class DatabaseStorage implements IStorage {
       .set({ 
         lastCheckIn: new Date(),
         nextCheckInDue: nextDue,
-        alertSentSinceLastCheckIn: false,  // Reset the alert flag on successful check-in
       })
       .where(eq(settings.userId, userId));
 
@@ -347,18 +348,16 @@ class DatabaseStorage implements IStorage {
         lastCheckIn: null,
         nextCheckInDue: null,
         alertsEnabled: true,
-        alertSentSinceLastCheckIn: false,
       };
     }
 
     const row = result[0];
     return {
       frequency: row.frequency as "daily" | "every_two_days",
-      intervalHours: parseFloat(row.intervalHours) || 24,
+      intervalHours: parseInt(row.intervalHours) || 24,
       lastCheckIn: row.lastCheckIn?.toISOString() || null,
       nextCheckInDue: row.nextCheckInDue?.toISOString() || null,
       alertsEnabled: row.alertsEnabled,
-      alertSentSinceLastCheckIn: row.alertSentSinceLastCheckIn ?? false,
     };
   }
 
@@ -367,20 +366,6 @@ class DatabaseStorage implements IStorage {
     if (updates.frequency !== undefined) dbUpdates.frequency = updates.frequency;
     if (updates.intervalHours !== undefined) dbUpdates.intervalHours = String(updates.intervalHours);
     if (updates.alertsEnabled !== undefined) dbUpdates.alertsEnabled = updates.alertsEnabled;
-    
-    // If interval changed, recalculate next check-in due time based on last check-in
-    if (updates.intervalHours !== undefined) {
-      const currentSettings = await this.getSettings(userId);
-      if (currentSettings.lastCheckIn) {
-        const lastCheckInTime = new Date(currentSettings.lastCheckIn);
-        const newNextDue = new Date(lastCheckInTime.getTime() + updates.intervalHours * 60 * 60 * 1000);
-        dbUpdates.nextCheckInDue = newNextDue;
-      } else {
-        // No previous check-in, set next due from now
-        const newNextDue = new Date(Date.now() + updates.intervalHours * 60 * 60 * 1000);
-        dbUpdates.nextCheckInDue = newNextDue;
-      }
-    }
     
     await getDb().update(settings)
       .set(dbUpdates)
@@ -419,19 +404,19 @@ class DatabaseStorage implements IStorage {
       return { wasMissed: false, alertSent: false };
     }
 
-    // If alert has already been sent since last check-in, just return without sending another
-    if (currentSettings.alertSentSinceLastCheckIn) {
+    const overdueKey = currentSettings.nextCheckInDue;
+    if (this.lastProcessedOverdue[userId] === overdueKey) {
       return { wasMissed: true, alertSent: false };
     }
 
-    // Create a missed check-in record
+    this.lastProcessedOverdue[userId] = overdueKey;
+
     await this.createMissedCheckIn(userId);
 
-    // Update the next due time based on the interval
     const hoursToAdd = currentSettings.intervalHours || 24;
     const nextDue = new Date(dueDate.getTime() + hoursToAdd * 60 * 60 * 1000);
     await getDb().update(settings)
-      .set({ nextCheckInDue: nextDue, alertSentSinceLastCheckIn: true })
+      .set({ nextCheckInDue: nextDue })
       .where(eq(settings.userId, userId));
 
     const allContacts = await this.getContacts(userId);

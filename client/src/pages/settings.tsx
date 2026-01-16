@@ -16,10 +16,6 @@ import type { Settings as SettingsType } from "@shared/schema";
 import { useState, useEffect } from "react";
 
 function formatInterval(hours: number): string {
-  if (hours < 1) {
-    const minutes = Math.round(hours * 60);
-    return minutes === 1 ? "1 minute" : `${minutes} minutes`;
-  }
   if (hours === 1) return "1 hour";
   if (hours < 24) return `${hours} hours`;
   if (hours === 24) return "1 day";
@@ -28,31 +24,6 @@ function formatInterval(hours: number): string {
   const remainingHours = hours % 24;
   if (remainingHours === 0) return `${days} days`;
   return `${days} day${days > 1 ? 's' : ''} ${remainingHours} hour${remainingHours > 1 ? 's' : ''}`;
-}
-
-const INTERVAL_STEPS = [
-  2 / 60,
-  0.5,
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
-  14, 16, 18, 20, 22, 24,
-  30, 36, 42, 48
-];
-
-function hoursToStep(hours: number): number {
-  let closest = 0;
-  let minDiff = Math.abs(INTERVAL_STEPS[0] - hours);
-  for (let i = 1; i < INTERVAL_STEPS.length; i++) {
-    const diff = Math.abs(INTERVAL_STEPS[i] - hours);
-    if (diff < minDiff) {
-      minDiff = diff;
-      closest = i;
-    }
-  }
-  return closest;
-}
-
-function stepToHours(step: number): number {
-  return INTERVAL_STEPS[Math.min(step, INTERVAL_STEPS.length - 1)];
 }
 
 export default function Settings() {
@@ -121,6 +92,14 @@ export default function Settings() {
     updateMutation.mutate({ alertsEnabled: false, password: disablePassword });
   };
 
+  const handleIntervalChange = (value: number[]) => {
+    setLocalInterval(value[0]);
+  };
+
+  const handleIntervalCommit = (value: number[]) => {
+    updateMutation.mutate({ intervalHours: value[0] });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -137,7 +116,7 @@ export default function Settings() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Customize how aok works for you.
+        Customize how CheckMate24 works for you.
       </p>
 
       <Card>
@@ -153,18 +132,18 @@ export default function Settings() {
         <CardContent className="space-y-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">2 min</span>
+              <span className="text-sm text-muted-foreground">1 hour</span>
               <span className="text-lg font-semibold text-primary">
                 {formatInterval(localInterval)}
               </span>
               <span className="text-sm text-muted-foreground">48 hours</span>
             </div>
             <Slider
-              value={[hoursToStep(localInterval)]}
-              onValueChange={(value) => setLocalInterval(stepToHours(value[0]))}
-              onValueCommit={(value) => updateMutation.mutate({ intervalHours: stepToHours(value[0]) })}
-              min={0}
-              max={INTERVAL_STEPS.length - 1}
+              value={[localInterval]}
+              onValueChange={handleIntervalChange}
+              onValueCommit={handleIntervalCommit}
+              min={1}
+              max={48}
               step={1}
               className="w-full"
               data-testid="slider-interval"

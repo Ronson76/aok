@@ -135,7 +135,6 @@ export const settings = pgTable("settings", {
   lastCheckIn: timestamp("last_check_in"),
   nextCheckInDue: timestamp("next_check_in_due"),
   alertsEnabled: boolean("alerts_enabled").notNull().default(true),
-  alertSentSinceLastCheckIn: boolean("alert_sent_since_last_check_in").notNull().default(false),
 });
 
 export type Settings = {
@@ -144,12 +143,11 @@ export type Settings = {
   lastCheckIn: string | null;
   nextCheckInDue: string | null;
   alertsEnabled: boolean;
-  alertSentSinceLastCheckIn: boolean;
 };
 
 export const updateSettingsSchema = z.object({
   frequency: z.enum(checkInFrequencies).optional(),
-  intervalHours: z.number().min(0.0166).max(48).optional(),
+  intervalHours: z.number().min(1).max(48).optional(),
   alertsEnabled: z.boolean().optional(),
   password: z.string().optional(),
 });
