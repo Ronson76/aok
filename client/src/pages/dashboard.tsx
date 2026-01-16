@@ -4,12 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle, Clock, AlertTriangle, Shield, Loader2, AlertOctagon, Volume2, VolumeX, Users } from "lucide-react";
-import { Link } from "wouter";
+import { CheckCircle, Clock, AlertTriangle, Shield, Loader2, AlertOctagon, Users } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import type { StatusData } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 function getStatusIcon(status: StatusData["status"]) {
   switch (status) {
