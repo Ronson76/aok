@@ -190,7 +190,7 @@ export default function Settings() {
           <div className="flex items-start gap-2 p-3 rounded-md bg-muted/50">
             <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
             <p className="text-sm text-muted-foreground">
-              When enabled, your emergency contacts will receive an alert via email if you don't check in on time.
+              When enabled, all your emergency contacts will receive an alert if you miss a check-in. When disabled, only your primary contact will be notified.
             </p>
           </div>
         </CardContent>
