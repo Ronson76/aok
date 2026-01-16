@@ -39,22 +39,27 @@ export default function Dashboard() {
   const [gettingLocation, setGettingLocation] = useState(false);
   const [cachedLocation, setCachedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
-  const { data: status, isLoading, error } = useQuery<StatusData>({
+  const { data: status, isLoading, error, refetch } = useQuery<StatusData>({
     queryKey: ["/api/status"],
     refetchInterval: 10000,
+    retry: 3,
+    retryDelay: 1000,
   });
 
-  useCheckInNotifications(status);
+  // Only run notifications after we have valid status data
+  useCheckInNotifications(status?.status ? status : undefined);
 
   const isUrgent = status?.status === 'pending' || status?.status === 'overdue';
 
   // Handle error state
   if (error) {
+    console.error('[Dashboard] Status query error:', error);
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8 text-center gap-4">
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center gap-4">
         <AlertTriangle className="h-12 w-12 text-destructive" />
-        <h2 className="text-xl font-semibold">Failed to load status</h2>
-        <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+        <h2 className="text-xl font-semibold">Unable to load your status</h2>
+        <p className="text-muted-foreground text-sm">There was a problem connecting to the server.</p>
+        <Button onClick={() => refetch()} data-testid="button-retry-status">Try Again</Button>
       </div>
     );
   }
