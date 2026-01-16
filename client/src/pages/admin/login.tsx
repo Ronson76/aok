@@ -81,7 +81,7 @@ export default function AdminLogin() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
+          <div className="flex flex-col items-center mb-4">
             <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
               {needsSetup ? (
                 <UserPlus className="w-6 h-6 text-primary-foreground" />
@@ -89,6 +89,7 @@ export default function AdminLogin() {
                 <Shield className="w-6 h-6 text-primary-foreground" />
               )}
             </div>
+            <span className="text-xs text-muted-foreground mt-1">&copy; Ghuman</span>
           </div>
           <CardTitle className="text-2xl">
             {needsSetup ? "Create Admin Account" : "Admin Login"}
