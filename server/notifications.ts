@@ -14,7 +14,7 @@ async function getResendCredentials() {
   if (apiKey) {
     return { 
       apiKey, 
-      fromEmail: 'CheckMate24 <onboarding@resend.dev>' 
+      fromEmail: 'aok <onboarding@resend.dev>' 
     };
   }
   
@@ -59,7 +59,7 @@ async function sendEmail(to: string, subject: string, body: string): Promise<voi
     const { client, fromEmail } = await getResendClient();
     
     await client.emails.send({
-      from: fromEmail || 'CheckMate24 <onboarding@resend.dev>',
+      from: fromEmail || 'aok <onboarding@resend.dev>',
       to: [to],
       subject: subject,
       text: body,
@@ -92,36 +92,36 @@ export async function sendContactAddedNotification(
     : user.name;
   const contactName = contact.name;
 
-  const emailSubject = `You've been added as an emergency contact on CheckMate24`;
+  const emailSubject = `You've been added as an emergency contact on aok`;
   const emailBody = isOrganization 
     ? `Hi ${contactName},
 
-${user.name} has added you as an emergency contact for a person they are monitoring on CheckMate24.
+${user.name} has added you as an emergency contact for a person they are monitoring on aok.
 
 Reference ID: ${user.referenceId}
 
-CheckMate24 is a personal safety check-in app. If this person misses a check-in, you will be notified automatically.
+aok is a personal safety check-in app. If this person misses a check-in, you will be notified automatically.
 
 You don't need to do anything right now - you'll only be contacted if they miss a scheduled check-in.
 
 Thank you for your support.
 
-- The CheckMate24 Team`
+- The aok Team`
     : `Hi ${contactName},
 
-${user.name} has added you as their emergency contact on CheckMate24.
+${user.name} has added you as their emergency contact on aok.
 
-CheckMate24 is a personal safety check-in app. If ${user.name} misses a check-in, you will be notified automatically.
+aok is a personal safety check-in app. If ${user.name} misses a check-in, you will be notified automatically.
 
 This means ${user.name} trusts you to help ensure their safety. You don't need to do anything right now - you'll only be contacted if they miss a scheduled check-in.
 
 Thank you for being there for ${user.name}.
 
-- The CheckMate24 Team`;
+- The aok Team`;
 
   const smsBody = isOrganization
-    ? `Hi ${contactName}, you've been added as an emergency contact for Reference ${user.referenceId} on CheckMate24. You'll be notified if they miss a check-in.`
-    : `Hi ${contactName}, ${user.name} has added you as their emergency contact on CheckMate24. You'll be notified if they miss a check-in.`;
+    ? `Hi ${contactName}, you've been added as an emergency contact for Reference ${user.referenceId} on aok. You'll be notified if they miss a check-in.`
+    : `Hi ${contactName}, ${user.name} has added you as their emergency contact on aok. You'll be notified if they miss a check-in.`;
 
   try {
     await sendEmail(contact.email, emailSubject, emailBody);
@@ -160,7 +160,7 @@ export async function sendMissedCheckInAlert(
   let emailsFailed = 0;
   
   for (const contact of contacts) {
-    const emailSubject = `ALERT: ${subjectIdentifier} missed their CheckMate24 check-in`;
+    const emailSubject = `ALERT: ${subjectIdentifier} missed their aok check-in`;
     
     let locationInfo = "";
     if (user.addressLine1) {
@@ -176,14 +176,14 @@ Mobile number: ${user.mobileNumber}`;
     
     const emailBody = `Hi ${contact.name},
 
-This is an automated alert from CheckMate24.
+This is an automated alert from aok.
 
 ${identifier} has missed their scheduled check-in. This may indicate they need assistance.
 ${locationInfo}
 
 Please try to reach out to ensure their safety.
 
-- The CheckMate24 Team`;
+- The aok Team`;
 
     try {
       await sendEmail(contact.email, emailSubject, emailBody);
@@ -213,16 +213,16 @@ export async function sendSuccessfulCheckInNotification(
     timeStyle: 'short' 
   });
   
-  const subject = `CheckMate24: ${identifier} checked in successfully`;
+  const subject = `aok: ${identifier} checked in successfully`;
   const body = `Hi ${primaryContact.name},
 
-Good news! ${identifier} has completed their scheduled check-in on CheckMate24.
+Good news! ${identifier} has completed their scheduled check-in on aok.
 
 Check-in time: ${checkInTime}
 
 This is an automated notification confirming their safety. No action is required from you.
 
-- The CheckMate24 Team`;
+- The aok Team`;
 
   try {
     await sendEmail(primaryContact.email, subject, body);
@@ -287,7 +287,7 @@ Mobile number: ${user.mobileNumber}`;
 
 Hi ${contact.name},
 
-${identifier} has triggered an EMERGENCY ALERT on CheckMate24 at ${alertTime}.
+${identifier} has triggered an EMERGENCY ALERT on aok at ${alertTime}.
 
 This is NOT a routine missed check-in. They have manually pressed the emergency button indicating they need immediate assistance.
 ${locationInfo}
@@ -296,7 +296,7 @@ PLEASE CONTACT THEM IMMEDIATELY.
 
 If you cannot reach them, consider contacting local emergency services.
 
-- The CheckMate24 Team`;
+- The aok Team`;
 
     try {
       await sendEmail(contact.email, emailSubject, emailBody);
@@ -316,10 +316,10 @@ export async function sendPasswordResetEmail(
   resetUrl: string,
   userName: string
 ): Promise<boolean> {
-  const subject = "Reset your CheckMate24 password";
+  const subject = "Reset your aok password";
   const body = `Hi ${userName},
 
-You requested to reset your CheckMate24 password. Click the link below to set a new password:
+You requested to reset your aok password. Click the link below to set a new password:
 
 ${resetUrl}
 
@@ -327,7 +327,7 @@ This link will expire in 1 hour.
 
 If you didn't request this, you can safely ignore this email.
 
-- The CheckMate24 Team`;
+- The aok Team`;
 
   try {
     await sendEmail(email, subject, body);
