@@ -9,36 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCheckInNotifications } from "@/hooks/use-check-in-notifications";
 import type { StatusData } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
-import { useState, useEffect, Component, type ReactNode } from "react";
-
-// Error boundary to catch any rendering crashes
-class DashboardErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
-  constructor(props: { children: ReactNode }) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error('[Dashboard] Error caught:', error, errorInfo);
-  }
-  
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-          <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
-          <Button onClick={() => window.location.reload()}>Refresh Page</Button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
+import { useState } from "react";
 
 function getStatusIcon(status: StatusData["status"]) {
   switch (status) {
@@ -62,7 +33,7 @@ function getStatusLabel(status: StatusData["status"]) {
   }
 }
 
-function DashboardContent() {
+export default function Dashboard() {
   const { toast } = useToast();
   const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
@@ -396,13 +367,5 @@ function DashboardContent() {
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-export default function Dashboard() {
-  return (
-    <DashboardErrorBoundary>
-      <DashboardContent />
-    </DashboardErrorBoundary>
   );
 }
