@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert } from "lucide-react";
@@ -29,16 +30,30 @@ function formatInterval(hours: number): string {
   return `${days} day${days > 1 ? 's' : ''} ${remainingHours} hour${remainingHours > 1 ? 's' : ''}`;
 }
 
-const INTERVAL_PRESETS = [
-  { label: "1 min", value: 1 / 60 },
-  { label: "30 min", value: 0.5 },
-  { label: "1 hour", value: 1 },
-  { label: "2 hours", value: 2 },
-  { label: "6 hours", value: 6 },
-  { label: "12 hours", value: 12 },
-  { label: "24 hours", value: 24 },
-  { label: "48 hours", value: 48 },
+const INTERVAL_STEPS = [
+  1 / 60,
+  0.5,
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+  14, 16, 18, 20, 22, 24,
+  30, 36, 42, 48
 ];
+
+function hoursToStep(hours: number): number {
+  let closest = 0;
+  let minDiff = Math.abs(INTERVAL_STEPS[0] - hours);
+  for (let i = 1; i < INTERVAL_STEPS.length; i++) {
+    const diff = Math.abs(INTERVAL_STEPS[i] - hours);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = i;
+    }
+  }
+  return closest;
+}
+
+function stepToHours(step: number): number {
+  return INTERVAL_STEPS[Math.min(step, INTERVAL_STEPS.length - 1)];
+}
 
 export default function Settings() {
   const { toast } = useToast();
@@ -137,28 +152,23 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
-            <div className="text-center">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">1 min</span>
               <span className="text-lg font-semibold text-primary">
                 {formatInterval(localInterval)}
               </span>
+              <span className="text-sm text-muted-foreground">48 hours</span>
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              {INTERVAL_PRESETS.map((preset) => (
-                <Button
-                  key={preset.label}
-                  variant={Math.abs(localInterval - preset.value) < 0.01 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setLocalInterval(preset.value);
-                    updateMutation.mutate({ intervalHours: preset.value });
-                  }}
-                  disabled={updateMutation.isPending}
-                  data-testid={`button-interval-${preset.label.replace(/\s/g, '-')}`}
-                >
-                  {preset.label}
-                </Button>
-              ))}
-            </div>
+            <Slider
+              value={[hoursToStep(localInterval)]}
+              onValueChange={(value) => setLocalInterval(stepToHours(value[0]))}
+              onValueCommit={(value) => updateMutation.mutate({ intervalHours: stepToHours(value[0]) })}
+              min={0}
+              max={INTERVAL_STEPS.length - 1}
+              step={1}
+              className="w-full"
+              data-testid="slider-interval"
+            />
           </div>
           
           <div className="flex items-start gap-2 p-3 rounded-md bg-muted/50">
