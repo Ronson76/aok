@@ -97,17 +97,32 @@ function AdminAuthRoute({ component: Component }: { component: React.ComponentTy
   return <Component />;
 }
 
-function AppRoutes() {
+function DashboardWrapper() {
   const { user } = useAuth();
-  const isOrganization = user?.accountType === "organization";
+  if (user?.accountType === "organization") {
+    return <OrganizationDashboard />;
+  }
+  return <Dashboard />;
+}
 
+function AppRoutes() {
   return (
     <Switch>
-      <Route path="/app" component={() => <ProtectedRoute component={isOrganization ? OrganizationDashboard : Dashboard} />} />
-      <Route path="/app/org" component={() => <ProtectedRoute component={OrganizationDashboard} />} />
-      <Route path="/app/contacts" component={() => <ProtectedRoute component={Contacts} />} />
-      <Route path="/app/history" component={() => <ProtectedRoute component={History} />} />
-      <Route path="/app/settings" component={() => <ProtectedRoute component={Settings} />} />
+      <Route path="/app">
+        <ProtectedRoute component={DashboardWrapper} />
+      </Route>
+      <Route path="/app/org">
+        <ProtectedRoute component={OrganizationDashboard} />
+      </Route>
+      <Route path="/app/contacts">
+        <ProtectedRoute component={Contacts} />
+      </Route>
+      <Route path="/app/history">
+        <ProtectedRoute component={History} />
+      </Route>
+      <Route path="/app/settings">
+        <ProtectedRoute component={Settings} />
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
