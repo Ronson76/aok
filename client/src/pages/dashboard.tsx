@@ -236,10 +236,10 @@ export default function Dashboard() {
             {status?.lastCheckIn ? (
               <div className="space-y-1">
                 <p className="text-lg font-semibold">
-                  {formatDistanceToNow(new Date(status.lastCheckIn), { addSuffix: true })}
+                  {format(new Date(status.lastCheckIn), "h:mm a")}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {format(new Date(status.lastCheckIn), "MMMM d, yyyy 'at' h:mm a")}
+                  {format(new Date(status.lastCheckIn), "MMMM d, yyyy")}
                 </p>
               </div>
             ) : (
