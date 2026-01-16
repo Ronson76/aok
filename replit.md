@@ -1,8 +1,8 @@
-# CheckMate24
+# aok
 
 ## Overview
 
-CheckMate24 is a personal safety check-in application that helps users stay connected with their loved ones through regular check-ins. Users set a check-in frequency, and if they miss a check-in, their emergency contacts can be automatically alerted. The app provides a dashboard showing check-in status, streak tracking, contact management, history viewing, and settings configuration.
+aok is a personal safety check-in application that helps users stay connected with their loved ones through regular check-ins. Users set a check-in frequency (1-48 hours), and if they miss a check-in, their emergency contacts can be automatically alerted via email and voice calls. The app provides a dashboard showing check-in status, streak tracking, contact management, history viewing, and settings configuration. It includes an emergency alert button with GPS location sharing and an alarm system that beeps every 2 minutes when overdue.
 
 ## User Preferences
 
@@ -37,7 +37,7 @@ The server handles API routes through a central `registerRoutes` function. In de
 The storage interface defines operations for contacts, check-ins, and settings. This abstraction allows swapping between in-memory storage and database-backed storage.
 
 ### Data Models
-- **Contact**: Emergency contacts with name, email, optional phone, relationship, and isPrimary flag
+- **Contact**: Emergency contacts with name, email, optional phone, phoneType (mobile/landline), relationship, and isPrimary flag
 - **CheckIn**: Timestamped records with success/missed status
 - **Settings**: Check-in frequency (daily/every_two_days), last check-in time, next due time, alerts toggle
 - **AlertLog**: Records of alerts sent to contacts when check-ins are missed
@@ -65,6 +65,15 @@ The app uses Resend for all email notifications:
 - **Missed Check-in Alerts**: When a check-in is missed, all emergency contacts receive alert emails with the user's registered address
 - **Password Reset**: Password reset links are sent via email
 - The Resend connector is configured via Replit's integration system (credentials managed automatically)
+
+### Voice Call Alerts (Twilio Integration)
+The app supports automated voice calls to landline contacts during emergencies:
+- **Phone Type**: Contacts can be marked as "mobile" or "landline" when adding a phone number
+- **Landline Voice Calls**: When a check-in is missed or an emergency is triggered, landline contacts receive automated phone calls
+- **Text-to-Speech**: Calls use Twilio's TTS to announce the alert message including the user's name or reference ID
+- **Emergency Priority**: Emergency alerts trigger immediate voice calls with urgent messaging
+- **Missed Check-in Calls**: Missed check-in alerts also trigger voice calls to landline contacts
+- **Configuration**: Requires TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER environment variables or Replit Twilio connector
 
 ### Admin Dashboard
 The app includes a separate admin system for platform management:
