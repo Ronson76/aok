@@ -11,6 +11,10 @@ export type CheckInFrequency = typeof checkInFrequencies[number];
 export const accountTypes = ["individual", "organization"] as const;
 export type AccountType = typeof accountTypes[number];
 
+// Phone type options for contacts
+export const phoneTypes = ["mobile", "landline"] as const;
+export type PhoneType = typeof phoneTypes[number];
+
 // Users table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -97,11 +101,14 @@ export const contacts = pgTable("contacts", {
   name: text("name").notNull(),
   email: text("email").notNull(),
   phone: text("phone"),
+  phoneType: text("phone_type").$type<PhoneType>(),
   relationship: text("relationship").notNull(),
   isPrimary: boolean("is_primary").notNull().default(false),
 });
 
-export const insertContactSchema = createInsertSchema(contacts).omit({ id: true, userId: true, isPrimary: true });
+export const insertContactSchema = createInsertSchema(contacts).omit({ id: true, userId: true, isPrimary: true }).extend({
+  phoneType: z.enum(phoneTypes).optional(),
+});
 export type InsertContact = z.infer<typeof insertContactSchema>;
 export type Contact = typeof contacts.$inferSelect;
 
@@ -110,6 +117,7 @@ export const updateContactSchema = z.object({
   name: z.string().min(1).optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
+  phoneType: z.enum(phoneTypes).optional(),
   relationship: z.string().optional(),
 });
 export type UpdateContact = z.infer<typeof updateContactSchema>;
