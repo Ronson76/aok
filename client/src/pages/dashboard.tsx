@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle, Clock, AlertTriangle, Shield, Loader2, AlertOctagon, Volume2, VolumeX } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, Shield, Loader2, AlertOctagon, Volume2, VolumeX, Users } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import type { StatusData } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
@@ -249,20 +250,39 @@ export default function Dashboard() {
             )}
           </div>
 
-          <Button
-            size="lg"
-            className="w-full max-w-xs px-8 py-6 text-lg font-semibold"
-            onClick={() => checkInMutation.mutate()}
-            disabled={checkInMutation.isPending}
-            data-testid="button-check-in"
-          >
-            {checkInMutation.isPending ? (
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-            ) : (
-              <CheckCircle className="h-5 w-5 mr-2" />
-            )}
-            Check In Now
-          </Button>
+          {status?.contactCount === 0 ? (
+            <div className="text-center space-y-4 w-full max-w-xs">
+              <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                <Users className="h-5 w-5" />
+                <p className="text-sm">Add an emergency contact to check in</p>
+              </div>
+              <Link href="/contacts">
+                <Button
+                  size="lg"
+                  className="w-full px-8 py-6 text-lg font-semibold"
+                  data-testid="button-add-contacts"
+                >
+                  <Users className="h-5 w-5 mr-2" />
+                  Add Contact
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <Button
+              size="lg"
+              className="w-full max-w-xs px-8 py-6 text-lg font-semibold"
+              onClick={() => checkInMutation.mutate()}
+              disabled={checkInMutation.isPending}
+              data-testid="button-check-in"
+            >
+              {checkInMutation.isPending ? (
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              ) : (
+                <CheckCircle className="h-5 w-5 mr-2" />
+              )}
+              Check In Now
+            </Button>
+          )}
         </CardContent>
       </Card>
 
