@@ -7,10 +7,9 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/bottom-nav";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
-import { Loader2, ShieldCheck, Volume2, VolumeX } from "lucide-react";
+import { Loader2, ShieldCheck, Volume2 } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { StatusData } from "@shared/schema";
 import Landing from "@/pages/landing";
@@ -120,7 +119,6 @@ function AppRoutes() {
 function AppLayout() {
   const { isAuthenticated } = useAuth();
   const [alarmPlaying, setAlarmPlaying] = useState(false);
-  const [alarmDismissed, setAlarmDismissed] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const alarmIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -175,18 +173,16 @@ function AppLayout() {
       audioContextRef.current = null;
     }
     setAlarmPlaying(false);
-    setAlarmDismissed(true);
   };
 
   useEffect(() => {
-    if (isOverdue && !alarmDismissed) {
+    if (isOverdue) {
       playAlarmSound();
       if ('setAppBadge' in navigator) {
         (navigator as any).setAppBadge(1);
       }
-    } else if (!isOverdue) {
+    } else {
       stopAlarmSound();
-      setAlarmDismissed(false);
       if ('clearAppBadge' in navigator) {
         (navigator as any).clearAppBadge();
       }
@@ -200,7 +196,7 @@ function AppLayout() {
         audioContextRef.current.close();
       }
     };
-  }, [isOverdue, alarmDismissed]);
+  }, [isOverdue]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -224,23 +220,12 @@ function AppLayout() {
         <div className="sticky top-[52px] z-30 max-w-md mx-auto px-4 py-2">
           <Card className="border-destructive bg-destructive/10 animate-pulse">
             <CardContent className="py-3">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <Volume2 className="h-5 w-5 text-destructive" />
-                  <div>
-                    <p className="font-semibold text-destructive text-sm">Alarm Active</p>
-                    <p className="text-xs text-muted-foreground">Your check-in is overdue</p>
-                  </div>
+              <div className="flex items-center gap-3">
+                <Volume2 className="h-5 w-5 text-destructive" />
+                <div>
+                  <p className="font-semibold text-destructive text-sm">Check-In Overdue</p>
+                  <p className="text-xs text-muted-foreground">Check in now to stop the alarm</p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={stopAlarmSound}
-                  data-testid="button-dismiss-alarm"
-                >
-                  <VolumeX className="h-4 w-4 mr-1" />
-                  Dismiss
-                </Button>
               </div>
             </CardContent>
           </Card>
