@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/bottom-nav";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
-import { Loader2, Shield } from "lucide-react";
+import { Loader2, ShieldCheck } from "lucide-react";
 import { Link } from "wouter";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
@@ -120,7 +120,7 @@ function AppLayout() {
         <div className="max-w-md mx-auto px-4 py-3">
           <Link href="/app">
             <div className="flex flex-col items-center cursor-pointer w-fit" data-testid="link-home-logo">
-              <Shield className="h-6 w-6 text-primary" />
+              <ShieldCheck className="h-6 w-6 text-primary" />
               <span className="text-xs font-semibold text-primary">aok</span>
             </div>
           </Link>

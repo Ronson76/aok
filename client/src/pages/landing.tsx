@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, Bell, Users, Clock, CheckCircle, Heart } from "lucide-react";
+import { ShieldCheck, Bell, Users, Clock, CheckCircle, Heart } from "lucide-react";
 
 export default function Landing() {
   return (
@@ -9,7 +9,7 @@ export default function Landing() {
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex flex-col items-center">
-            <Shield className="h-8 w-8 text-primary" />
+            <ShieldCheck className="h-8 w-8 text-primary" />
             <span className="text-sm font-semibold text-primary">aok</span>
           </div>
           <Link href="/login">
@@ -179,7 +179,7 @@ export default function Landing() {
       <footer className="border-t py-8 px-4">
         <div className="container mx-auto text-center text-muted-foreground">
           <div className="flex flex-col items-center justify-center mb-2">
-            <Shield className="h-5 w-5" />
+            <ShieldCheck className="h-5 w-5" />
             <span className="text-sm font-semibold">aok</span>
           </div>
           <p className="text-sm mb-4">Your personal safety check-in companion</p>
