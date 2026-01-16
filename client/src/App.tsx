@@ -168,8 +168,8 @@ function AppLayout() {
       clearInterval(alarmIntervalRef.current);
       alarmIntervalRef.current = null;
     }
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close().catch(() => {});
       audioContextRef.current = null;
     }
     setAlarmPlaying(false);
