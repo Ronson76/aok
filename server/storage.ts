@@ -79,7 +79,6 @@ export interface IStorage {
 }
 
 class DatabaseStorage implements IStorage {
-  private lastProcessedOverdue: { [userId: string]: string | null } = {};
 
   // Users
   async createUser(data: {
@@ -428,83 +427,93 @@ class DatabaseStorage implements IStorage {
 
   // Process overdue check-ins
   async processOverdueCheckIn(userId: string): Promise<{ wasMissed: boolean; alertSent: boolean }> {
-    const currentSettings = await this.getSettings(userId);
+    // Get raw settings including lastMissedDueAt
+    const rawSettings = await getDb().select().from(settings).where(eq(settings.userId, userId));
+    if (rawSettings.length === 0) {
+      return { wasMissed: false, alertSent: false };
+    }
+    
+    const row = rawSettings[0];
     const now = new Date();
     
-    if (!currentSettings.nextCheckInDue) {
+    if (!row.nextCheckInDue) {
       return { wasMissed: false, alertSent: false };
     }
 
-    const dueDate = new Date(currentSettings.nextCheckInDue);
+    const dueDate = row.nextCheckInDue;
     
     if (now < dueDate) {
       return { wasMissed: false, alertSent: false };
     }
 
-    const overdueKey = currentSettings.nextCheckInDue;
-    if (this.lastProcessedOverdue[userId] === overdueKey) {
+    // Check if we've already processed this overdue period (persisted in DB)
+    if (row.lastMissedDueAt && row.lastMissedDueAt.getTime() === dueDate.getTime()) {
       return { wasMissed: true, alertSent: false };
     }
 
-    this.lastProcessedOverdue[userId] = overdueKey;
-
-    await this.createMissedCheckIn(userId);
-
-    const hoursToAdd = currentSettings.intervalHours || 24;
-    const nextDue = new Date(dueDate.getTime() + hoursToAdd * 60 * 60 * 1000);
-    await getDb().update(settings)
-      .set({ nextCheckInDue: nextDue })
-      .where(eq(settings.userId, userId));
-
+    // Get contacts and user info BEFORE making any changes
     const allContacts = await this.getContacts(userId);
-    if (allContacts.length === 0) {
-      return { wasMissed: true, alertSent: false };
-    }
-
     const user = await this.getUserById(userId);
+    
     if (!user) {
-      return { wasMissed: true, alertSent: false };
+      return { wasMissed: false, alertSent: false };
     }
 
-    // Determine which contacts to alert based on alertsEnabled setting
-    // Primary contact ALWAYS gets alerted, even when alerts are disabled
+    // Determine contacts to alert
     const primaryContact = allContacts.find(c => c.isPrimary);
-    const contactsToAlert = currentSettings.alertsEnabled 
+    const alertsEnabled = row.alertsEnabled;
+    const contactsToAlert = alertsEnabled 
       ? allContacts 
       : (primaryContact ? [primaryContact] : []);
     
-    if (contactsToAlert.length === 0) {
-      return { wasMissed: true, alertSent: false };
+    const contactNames = contactsToAlert.map(c => c.name);
+    let alertSent = false;
+    
+    // Send alerts FIRST (before updating any state)
+    if (contactsToAlert.length > 0) {
+      console.log(`[ALERT] Missed check-in detected for user ${userId}! Sending alerts to: ${contactNames.join(", ")}`);
+      
+      try {
+        // Send email alerts
+        const { emailsSent, emailsFailed } = await sendMissedCheckInAlert(contactsToAlert, user);
+        
+        // Send voice calls to landline contacts
+        const { callsMade, callsFailed } = await sendVoiceAlerts(contactsToAlert, user, 'missed_checkin');
+        
+        alertSent = emailsSent > 0 || callsMade > 0;
+        
+        const notificationParts = [];
+        if (emailsSent > 0) notificationParts.push(`${emailsSent} email(s)`);
+        if (callsMade > 0) notificationParts.push(`${callsMade} voice call(s)`);
+        
+        const failedParts = [];
+        if (emailsFailed > 0) failedParts.push(`${emailsFailed} email(s)`);
+        if (callsFailed > 0) failedParts.push(`${callsFailed} call(s)`);
+        
+        const message = `Missed check-in alert sent! ${notificationParts.join(', ') || 'no notifications'} delivered${failedParts.length > 0 ? `, ${failedParts.join(', ')} failed` : ''}.`;
+        await this.createAlertLog(userId, contactNames, message);
+      } catch (error) {
+        console.error(`[ALERT] Error sending alerts:`, error);
+        const message = `Missed check-in detected. Alert delivery failed.`;
+        await this.createAlertLog(userId, contactNames, message);
+      }
     }
 
-    const contactNames = contactsToAlert.map(c => c.name);
+    // Now update the database state AFTER alerts are sent
+    await this.createMissedCheckIn(userId);
+
+    const hoursToAdd = parseInt(row.intervalHours) || 24;
+    const nextDue = new Date(dueDate.getTime() + hoursToAdd * 60 * 60 * 1000);
     
-    console.log(`[ALERT] Missed check-in detected for user ${userId}! Sending alerts to: ${contactNames.join(", ")}`);
-    
-    try {
-      // Send email alerts
-      const { emailsSent, emailsFailed } = await sendMissedCheckInAlert(contactsToAlert, user);
-      
-      // Send voice calls to landline contacts
-      const { callsMade, callsFailed } = await sendVoiceAlerts(contactsToAlert, user, 'missed_checkin');
-      
-      const notificationParts = [];
-      if (emailsSent > 0) notificationParts.push(`${emailsSent} email(s)`);
-      if (callsMade > 0) notificationParts.push(`${callsMade} voice call(s)`);
-      
-      const failedParts = [];
-      if (emailsFailed > 0) failedParts.push(`${emailsFailed} email(s)`);
-      if (callsFailed > 0) failedParts.push(`${callsFailed} call(s)`);
-      
-      const message = `Missed check-in alert sent! ${notificationParts.join(', ') || 'no notifications'} delivered${failedParts.length > 0 ? `, ${failedParts.join(', ')} failed` : ''}.`;
-      await this.createAlertLog(userId, contactNames, message);
-      return { wasMissed: true, alertSent: emailsSent > 0 || callsMade > 0 };
-    } catch (error) {
-      console.error(`[ALERT] Error sending alerts:`, error);
-      const message = `Missed check-in detected. Alert delivery failed.`;
-      await this.createAlertLog(userId, contactNames, message);
-      return { wasMissed: true, alertSent: false };
-    }
+    // Update both nextCheckInDue and lastMissedDueAt atomically
+    await getDb().update(settings)
+      .set({ 
+        nextCheckInDue: nextDue,
+        lastMissedDueAt: dueDate  // Mark this due date as processed
+      })
+      .where(eq(settings.userId, userId));
+
+    return { wasMissed: true, alertSent };
   }
 }
 
