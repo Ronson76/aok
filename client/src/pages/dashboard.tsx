@@ -166,13 +166,14 @@ export default function Dashboard() {
   }
 
   const statusInfo = status ? getStatusLabel(status.status) : { text: "Loading", variant: "secondary" as const };
+  const isOverdue = status?.status === "overdue";
 
   return (
     <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">
-      <Card className="border-2">
+      <Card className={`border-2 ${isOverdue ? "border-destructive bg-destructive/5" : ""}`}>
         <CardContent className="flex flex-col items-center gap-6 py-8">
-          <div className="rounded-full bg-primary/10 p-4">
-            <ShieldCheck className="h-16 w-16 text-primary" />
+          <div className={`rounded-full p-4 ${isOverdue ? "bg-destructive/10" : "bg-primary/10"}`}>
+            <ShieldCheck className={`h-16 w-16 ${isOverdue ? "text-destructive" : "text-primary"}`} />
           </div>
           
           <div className="text-center space-y-2">
