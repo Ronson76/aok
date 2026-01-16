@@ -77,8 +77,6 @@ export interface IStorage {
 }
 
 class DatabaseStorage implements IStorage {
-  private lastProcessedOverdue: { [userId: string]: string | null } = {};
-
   // Users
   async createUser(data: {
     email: string;
@@ -297,6 +295,7 @@ class DatabaseStorage implements IStorage {
       .set({ 
         lastCheckIn: new Date(),
         nextCheckInDue: nextDue,
+        alertSentSinceLastCheckIn: false,  // Reset the alert flag on successful check-in
       })
       .where(eq(settings.userId, userId));
 
@@ -348,6 +347,7 @@ class DatabaseStorage implements IStorage {
         lastCheckIn: null,
         nextCheckInDue: null,
         alertsEnabled: true,
+        alertSentSinceLastCheckIn: false,
       };
     }
 
@@ -358,6 +358,7 @@ class DatabaseStorage implements IStorage {
       lastCheckIn: row.lastCheckIn?.toISOString() || null,
       nextCheckInDue: row.nextCheckInDue?.toISOString() || null,
       alertsEnabled: row.alertsEnabled,
+      alertSentSinceLastCheckIn: row.alertSentSinceLastCheckIn ?? false,
     };
   }
 
@@ -418,19 +419,19 @@ class DatabaseStorage implements IStorage {
       return { wasMissed: false, alertSent: false };
     }
 
-    const overdueKey = currentSettings.nextCheckInDue;
-    if (this.lastProcessedOverdue[userId] === overdueKey) {
+    // If alert has already been sent since last check-in, just return without sending another
+    if (currentSettings.alertSentSinceLastCheckIn) {
       return { wasMissed: true, alertSent: false };
     }
 
-    this.lastProcessedOverdue[userId] = overdueKey;
-
+    // Create a missed check-in record
     await this.createMissedCheckIn(userId);
 
+    // Update the next due time based on the interval
     const hoursToAdd = currentSettings.intervalHours || 24;
     const nextDue = new Date(dueDate.getTime() + hoursToAdd * 60 * 60 * 1000);
     await getDb().update(settings)
-      .set({ nextCheckInDue: nextDue })
+      .set({ nextCheckInDue: nextDue, alertSentSinceLastCheckIn: true })
       .where(eq(settings.userId, userId));
 
     const allContacts = await this.getContacts(userId);

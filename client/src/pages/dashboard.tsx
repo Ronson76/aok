@@ -34,7 +34,6 @@ function getStatusLabel(status: StatusData["status"]) {
 }
 
 export default function Dashboard() {
-  console.log('[Dashboard] Component rendering');
   const { toast } = useToast();
   const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
@@ -47,26 +46,12 @@ export default function Dashboard() {
     retryDelay: 1000,
   });
 
-  console.log('[Dashboard] Query state:', { status, isLoading, error: error?.message });
-
   // Only run notifications after we have valid status data
   useCheckInNotifications(status?.status ? status : undefined);
 
   const isUrgent = status?.status === 'pending' || status?.status === 'overdue';
 
-  // Handle error state
-  if (error) {
-    console.error('[Dashboard] Status query error:', error);
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center gap-4">
-        <AlertTriangle className="h-12 w-12 text-destructive" />
-        <h2 className="text-xl font-semibold">Unable to load your status</h2>
-        <p className="text-muted-foreground text-sm">There was a problem connecting to the server.</p>
-        <Button onClick={() => refetch()} data-testid="button-retry-status">Try Again</Button>
-      </div>
-    );
-  }
-
+  // All hooks must be defined before any early returns
   const checkInMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/checkins"),
     onSuccess: () => {
@@ -138,6 +123,18 @@ export default function Dashboard() {
   const handleEmergencyAlert = () => {
     emergencyMutation.mutate(cachedLocation || undefined);
   };
+
+  // Handle error state (all hooks must be defined before this)
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center gap-4">
+        <AlertTriangle className="h-12 w-12 text-destructive" />
+        <h2 className="text-xl font-semibold">Unable to load your status</h2>
+        <p className="text-muted-foreground text-sm">There was a problem connecting to the server.</p>
+        <Button onClick={() => refetch()} data-testid="button-retry-status">Try Again</Button>
+      </div>
+    );
+  }
 
   if (isLoading || !status) {
     return (

@@ -28,8 +28,6 @@ import OrganizationDashboard from "@/pages/org/dashboard";
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { isAuthenticated, isLoading } = useAuth();
   
-  console.log('[ProtectedRoute] isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
-  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -39,11 +37,9 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   }
 
   if (!isAuthenticated) {
-    console.log('[ProtectedRoute] Not authenticated, redirecting to login');
     return <Redirect to="/login" />;
   }
 
-  console.log('[ProtectedRoute] Rendering protected component');
   return <Component />;
 }
 
@@ -151,6 +147,12 @@ function AdminRoutes() {
 
 function Router() {
   const [location] = useLocation();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // If user is authenticated and on landing page, redirect to app
+  if (location === "/" && isAuthenticated && !isLoading) {
+    return <Redirect to="/app" />;
+  }
 
   if (location === "/") {
     return <Landing />;
