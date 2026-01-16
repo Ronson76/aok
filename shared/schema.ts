@@ -142,6 +142,7 @@ export const settings = pgTable("settings", {
   intervalHours: text("interval_hours").notNull().default("24"),
   lastCheckIn: timestamp("last_check_in"),
   nextCheckInDue: timestamp("next_check_in_due"),
+  lastMissedDueAt: timestamp("last_missed_due_at"),
   alertsEnabled: boolean("alerts_enabled").notNull().default(true),
 });
 
