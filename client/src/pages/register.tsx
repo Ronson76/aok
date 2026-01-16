@@ -9,8 +9,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PasswordInput } from "@/components/password-input";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Loader2, User, Building2 } from "lucide-react";
+import { Loader2, User, Building2 } from "lucide-react";
 import { insertUserSchema, type InsertUser } from "@shared/schema";
+import logoImage from "@assets/file_00000000647471f4a7ccf7a82acadf40_1768557791378.png";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function Register() {
@@ -73,7 +74,7 @@ export default function Register() {
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-2">
-            <Shield className="h-12 w-12 text-primary" />
+            <img src={logoImage} alt="aok" className="h-12" />
           </div>
           <CardTitle className="text-2xl">Create Your Account</CardTitle>
           <CardDescription>
