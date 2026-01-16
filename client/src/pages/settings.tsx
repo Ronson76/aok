@@ -8,7 +8,13 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert } from "lucide-react";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, MoreVertical, Mail } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
@@ -110,9 +116,26 @@ export default function Settings() {
 
   return (
     <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">
-      <div className="flex items-center gap-3 pt-2">
-        <SettingsIcon className="h-7 w-7 text-primary" />
-        <h1 className="text-2xl font-semibold">Settings</h1>
+      <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center gap-3">
+          <SettingsIcon className="h-7 w-7 text-primary" />
+          <h1 className="text-2xl font-semibold">Settings</h1>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="icon" variant="ghost" data-testid="button-menu">
+              <MoreVertical className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <a href="mailto:support@aok.app" className="flex items-center gap-2" data-testid="link-contact-us">
+                <Mail className="h-4 w-4" />
+                Contact Us
+              </a>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <p className="text-sm text-muted-foreground">

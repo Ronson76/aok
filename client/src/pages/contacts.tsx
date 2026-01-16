@@ -25,7 +25,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Mail, Phone, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall } from "lucide-react";
+import { Plus, Mail, Phone, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall, MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -165,7 +171,8 @@ export default function Contacts() {
           <h1 className="text-2xl font-semibold">Contacts</h1>
         </div>
         
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <div className="flex items-center gap-1">
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button size="icon" data-testid="button-add-contact">
               <Plus className="h-5 w-5" />
@@ -283,6 +290,22 @@ export default function Contacts() {
             </Form>
           </DialogContent>
         </Dialog>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="ghost" data-testid="button-menu">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <a href="mailto:support@aok.app" className="flex items-center gap-2" data-testid="link-contact-us">
+                  <Mail className="h-4 w-4" />
+                  Contact Us
+                </a>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <p className="text-sm text-muted-foreground">
