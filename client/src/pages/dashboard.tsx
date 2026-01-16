@@ -8,8 +8,29 @@ import { CheckCircle, Clock, AlertTriangle, Shield, Loader2, AlertOctagon, Users
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import type { StatusData } from "@shared/schema";
-import { formatDistanceToNow, format } from "date-fns";
-import { useState } from "react";
+import { formatDistanceToNow, format, differenceInSeconds } from "date-fns";
+import { useState, useEffect } from "react";
+
+function formatCountdown(targetDate: Date): string {
+  const now = new Date();
+  const diffInSeconds = differenceInSeconds(targetDate, now);
+  
+  if (diffInSeconds <= 0) {
+    return "Due now";
+  }
+  
+  const hours = Math.floor(diffInSeconds / 3600);
+  const minutes = Math.floor((diffInSeconds % 3600) / 60);
+  const seconds = diffInSeconds % 60;
+  
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${seconds}s`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  } else {
+    return `${seconds}s`;
+  }
+}
 
 function getStatusIcon(status: StatusData["status"]) {
   switch (status) {
@@ -38,11 +59,31 @@ export default function Dashboard() {
   const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [cachedLocation, setCachedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [countdown, setCountdown] = useState<string>("");
 
   const { data: status, isLoading } = useQuery<StatusData>({
     queryKey: ["/api/status"],
     refetchInterval: 30000,
   });
+
+  // Live countdown timer
+  useEffect(() => {
+    if (!status?.nextCheckInDue) {
+      setCountdown("");
+      return;
+    }
+
+    const targetDate = new Date(status.nextCheckInDue);
+    
+    const updateCountdown = () => {
+      setCountdown(formatCountdown(targetDate));
+    };
+    
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    
+    return () => clearInterval(interval);
+  }, [status?.nextCheckInDue]);
 
   const checkInMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/checkins"),
@@ -219,10 +260,8 @@ export default function Dashboard() {
           <CardContent>
             {status?.nextCheckInDue ? (
               <div className="space-y-1">
-                <p className="text-lg font-semibold">
-                  {status.hoursUntilDue !== null && status.hoursUntilDue > 0
-                    ? `In ${status.hoursUntilDue} hours`
-                    : "Due now"}
+                <p className="text-2xl font-bold font-mono tracking-tight" data-testid="text-countdown">
+                  {countdown || "Due now"}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {format(new Date(status.nextCheckInDue), "MMMM d, yyyy 'at' h:mm a")}
