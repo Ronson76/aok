@@ -1,16 +1,16 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Bell, Users, Clock, CheckCircle, Heart } from "lucide-react";
-import logoImage from "@assets/file_00000000647471f4a7ccf7a82acadf40_1768557791378.png";
+import { Shield, Bell, Users, Clock, CheckCircle, Heart } from "lucide-react";
 
 export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <img src={logoImage} alt="aok" className="h-10" />
+          <div className="flex flex-col items-center">
+            <Shield className="h-8 w-8 text-primary" />
+            <span className="text-sm font-semibold text-primary">aok</span>
           </div>
           <Link href="/login">
             <Button data-testid="button-open-app">Sign In</Button>
@@ -178,8 +178,9 @@ export default function Landing() {
 
       <footer className="border-t py-8 px-4">
         <div className="container mx-auto text-center text-muted-foreground">
-          <div className="flex items-center justify-center mb-2">
-            <img src={logoImage} alt="aok" className="h-8" />
+          <div className="flex flex-col items-center justify-center mb-2">
+            <Shield className="h-5 w-5" />
+            <span className="text-sm font-semibold">aok</span>
           </div>
           <p className="text-sm mb-4">Your personal safety check-in companion</p>
           <Link href="/admin/login">
