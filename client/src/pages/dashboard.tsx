@@ -39,7 +39,7 @@ export default function Dashboard() {
   const [gettingLocation, setGettingLocation] = useState(false);
   const [cachedLocation, setCachedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
-  const { data: status, isLoading } = useQuery<StatusData>({
+  const { data: status, isLoading, error } = useQuery<StatusData>({
     queryKey: ["/api/status"],
     refetchInterval: 10000,
   });
@@ -47,6 +47,17 @@ export default function Dashboard() {
   useCheckInNotifications(status);
 
   const isUrgent = status?.status === 'pending' || status?.status === 'overdue';
+
+  // Handle error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8 text-center gap-4">
+        <AlertTriangle className="h-12 w-12 text-destructive" />
+        <h2 className="text-xl font-semibold">Failed to load status</h2>
+        <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+      </div>
+    );
+  }
 
   const checkInMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/checkins"),
@@ -120,7 +131,7 @@ export default function Dashboard() {
     emergencyMutation.mutate(cachedLocation || undefined);
   };
 
-  if (isLoading) {
+  if (isLoading || !status) {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -128,7 +139,7 @@ export default function Dashboard() {
     );
   }
 
-  const statusInfo = status ? getStatusLabel(status.status) : { text: "Loading", variant: "secondary" as const };
+  const statusInfo = getStatusLabel(status.status) || { text: "Unknown", variant: "secondary" as const };
 
   if (isUrgent) {
     return (
