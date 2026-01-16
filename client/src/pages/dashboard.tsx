@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle, Clock, AlertTriangle, Shield, Loader2, AlertOctagon } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useCheckInNotifications } from "@/hooks/use-check-in-notifications";
 import type { StatusData } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
 import { useState } from "react";
@@ -40,7 +41,10 @@ export default function Dashboard() {
 
   const { data: status, isLoading } = useQuery<StatusData>({
     queryKey: ["/api/status"],
+    refetchInterval: 60000,
   });
+
+  useCheckInNotifications(status);
 
   const checkInMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/checkins"),
@@ -127,8 +131,8 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">
       <div className="flex items-center gap-3 pt-2">
-        <Shield className="h-8 w-8 text-primary" />
-        <h1 className="text-2xl font-semibold">CheckMate24</h1>
+        <ShieldCheck className="h-8 w-8 text-primary" />
+        <h1 className="text-2xl font-semibold">aok</h1>
       </div>
 
       <Card className="border-2">
