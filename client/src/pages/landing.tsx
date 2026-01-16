@@ -20,6 +20,11 @@ export default function Landing() {
 
       <section className="py-20 px-4">
         <div className="container mx-auto max-w-4xl text-center">
+          <div className="flex justify-center mb-8">
+            <div className="rounded-full bg-primary/10 p-6">
+              <ShieldCheck className="h-20 w-20 text-primary" />
+            </div>
+          </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-6">
             Your Personal Safety Check-In
           </h1>
