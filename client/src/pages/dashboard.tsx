@@ -149,49 +149,7 @@ export default function Dashboard() {
 
   const statusInfo = getStatusLabel(status.status) || { text: "Unknown", variant: "secondary" as const };
 
-  if (isUrgent) {
-    return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background p-8">
-        <div className="flex flex-col items-center gap-8 text-center max-w-sm">
-          <ShieldCheck className="h-20 w-20 text-primary" />
-          
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold">
-              {status?.status === 'overdue' ? 'Check-In Overdue!' : 'Time to Check In'}
-            </h1>
-            <p className="text-muted-foreground">
-              {status?.status === 'overdue' 
-                ? 'Your contacts may have been notified. Check in now to confirm you\'re safe.'
-                : 'Let your loved ones know you\'re safe.'}
-            </p>
-          </div>
-
-          <button
-            onClick={() => checkInMutation.mutate()}
-            disabled={checkInMutation.isPending}
-            className={`w-64 h-64 rounded-full text-white text-3xl font-bold shadow-2xl flex flex-col items-center justify-center gap-2 bg-primary animate-pulse ${checkInMutation.isPending ? 'opacity-50' : 'hover:scale-110 active:scale-95'}`}
-            style={{ animationDuration: '1s' }}
-            data-testid="button-urgent-check-in"
-          >
-            {checkInMutation.isPending ? (
-              <Loader2 className="h-16 w-16 animate-spin" />
-            ) : (
-              <>
-                <CheckCircle className="h-16 w-16" />
-                <span>CHECK IN</span>
-              </>
-            )}
-          </button>
-
-          {status?.streak !== undefined && status.streak > 0 && (
-            <p className="text-sm text-muted-foreground">
-              {status.streak} day streak
-            </p>
-          )}
-        </div>
-      </div>
-    );
-  }
+  // Urgent check-in mode removed temporarily for debugging
 
   return (
     <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">
