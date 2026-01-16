@@ -8,9 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { PasswordInput } from "@/components/password-input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Shield, Loader2 } from "lucide-react";
 import { loginSchema, type LoginInput } from "@shared/schema";
-import logoImage from "@assets/file_00000000647471f4a7ccf7a82acadf40_1768557791378.png";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function Login() {
@@ -55,8 +54,9 @@ export default function Login() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
-          <div className="flex justify-center mb-2">
-            <img src={logoImage} alt="aok" className="h-12" />
+          <div className="flex flex-col items-center justify-center mb-2">
+            <Shield className="h-12 w-12 text-primary" />
+            <span className="text-lg font-semibold text-primary">aok</span>
           </div>
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
           <CardDescription>
