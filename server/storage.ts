@@ -404,7 +404,7 @@ class DatabaseStorage implements IStorage {
     const currentSettings = await this.getSettings(userId);
     const now = new Date();
     
-    if (!currentSettings.nextCheckInDue || !currentSettings.alertsEnabled) {
+    if (!currentSettings.nextCheckInDue) {
       return { wasMissed: false, alertSent: false };
     }
 
@@ -439,12 +439,23 @@ class DatabaseStorage implements IStorage {
       return { wasMissed: true, alertSent: false };
     }
 
-    const contactNames = allContacts.map(c => c.name);
+    // Determine which contacts to alert based on alertsEnabled setting
+    // Primary contact ALWAYS gets alerted, even when alerts are disabled
+    const primaryContact = allContacts.find(c => c.isPrimary);
+    const contactsToAlert = currentSettings.alertsEnabled 
+      ? allContacts 
+      : (primaryContact ? [primaryContact] : []);
+    
+    if (contactsToAlert.length === 0) {
+      return { wasMissed: true, alertSent: false };
+    }
+
+    const contactNames = contactsToAlert.map(c => c.name);
     
     console.log(`[ALERT] Missed check-in detected for user ${userId}! Sending alerts to: ${contactNames.join(", ")}`);
     
     try {
-      const { emailsSent, emailsFailed } = await sendMissedCheckInAlert(allContacts, user);
+      const { emailsSent, emailsFailed } = await sendMissedCheckInAlert(contactsToAlert, user);
       const message = `Missed check-in alert sent! ${emailsSent} email(s) delivered${emailsFailed > 0 ? `, ${emailsFailed} failed` : ''}.`;
       await this.createAlertLog(userId, contactNames, message);
       return { wasMissed: true, alertSent: emailsSent > 0 };
