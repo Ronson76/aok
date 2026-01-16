@@ -245,16 +245,30 @@ export default function Dashboard() {
                 Immediately notify all your contacts if you need help
               </p>
             </div>
-            <Button
-              variant="destructive"
-              size="lg"
-              className="w-full max-w-xs"
-              onClick={handleOpenEmergencyDialog}
-              data-testid="button-emergency"
-            >
-              <AlertOctagon className="h-5 w-5 mr-2" />
-              Emergency Alert
-            </Button>
+            {status?.contactCount === 0 ? (
+              <Link href="/contacts">
+                <Button
+                  variant="destructive"
+                  size="lg"
+                  className="w-full max-w-xs"
+                  data-testid="button-emergency-add-contact"
+                >
+                  <Users className="h-5 w-5 mr-2" />
+                  Add Contact First
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                variant="destructive"
+                size="lg"
+                className="w-full max-w-xs"
+                onClick={handleOpenEmergencyDialog}
+                data-testid="button-emergency"
+              >
+                <AlertOctagon className="h-5 w-5 mr-2" />
+                Emergency Alert
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
