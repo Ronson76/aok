@@ -334,6 +334,9 @@ export async function registerRoutes(
   // Get alert logs
   app.get("/api/alerts", async (req, res) => {
     try {
+      // Cleanup old alerts (older than 7 days) in the background
+      storage.cleanupOldAlerts().catch(err => console.log("[cleanup] Failed to cleanup old alerts:", err));
+      
       const alerts = await storage.getAlertLogs(req.userId!);
       res.json(alerts);
     } catch (error) {
