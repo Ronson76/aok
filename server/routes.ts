@@ -22,8 +22,6 @@ declare global {
 async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const sessionId = req.cookies?.session;
   
-  console.log('[authMiddleware] Path:', req.path, 'Session cookie:', sessionId ? 'present' : 'missing', 'All cookies:', JSON.stringify(req.cookies));
-  
   if (!sessionId) {
     return res.status(401).json({ error: "Not authenticated" });
   }
@@ -296,19 +294,12 @@ export async function registerRoutes(
         const now = new Date();
         const dueDate = new Date(settings.nextCheckInDue);
         const diffMs = dueDate.getTime() - now.getTime();
-        const diffHours = diffMs / (1000 * 60 * 60);
-        hoursUntilDue = Math.round(diffHours);
+        hoursUntilDue = Math.round(diffMs / (1000 * 60 * 60));
         
         if (diffMs < 0) {
           status = "overdue";
-        } else {
-          // Calculate pending threshold: 50% of interval, but minimum 1 minute for short intervals
-          const intervalHours = settings.intervalHours || 24;
-          const pendingThresholdHours = Math.max(intervalHours * 0.5, 1 / 60); // 50% of interval, min 1 minute
-          
-          if (diffHours <= pendingThresholdHours) {
-            status = "pending";
-          }
+        } else if (hoursUntilDue <= 6) {
+          status = "pending";
         }
       } else if (!settings.lastCheckIn) {
         status = "pending";
@@ -551,15 +542,15 @@ export async function registerRoutes(
       }
 
       const resend = new Resend(apiKey);
-      const fromEmail = 'aok <onboarding@resend.dev>';
+      const fromEmail = 'CheckMate <onboarding@resend.dev>';
       
       console.log(`[TEST EMAIL] Sending to ${email} from ${fromEmail}`);
       
       const result = await resend.emails.send({
         from: fromEmail,
         to: [email],
-        subject: 'aok Test Email',
-        text: `This is a test email from aok to verify the email system is working correctly.\n\nSent at: ${new Date().toISOString()}`,
+        subject: 'CheckMate Test Email',
+        text: `This is a test email from CheckMate to verify the email system is working correctly.\n\nSent at: ${new Date().toISOString()}`,
       });
       
       console.log(`[TEST EMAIL] Result:`, result);
