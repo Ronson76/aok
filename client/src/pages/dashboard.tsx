@@ -34,6 +34,7 @@ function getStatusLabel(status: StatusData["status"]) {
 }
 
 export default function Dashboard() {
+  console.log('[Dashboard] Component rendering');
   const { toast } = useToast();
   const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
@@ -45,6 +46,8 @@ export default function Dashboard() {
     retry: 3,
     retryDelay: 1000,
   });
+
+  console.log('[Dashboard] Query state:', { status, isLoading, error: error?.message });
 
   // Only run notifications after we have valid status data
   useCheckInNotifications(status?.status ? status : undefined);
@@ -138,7 +141,7 @@ export default function Dashboard() {
 
   if (isLoading || !status) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
