@@ -367,6 +367,20 @@ class DatabaseStorage implements IStorage {
     if (updates.intervalHours !== undefined) dbUpdates.intervalHours = String(updates.intervalHours);
     if (updates.alertsEnabled !== undefined) dbUpdates.alertsEnabled = updates.alertsEnabled;
     
+    // If interval changed, recalculate next check-in due time based on last check-in
+    if (updates.intervalHours !== undefined) {
+      const currentSettings = await this.getSettings(userId);
+      if (currentSettings.lastCheckIn) {
+        const lastCheckInTime = new Date(currentSettings.lastCheckIn);
+        const newNextDue = new Date(lastCheckInTime.getTime() + updates.intervalHours * 60 * 60 * 1000);
+        dbUpdates.nextCheckInDue = newNextDue;
+      } else {
+        // No previous check-in, set next due from now
+        const newNextDue = new Date(Date.now() + updates.intervalHours * 60 * 60 * 1000);
+        dbUpdates.nextCheckInDue = newNextDue;
+      }
+    }
+    
     await getDb().update(settings)
       .set(dbUpdates)
       .where(eq(settings.userId, userId));
