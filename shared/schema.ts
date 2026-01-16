@@ -211,6 +211,7 @@ export interface StatusData {
   nextCheckInDue: string | null;
   streak: number;
   hoursUntilDue: number | null;
+  contactCount: number;
 }
 
 // User profile (safe to send to frontend, without password)

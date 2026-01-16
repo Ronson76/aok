@@ -286,6 +286,7 @@ export async function registerRoutes(
       
       const settings = await storage.getSettings(userId);
       const checkIns = await storage.getCheckIns(userId);
+      const contacts = await storage.getContacts(userId);
       
       let status: StatusData["status"] = "safe";
       let hoursUntilDue: number | null = null;
@@ -321,6 +322,7 @@ export async function registerRoutes(
         nextCheckInDue: settings.nextCheckInDue,
         streak,
         hoursUntilDue,
+        contactCount: contacts.length,
       };
 
       res.json(statusData);
@@ -428,6 +430,12 @@ export async function registerRoutes(
 
   app.post("/api/checkins", async (req, res) => {
     try {
+      // Require at least one contact before check-in
+      const contacts = await storage.getContacts(req.userId!);
+      if (contacts.length === 0) {
+        return res.status(400).json({ error: "Please add at least one emergency contact before checking in" });
+      }
+      
       const checkIn = await storage.createCheckIn(req.userId!);
       
       // Notify primary contact if one exists
