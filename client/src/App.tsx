@@ -24,6 +24,7 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminBundles from "@/pages/admin/bundles";
 import OrganizationDashboard from "@/pages/org/dashboard";
+import OverdueAlert from "@/pages/overdue-alert";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -104,6 +105,7 @@ function AppRoutes() {
   return (
     <Switch>
       <Route path="/app" component={() => <ProtectedRoute component={isOrganization ? OrganizationDashboard : Dashboard} />} />
+      <Route path="/app/overdue" component={() => <ProtectedRoute component={OverdueAlert} />} />
       <Route path="/app/org" component={() => <ProtectedRoute component={OrganizationDashboard} />} />
       <Route path="/app/contacts" component={() => <ProtectedRoute component={Contacts} />} />
       <Route path="/app/history" component={() => <ProtectedRoute component={History} />} />
