@@ -22,6 +22,8 @@ declare global {
 async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const sessionId = req.cookies?.session;
   
+  console.log('[authMiddleware] Path:', req.path, 'Session cookie:', sessionId ? 'present' : 'missing', 'All cookies:', JSON.stringify(req.cookies));
+  
   if (!sessionId) {
     return res.status(401).json({ error: "Not authenticated" });
   }
