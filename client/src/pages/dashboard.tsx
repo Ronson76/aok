@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle, Clock, AlertTriangle, Shield, Loader2, AlertOctagon } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, Shield, Loader2, AlertOctagon, Volume2, VolumeX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { StatusData } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 function getStatusIcon(status: StatusData["status"]) {
   switch (status) {
@@ -37,10 +37,87 @@ export default function Dashboard() {
   const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [cachedLocation, setCachedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [alarmPlaying, setAlarmPlaying] = useState(false);
+  const [alarmDismissed, setAlarmDismissed] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const oscillatorRef = useRef<OscillatorNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const alarmIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: status, isLoading } = useQuery<StatusData>({
     queryKey: ["/api/status"],
+    refetchInterval: 30000,
   });
+
+  const playAlarmSound = () => {
+    if (audioContextRef.current) return;
+    
+    try {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const ctx = audioContextRef.current;
+      
+      const playBeep = () => {
+        if (!audioContextRef.current) return;
+        
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        oscillator.frequency.value = 880;
+        oscillator.type = 'sine';
+        gainNode.gain.value = 0.3;
+        
+        oscillator.start();
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        oscillator.stop(ctx.currentTime + 0.5);
+      };
+      
+      playBeep();
+      alarmIntervalRef.current = setInterval(playBeep, 2000);
+      setAlarmPlaying(true);
+    } catch (e) {
+      console.log('Audio not supported');
+    }
+  };
+
+  const stopAlarmSound = () => {
+    if (alarmIntervalRef.current) {
+      clearInterval(alarmIntervalRef.current);
+      alarmIntervalRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    setAlarmPlaying(false);
+    setAlarmDismissed(true);
+  };
+
+  useEffect(() => {
+    if (status?.status === 'overdue' && !alarmDismissed) {
+      playAlarmSound();
+      if ('setAppBadge' in navigator) {
+        (navigator as any).setAppBadge(1);
+      }
+    } else if (status?.status !== 'overdue') {
+      stopAlarmSound();
+      setAlarmDismissed(false);
+      if ('clearAppBadge' in navigator) {
+        (navigator as any).clearAppBadge();
+      }
+    }
+    
+    return () => {
+      if (alarmIntervalRef.current) {
+        clearInterval(alarmIntervalRef.current);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, [status?.status, alarmDismissed]);
 
   const checkInMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/checkins"),
@@ -128,8 +205,33 @@ export default function Dashboard() {
     <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">
       <div className="flex items-center gap-3 pt-2">
         <Shield className="h-8 w-8 text-primary" />
-        <h1 className="text-2xl font-semibold">CheckMate24</h1>
+        <h1 className="text-2xl font-semibold">aok</h1>
       </div>
+
+      {alarmPlaying && (
+        <Card className="border-destructive bg-destructive/10 animate-pulse">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Volume2 className="h-6 w-6 text-destructive" />
+                <div>
+                  <p className="font-semibold text-destructive">Alarm Active</p>
+                  <p className="text-sm text-muted-foreground">Your check-in is overdue</p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={stopAlarmSound}
+                data-testid="button-dismiss-alarm"
+              >
+                <VolumeX className="h-4 w-4 mr-2" />
+                Dismiss
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-2">
         <CardContent className="flex flex-col items-center gap-6 py-8">
