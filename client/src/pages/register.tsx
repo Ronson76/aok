@@ -51,7 +51,7 @@ export default function Register() {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast({
         title: "Account Created",
-        description: "Welcome to CheckMate24! Your account has been created successfully.",
+        description: "Welcome to aok! Your account has been created successfully.",
       });
       setLocation("/app");
     },
@@ -78,7 +78,7 @@ export default function Register() {
           </div>
           <CardTitle className="text-2xl">Create Your Account</CardTitle>
           <CardDescription>
-            Sign up for CheckMate to stay connected with your loved ones
+            Sign up for aok to stay connected with your loved ones
           </CardDescription>
         </CardHeader>
         <CardContent>

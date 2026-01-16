@@ -60,7 +60,7 @@ export default function Login() {
           </div>
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
           <CardDescription>
-            Sign in to your CheckMate24 account
+            Sign in to your aok account
           </CardDescription>
         </CardHeader>
         <CardContent>
