@@ -9,7 +9,7 @@ import { ensureDb } from "./db";
 import { eq, desc, and, isNull, lt, count, sql } from "drizzle-orm";
 import { randomUUID, randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
-import { sendMissedCheckInAlert } from "./notifications";
+import { sendMissedCheckInAlert, sendVoiceAlerts } from "./notifications";
 
 // Get database instance at runtime (not at import time)
 function getDb() {
@@ -455,10 +455,23 @@ class DatabaseStorage implements IStorage {
     console.log(`[ALERT] Missed check-in detected for user ${userId}! Sending alerts to: ${contactNames.join(", ")}`);
     
     try {
+      // Send email alerts
       const { emailsSent, emailsFailed } = await sendMissedCheckInAlert(contactsToAlert, user);
-      const message = `Missed check-in alert sent! ${emailsSent} email(s) delivered${emailsFailed > 0 ? `, ${emailsFailed} failed` : ''}.`;
+      
+      // Send voice calls to landline contacts
+      const { callsMade, callsFailed } = await sendVoiceAlerts(contactsToAlert, user, 'missed_checkin');
+      
+      const notificationParts = [];
+      if (emailsSent > 0) notificationParts.push(`${emailsSent} email(s)`);
+      if (callsMade > 0) notificationParts.push(`${callsMade} voice call(s)`);
+      
+      const failedParts = [];
+      if (emailsFailed > 0) failedParts.push(`${emailsFailed} email(s)`);
+      if (callsFailed > 0) failedParts.push(`${callsFailed} call(s)`);
+      
+      const message = `Missed check-in alert sent! ${notificationParts.join(', ') || 'no notifications'} delivered${failedParts.length > 0 ? `, ${failedParts.join(', ')} failed` : ''}.`;
       await this.createAlertLog(userId, contactNames, message);
-      return { wasMissed: true, alertSent: emailsSent > 0 };
+      return { wasMissed: true, alertSent: emailsSent > 0 || callsMade > 0 };
     } catch (error) {
       console.error(`[ALERT] Error sending alerts:`, error);
       const message = `Missed check-in detected. Alert delivery failed.`;

@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
-import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert } from "./notifications";
+import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
 
@@ -470,19 +470,34 @@ export async function registerRoutes(
       }
 
       const location = req.body?.location as { latitude: number; longitude: number } | undefined;
-      const result = await sendEmergencyAlert(contacts, user, location);
+      
+      // Send email alerts
+      const emailResult = await sendEmergencyAlert(contacts, user, location);
+      
+      // Send voice calls to landline contacts
+      const voiceResult = await sendVoiceAlerts(contacts, user, 'emergency');
       
       // Log the emergency alert
+      const notificationSummary = [];
+      if (emailResult.emailsSent > 0) {
+        notificationSummary.push(`${emailResult.emailsSent} email(s)`);
+      }
+      if (voiceResult.callsMade > 0) {
+        notificationSummary.push(`${voiceResult.callsMade} voice call(s)`);
+      }
+      
       await storage.createAlertLog(
         req.userId!, 
         contacts.map(c => c.email),
-        `EMERGENCY ALERT triggered - ${result.emailsSent} contacts notified`
+        `EMERGENCY ALERT triggered - ${notificationSummary.join(', ') || 'no contacts'} notified`
       );
 
       res.json({ 
         success: true, 
-        contactsNotified: result.emailsSent,
-        message: `Emergency alert sent to ${result.emailsSent} contact(s)` 
+        emailsSent: emailResult.emailsSent,
+        voiceCallsMade: voiceResult.callsMade,
+        contactsNotified: emailResult.emailsSent + voiceResult.callsMade,
+        message: `Emergency alert sent to ${emailResult.emailsSent} email(s)${voiceResult.callsMade > 0 ? ` and ${voiceResult.callsMade} voice call(s)` : ''}` 
       });
     } catch (error) {
       console.error('[EMERGENCY] Failed to send emergency alert:', error);
