@@ -71,6 +71,7 @@ export interface IStorage {
   // Alerts
   getAlertLogs(userId: string): Promise<AlertLog[]>;
   createAlertLog(userId: string, contactsNotified: string[], message: string): Promise<AlertLog>;
+  cleanupOldAlerts(): Promise<number>;
 
   // Missed check-in processing
   processOverdueCheckIn(userId: string): Promise<{ wasMissed: boolean; alertSent: boolean }>;
@@ -397,6 +398,17 @@ class DatabaseStorage implements IStorage {
       message,
     }).returning();
     return result[0];
+  }
+
+  async cleanupOldAlerts(): Promise<number> {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const result = await getDb().delete(alertLogs)
+      .where(lt(alertLogs.timestamp, sevenDaysAgo))
+      .returning();
+    
+    return result.length;
   }
 
   // Process overdue check-ins
