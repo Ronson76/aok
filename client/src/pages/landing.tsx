@@ -53,7 +53,7 @@ export default function Landing() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Simple Check-Ins</h3>
                 <p className="text-muted-foreground">
-                  One tap to confirm you're safe. Set your schedule to daily or every two days.
+                  One tap to confirm you're safe. Set your schedule from hourly, daily or every two days.
                 </p>
               </CardContent>
             </Card>
