@@ -6,7 +6,7 @@ import {
   OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData
 } from "@shared/schema";
 import { ensureDb } from "./db";
-import { eq, desc, and, isNull, lt, count, sql } from "drizzle-orm";
+import { eq, desc, and, isNull, lt, gte, count, sql } from "drizzle-orm";
 import { randomUUID, randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
 import { sendMissedCheckInAlert, sendVoiceAlerts } from "./notifications";
@@ -70,6 +70,7 @@ export interface IStorage {
 
   // Alerts
   getAlertLogs(userId: string): Promise<AlertLog[]>;
+  getAlertLogsForUser(userId: string): Promise<AlertLog[]>;
   createAlertLog(userId: string, contactsNotified: string[], message: string): Promise<AlertLog>;
   cleanupOldAlerts(): Promise<number>;
 
@@ -401,14 +402,28 @@ class DatabaseStorage implements IStorage {
   }
 
   async cleanupOldAlerts(): Promise<number> {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    // Delete alerts older than 30 days (admin retention period)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
     const result = await getDb().delete(alertLogs)
-      .where(lt(alertLogs.timestamp, sevenDaysAgo))
+      .where(lt(alertLogs.timestamp, thirtyDaysAgo))
       .returning();
     
     return result.length;
+  }
+
+  async getAlertLogsForUser(userId: string): Promise<AlertLog[]> {
+    // Returns alerts from last 7 days for regular users
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    return await getDb().select().from(alertLogs)
+      .where(and(
+        eq(alertLogs.userId, userId),
+        gte(alertLogs.timestamp, sevenDaysAgo)
+      ))
+      .orderBy(desc(alertLogs.timestamp));
   }
 
   // Process overdue check-ins
