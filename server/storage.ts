@@ -367,6 +367,16 @@ class DatabaseStorage implements IStorage {
     if (updates.intervalHours !== undefined) dbUpdates.intervalHours = String(updates.intervalHours);
     if (updates.alertsEnabled !== undefined) dbUpdates.alertsEnabled = updates.alertsEnabled;
     
+    // If interval is changing, recalculate nextCheckInDue based on lastCheckIn
+    if (updates.intervalHours !== undefined) {
+      const currentSettings = await this.getSettings(userId);
+      if (currentSettings.lastCheckIn) {
+        const lastCheckIn = new Date(currentSettings.lastCheckIn);
+        const nextDue = new Date(lastCheckIn.getTime() + updates.intervalHours * 60 * 60 * 1000);
+        dbUpdates.nextCheckInDue = nextDue;
+      }
+    }
+    
     await getDb().update(settings)
       .set(dbUpdates)
       .where(eq(settings.userId, userId));
@@ -995,6 +1005,12 @@ class OrganizationStorage implements IOrganizationStorage {
       else break;
     }
     
+    // Get contact count for this client
+    const clientContacts = await getDb()
+      .select()
+      .from(contacts)
+      .where(eq(contacts.userId, clientId));
+    
     // Determine status
     const now = new Date();
     const nextDue = clientSettings?.nextCheckInDue ? new Date(clientSettings.nextCheckInDue) : null;
@@ -1019,6 +1035,7 @@ class OrganizationStorage implements IOrganizationStorage {
       nextCheckInDue: nextDue?.toISOString() || null,
       streak,
       hoursUntilDue,
+      contactCount: clientContacts.length,
     };
   }
 
