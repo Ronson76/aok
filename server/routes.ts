@@ -294,12 +294,19 @@ export async function registerRoutes(
         const now = new Date();
         const dueDate = new Date(settings.nextCheckInDue);
         const diffMs = dueDate.getTime() - now.getTime();
-        hoursUntilDue = Math.round(diffMs / (1000 * 60 * 60));
+        const diffHours = diffMs / (1000 * 60 * 60);
+        hoursUntilDue = Math.round(diffHours);
         
         if (diffMs < 0) {
           status = "overdue";
-        } else if (hoursUntilDue <= 6) {
-          status = "pending";
+        } else {
+          // Calculate pending threshold: 50% of interval, but minimum 1 minute for short intervals
+          const intervalHours = settings.intervalHours || 24;
+          const pendingThresholdHours = Math.max(intervalHours * 0.5, 1 / 60); // 50% of interval, min 1 minute
+          
+          if (diffHours <= pendingThresholdHours) {
+            status = "pending";
+          }
         }
       } else if (!settings.lastCheckIn) {
         status = "pending";
