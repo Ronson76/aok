@@ -1,4 +1,4 @@
-const CACHE_NAME = 'checkmate-v1';
+const CACHE_NAME = 'aok-v1';
 const urlsToCache = [
   '/',
   '/icon-512.png'
