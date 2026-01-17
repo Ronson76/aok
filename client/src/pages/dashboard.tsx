@@ -65,6 +65,33 @@ if (typeof window !== 'undefined') {
   });
 }
 
+// Track which overdue period we've already alarmed for (persisted across page reloads)
+const ALARM_STORAGE_KEY = 'aok_last_alarm_due_time';
+
+function getLastAlarmedDueTime(): string | null {
+  try {
+    return localStorage.getItem(ALARM_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function setLastAlarmedDueTime(dueTime: string) {
+  try {
+    localStorage.setItem(ALARM_STORAGE_KEY, dueTime);
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+function clearLastAlarmedDueTime() {
+  try {
+    localStorage.removeItem(ALARM_STORAGE_KEY);
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 // Play alarm beep using the shared (unlocked) AudioContext
 function playAlarmBeep() {
   try {
@@ -211,9 +238,14 @@ export default function Dashboard() {
           // Refresh status from server to get official overdue state
           queryClient.invalidateQueries({ queryKey: ["/api/status"] });
           
-          // Play initial alarm when first becoming overdue
-          if (!hasPlayedInitialAlarm.current) {
+          // Play initial alarm when first becoming overdue (check localStorage too)
+          const lastAlarmedDueTime = getLastAlarmedDueTime();
+          const currentDueTime = status.nextCheckInDue;
+          const alreadyAlarmedForThisPeriod = currentDueTime && lastAlarmedDueTime === currentDueTime;
+          
+          if (!hasPlayedInitialAlarm.current && !alreadyAlarmedForThisPeriod && currentDueTime) {
             hasPlayedInitialAlarm.current = true;
+            setLastAlarmedDueTime(currentDueTime);
             playAlarmBeep();
           }
         }
@@ -233,6 +265,7 @@ export default function Dashboard() {
   const effectivelyOverdue = status?.status === "overdue" || isLocallyOverdue;
 
   // Alarm that repeats every 2 minutes while overdue
+  // Uses localStorage to prevent replaying initial alarm on page reload for the same overdue period
   useEffect(() => {
     // Always clear existing interval first to prevent duplicates
     if (alarmIntervalRef.current) {
@@ -240,14 +273,24 @@ export default function Dashboard() {
       alarmIntervalRef.current = null;
     }
     
-    if (effectivelyOverdue) {
-      // Play alarm immediately if we just became overdue
-      if (!hasPlayedInitialAlarm.current) {
+    const currentDueTime = status?.nextCheckInDue;
+    
+    if (effectivelyOverdue && currentDueTime) {
+      // Check if we've already alarmed for this specific overdue period (persisted across page reloads)
+      const lastAlarmedDueTime = getLastAlarmedDueTime();
+      const alreadyAlarmedForThisPeriod = lastAlarmedDueTime === currentDueTime;
+      
+      // Play alarm immediately only if we haven't already for this overdue period
+      if (!hasPlayedInitialAlarm.current && !alreadyAlarmedForThisPeriod) {
         hasPlayedInitialAlarm.current = true;
+        setLastAlarmedDueTime(currentDueTime);
         playAlarmBeep();
+      } else if (alreadyAlarmedForThisPeriod) {
+        // If we already alarmed for this period (from localStorage), sync the ref
+        hasPlayedInitialAlarm.current = true;
       }
       
-      // Set up repeating alarm every 2 minutes
+      // Set up repeating alarm every 2 minutes (this continues regardless)
       alarmIntervalRef.current = setInterval(() => {
         playAlarmBeep();
       }, 2 * 60 * 1000); // 2 minutes
@@ -262,6 +305,9 @@ export default function Dashboard() {
       }
       hasPlayedInitialAlarm.current = false;
       
+      // Clear the persisted alarm state when no longer overdue (new check-in period started)
+      clearLastAlarmedDueTime();
+      
       // Clear app badge
       updateAppBadge(0);
     }
@@ -272,7 +318,7 @@ export default function Dashboard() {
         alarmIntervalRef.current = null;
       }
     };
-  }, [effectivelyOverdue]);
+  }, [effectivelyOverdue, status?.nextCheckInDue]);
 
   const checkInMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/checkins"),
