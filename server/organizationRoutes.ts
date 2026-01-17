@@ -2,6 +2,7 @@ import { Express, Request, Response } from "express";
 import { organizationStorage, storage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
+import { updateOrganizationClientProfileSchema, orgClientStatuses } from "@shared/schema";
 
 // Middleware to ensure user is an organization
 function requireOrganization(req: Request, res: Response, next: () => void) {
@@ -195,6 +196,101 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("[ORG] Failed to reset client password:", error);
       res.status(500).json({ error: "Failed to reset client password" });
+    }
+  });
+
+  // Get client profile by organization client ID
+  app.get("/api/org/clients/:orgClientId/profile", requireOrganization, async (req, res) => {
+    try {
+      const { orgClientId } = req.params;
+      
+      // Get the org client to verify ownership
+      const orgClient = await organizationStorage.getClientById(orgClientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      const profile = await organizationStorage.getClientProfile(orgClientId);
+      res.json(profile || null);
+    } catch (error) {
+      console.error("[ORG] Failed to get client profile:", error);
+      res.status(500).json({ error: "Failed to get client profile" });
+    }
+  });
+
+  // Update client profile
+  app.put("/api/org/clients/:orgClientId/profile", requireOrganization, async (req, res) => {
+    try {
+      const { orgClientId } = req.params;
+      const parsed = updateOrganizationClientProfileSchema.safeParse(req.body);
+      
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+
+      // Get the org client to verify ownership
+      const orgClient = await organizationStorage.getClientById(orgClientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      const profile = await organizationStorage.updateClientProfile(orgClientId, parsed.data);
+      res.json(profile);
+    } catch (error) {
+      console.error("[ORG] Failed to update client profile:", error);
+      res.status(500).json({ error: "Failed to update client profile" });
+    }
+  });
+
+  // Get client alert history
+  app.get("/api/org/clients/:clientId/alerts", requireOrganization, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      
+      // Verify the client belongs to this organization
+      const isClient = await organizationStorage.isClientOfOrganization(req.userId!, clientId);
+      if (!isClient) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      const alerts = await organizationStorage.getClientAlertLogs(clientId);
+      const alertCounts = await organizationStorage.getClientAlertCounts(clientId);
+      
+      res.json({
+        alerts,
+        counts: alertCounts,
+      });
+    } catch (error) {
+      console.error("[ORG] Failed to get client alerts:", error);
+      res.status(500).json({ error: "Failed to get client alerts" });
+    }
+  });
+
+  // Update client status (active/paused/terminated)
+  const updateStatusSchema = z.object({
+    status: z.enum(orgClientStatuses),
+  });
+
+  app.patch("/api/org/clients/:orgClientId/status", requireOrganization, async (req, res) => {
+    try {
+      const { orgClientId } = req.params;
+      const parsed = updateStatusSchema.safeParse(req.body);
+      
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid status" });
+      }
+
+      // Get the org client to verify ownership
+      const orgClient = await organizationStorage.getClientById(orgClientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      const updated = await organizationStorage.updateClientStatus(orgClientId, parsed.data.status);
+      res.json(updated);
+    } catch (error) {
+      console.error("[ORG] Failed to update client status:", error);
+      res.status(500).json({ error: "Failed to update client status" });
     }
   });
 }
