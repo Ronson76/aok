@@ -15,6 +15,29 @@ function generateReferenceCode(): string {
   return code;
 }
 
+// Parse a time string (HH:MM) into a Date object for today
+function parseScheduleTime(timeStr: string): Date | null {
+  if (!timeStr) return null;
+  
+  // Handle HH:MM format
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+  if (match) {
+    const hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const now = new Date();
+    now.setHours(hours, minutes, 0, 0);
+    return now;
+  }
+  
+  // Try parsing as full date/time
+  const date = new Date(timeStr);
+  if (!isNaN(date.getTime())) {
+    return date;
+  }
+  
+  return null;
+}
+
 // Middleware to ensure user is an organization
 function requireOrganization(req: Request, res: Response, next: () => void) {
   if (!req.user || (req.user as any).accountType !== "organization") {
@@ -127,7 +150,7 @@ export function registerOrganizationRoutes(app: Express) {
         clientName,
         clientPhone,
         referenceCode,
-        scheduleStartTime: scheduleStartTime ? new Date(scheduleStartTime) : null,
+        scheduleStartTime: scheduleStartTime ? parseScheduleTime(scheduleStartTime) : null,
         checkInIntervalHours: checkInIntervalHours || 24,
       });
 
