@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, KeyRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { OrganizationDashboardStats, OrganizationClientWithDetails, OrganizationBundle } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
@@ -43,6 +43,13 @@ export default function OrganizationDashboard() {
   const [nickname, setNickname] = useState("");
   const [selectedBundleId, setSelectedBundleId] = useState<string>("");
   const [selectedClient, setSelectedClient] = useState<OrganizationClientWithDetails | null>(null);
+  
+  const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
+  const [resetPasswordClientId, setResetPasswordClientId] = useState<string | null>(null);
+  const [resetPasswordClientName, setResetPasswordClientName] = useState<string>("");
+  const [newClientPassword, setNewClientPassword] = useState("");
+  const [confirmClientPassword, setConfirmClientPassword] = useState("");
+  const [orgPassword, setOrgPassword] = useState("");
 
   const { data: stats, isLoading: statsLoading } = useQuery<OrganizationDashboardStats>({
     queryKey: ["/api/org/dashboard"],
@@ -102,6 +109,75 @@ export default function OrganizationDashboard() {
       });
     },
   });
+
+  const resetClientPasswordMutation = useMutation({
+    mutationFn: async ({ clientId, newPassword, orgPassword }: { clientId: string; newPassword: string; orgPassword: string }) => {
+      const response = await apiRequest("POST", `/api/org/clients/${clientId}/reset-password`, {
+        newPassword,
+        orgPassword,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      setShowResetPasswordDialog(false);
+      setResetPasswordClientId(null);
+      setResetPasswordClientName("");
+      setNewClientPassword("");
+      setConfirmClientPassword("");
+      setOrgPassword("");
+      toast({
+        title: "Password reset",
+        description: "The client's password has been successfully reset.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to reset password",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleResetPasswordClick = (client: OrganizationClientWithDetails) => {
+    setResetPasswordClientId(client.clientId);
+    setResetPasswordClientName(client.nickname || client.client.name);
+    setShowResetPasswordDialog(true);
+  };
+
+  const handleResetPasswordSubmit = () => {
+    if (!newClientPassword || newClientPassword.length < 8) {
+      toast({
+        title: "Invalid password",
+        description: "Password must be at least 8 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (newClientPassword !== confirmClientPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure both passwords match.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!orgPassword) {
+      toast({
+        title: "Organization password required",
+        description: "Please enter your organization password to confirm.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (resetPasswordClientId) {
+      resetClientPasswordMutation.mutate({
+        clientId: resetPasswordClientId,
+        newPassword: newClientPassword,
+        orgPassword,
+      });
+    }
+  };
 
   if (statsLoading || clientsLoading) {
     return (
@@ -312,8 +388,18 @@ export default function OrganizationDashboard() {
                       size="icon"
                       onClick={() => setSelectedClient(client)}
                       data-testid={`button-view-client-${client.clientId}`}
+                      title="View details"
                     >
                       <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleResetPasswordClick(client)}
+                      data-testid={`button-reset-password-${client.clientId}`}
+                      title="Reset password"
+                    >
+                      <KeyRound className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -321,6 +407,7 @@ export default function OrganizationDashboard() {
                       onClick={() => removeClientMutation.mutate(client.clientId)}
                       disabled={removeClientMutation.isPending}
                       data-testid={`button-remove-client-${client.clientId}`}
+                      title="Remove client"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -395,6 +482,96 @@ export default function OrganizationDashboard() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showResetPasswordDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowResetPasswordDialog(false);
+          setResetPasswordClientId(null);
+          setResetPasswordClientName("");
+          setNewClientPassword("");
+          setConfirmClientPassword("");
+          setOrgPassword("");
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Reset Client Password
+            </DialogTitle>
+            <DialogDescription>
+              Set a new password for {resetPasswordClientName}. The client will be signed out of all devices.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                placeholder="Enter new password (min 8 characters)"
+                value={newClientPassword}
+                onChange={(e) => setNewClientPassword(e.target.value)}
+                data-testid="input-new-client-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                placeholder="Confirm new password"
+                value={confirmClientPassword}
+                onChange={(e) => setConfirmClientPassword(e.target.value)}
+                data-testid="input-confirm-client-password"
+              />
+            </div>
+            <div className="space-y-2 pt-4 border-t">
+              <Label htmlFor="org-password">Your Organization Password</Label>
+              <Input
+                id="org-password"
+                type="password"
+                placeholder="Enter your password to confirm"
+                value={orgPassword}
+                onChange={(e) => setOrgPassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleResetPasswordSubmit();
+                }}
+                data-testid="input-org-password"
+              />
+              <p className="text-xs text-muted-foreground">
+                Your password is required to authorize this change.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowResetPasswordDialog(false);
+                setResetPasswordClientId(null);
+                setResetPasswordClientName("");
+                setNewClientPassword("");
+                setConfirmClientPassword("");
+                setOrgPassword("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleResetPasswordSubmit}
+              disabled={resetClientPasswordMutation.isPending}
+              data-testid="button-confirm-reset-password"
+            >
+              {resetClientPasswordMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Resetting...</>
+              ) : (
+                "Reset Password"
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
