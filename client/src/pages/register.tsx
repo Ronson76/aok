@@ -251,20 +251,21 @@ export default function Register() {
 
                   <FormField
                     control={form.control}
-                    name="referenceId"
+                    name="mobileNumber"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Reference ID</FormLabel>
+                        <FormLabel>Contact Phone Number</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="Client/Patient ID" 
+                            type="tel" 
+                            placeholder="+44 20 1234 5678" 
                             {...field} 
                             value={field.value || ""}
-                            data-testid="input-reference-id" 
+                            data-testid="input-phone" 
                           />
                         </FormControl>
                         <FormDescription>
-                          A unique identifier for the vulnerable person you're monitoring
+                          Main contact number for your organisation
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -272,7 +273,7 @@ export default function Register() {
                   />
 
                   <div className="space-y-4 border-t pt-4">
-                    <h3 className="font-medium text-sm text-muted-foreground">Location (Optional)</h3>
+                    <h3 className="font-medium text-sm text-muted-foreground">Organisation Address (Optional)</h3>
                     
                     <FormField
                       control={form.control}
