@@ -452,6 +452,35 @@ export async function registerRoutes(
     }
   });
 
+  // Update a contact
+  app.patch("/api/contacts/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, email, phone, phoneType, relationship } = req.body;
+
+      // At minimum, name and email are required
+      if (!name || !email) {
+        return res.status(400).json({ error: "Name and email are required" });
+      }
+
+      const updated = await storage.updateContact(req.userId!, id, {
+        name,
+        email,
+        phone: phone || null,
+        phoneType: phone ? (phoneType || "mobile") : null,
+        relationship,
+      });
+
+      if (!updated) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update contact" });
+    }
+  });
+
   app.delete("/api/contacts/:id", async (req, res) => {
     try {
       const { id } = req.params;
