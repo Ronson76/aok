@@ -578,3 +578,50 @@ aok - Personal Safety Check-In`;
 
   return result;
 }
+
+// Send push notification to user's subscribed devices
+export async function sendPushNotification(
+  subscriptions: Array<{ endpoint: string; p256dh: string; auth: string }>,
+  payload: { title: string; body: string; tag?: string; url?: string; requireInteraction?: boolean }
+): Promise<{ sent: number; failed: number }> {
+  const webpush = await import('web-push');
+  
+  const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
+  const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+  
+  if (!vapidPublicKey || !vapidPrivateKey) {
+    console.error('[PUSH] VAPID keys not configured');
+    return { sent: 0, failed: subscriptions.length };
+  }
+  
+  webpush.setVapidDetails(
+    'mailto:support@aok.app',
+    vapidPublicKey,
+    vapidPrivateKey
+  );
+  
+  let sent = 0;
+  let failed = 0;
+  
+  for (const sub of subscriptions) {
+    try {
+      await webpush.sendNotification(
+        {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: sub.p256dh,
+            auth: sub.auth,
+          },
+        },
+        JSON.stringify(payload)
+      );
+      sent++;
+      console.log(`[PUSH] Notification sent to ${sub.endpoint.substring(0, 50)}...`);
+    } catch (error: any) {
+      failed++;
+      console.error(`[PUSH] Failed to send notification:`, error.message);
+    }
+  }
+  
+  return { sent, failed };
+}

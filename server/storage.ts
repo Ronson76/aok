@@ -11,7 +11,7 @@ import { ensureDb } from "./db";
 import { eq, desc, and, isNull, lt, gte, count, sql } from "drizzle-orm";
 import { randomUUID, randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
-import { sendMissedCheckInAlert, sendVoiceAlerts } from "./notifications";
+import { sendMissedCheckInAlert, sendVoiceAlerts, sendPushNotification } from "./notifications";
 
 // Get database instance at runtime (not at import time)
 function getDb() {
@@ -545,15 +545,33 @@ class DatabaseStorage implements IStorage {
         // Send voice calls to landline contacts
         const { callsMade, callsFailed } = await sendVoiceAlerts(contactsToAlert, user, 'missed_checkin');
         
-        alertSent = emailsSent > 0 || callsMade > 0;
+        // Send push notifications to user's devices
+        const userSubscriptions = await this.getPushSubscriptions(userId);
+        let pushSent = 0;
+        let pushFailed = 0;
+        if (userSubscriptions.length > 0) {
+          const pushResult = await sendPushNotification(userSubscriptions, {
+            title: "Check-in Overdue!",
+            body: "Your check-in is overdue. Your contacts have been notified.",
+            tag: "overdue-alert",
+            url: "/",
+            requireInteraction: true,
+          });
+          pushSent = pushResult.sent;
+          pushFailed = pushResult.failed;
+        }
+        
+        alertSent = emailsSent > 0 || callsMade > 0 || pushSent > 0;
         
         const notificationParts = [];
         if (emailsSent > 0) notificationParts.push(`${emailsSent} email(s)`);
         if (callsMade > 0) notificationParts.push(`${callsMade} voice call(s)`);
+        if (pushSent > 0) notificationParts.push(`${pushSent} push notification(s)`);
         
         const failedParts = [];
         if (emailsFailed > 0) failedParts.push(`${emailsFailed} email(s)`);
         if (callsFailed > 0) failedParts.push(`${callsFailed} call(s)`);
+        if (pushFailed > 0) failedParts.push(`${pushFailed} push(es)`);
         
         const message = `${alertType} missed check-in alert sent! ${notificationParts.join(', ') || 'no notifications'} delivered${failedParts.length > 0 ? `, ${failedParts.join(', ')} failed` : ''}.`;
         await this.createAlertLog(userId, contactNames, message);
