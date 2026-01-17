@@ -204,8 +204,8 @@ export function registerAdminRoutes(app: Express) {
         return res.status(400).json({ error: "userId, name, and seatLimit are required" });
       }
 
-      if (seatLimit < 1) {
-        return res.status(400).json({ error: "seatLimit must be at least 1" });
+      if (seatLimit < 1 || seatLimit > 1000) {
+        return res.status(400).json({ error: "seatLimit must be between 1 and 1000" });
       }
 
       const bundle = await adminStorage.createBundle(
