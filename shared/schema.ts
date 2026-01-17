@@ -108,6 +108,10 @@ export const contacts = pgTable("contacts", {
 
 export const insertContactSchema = createInsertSchema(contacts).omit({ id: true, userId: true, isPrimary: true }).extend({
   phoneType: z.enum(phoneTypes).optional(),
+  phone: z.string().optional().refine(
+    (val) => !val || /^\+\d{7,15}$/.test(val.replace(/[\s\-\(\)]/g, "")),
+    { message: "Phone must be in international format with country code (e.g., +447123456789)" }
+  ),
 });
 export type InsertContact = z.infer<typeof insertContactSchema>;
 export type Contact = typeof contacts.$inferSelect;
@@ -116,7 +120,10 @@ export type Contact = typeof contacts.$inferSelect;
 export const updateContactSchema = z.object({
   name: z.string().min(1).optional(),
   email: z.string().email().optional(),
-  phone: z.string().optional(),
+  phone: z.string().optional().refine(
+    (val) => !val || /^\+\d{7,15}$/.test(val.replace(/[\s\-\(\)]/g, "")),
+    { message: "Phone must be in international format with country code (e.g., +447123456789)" }
+  ),
   phoneType: z.enum(phoneTypes).optional(),
   relationship: z.string().optional(),
 });

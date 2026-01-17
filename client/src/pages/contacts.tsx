@@ -68,6 +68,30 @@ function getAvatarColor(name: string) {
   return colors[index];
 }
 
+const countryCodes = [
+  { code: "+44", country: "UK", flag: "🇬🇧" },
+  { code: "+1", country: "US/CA", flag: "🇺🇸" },
+  { code: "+353", country: "Ireland", flag: "🇮🇪" },
+  { code: "+61", country: "Australia", flag: "🇦🇺" },
+  { code: "+64", country: "New Zealand", flag: "🇳🇿" },
+  { code: "+91", country: "India", flag: "🇮🇳" },
+  { code: "+49", country: "Germany", flag: "🇩🇪" },
+  { code: "+33", country: "France", flag: "🇫🇷" },
+  { code: "+34", country: "Spain", flag: "🇪🇸" },
+  { code: "+39", country: "Italy", flag: "🇮🇹" },
+  { code: "+31", country: "Netherlands", flag: "🇳🇱" },
+  { code: "+27", country: "South Africa", flag: "🇿🇦" },
+  { code: "+971", country: "UAE", flag: "🇦🇪" },
+  { code: "+65", country: "Singapore", flag: "🇸🇬" },
+  { code: "+81", country: "Japan", flag: "🇯🇵" },
+];
+
+function isValidInternationalPhone(phone: string): boolean {
+  if (!phone || phone.trim() === "") return true;
+  const cleaned = phone.replace(/[\s\-\(\)]/g, "");
+  return /^\+\d{7,15}$/.test(cleaned);
+}
+
 export default function Contacts() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -78,6 +102,8 @@ export default function Contacts() {
   const [showDeletePasswordDialog, setShowDeletePasswordDialog] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [selectedCountryCode, setSelectedCountryCode] = useState("+44");
+  const [editSelectedCountryCode, setEditSelectedCountryCode] = useState("+44");
   
   const isOrganization = user?.accountType === "organization";
 
@@ -221,6 +247,19 @@ export default function Contacts() {
 
   const handleEditContact = (contact: Contact) => {
     setEditingContact(contact);
+    
+    // Extract country code from existing phone number
+    if (contact.phone) {
+      const matchedCode = countryCodes.find(c => contact.phone?.startsWith(c.code));
+      if (matchedCode) {
+        setEditSelectedCountryCode(matchedCode.code);
+      } else {
+        setEditSelectedCountryCode("+44");
+      }
+    } else {
+      setEditSelectedCountryCode("+44");
+    }
+    
     editForm.reset({
       name: contact.name,
       email: contact.email,
@@ -296,9 +335,49 @@ export default function Contacts() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Phone (optional)</FormLabel>
-                      <FormControl>
-                        <Input type="tel" placeholder="+1 234 567 8900" {...field} value={field.value || ""} data-testid="input-contact-phone" />
-                      </FormControl>
+                      <div className="flex gap-2">
+                        <Select value={selectedCountryCode} onValueChange={(code) => {
+                          const oldCode = selectedCountryCode;
+                          setSelectedCountryCode(code);
+                          if (field.value) {
+                            const localNumber = field.value.replace(oldCode, "").replace(/^0+/, "");
+                            field.onChange(localNumber ? code + localNumber : "");
+                          }
+                        }}>
+                          <SelectTrigger className="w-[100px]" data-testid="select-country-code">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {countryCodes.map((c) => (
+                              <SelectItem key={c.code} value={c.code}>
+                                <span className="flex items-center gap-1">
+                                  <span>{c.flag}</span>
+                                  <span>{c.code}</span>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormControl>
+                          <Input 
+                            type="tel" 
+                            placeholder="7123456789" 
+                            {...field} 
+                            value={field.value?.replace(selectedCountryCode, "") || ""} 
+                            onChange={(e) => {
+                              const localNumber = e.target.value.replace(/^0+/, "");
+                              field.onChange(localNumber ? selectedCountryCode + localNumber : "");
+                            }}
+                            data-testid="input-contact-phone" 
+                          />
+                        </FormControl>
+                      </div>
+                      <FormDescription className="text-xs">
+                        Include country code for international calls (e.g., +44 for UK)
+                      </FormDescription>
+                      {field.value && !isValidInternationalPhone(field.value) && (
+                        <p className="text-xs text-destructive">Please enter a valid phone number with country code</p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -637,9 +716,49 @@ export default function Contacts() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Phone (optional)</FormLabel>
-                    <FormControl>
-                      <Input type="tel" placeholder="+1 234 567 8900" {...field} value={field.value || ""} data-testid="input-edit-contact-phone" />
-                    </FormControl>
+                    <div className="flex gap-2">
+                      <Select value={editSelectedCountryCode} onValueChange={(code) => {
+                        const oldCode = editSelectedCountryCode;
+                        setEditSelectedCountryCode(code);
+                        if (field.value) {
+                          const localNumber = field.value.replace(oldCode, "").replace(/^0+/, "");
+                          field.onChange(localNumber ? code + localNumber : "");
+                        }
+                      }}>
+                        <SelectTrigger className="w-[100px]" data-testid="select-edit-country-code">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {countryCodes.map((c) => (
+                            <SelectItem key={c.code} value={c.code}>
+                              <span className="flex items-center gap-1">
+                                <span>{c.flag}</span>
+                                <span>{c.code}</span>
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormControl>
+                        <Input 
+                          type="tel" 
+                          placeholder="7123456789" 
+                          {...field} 
+                          value={field.value?.replace(editSelectedCountryCode, "") || ""} 
+                          onChange={(e) => {
+                            const localNumber = e.target.value.replace(/^0+/, "");
+                            field.onChange(localNumber ? editSelectedCountryCode + localNumber : "");
+                          }}
+                          data-testid="input-edit-contact-phone" 
+                        />
+                      </FormControl>
+                    </div>
+                    <FormDescription className="text-xs">
+                      Include country code for international calls (e.g., +44 for UK)
+                    </FormDescription>
+                    {field.value && !isValidInternationalPhone(field.value) && (
+                      <p className="text-xs text-destructive">Please enter a valid phone number with country code</p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
