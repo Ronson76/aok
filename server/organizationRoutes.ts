@@ -433,4 +433,144 @@ export function registerOrganizationRoutes(app: Express) {
       res.status(500).json({ error: "Failed to update client status" });
     }
   });
+
+  // Get contacts for a client
+  app.get("/api/org/clients/:orgClientId/contacts", requireOrganization, async (req, res) => {
+    try {
+      const { orgClientId } = req.params;
+      
+      const orgClient = await organizationStorage.getClientById(orgClientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      // If client is registered (has a user account), get their actual contacts
+      if (orgClient.clientId) {
+        const contacts = await storage.getContacts(orgClient.clientId);
+        res.json(contacts);
+      } else {
+        // Otherwise get pending contacts
+        const pendingContacts = await organizationStorage.getPendingClientContacts(orgClientId);
+        res.json(pendingContacts);
+      }
+    } catch (error) {
+      console.error("[ORG] Failed to get client contacts:", error);
+      res.status(500).json({ error: "Failed to get client contacts" });
+    }
+  });
+
+  // Add a contact for a client
+  const addContactSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    email: z.string().email("Invalid email address"),
+    phone: z.string().optional(),
+    phoneType: z.enum(["mobile", "landline"]).optional(),
+    relationship: z.string().optional(),
+    isPrimary: z.boolean().optional(),
+  });
+
+  app.post("/api/org/clients/:orgClientId/contacts", requireOrganization, async (req, res) => {
+    try {
+      const { orgClientId } = req.params;
+      const parsed = addContactSchema.safeParse(req.body);
+      
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
+      }
+
+      const orgClient = await organizationStorage.getClientById(orgClientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      const { name, email, phone, phoneType, relationship, isPrimary } = parsed.data;
+
+      // If client is registered (has a user account), add to their contacts
+      if (orgClient.clientId) {
+        const contact = await storage.createContact(orgClient.clientId, {
+          name,
+          email,
+          phone: phone || undefined,
+          phoneType: phoneType || undefined,
+          relationship: relationship || "",
+        });
+        // Set as primary if requested
+        if (isPrimary && contact) {
+          await storage.setPrimaryContact(orgClient.clientId, contact.id);
+        }
+        res.status(201).json(contact);
+      } else {
+        // Otherwise add to pending contacts
+        await organizationStorage.addPendingClientContact(orgClientId, {
+          name,
+          email,
+          phone,
+          phoneType,
+          relationship,
+          isPrimary,
+        });
+        res.status(201).json({ success: true });
+      }
+    } catch (error) {
+      console.error("[ORG] Failed to add client contact:", error);
+      res.status(500).json({ error: "Failed to add client contact" });
+    }
+  });
+
+  // Update a contact for a client
+  app.patch("/api/org/clients/:orgClientId/contacts/:contactId", requireOrganization, async (req, res) => {
+    try {
+      const { orgClientId, contactId } = req.params;
+      const parsed = addContactSchema.partial().safeParse(req.body);
+      
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
+      }
+
+      const orgClient = await organizationStorage.getClientById(orgClientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      // Only update contacts for registered clients
+      if (!orgClient.clientId) {
+        return res.status(400).json({ error: "Cannot update contacts for pending clients" });
+      }
+
+      const contact = await storage.updateContact(orgClient.clientId, contactId, parsed.data);
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      res.json(contact);
+    } catch (error) {
+      console.error("[ORG] Failed to update client contact:", error);
+      res.status(500).json({ error: "Failed to update client contact" });
+    }
+  });
+
+  // Delete a contact for a client
+  app.delete("/api/org/clients/:orgClientId/contacts/:contactId", requireOrganization, async (req, res) => {
+    try {
+      const { orgClientId, contactId } = req.params;
+
+      const orgClient = await organizationStorage.getClientById(orgClientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      // Only delete contacts for registered clients
+      if (!orgClient.clientId) {
+        return res.status(400).json({ error: "Cannot delete contacts for pending clients" });
+      }
+
+      const success = await storage.deleteContact(orgClient.clientId, contactId);
+      if (!success) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[ORG] Failed to delete client contact:", error);
+      res.status(500).json({ error: "Failed to delete client contact" });
+    }
+  });
 }

@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { OrganizationDashboardStats, OrganizationClientWithDetails, OrganizationBundle, OrganizationClientProfile, AlertLog, OrgClientStatus } from "@shared/schema";
+import type { OrganizationDashboardStats, OrganizationClientWithDetails, OrganizationBundle, OrganizationClientProfile, AlertLog, OrgClientStatus, Contact } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
 import { useState } from "react";
 
@@ -88,6 +89,20 @@ export default function OrganizationDashboard() {
   // Alert view state
   const [clientAlerts, setClientAlerts] = useState<{ alerts: AlertLog[]; counts: { total: number; emails: number; calls: number; emergencies: number } } | null>(null);
   const [loadingAlerts, setLoadingAlerts] = useState(false);
+  
+  // Client contacts state
+  const [clientContacts, setClientContacts] = useState<Contact[]>([]);
+  const [loadingContacts, setLoadingContacts] = useState(false);
+  const [showAddContactDialog, setShowAddContactDialog] = useState(false);
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  const [contactFormData, setContactFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    phoneType: "mobile" as "mobile" | "landline",
+    relationship: "",
+    isPrimary: false,
+  });
 
   const { data: stats, isLoading: statsLoading } = useQuery<OrganizationDashboardStats>({
     queryKey: ["/api/org/dashboard"],
@@ -299,13 +314,129 @@ export default function OrganizationDashboard() {
     }
   };
 
+  const fetchClientContacts = async (orgClientId: string) => {
+    setLoadingContacts(true);
+    try {
+      const response = await apiRequest("GET", `/api/org/clients/${orgClientId}/contacts`);
+      const data = await response.json();
+      setClientContacts(data);
+    } catch (error) {
+      console.error("Failed to fetch contacts:", error);
+      setClientContacts([]);
+    } finally {
+      setLoadingContacts(false);
+    }
+  };
+
+  const resetContactForm = () => {
+    setContactFormData({
+      name: "",
+      email: "",
+      phone: "",
+      phoneType: "mobile",
+      relationship: "",
+      isPrimary: false,
+    });
+    setEditingContactId(null);
+  };
+
+  const addContactMutation = useMutation({
+    mutationFn: async (orgClientId: string) => {
+      const response = await apiRequest("POST", `/api/org/clients/${orgClientId}/contacts`, contactFormData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      if (selectedClient) {
+        fetchClientContacts(selectedClient.id);
+      }
+      setShowAddContactDialog(false);
+      resetContactForm();
+      toast({
+        title: "Contact added",
+        description: "Emergency contact has been added.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to add contact",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateContactMutation = useMutation({
+    mutationFn: async ({ orgClientId, contactId }: { orgClientId: string; contactId: string }) => {
+      const response = await apiRequest("PATCH", `/api/org/clients/${orgClientId}/contacts/${contactId}`, contactFormData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      if (selectedClient) {
+        fetchClientContacts(selectedClient.id);
+      }
+      setShowAddContactDialog(false);
+      resetContactForm();
+      toast({
+        title: "Contact updated",
+        description: "Emergency contact has been updated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update contact",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteContactMutation = useMutation({
+    mutationFn: async ({ orgClientId, contactId }: { orgClientId: string; contactId: string }) => {
+      await apiRequest("DELETE", `/api/org/clients/${orgClientId}/contacts/${contactId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      if (selectedClient) {
+        fetchClientContacts(selectedClient.id);
+      }
+      toast({
+        title: "Contact deleted",
+        description: "Emergency contact has been removed.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to delete contact",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditContact = (contact: Contact) => {
+    setContactFormData({
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone || "",
+      phoneType: contact.phoneType || "mobile",
+      relationship: contact.relationship || "",
+      isPrimary: contact.isPrimary || false,
+    });
+    setEditingContactId(contact.id);
+    setShowAddContactDialog(true);
+  };
+
   const handleViewClientDetails = (client: OrganizationClientWithDetails) => {
     setSelectedClient(client);
     setProfileData(client.profile || {});
     setEditingProfile(false);
+    setClientContacts([]);
     if (client.clientId) {
       fetchClientAlerts(client.clientId);
     }
+    fetchClientContacts(client.id);
   };
 
   const handleResetPasswordClick = (client: OrganizationClientWithDetails) => {
@@ -870,9 +1001,12 @@ export default function OrganizationDashboard() {
           </DialogHeader>
           {selectedClient && (
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
                 <TabsTrigger value="profile" data-testid="tab-profile">Profile</TabsTrigger>
+                <TabsTrigger value="contacts" data-testid="tab-contacts">
+                  Contacts {clientContacts.length > 0 ? `(${clientContacts.length})` : ""}
+                </TabsTrigger>
                 <TabsTrigger value="alerts" data-testid="tab-alerts">
                   Alerts {clientAlerts?.counts?.total ? `(${clientAlerts.counts.total})` : ""}
                 </TabsTrigger>
@@ -1121,6 +1255,94 @@ export default function OrganizationDashboard() {
                 )}
               </TabsContent>
               
+              <TabsContent value="contacts" className="space-y-4 mt-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    Emergency Contacts
+                  </h4>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      resetContactForm();
+                      setShowAddContactDialog(true);
+                    }}
+                    data-testid="button-add-contact"
+                  >
+                    <UserPlus className="h-4 w-4 mr-1" />
+                    Add Contact
+                  </Button>
+                </div>
+                
+                {loadingContacts ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : clientContacts.length > 0 ? (
+                  <div className="space-y-3">
+                    {clientContacts.map((contact) => (
+                      <div key={contact.id} className="p-3 rounded-lg bg-muted">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{contact.name}</span>
+                              {contact.isPrimary && (
+                                <Badge variant="default" className="text-xs" data-testid={`badge-primary-${contact.id}`}>Primary</Badge>
+                              )}
+                              {contact.relationship && (
+                                <Badge variant="outline" className="text-xs">{contact.relationship}</Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Mail className="h-3 w-3" />
+                              {contact.email}
+                            </div>
+                            {contact.phone && (
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Phone className="h-3 w-3" />
+                                {contact.phone}
+                                {contact.phoneType && (
+                                  <span className="text-xs">({contact.phoneType})</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleEditContact(contact)}
+                              data-testid={`button-edit-contact-${contact.id}`}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => {
+                                if (confirm(`Remove ${contact.name} from emergency contacts?`)) {
+                                  deleteContactMutation.mutate({ orgClientId: selectedClient.id, contactId: contact.id });
+                                }
+                              }}
+                              data-testid={`button-delete-contact-${contact.id}`}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Phone className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No emergency contacts added yet.</p>
+                    <p className="text-sm">Add contacts who should be notified if the client misses a check-in.</p>
+                  </div>
+                )}
+              </TabsContent>
+              
               <TabsContent value="alerts" className="space-y-4 mt-4">
                 {loadingAlerts ? (
                   <div className="flex items-center justify-center py-8">
@@ -1258,6 +1480,113 @@ export default function OrganizationDashboard() {
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Resetting...</>
               ) : (
                 "Reset Password"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add/Edit Contact Dialog */}
+      <Dialog open={showAddContactDialog} onOpenChange={(open) => { if (!open) { setShowAddContactDialog(false); resetContactForm(); } }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{editingContactId ? "Edit Contact" : "Add Emergency Contact"}</DialogTitle>
+            <DialogDescription>
+              {editingContactId ? "Update the emergency contact details." : "Add a new emergency contact for this client."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="contact-name">Name *</Label>
+              <Input
+                id="contact-name"
+                value={contactFormData.name}
+                onChange={(e) => setContactFormData({ ...contactFormData, name: e.target.value })}
+                placeholder="Contact name"
+                data-testid="input-contact-name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="contact-email">Email *</Label>
+              <Input
+                id="contact-email"
+                type="email"
+                value={contactFormData.email}
+                onChange={(e) => setContactFormData({ ...contactFormData, email: e.target.value })}
+                placeholder="contact@example.com"
+                data-testid="input-contact-email"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="contact-phone">Phone</Label>
+                <Input
+                  id="contact-phone"
+                  type="tel"
+                  value={contactFormData.phone}
+                  onChange={(e) => setContactFormData({ ...contactFormData, phone: e.target.value })}
+                  placeholder="+44..."
+                  data-testid="input-contact-phone"
+                />
+              </div>
+              <div>
+                <Label htmlFor="contact-phone-type">Phone Type</Label>
+                <Select
+                  value={contactFormData.phoneType}
+                  onValueChange={(value: "mobile" | "landline") => setContactFormData({ ...contactFormData, phoneType: value })}
+                >
+                  <SelectTrigger id="contact-phone-type" data-testid="select-contact-phone-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mobile">Mobile</SelectItem>
+                    <SelectItem value="landline">Landline</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="contact-relationship">Relationship</Label>
+              <Input
+                id="contact-relationship"
+                value={contactFormData.relationship}
+                onChange={(e) => setContactFormData({ ...contactFormData, relationship: e.target.value })}
+                placeholder="e.g., Family, Friend, Carer"
+                data-testid="input-contact-relationship"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="contact-primary"
+                checked={contactFormData.isPrimary}
+                onCheckedChange={(checked) => setContactFormData({ ...contactFormData, isPrimary: checked === true })}
+                data-testid="checkbox-contact-primary"
+              />
+              <Label htmlFor="contact-primary" className="font-normal cursor-pointer">
+                Primary contact (notified on every check-in)
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowAddContactDialog(false); resetContactForm(); }} data-testid="button-cancel-contact">
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!selectedClient) return;
+                if (editingContactId) {
+                  updateContactMutation.mutate({ orgClientId: selectedClient.id, contactId: editingContactId });
+                } else {
+                  addContactMutation.mutate(selectedClient.id);
+                }
+              }}
+              disabled={!contactFormData.name || !contactFormData.email || addContactMutation.isPending || updateContactMutation.isPending}
+              data-testid="button-save-contact"
+            >
+              {(addContactMutation.isPending || updateContactMutation.isPending) ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+              ) : (
+                editingContactId ? "Update Contact" : "Add Contact"
               )}
             </Button>
           </DialogFooter>

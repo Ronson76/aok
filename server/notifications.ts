@@ -479,7 +479,7 @@ async function getTwilioCredentials(): Promise<TwilioCredentials | null> {
   const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
   if (accountSid && authToken && phoneNumber) {
-    // Legacy auth token mode - use as API key
+    console.log('[TWILIO] Using environment variable credentials');
     return { accountSid, apiKey: accountSid, apiKeySecret: authToken, phoneNumber };
   }
 
@@ -492,7 +492,10 @@ async function getTwilioCredentials(): Promise<TwilioCredentials | null> {
       ? 'depl ' + process.env.WEB_REPL_RENEWAL 
       : null;
 
+    console.log('[TWILIO] Connector check - hostname:', hostname ? 'present' : 'missing', 'token:', xReplitToken ? 'present' : 'missing');
+
     if (!xReplitToken || !hostname) {
+      console.log('[TWILIO] Missing hostname or token for connector');
       return null;
     }
 
@@ -507,15 +510,24 @@ async function getTwilioCredentials(): Promise<TwilioCredentials | null> {
     );
 
     const data = await response.json();
+    console.log('[TWILIO] Connector response items:', data.items?.length || 0);
     const twilioSettings = data.items?.[0]?.settings;
 
     if (twilioSettings?.account_sid && twilioSettings?.api_key && twilioSettings?.api_key_secret && twilioSettings?.phone_number) {
+      console.log('[TWILIO] Successfully got credentials from connector');
       return {
         accountSid: twilioSettings.account_sid,
         apiKey: twilioSettings.api_key,
         apiKeySecret: twilioSettings.api_key_secret,
         phoneNumber: twilioSettings.phone_number
       };
+    } else {
+      console.log('[TWILIO] Connector settings incomplete:', 
+        'account_sid:', !!twilioSettings?.account_sid,
+        'api_key:', !!twilioSettings?.api_key,
+        'api_key_secret:', !!twilioSettings?.api_key_secret,
+        'phone_number:', !!twilioSettings?.phone_number
+      );
     }
   } catch (error) {
     console.log('[TWILIO] Failed to get credentials from connector:', error);
