@@ -237,122 +237,25 @@ export default function Register() {
                 <>
                   <FormField
                     control={form.control}
-                    name="name"
+                    name="referenceId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Organisation Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Care Home Ltd" {...field} data-testid="input-name" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="mobileNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact Phone Number</FormLabel>
+                        <FormLabel>Reference Number</FormLabel>
                         <FormControl>
                           <Input 
-                            type="tel" 
-                            placeholder="+44 20 1234 5678" 
+                            placeholder="Enter your reference number" 
                             {...field} 
                             value={field.value || ""}
-                            data-testid="input-phone" 
+                            data-testid="input-reference-number" 
                           />
                         </FormControl>
                         <FormDescription>
-                          Main contact number for your organisation
+                          Your unique reference number provided by your organisation
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  <div className="space-y-4 border-t pt-4">
-                    <h3 className="font-medium text-sm text-muted-foreground">Organisation Address (Optional)</h3>
-                    
-                    <FormField
-                      control={form.control}
-                      name="addressLine1"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Address Line 1</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="123 Main Street" 
-                              {...field} 
-                              value={field.value || ""}
-                              data-testid="input-address1" 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>City</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="London" 
-                                {...field} 
-                                value={field.value || ""}
-                                data-testid="input-city" 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="postalCode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Postal Code</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="SW1A 1AA" 
-                                {...field} 
-                                value={field.value || ""}
-                                data-testid="input-postcode" 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="country"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Country</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="United Kingdom" 
-                              {...field} 
-                              value={field.value || ""}
-                              data-testid="input-country" 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
                 </>
               ) : (
                 <>
