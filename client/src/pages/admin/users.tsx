@@ -17,17 +17,34 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
-  Users, LogOut, Shield, Trash2, ArrowLeft, Building2, User, Ban, CheckCircle
+  Users, LogOut, Shield, Trash2, ArrowLeft, Building2, User, Ban, CheckCircle, Plus, Loader2, Eye, EyeOff
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { UserProfile } from "@shared/schema";
+import { useState } from "react";
 
 export default function AdminUsers() {
   const { admin, logout } = useAdmin();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  const [showCreateOrgDialog, setShowCreateOrgDialog] = useState(false);
+  const [orgName, setOrgName] = useState("");
+  const [orgEmail, setOrgEmail] = useState("");
+  const [orgPassword, setOrgPassword] = useState("");
+  const [showOrgPassword, setShowOrgPassword] = useState(false);
 
   const { data: users, isLoading } = useQuery<UserProfile[]>({
     queryKey: ["/api/admin/users"],
@@ -72,6 +89,35 @@ export default function AdminUsers() {
         variant: "destructive",
         title: "Update failed",
         description: error.message || "Could not update user status",
+      });
+    },
+  });
+
+  const createOrgMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/admin/organizations", {
+        name: orgName,
+        email: orgEmail,
+        password: orgPassword,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard/stats"] });
+      setShowCreateOrgDialog(false);
+      setOrgName("");
+      setOrgEmail("");
+      setOrgPassword("");
+      toast({
+        title: "Organisation created",
+        description: `${orgName} has been created. They can now log in.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to create organisation",
+        description: error.message || "Could not create organisation",
       });
     },
   });
@@ -153,14 +199,22 @@ export default function AdminUsers() {
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              All Users
-            </CardTitle>
-            <CardDescription>
-              {users?.length || 0} registered users
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                All Users
+              </CardTitle>
+              <CardDescription>
+                {users?.length || 0} registered users
+              </CardDescription>
+            </div>
+            {isSuperAdmin && (
+              <Button onClick={() => setShowCreateOrgDialog(true)} data-testid="button-create-org">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Organisation
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -272,6 +326,95 @@ export default function AdminUsers() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Create Organisation Dialog */}
+      <Dialog open={showCreateOrgDialog} onOpenChange={setShowCreateOrgDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5" />
+              Create Organisation
+            </DialogTitle>
+            <DialogDescription>
+              Create a new organisation account. They can log in at the Organisation portal.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="org-name">Organisation Name</Label>
+              <Input
+                id="org-name"
+                placeholder="Naiya Care Services"
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
+                data-testid="input-org-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="org-email">Email</Label>
+              <Input
+                id="org-email"
+                type="email"
+                placeholder="admin@naiyacare.com"
+                value={orgEmail}
+                onChange={(e) => setOrgEmail(e.target.value)}
+                data-testid="input-org-email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="org-password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="org-password"
+                  type={showOrgPassword ? "text" : "password"}
+                  placeholder="Minimum 6 characters"
+                  value={orgPassword}
+                  onChange={(e) => setOrgPassword(e.target.value)}
+                  className="pr-10"
+                  data-testid="input-org-password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowOrgPassword(!showOrgPassword)}
+                  data-testid="button-toggle-org-password"
+                >
+                  {showOrgPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateOrgDialog(false)}
+              data-testid="button-cancel-org"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => createOrgMutation.mutate()}
+              disabled={!orgName || !orgEmail || !orgPassword || orgPassword.length < 6 || createOrgMutation.isPending}
+              data-testid="button-submit-org"
+            >
+              {createOrgMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create Organisation"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
