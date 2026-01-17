@@ -7,10 +7,14 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/bottom-nav";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
-import { Loader2, ShieldCheck, Volume2 } from "lucide-react";
+import { Loader2, ShieldCheck, Volume2, MoreVertical, Mail, QrCode } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { QRCodeSVG } from "qrcode.react";
 import type { StatusData } from "@shared/schema";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
@@ -118,9 +122,14 @@ function AppRoutes() {
 
 function AppLayout() {
   const { isAuthenticated } = useAuth();
+  const [location] = useLocation();
   const [alarmPlaying, setAlarmPlaying] = useState(false);
+  const [showQRDialog, setShowQRDialog] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const alarmIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const appUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const showMenu = ['/', '/login', '/app'].includes(location);
 
   const { data: status } = useQuery<StatusData>({
     queryKey: ["/api/status"],
@@ -201,7 +210,8 @@ function AppLayout() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background border-b">
-        <div className="max-w-md mx-auto px-4 py-3">
+        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="w-10" />
           <Link href="/app">
             <div className="flex flex-col items-center cursor-pointer w-fit relative" data-testid="link-home-logo">
               <ShieldCheck className="h-6 w-6 text-primary" />
@@ -213,8 +223,61 @@ function AppLayout() {
               )}
             </div>
           </Link>
+          {showMenu ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="ghost" data-testid="button-menu">
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setShowQRDialog(true)} data-testid="menu-share-qr">
+                  <QrCode className="h-4 w-4 mr-2" />
+                  Share App
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="mailto:support@aok.app" className="flex items-center gap-2" data-testid="link-contact-us">
+                    <Mail className="h-4 w-4" />
+                    Contact Us
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="w-10" />
+          )}
         </div>
       </header>
+      
+      {/* QR Code Dialog */}
+      <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share aok</DialogTitle>
+            <DialogDescription>
+              Scan this QR code to download the aok app and stay safe with your loved ones.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="bg-white p-4 rounded-lg">
+              <QRCodeSVG 
+                value={appUrl} 
+                size={200}
+                level="H"
+                includeMargin={true}
+              />
+            </div>
+            <p className="text-sm text-muted-foreground text-center">
+              {appUrl}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowQRDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {alarmPlaying && (
         <div className="sticky top-[52px] z-30 max-w-md mx-auto px-4 py-2">
