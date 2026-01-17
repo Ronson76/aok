@@ -25,13 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Mail, Phone, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall, MoreVertical } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Plus, Mail, Phone, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
