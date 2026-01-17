@@ -589,16 +589,19 @@ export async function registerRoutes(
 
       const location = req.body?.location as { latitude: number; longitude: number } | undefined;
       
-      // Send email alerts
-      const emailResult = await sendEmergencyAlert(contacts, user, location);
+      // Send email and SMS alerts
+      const alertResult = await sendEmergencyAlert(contacts, user, location);
       
       // Send voice calls to landline contacts
       const voiceResult = await sendVoiceAlerts(contacts, user, 'emergency');
       
       // Log the emergency alert
       const notificationSummary = [];
-      if (emailResult.emailsSent > 0) {
-        notificationSummary.push(`${emailResult.emailsSent} email(s)`);
+      if (alertResult.emailsSent > 0) {
+        notificationSummary.push(`${alertResult.emailsSent} email(s)`);
+      }
+      if (alertResult.smsSent > 0) {
+        notificationSummary.push(`${alertResult.smsSent} SMS(s)`);
       }
       if (voiceResult.callsMade > 0) {
         notificationSummary.push(`${voiceResult.callsMade} voice call(s)`);
@@ -610,12 +613,22 @@ export async function registerRoutes(
         `EMERGENCY ALERT triggered - ${notificationSummary.join(', ') || 'no contacts'} notified`
       );
 
+      const totalNotified = alertResult.emailsSent + alertResult.smsSent + voiceResult.callsMade;
+      let message = `Emergency alert sent to ${alertResult.emailsSent} email(s)`;
+      if (alertResult.smsSent > 0) {
+        message += `, ${alertResult.smsSent} SMS(s)`;
+      }
+      if (voiceResult.callsMade > 0) {
+        message += ` and ${voiceResult.callsMade} voice call(s)`;
+      }
+
       res.json({ 
         success: true, 
-        emailsSent: emailResult.emailsSent,
+        emailsSent: alertResult.emailsSent,
+        smsSent: alertResult.smsSent,
         voiceCallsMade: voiceResult.callsMade,
-        contactsNotified: emailResult.emailsSent + voiceResult.callsMade,
-        message: `Emergency alert sent to ${emailResult.emailsSent} email(s)${voiceResult.callsMade > 0 ? ` and ${voiceResult.callsMade} voice call(s)` : ''}` 
+        contactsNotified: totalNotified,
+        message 
       });
     } catch (error) {
       console.error('[EMERGENCY] Failed to send emergency alert:', error);
