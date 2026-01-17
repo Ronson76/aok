@@ -432,7 +432,7 @@ class DatabaseStorage implements IStorage {
 
   // Process overdue check-ins
   async processOverdueCheckIn(userId: string): Promise<{ wasMissed: boolean; alertSent: boolean }> {
-    // Get raw settings including lastMissedDueAt
+    // Get raw settings including lastMissedDueAt and lastAlertSentAt
     const rawSettings = await getDb().select().from(settings).where(eq(settings.userId, userId));
     if (rawSettings.length === 0) {
       return { wasMissed: false, alertSent: false };
@@ -447,12 +447,43 @@ class DatabaseStorage implements IStorage {
 
     const dueDate = row.nextCheckInDue;
     
+    // Check if currently overdue
     if (now < dueDate) {
       return { wasMissed: false, alertSent: false };
     }
 
-    // Check if we've already processed this overdue period (persisted in DB)
-    if (row.lastMissedDueAt && row.lastMissedDueAt.getTime() === dueDate.getTime()) {
+    // Calculate time since overdue
+    const msSinceOverdue = now.getTime() - dueDate.getTime();
+    const minutesSinceOverdue = msSinceOverdue / (1000 * 60);
+    
+    // First alert: 5 minutes after overdue
+    // Repeat alerts: every 15 minutes after the first alert
+    const FIRST_ALERT_DELAY_MINUTES = 5;
+    const REPEAT_ALERT_INTERVAL_MINUTES = 15;
+    
+    // Check if it's too early for first alert
+    if (minutesSinceOverdue < FIRST_ALERT_DELAY_MINUTES) {
+      return { wasMissed: true, alertSent: false };
+    }
+    
+    // Check if we need to send an alert
+    let shouldSendAlert = false;
+    const lastAlertTime = row.lastAlertSentAt;
+    
+    if (!lastAlertTime || lastAlertTime < dueDate) {
+      // No alert sent for this overdue period yet - send first alert
+      shouldSendAlert = true;
+    } else {
+      // Check if enough time has passed since last alert (15 minutes)
+      const msSinceLastAlert = now.getTime() - lastAlertTime.getTime();
+      const minutesSinceLastAlert = msSinceLastAlert / (1000 * 60);
+      
+      if (minutesSinceLastAlert >= REPEAT_ALERT_INTERVAL_MINUTES) {
+        shouldSendAlert = true;
+      }
+    }
+    
+    if (!shouldSendAlert) {
       return { wasMissed: true, alertSent: false };
     }
 
@@ -474,9 +505,13 @@ class DatabaseStorage implements IStorage {
     const contactNames = contactsToAlert.map(c => c.name);
     let alertSent = false;
     
+    // Determine if this is first alert or repeat
+    const isFirstAlert = !lastAlertTime || lastAlertTime < dueDate;
+    const alertType = isFirstAlert ? "First" : "Repeat";
+    
     // Send alerts FIRST (before updating any state)
     if (contactsToAlert.length > 0) {
-      console.log(`[ALERT] Missed check-in detected for user ${userId}! Sending alerts to: ${contactNames.join(", ")}`);
+      console.log(`[ALERT] ${alertType} missed check-in alert for user ${userId}! Sending to: ${contactNames.join(", ")}`);
       
       try {
         // Send email alerts
@@ -495,23 +530,25 @@ class DatabaseStorage implements IStorage {
         if (emailsFailed > 0) failedParts.push(`${emailsFailed} email(s)`);
         if (callsFailed > 0) failedParts.push(`${callsFailed} call(s)`);
         
-        const message = `Missed check-in alert sent! ${notificationParts.join(', ') || 'no notifications'} delivered${failedParts.length > 0 ? `, ${failedParts.join(', ')} failed` : ''}.`;
+        const message = `${alertType} missed check-in alert sent! ${notificationParts.join(', ') || 'no notifications'} delivered${failedParts.length > 0 ? `, ${failedParts.join(', ')} failed` : ''}.`;
         await this.createAlertLog(userId, contactNames, message);
       } catch (error) {
         console.error(`[ALERT] Error sending alerts:`, error);
-        const message = `Missed check-in detected. Alert delivery failed.`;
+        const message = `${alertType} missed check-in detected. Alert delivery failed.`;
         await this.createAlertLog(userId, contactNames, message);
       }
     }
 
-    // Now update the database state AFTER alerts are sent
-    await this.createMissedCheckIn(userId);
+    // Record missed check-in only on first alert
+    if (isFirstAlert) {
+      await this.createMissedCheckIn(userId);
+    }
 
-    // Only mark this due date as processed to prevent duplicate alerts
-    // Do NOT update nextCheckInDue - user must manually check in to reset the timer
+    // Update lastAlertSentAt and lastMissedDueAt
     await getDb().update(settings)
       .set({ 
-        lastMissedDueAt: dueDate  // Mark this due date as processed
+        lastMissedDueAt: dueDate,
+        lastAlertSentAt: now
       })
       .where(eq(settings.userId, userId));
 
