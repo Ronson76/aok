@@ -79,9 +79,49 @@ async function sendEmail(to: string, subject: string, body: string): Promise<voi
   }
 }
 
-async function sendSMS(to: string, body: string): Promise<void> {
-  console.log(`[SMS] SMS not configured. Would send to ${to}: ${body.substring(0, 50)}...`);
-  throw new Error("SMS service not configured");
+async function sendSMS(to: string, body: string): Promise<{ success: boolean; error?: string }> {
+  const credentials = await getTwilioCredentials();
+  
+  if (!credentials) {
+    console.log(`[SMS] Twilio not configured. Would send to ${to}: ${body.substring(0, 50)}...`);
+    return { success: false, error: "Twilio not configured" };
+  }
+
+  try {
+    const auth = Buffer.from(`${credentials.apiKey}:${credentials.apiKeySecret}`).toString('base64');
+    
+    const response = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${credentials.accountSid}/Messages.json`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          To: to,
+          From: credentials.phoneNumber,
+          Body: body,
+        }).toString(),
+      }
+    );
+
+    const result = await response.json();
+
+    if (response.ok) {
+      console.log(`[SMS] Successfully sent SMS to ${to}, SID: ${result.sid}`);
+      return { success: true };
+    } else {
+      console.error(`[SMS] Failed to send to ${to}:`, result);
+      return { success: false, error: result.message || 'SMS failed' };
+    }
+  } catch (error) {
+    console.error(`[SMS] Error sending to ${to}:`, error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
 }
 
 export async function sendContactAddedNotification(
@@ -140,12 +180,11 @@ Thank you for being there for ${user.name}.
     console.log(`[NOTIFICATION] Email failed for ${contact.email}: ${result.email.error}`);
   }
 
-  if (contact.phone) {
-    try {
-      await sendSMS(contact.phone, smsBody);
-      result.sms.sent = true;
-    } catch (error) {
-      result.sms.error = error instanceof Error ? error.message : "Failed to send SMS";
+  if (contact.phone && contact.phoneType !== "landline") {
+    const smsResult = await sendSMS(contact.phone, smsBody);
+    result.sms.sent = smsResult.success;
+    if (!smsResult.success) {
+      result.sms.error = smsResult.error || "Failed to send SMS";
     }
   }
 
@@ -304,7 +343,7 @@ export async function sendEmergencyAlert(
   contacts: Contact[],
   user: User,
   gpsLocation?: { latitude: number; longitude: number }
-): Promise<{ emailsSent: number; emailsFailed: number }> {
+): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number }> {
   const isOrganization = user.accountType === "organization";
   const identifier = isOrganization 
     ? `Reference ID: ${user.referenceId}` 
@@ -315,11 +354,14 @@ export async function sendEmergencyAlert(
   
   let emailsSent = 0;
   let emailsFailed = 0;
+  let smsSent = 0;
+  let smsFailed = 0;
   
   for (const contact of contacts) {
     const emailSubject = `EMERGENCY ALERT: ${subjectIdentifier} needs help!`;
     
     let locationInfo = "";
+    let smsLocationInfo = "";
     
     if (gpsLocation) {
       const mapsUrl = `https://www.google.com/maps?q=${gpsLocation.latitude},${gpsLocation.longitude}`;
@@ -328,6 +370,7 @@ CURRENT GPS LOCATION:
 Coordinates: ${gpsLocation.latitude.toFixed(6)}, ${gpsLocation.longitude.toFixed(6)}
 View on map: ${mapsUrl}
 `;
+      smsLocationInfo = `Location: ${mapsUrl}`;
     }
     
     if (user.addressLine1) {
@@ -372,9 +415,22 @@ If you cannot reach them, consider contacting local emergency services.
       emailsFailed++;
       console.error(`[EMERGENCY ALERT] Failed to send email to ${contact.email}:`, error);
     }
+
+    if (contact.phone && contact.phoneType !== "landline") {
+      const smsBody = `EMERGENCY ALERT from aok: ${identifier} needs immediate help! ${smsLocationInfo} ${user.mobileNumber ? `Call them: ${user.mobileNumber}` : "Contact them immediately."}`;
+      
+      const smsResult = await sendSMS(contact.phone, smsBody);
+      if (smsResult.success) {
+        smsSent++;
+        console.log(`[EMERGENCY ALERT] SMS sent to ${contact.name} (${contact.phone})`);
+      } else {
+        smsFailed++;
+        console.error(`[EMERGENCY ALERT] Failed to send SMS to ${contact.phone}:`, smsResult.error);
+      }
+    }
   }
 
-  return { emailsSent, emailsFailed };
+  return { emailsSent, emailsFailed, smsSent, smsFailed };
 }
 
 export async function sendPasswordResetEmail(

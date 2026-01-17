@@ -66,14 +66,14 @@ The app uses Resend for all email notifications:
 - **Password Reset**: Password reset links are sent via email
 - The Resend connector is configured via Replit's integration system (credentials managed automatically)
 
-### Voice Call Alerts (Twilio Integration)
-The app supports automated voice calls to landline contacts during emergencies:
+### Twilio Integration (SMS and Voice Calls)
+The app supports SMS and automated voice calls via Twilio:
 - **Phone Type**: Contacts can be marked as "mobile" or "landline" when adding a phone number
-- **Landline Voice Calls**: When a check-in is missed or an emergency is triggered, landline contacts receive automated phone calls
-- **Text-to-Speech**: Calls use Twilio's TTS to announce the alert message including the user's name or reference ID
-- **Emergency Priority**: Emergency alerts trigger immediate voice calls with urgent messaging
-- **Missed Check-in Calls**: Missed check-in alerts also trigger voice calls to landline contacts
-- **Configuration**: Requires TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER environment variables or Replit Twilio connector
+- **SMS Alerts**: Mobile contacts (and contacts without a specified phone type) receive SMS alerts for emergency alerts
+- **Voice Calls**: Landline contacts receive automated phone calls for emergencies and missed check-ins
+- **Text-to-Speech**: Voice calls use Twilio's TTS to announce the alert message including the user's name or reference ID
+- **Emergency Priority**: Emergency alerts trigger immediate SMS to mobile contacts and voice calls to landlines
+- **Configuration**: Uses Replit Twilio connector with API key authentication (credentials managed automatically)
 
 ### Admin Dashboard
 The app includes a separate admin system for platform management:
