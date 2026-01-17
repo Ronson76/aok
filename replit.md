@@ -82,6 +82,9 @@ The app includes a separate admin system for platform management:
 - **Dashboard Statistics**: Overview of total users, organizations, individuals, check-ins, missed check-ins, and active bundles
 - **User Management**: View all registered users, delete users (super_admin only)
 - **Organization Bundles**: Create subscription bundles to allocate seats to organizations for monitoring users
+- **Organization Client Overview**: View all organizations with client summaries, total/active/paused client counts, and aggregated alert counts
+- **Privacy-Limited Client View**: Super admins can view organization clients with limited information (ordinal number, email, mobile) to protect privacy while allowing oversight
+- **Client Status Controls**: Super admins can pause/resume or remove clients from organizations
 - **Audit Logging**: All admin actions are logged for security and accountability
 
 Admin API endpoints are prefixed with `/api/admin/` and use separate cookies for session management.
