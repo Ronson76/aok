@@ -1,166 +1,178 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { History as HistoryIcon, CheckCircle, XCircle, Loader2, Calendar, Bell, AlertTriangle } from "lucide-react";
 import type { CheckIn, AlertLog } from "@shared/schema";
-import { format, isToday, isYesterday, formatDistanceToNow } from "date-fns";
+import { format, isToday, startOfDay, subDays, isSameDay } from "date-fns";
 
-function formatDateHeader(date: Date) {
-  if (isToday(date)) return "Today";
-  if (isYesterday(date)) return "Yesterday";
-  return format(date, "EEEE, MMMM d");
+interface DaySummary {
+  date: Date;
+  checkIns: number;
+  missed: number;
+  alerts: number;
+  hasEmergency: boolean;
 }
 
-function groupCheckInsByDate(checkIns: CheckIn[]) {
-  const groups: { [key: string]: CheckIn[] } = {};
+function getTodayItems(checkIns: CheckIn[], alerts: AlertLog[]) {
+  const today = new Date();
+  return {
+    checkIns: checkIns.filter(c => isToday(new Date(c.timestamp))),
+    alerts: alerts.filter(a => isToday(new Date(a.timestamp)))
+  };
+}
+
+function getWeekSummary(checkIns: CheckIn[], alerts: AlertLog[]): DaySummary[] {
+  const days: DaySummary[] = [];
   
-  checkIns.forEach((checkIn) => {
-    const date = new Date(checkIn.timestamp);
-    const key = format(date, "yyyy-MM-dd");
-    if (!groups[key]) {
-      groups[key] = [];
-    }
-    groups[key].push(checkIn);
-  });
-
-  return Object.entries(groups)
-    .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
-    .map(([date, items]) => ({
-      date: new Date(date),
-      items: items.sort(
-        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      ),
-    }));
+  for (let i = 1; i <= 6; i++) {
+    const date = startOfDay(subDays(new Date(), i));
+    
+    const dayCheckIns = checkIns.filter(c => isSameDay(new Date(c.timestamp), date));
+    const dayAlerts = alerts.filter(a => isSameDay(new Date(a.timestamp), date));
+    
+    days.push({
+      date,
+      checkIns: dayCheckIns.filter(c => c.status === "success").length,
+      missed: dayCheckIns.filter(c => c.status === "missed").length,
+      alerts: dayAlerts.length,
+      hasEmergency: dayAlerts.some(a => a.message.includes("EMERGENCY"))
+    });
+  }
+  
+  return days;
 }
 
-function CheckInsTab({ checkIns }: { checkIns: CheckIn[] }) {
-  const groupedCheckIns = groupCheckInsByDate(checkIns);
-
-  if (checkIns.length === 0) {
+function TodaySection({ checkIns, alerts }: { checkIns: CheckIn[], alerts: AlertLog[] }) {
+  const hasActivity = checkIns.length > 0 || alerts.length > 0;
+  
+  if (!hasActivity) {
     return (
       <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="rounded-full bg-muted p-4 mb-4">
-            <Calendar className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <h3 className="text-lg font-medium mb-2">No check-ins yet</h3>
-          <p className="text-sm text-muted-foreground max-w-xs">
-            Your check-in history will appear here. Head to the dashboard to make your first check-in!
-          </p>
+        <CardContent className="py-6 text-center">
+          <p className="text-muted-foreground">No activity today yet</p>
         </CardContent>
       </Card>
     );
   }
-
+  
+  const sortedItems = [
+    ...checkIns.map(c => ({ type: 'checkin' as const, data: c, time: new Date(c.timestamp) })),
+    ...alerts.map(a => ({ type: 'alert' as const, data: a, time: new Date(a.timestamp) }))
+  ].sort((a, b) => b.time.getTime() - a.time.getTime());
+  
   return (
-    <div className="space-y-6">
-      {groupedCheckIns.map((group) => (
-        <div key={format(group.date, "yyyy-MM-dd")} className="space-y-3">
-          <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2">
-            {formatDateHeader(group.date)}
-          </h2>
-          
-          <div className="space-y-2 relative">
-            <div className="absolute left-[22px] top-0 bottom-0 w-px bg-border" />
-            
-            {group.items.map((checkIn) => (
-              <Card key={checkIn.id} className="relative ml-10">
-                <div
-                  className={`absolute -left-[26px] top-1/2 -translate-y-1/2 rounded-full p-1 ${
-                    checkIn.status === "success" ? "bg-primary" : "bg-destructive"
-                  }`}
-                >
-                  {checkIn.status === "success" ? (
-                    <CheckCircle className="h-4 w-4 text-primary-foreground" />
+    <div className="space-y-2">
+      {sortedItems.map((item, index) => {
+        if (item.type === 'checkin') {
+          const checkIn = item.data as CheckIn;
+          const isSuccess = checkIn.status === "success";
+          return (
+            <Card key={`checkin-${checkIn.id}`}>
+              <CardContent className="py-3 flex items-center gap-3">
+                <div className={`rounded-full p-1.5 ${isSuccess ? "bg-primary/10" : "bg-destructive/10"}`}>
+                  {isSuccess ? (
+                    <CheckCircle className="h-4 w-4 text-primary" />
                   ) : (
-                    <XCircle className="h-4 w-4 text-destructive-foreground" />
+                    <XCircle className="h-4 w-4 text-destructive" />
                   )}
                 </div>
-                
-                <CardContent className="py-3 flex items-center justify-between gap-2 flex-wrap">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">
-                        {checkIn.status === "success" ? "Checked In" : "Missed Check-In"}
-                      </span>
-                      <Badge
-                        variant={checkIn.status === "success" ? "default" : "destructive"}
-                        className="text-xs"
-                      >
-                        {checkIn.status === "success" ? "Safe" : "Missed"}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(checkIn.timestamp), "h:mm a")}
-                    </p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(checkIn.timestamp), { addSuffix: true })}
+                <div className="flex-1">
+                  <span className="font-medium text-sm">
+                    {isSuccess ? "Checked In" : "Missed Check-In"}
                   </span>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      ))}
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {format(new Date(checkIn.timestamp), "h:mm a")}
+                </span>
+              </CardContent>
+            </Card>
+          );
+        } else {
+          const alert = item.data as AlertLog;
+          const isEmergency = alert.message.includes("EMERGENCY");
+          return (
+            <Card key={`alert-${alert.id}`} className={isEmergency ? "border-red-500/50" : "border-destructive/50"}>
+              <CardContent className="py-3 flex items-center gap-3">
+                <div className={`rounded-full p-1.5 ${isEmergency ? "bg-red-500/10" : "bg-destructive/10"}`}>
+                  <AlertTriangle className={`h-4 w-4 ${isEmergency ? "text-red-500" : "text-destructive"}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-sm">
+                    {isEmergency ? "Emergency Alert" : "Alert Sent"}
+                  </span>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {alert.contactsNotified.join(", ")}
+                  </p>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {format(new Date(alert.timestamp), "h:mm a")}
+                </span>
+              </CardContent>
+            </Card>
+          );
+        }
+      })}
     </div>
   );
 }
 
-function AlertsTab({ alerts }: { alerts: AlertLog[] }) {
-  if (alerts.length === 0) {
-    return (
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="rounded-full bg-muted p-4 mb-4">
-            <Bell className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <h3 className="text-lg font-medium mb-2">No alerts sent</h3>
-          <p className="text-sm text-muted-foreground max-w-xs">
-            When you miss a check-in or trigger an emergency, alerts sent to your contacts will appear here.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
+function CalendarDay({ summary }: { summary: DaySummary }) {
+  const hasIssues = summary.missed > 0 || summary.alerts > 0;
+  const dayName = format(summary.date, "EEE");
+  const dayNum = format(summary.date, "d");
+  
   return (
-    <div className="space-y-3">
-      {alerts.map((alert) => {
-        const isEmergency = alert.message.includes("EMERGENCY");
-        
-        return (
-          <Card key={alert.id}>
-            <CardContent className="py-4">
-              <div className="flex items-start gap-3">
-                <div className={`rounded-full p-2 flex-shrink-0 ${isEmergency ? "bg-red-500/20" : "bg-destructive/10"}`}>
-                  <AlertTriangle className={`h-4 w-4 ${isEmergency ? "text-red-500" : "text-destructive"}`} />
-                </div>
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium">
-                      {isEmergency ? "Emergency Alert" : "Alert Sent"}
-                    </span>
-                    <Badge 
-                      variant="destructive" 
-                      className={`text-xs ${isEmergency ? "bg-red-500 hover:bg-red-600" : ""}`}
-                    >
-                      {isEmergency ? "Emergency" : "Missed Check-In"}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Notified: {alert.contactsNotified.join(", ")}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(new Date(alert.timestamp), "MMMM d, yyyy 'at' h:mm a")}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+    <div 
+      className={`flex flex-col items-center p-2 rounded-lg border ${
+        summary.hasEmergency 
+          ? "border-red-500/50 bg-red-500/5" 
+          : hasIssues 
+            ? "border-destructive/50 bg-destructive/5" 
+            : summary.checkIns > 0 
+              ? "border-primary/50 bg-primary/5"
+              : "border-border"
+      }`}
+    >
+      <span className="text-xs text-muted-foreground">{dayName}</span>
+      <span className="text-lg font-semibold">{dayNum}</span>
+      
+      <div className="flex items-center gap-1 mt-1">
+        {summary.checkIns > 0 && (
+          <div className="flex items-center gap-0.5" title={`${summary.checkIns} check-ins`}>
+            <CheckCircle className="h-3 w-3 text-primary" />
+            <span className="text-xs text-primary">{summary.checkIns}</span>
+          </div>
+        )}
+        {summary.missed > 0 && (
+          <div className="flex items-center gap-0.5" title={`${summary.missed} missed`}>
+            <XCircle className="h-3 w-3 text-destructive" />
+            <span className="text-xs text-destructive">{summary.missed}</span>
+          </div>
+        )}
+      </div>
+      
+      {summary.alerts > 0 && (
+        <div className="flex items-center gap-0.5 mt-0.5" title={`${summary.alerts} alerts sent`}>
+          <Bell className={`h-3 w-3 ${summary.hasEmergency ? "text-red-500" : "text-destructive"}`} />
+          <span className={`text-xs ${summary.hasEmergency ? "text-red-500" : "text-destructive"}`}>
+            {summary.alerts}
+          </span>
+        </div>
+      )}
+      
+      {summary.checkIns === 0 && summary.missed === 0 && summary.alerts === 0 && (
+        <span className="text-xs text-muted-foreground mt-1">-</span>
+      )}
+    </div>
+  );
+}
+
+function WeekCalendar({ summary }: { summary: DaySummary[] }) {
+  return (
+    <div className="grid grid-cols-6 gap-2">
+      {summary.map((day) => (
+        <CalendarDay key={format(day.date, "yyyy-MM-dd")} summary={day} />
+      ))}
     </div>
   );
 }
@@ -182,6 +194,12 @@ export default function History() {
     );
   }
 
+  const todayItems = getTodayItems(checkIns, alerts);
+  const weekSummary = getWeekSummary(checkIns, alerts);
+  
+  const totalCheckIns = checkIns.filter(c => c.status === "success").length;
+  const totalMissed = checkIns.filter(c => c.status === "missed").length;
+
   return (
     <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">
       <div className="flex items-center gap-3 pt-2">
@@ -189,22 +207,57 @@ export default function History() {
         <h1 className="text-2xl font-semibold">History</h1>
       </div>
 
-      <Tabs defaultValue="checkins" className="w-full">
-        <TabsList className="w-full grid grid-cols-2">
-          <TabsTrigger value="checkins" data-testid="tab-checkins">
-            Check-Ins
-          </TabsTrigger>
-          <TabsTrigger value="alerts" data-testid="tab-alerts">
-            Alerts {alerts.length > 0 && `(${alerts.length})`}
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="checkins" className="mt-4">
-          <CheckInsTab checkIns={checkIns} />
-        </TabsContent>
-        <TabsContent value="alerts" className="mt-4">
-          <AlertsTab alerts={alerts} />
-        </TabsContent>
-      </Tabs>
+      <Card>
+        <CardContent className="py-4">
+          <div className="flex justify-around text-center">
+            <div>
+              <p className="text-2xl font-bold text-primary">{totalCheckIns}</p>
+              <p className="text-xs text-muted-foreground">Check-ins</p>
+            </div>
+            <div className="w-px bg-border" />
+            <div>
+              <p className="text-2xl font-bold text-destructive">{totalMissed}</p>
+              <p className="text-xs text-muted-foreground">Missed</p>
+            </div>
+            <div className="w-px bg-border" />
+            <div>
+              <p className="text-2xl font-bold text-muted-foreground">{alerts.length}</p>
+              <p className="text-xs text-muted-foreground">Alerts</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-medium text-muted-foreground">Today</h2>
+        </div>
+        <TodaySection checkIns={todayItems.checkIns} alerts={todayItems.alerts} />
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-medium text-muted-foreground">Previous 6 Days</h2>
+        </div>
+        <WeekCalendar summary={weekSummary} />
+        
+        <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground pt-2">
+          <div className="flex items-center gap-1">
+            <CheckCircle className="h-3 w-3 text-primary" />
+            <span>Check-in</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <XCircle className="h-3 w-3 text-destructive" />
+            <span>Missed</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Bell className="h-3 w-3 text-destructive" />
+            <span>Alert</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
