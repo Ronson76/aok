@@ -10,11 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { OrganizationDashboardStats, OrganizationClientWithDetails, OrganizationBundle, OrganizationClientProfile, AlertLog, OrgClientStatus, Contact } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useAuth } from "@/contexts/auth-context";
+import { useLocation } from "wouter";
 
 function getStatusIcon(status: "safe" | "pending" | "overdue", size: "sm" | "md" = "sm") {
   const iconClass = size === "sm" ? "h-4 w-4" : "h-6 w-6";
@@ -50,13 +52,77 @@ function getClientStatusBadge(status: OrgClientStatus) {
   }
 }
 
+const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
 export default function OrganizationDashboard() {
   const { toast } = useToast();
+  const { logout } = useAuth();
+  const [, setLocation] = useLocation();
   const [showAddClientDialog, setShowAddClientDialog] = useState(false);
   const [clientEmail, setClientEmail] = useState("");
   const [nickname, setNickname] = useState("");
   const [selectedBundleId, setSelectedBundleId] = useState<string>("");
   const [selectedClient, setSelectedClient] = useState<OrganizationClientWithDetails | null>(null);
+  
+  // Inactivity timeout for security
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const logoutRef = useRef(logout);
+  const toastRef = useRef(toast);
+  const setLocationRef = useRef(setLocation);
+  
+  // Keep refs updated
+  useEffect(() => {
+    logoutRef.current = logout;
+    toastRef.current = toast;
+    setLocationRef.current = setLocation;
+  }, [logout, toast, setLocation]);
+  
+  const resetInactivityTimer = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(async () => {
+      toastRef.current({
+        title: "Session expired",
+        description: "You have been logged out due to inactivity.",
+        variant: "destructive",
+      });
+      await logoutRef.current();
+      setLocationRef.current("/org/login");
+    }, SESSION_TIMEOUT_MS);
+  }, []);
+  
+  useEffect(() => {
+    // Only track low-frequency user interaction events
+    const events = ["mousedown", "keydown", "touchstart"];
+    
+    const handleActivity = () => {
+      resetInactivityTimer();
+    };
+    
+    events.forEach(event => {
+      document.addEventListener(event, handleActivity);
+    });
+    
+    resetInactivityTimer();
+    
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, handleActivity);
+      });
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [resetInactivityTimer]);
+  
+  const handleLogout = async () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    await logout();
+    setLocation("/org/login");
+  };
   
   // New client registration form state
   const [showRegisterClientDialog, setShowRegisterClientDialog] = useState(false);
@@ -506,6 +572,10 @@ export default function OrganizationDashboard() {
           >
             <UserPlus className="h-4 w-4 mr-2" />
             Register Client
+          </Button>
+          <Button variant="outline" onClick={handleLogout} data-testid="button-org-logout">
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
           </Button>
           <Dialog open={showAddClientDialog} onOpenChange={setShowAddClientDialog}>
             <DialogTrigger asChild>

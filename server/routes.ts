@@ -103,7 +103,7 @@ export async function registerRoutes(
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
+        maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days - client-side inactivity timer handles security
       });
 
       const { passwordHash: _, ...userProfile } = user;
@@ -146,7 +146,7 @@ export async function registerRoutes(
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        maxAge: 14 * 24 * 60 * 60 * 1000,
+        maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days - client-side inactivity timer handles security
       });
 
       const { passwordHash, ...userProfile } = user;
