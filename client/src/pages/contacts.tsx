@@ -167,17 +167,21 @@ export default function Contacts() {
 
   const setPrimaryMutation = useMutation({
     mutationFn: (id: string) => apiRequest("POST", `/api/contacts/${id}/primary`),
-    onSuccess: () => {
+    onSuccess: (_, contactId) => {
       queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      const contact = contacts.find(c => c.id === contactId);
+      const wasToggled = contact?.isPrimary;
       toast({
-        title: "Primary contact set",
-        description: "This contact will now receive notifications for every check-in.",
+        title: wasToggled ? "Primary status removed" : "Primary contact set",
+        description: wasToggled 
+          ? "This contact will only receive notifications for missed check-ins."
+          : "This contact will now receive notifications for every check-in.",
       });
     },
     onError: () => {
       toast({
-        title: "Failed to set primary contact",
-        description: "Please try again.",
+        title: "Failed to update primary status",
+        description: "At least one contact must remain as primary.",
         variant: "destructive",
       });
     },
@@ -366,8 +370,9 @@ export default function Contacts() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        These people will be notified if you miss a check-in. Your primary contact 
-        (marked with a star) will also receive notifications for every successful check-in.
+        These people will be notified if you miss a check-in. Primary contacts 
+        (marked with a filled star) will also receive notifications for every successful check-in. 
+        You can have multiple primary contacts, but at least one must remain.
       </p>
 
       {contacts.length === 0 ? (
@@ -434,18 +439,16 @@ export default function Contacts() {
                 </div>
 
                 <div className="flex items-center gap-1">
-                  {!contact.isPrimary && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setPrimaryMutation.mutate(contact.id)}
-                      disabled={setPrimaryMutation.isPending}
-                      title="Set as primary contact"
-                      data-testid={`button-set-primary-${contact.id}`}
-                    >
-                      <Star className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  )}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setPrimaryMutation.mutate(contact.id)}
+                    disabled={setPrimaryMutation.isPending}
+                    title={contact.isPrimary ? "Remove primary status" : "Set as primary contact"}
+                    data-testid={`button-toggle-primary-${contact.id}`}
+                  >
+                    <Star className={`h-4 w-4 ${contact.isPrimary ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} />
+                  </Button>
                   <Button
                     size="icon"
                     variant="ghost"

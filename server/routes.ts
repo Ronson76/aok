@@ -183,7 +183,7 @@ export async function registerRoutes(
         return res.status(401).json({ error: "User not found" });
       }
 
-      const { password } = req.body;
+      const { password, location } = req.body;
       if (!password) {
         return res.status(400).json({ error: "Password required" });
       }
@@ -193,16 +193,19 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Incorrect password" });
       }
 
+      // Get all primary contacts and send logout notification to each with location
       const contacts = await storage.getContacts(user.id);
-      const primaryContact = contacts.find(c => c.isPrimary);
-
-      if (primaryContact) {
-        await sendLogoutNotification(primaryContact, user);
+      const primaryContacts = contacts.filter(c => c.isPrimary);
+      
+      let notificationsSent = 0;
+      for (const primaryContact of primaryContacts) {
+        const result = await sendLogoutNotification(primaryContact, user, location);
+        if (result.sent) notificationsSent++;
       }
 
       await storage.deleteSession(sessionId);
       res.clearCookie("session");
-      res.json({ success: true, notificationSent: !!primaryContact });
+      res.json({ success: true, notificationsSent });
     } catch (error) {
       console.error("Logout confirmation error:", error);
       res.status(500).json({ error: "Failed to process logout" });

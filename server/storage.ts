@@ -53,6 +53,7 @@ export interface IStorage {
   getContacts(userId: string): Promise<Contact[]>;
   getContact(userId: string, id: string): Promise<Contact | undefined>;
   getPrimaryContact(userId: string): Promise<Contact | undefined>;
+  getPrimaryContacts(userId: string): Promise<Contact[]>;
   createContact(userId: string, contact: InsertContact): Promise<Contact>;
   updateContact(userId: string, id: string, updates: Partial<InsertContact>): Promise<Contact | undefined>;
   setPrimaryContact(userId: string, contactId: string): Promise<Contact | undefined>;
@@ -263,17 +264,33 @@ class DatabaseStorage implements IStorage {
       return undefined;
     }
     
-    // Unset all primary contacts for this user
-    await getDb().update(contacts)
-      .set({ isPrimary: false })
-      .where(eq(contacts.userId, userId));
+    // Toggle the isPrimary status
+    const newPrimaryStatus = !existingContact.isPrimary;
     
-    // Then set the specified contact as primary (scoped by userId for security)
+    // If turning OFF primary, ensure at least one other contact remains primary
+    if (!newPrimaryStatus) {
+      const allContacts = await this.getContacts(userId);
+      const primaryContacts = allContacts.filter(c => c.isPrimary);
+      
+      // If this is the only primary contact, don't allow turning it off
+      if (primaryContacts.length === 1 && primaryContacts[0].id === contactId) {
+        return existingContact; // Return unchanged - at least one must remain primary
+      }
+    }
+    
+    // Update the contact's primary status
     const result = await getDb().update(contacts)
-      .set({ isPrimary: true })
+      .set({ isPrimary: newPrimaryStatus })
       .where(and(eq(contacts.id, contactId), eq(contacts.userId, userId)))
       .returning();
     return result[0];
+  }
+  
+  async getPrimaryContacts(userId: string): Promise<Contact[]> {
+    const result = await getDb().select().from(contacts).where(
+      and(eq(contacts.userId, userId), eq(contacts.isPrimary, true))
+    );
+    return result;
   }
 
   async deleteContact(userId: string, id: string): Promise<boolean> {
