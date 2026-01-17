@@ -1,26 +1,125 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
 import { useAdmin } from "@/contexts/admin-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Users, Building2, User, CheckCircle, XCircle, Package, 
-  LogOut, Shield, TrendingUp, Calendar, AlertOctagon
+  LogOut, Shield, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone
 } from "lucide-react";
-import { format } from "date-fns";
-import type { DashboardStats } from "@shared/schema";
+import { format, formatDistanceToNow } from "date-fns";
+import { useState } from "react";
+import type { DashboardStats, AdminOrganizationView, AdminOrganizationClientView, OrgClientStatus } from "@shared/schema";
+
+function getClientStatusBadge(status: OrgClientStatus) {
+  switch (status) {
+    case "active":
+      return <Badge variant="outline" className="text-primary border-primary">Active</Badge>;
+    case "paused":
+      return <Badge variant="outline" className="text-yellow-600 border-yellow-600">Paused</Badge>;
+    case "terminated":
+      return <Badge variant="outline" className="text-muted-foreground border-muted-foreground">Terminated</Badge>;
+  }
+}
+
+function getCheckInStatusBadge(status: "safe" | "pending" | "overdue") {
+  switch (status) {
+    case "safe":
+      return <Badge variant="default">Safe</Badge>;
+    case "pending":
+      return <Badge variant="secondary">Pending</Badge>;
+    case "overdue":
+      return <Badge variant="destructive">Overdue</Badge>;
+  }
+}
 
 export default function AdminDashboard() {
   const { admin, logout } = useAdmin();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  
+  // State for viewing organization clients
+  const [selectedOrg, setSelectedOrg] = useState<AdminOrganizationView | null>(null);
+  const [orgClients, setOrgClients] = useState<AdminOrganizationClientView[]>([]);
+  const [loadingClients, setLoadingClients] = useState(false);
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/admin/dashboard/stats"],
   });
+  
+  const { data: organizations, isLoading: orgsLoading } = useQuery<AdminOrganizationView[]>({
+    queryKey: ["/api/admin/organizations"],
+  });
+  
+  const updateClientStatusMutation = useMutation({
+    mutationFn: async ({ organizationId, clientId, status }: { organizationId: string; clientId: string; status: OrgClientStatus }) => {
+      const response = await apiRequest("PATCH", `/api/admin/organizations/${organizationId}/clients/${clientId}/status`, { status });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+      if (selectedOrg) {
+        fetchOrgClients(selectedOrg.id);
+      }
+      toast({
+        title: "Status updated",
+        description: "Client status has been updated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update status",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const removeClientMutation = useMutation({
+    mutationFn: async ({ organizationId, clientId }: { organizationId: string; clientId: string }) => {
+      await apiRequest("DELETE", `/api/admin/organizations/${organizationId}/clients/${clientId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+      if (selectedOrg) {
+        fetchOrgClients(selectedOrg.id);
+      }
+      toast({
+        title: "Client removed",
+        description: "The client has been removed from the organization.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to remove client",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const fetchOrgClients = async (orgId: string) => {
+    setLoadingClients(true);
+    try {
+      const response = await apiRequest("GET", `/api/admin/organizations/${orgId}/clients`);
+      const data = await response.json();
+      setOrgClients(data);
+    } catch (error) {
+      console.error("Failed to fetch clients:", error);
+    } finally {
+      setLoadingClients(false);
+    }
+  };
+  
+  const handleViewOrgClients = (org: AdminOrganizationView) => {
+    setSelectedOrg(org);
+    fetchOrgClients(org.id);
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -317,6 +416,214 @@ export default function AdminDashboard() {
         ) : (
           <p className="text-muted-foreground">Failed to load statistics</p>
         )}
+        
+        {/* Organizations Section */}
+        <h2 className="text-2xl font-semibold mb-6 mt-10">Organizations & Clients</h2>
+        
+        {orgsLoading ? (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i}>
+                <CardHeader className="pb-2">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-32" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-24" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : organizations && organizations.length > 0 ? (
+          <div className="space-y-4">
+            {organizations.map((org) => (
+              <Card key={org.id} className={org.disabled ? "opacity-60" : ""}>
+                <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Building2 className="h-5 w-5 text-muted-foreground" />
+                      {org.name}
+                      {org.disabled && <Badge variant="destructive">Disabled</Badge>}
+                    </CardTitle>
+                    <CardDescription>{org.email}</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewOrgClients(org)}
+                      data-testid={`button-view-org-${org.id}`}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View Clients ({org.totalClients})
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Clients</p>
+                      <p className="text-xl font-bold">{org.totalClients}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Active</p>
+                      <p className="text-xl font-bold text-primary">{org.activeClients}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Paused</p>
+                      <p className="text-xl font-bold text-yellow-600">{org.pausedClients}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Alerts</p>
+                      <p className="text-xl font-bold text-destructive">{org.totalAlerts}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Bundles</p>
+                      <div className="flex flex-wrap gap-1">
+                        {org.bundles.map((bundle) => (
+                          <Badge 
+                            key={bundle.id} 
+                            variant={bundle.status === "active" ? "default" : "secondary"}
+                          >
+                            {bundle.name} ({bundle.seatsUsed}/{bundle.seatLimit})
+                          </Badge>
+                        ))}
+                        {org.bundles.length === 0 && <span className="text-muted-foreground">None</span>}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No organizations registered yet</p>
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* Organization Clients Dialog */}
+        <Dialog open={!!selectedOrg} onOpenChange={() => { setSelectedOrg(null); setOrgClients([]); }}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                {selectedOrg?.name} - Clients
+              </DialogTitle>
+              <DialogDescription>
+                Privacy-limited view showing ordinal number, email, and mobile only.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {loadingClients ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : orgClients.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No clients in this organization</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {orgClients.map((client) => (
+                  <div
+                    key={client.id}
+                    className={`flex items-center justify-between p-4 border rounded-lg ${client.clientStatus !== "active" ? "opacity-60" : ""}`}
+                    data-testid={`admin-client-${client.id}`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted text-muted-foreground font-medium">
+                        {client.clientOrdinal}
+                      </div>
+                      <div>
+                        <div className="font-medium flex items-center gap-2">
+                          User {client.clientOrdinal}
+                          {getClientStatusBadge(client.clientStatus)}
+                          {client.userDisabled && <Badge variant="destructive">Account Disabled</Badge>}
+                        </div>
+                        <div className="text-sm text-muted-foreground flex items-center gap-4">
+                          <span className="flex items-center gap-1">
+                            <Mail className="h-3 w-3" />
+                            {client.email}
+                          </span>
+                          {client.mobileNumber && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {client.mobileNumber}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1 flex items-center gap-4">
+                          <span>Added: {formatDistanceToNow(new Date(client.addedAt), { addSuffix: true })}</span>
+                          {client.alertCounts.total > 0 && (
+                            <span className="text-destructive">
+                              {client.alertCounts.total} alert{client.alertCounts.total !== 1 ? "s" : ""} 
+                              ({client.alertCounts.emergencies} emergency)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getCheckInStatusBadge(client.status.status)}
+                      
+                      {admin?.role === "super_admin" && (
+                        <>
+                          {client.clientStatus === "active" ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => updateClientStatusMutation.mutate({ 
+                                organizationId: selectedOrg!.id, 
+                                clientId: client.id, 
+                                status: "paused" 
+                              })}
+                              disabled={updateClientStatusMutation.isPending}
+                              title="Pause monitoring"
+                            >
+                              <Pause className="h-4 w-4 text-yellow-600" />
+                            </Button>
+                          ) : client.clientStatus === "paused" ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => updateClientStatusMutation.mutate({ 
+                                organizationId: selectedOrg!.id, 
+                                clientId: client.id, 
+                                status: "active" 
+                              })}
+                              disabled={updateClientStatusMutation.isPending}
+                              title="Resume monitoring"
+                            >
+                              <Play className="h-4 w-4 text-primary" />
+                            </Button>
+                          ) : null}
+                          
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeClientMutation.mutate({ 
+                              organizationId: selectedOrg!.id, 
+                              clientId: client.id 
+                            })}
+                            disabled={removeClientMutation.isPending}
+                            title="Remove from organization"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
