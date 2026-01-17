@@ -99,7 +99,8 @@ Organizations with bundles can monitor their clients' check-in status:
 - **Status Monitoring**: View real-time status (Safe/Pending/Overdue) for each client
 - **Dashboard Stats**: Overview of total clients, seat usage, and status distribution
 - **Emergency Alerts**: Track emergency alerts from monitored clients
-- **Security**: Bundle ownership verification prevents cross-organization access
+- **Client Password Reset**: Organizations can reset client passwords through the dashboard (requires org password verification)
+- **Security**: Bundle ownership verification prevents cross-organization access; password-protected actions for timer changes, contact deletion, and client password resets
 - **Separate Navigation**: Organization users have distinct navigation from individual users
 
 Organization API endpoints are prefixed with `/api/org/` and require organization account type.

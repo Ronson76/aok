@@ -1,6 +1,7 @@
 import { Express, Request, Response } from "express";
 import { organizationStorage, storage } from "./storage";
 import { z } from "zod";
+import bcrypt from "bcrypt";
 
 // Middleware to ensure user is an organization
 function requireOrganization(req: Request, res: Response, next: () => void) {
@@ -146,6 +147,54 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("[ORG] Failed to get client check-ins:", error);
       res.status(500).json({ error: "Failed to get client check-ins" });
+    }
+  });
+
+  // Reset a client's password (organization can set a new password for their client)
+  const resetClientPasswordSchema = z.object({
+    newPassword: z.string().min(8, "Password must be at least 8 characters"),
+    orgPassword: z.string().min(1, "Your password is required"),
+  });
+
+  app.post("/api/org/clients/:clientId/reset-password", requireOrganization, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const parsed = resetClientPasswordSchema.safeParse(req.body);
+      
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+
+      const { newPassword, orgPassword } = parsed.data;
+
+      // Verify the client belongs to this organization
+      const isClient = await organizationStorage.isClientOfOrganization(req.userId!, clientId);
+      if (!isClient) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      // Verify organization's password
+      const orgUser = await storage.getUserById(req.userId!);
+      if (!orgUser) {
+        return res.status(401).json({ error: "Organization not found" });
+      }
+
+      const isValidOrgPassword = await bcrypt.compare(orgPassword, orgUser.passwordHash);
+      if (!isValidOrgPassword) {
+        return res.status(401).json({ error: "Incorrect organization password" });
+      }
+
+      // Hash the new password and update the client's account
+      const newPasswordHash = await bcrypt.hash(newPassword, 10);
+      await storage.updateUserPassword(clientId, newPasswordHash);
+
+      // Invalidate all of the client's sessions for security
+      await storage.deleteAllUserSessions(clientId);
+
+      res.json({ success: true, message: "Client password has been reset" });
+    } catch (error) {
+      console.error("[ORG] Failed to reset client password:", error);
+      res.status(500).json({ error: "Failed to reset client password" });
     }
   });
 }
