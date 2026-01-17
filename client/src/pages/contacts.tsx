@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Mail, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall, ShieldAlert } from "lucide-react";
+import { Plus, Mail, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall, ShieldAlert, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -72,6 +72,8 @@ export default function Contacts() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showDeletePasswordDialog, setShowDeletePasswordDialog] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
@@ -90,7 +92,19 @@ export default function Contacts() {
     },
   });
 
+  const editForm = useForm<InsertContact>({
+    resolver: zodResolver(insertContactSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      phoneType: undefined,
+      relationship: "",
+    },
+  });
+
   const phoneValue = useWatch({ control: form.control, name: "phone" });
+  const editPhoneValue = useWatch({ control: editForm.control, name: "phone" });
 
   const { data: contacts = [], isLoading } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
@@ -169,8 +183,48 @@ export default function Contacts() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: InsertContact }) => 
+      apiRequest("PATCH", `/api/contacts/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      setEditDialogOpen(false);
+      setEditingContact(null);
+      editForm.reset();
+      toast({
+        title: "Contact updated",
+        description: "Your emergency contact has been updated.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Failed to update contact",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: InsertContact) => {
     createMutation.mutate(data);
+  };
+
+  const onEditSubmit = (data: InsertContact) => {
+    if (editingContact) {
+      updateMutation.mutate({ id: editingContact.id, data });
+    }
+  };
+
+  const handleEditContact = (contact: Contact) => {
+    setEditingContact(contact);
+    editForm.reset({
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone || "",
+      phoneType: contact.phoneType as "mobile" | "landline" | undefined,
+      relationship: contact.relationship,
+    });
+    setEditDialogOpen(true);
   };
 
   if (isLoading) {
@@ -395,6 +449,15 @@ export default function Contacts() {
                   <Button
                     size="icon"
                     variant="ghost"
+                    onClick={() => handleEditContact(contact)}
+                    title="Edit contact"
+                    data-testid={`button-edit-contact-${contact.id}`}
+                  >
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
                     onClick={() => setDeleteId(contact.id)}
                     data-testid={`button-delete-contact-${contact.id}`}
                   >
@@ -520,6 +583,126 @@ export default function Contacts() {
               Remove Contact
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setEditDialogOpen(false);
+          setEditingContact(null);
+          editForm.reset();
+        }
+      }}>
+        <DialogContent className="max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5" />
+              Edit Contact
+            </DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4 overflow-y-auto flex-1 pr-1 pb-2">
+              <FormField
+                control={editForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John Doe" {...field} data-testid="input-edit-contact-name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="john@example.com" {...field} data-testid="input-edit-contact-email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone (optional)</FormLabel>
+                    <FormControl>
+                      <Input type="tel" placeholder="+1 234 567 8900" {...field} value={field.value || ""} data-testid="input-edit-contact-phone" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {editPhoneValue && editPhoneValue.length > 0 && (
+                <FormField
+                  control={editForm.control}
+                  name="phoneType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-edit-phone-type">
+                            <SelectValue placeholder="Select phone type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="mobile" data-testid="option-edit-mobile">
+                            <span className="flex items-center gap-2">
+                              <Smartphone className="h-4 w-4" />
+                              Mobile
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="landline" data-testid="option-edit-landline">
+                            <span className="flex items-center gap-2">
+                              <PhoneCall className="h-4 w-4" />
+                              Landline
+                            </span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription className="text-xs">
+                        Landline contacts will receive automated voice calls during emergencies.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              <FormField
+                control={editForm.control}
+                name="relationship"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Relationship</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Spouse, Parent, Friend..." {...field} data-testid="input-edit-contact-relationship" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={updateMutation.isPending}
+                data-testid="button-update-contact"
+              >
+                {updateMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Update Contact
+              </Button>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
