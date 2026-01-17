@@ -583,7 +583,7 @@ export default function Dashboard() {
             </DialogTitle>
             <DialogDescription>
               This will immediately send an urgent alert to ALL your emergency contacts. 
-              They will be notified that you need immediate help.
+              They will be notified that you need immediate help and your last known location will be shared.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-3">
