@@ -507,13 +507,10 @@ class DatabaseStorage implements IStorage {
     // Now update the database state AFTER alerts are sent
     await this.createMissedCheckIn(userId);
 
-    const hoursToAdd = parseInt(row.intervalHours) || 24;
-    const nextDue = new Date(dueDate.getTime() + hoursToAdd * 60 * 60 * 1000);
-    
-    // Update both nextCheckInDue and lastMissedDueAt atomically
+    // Only mark this due date as processed to prevent duplicate alerts
+    // Do NOT update nextCheckInDue - user must manually check in to reset the timer
     await getDb().update(settings)
       .set({ 
-        nextCheckInDue: nextDue,
         lastMissedDueAt: dueDate  // Mark this due date as processed
       })
       .where(eq(settings.userId, userId));
