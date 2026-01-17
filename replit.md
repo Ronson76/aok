@@ -102,11 +102,18 @@ Organizations with bundles can monitor their clients' check-in status:
 - **Status Monitoring**: View real-time status (Safe/Pending/Overdue) for each client
 - **Dashboard Stats**: Overview of total clients, seat usage, and status distribution
 - **Emergency Alerts**: Track emergency alerts from monitored clients
+- **Emergency Contact Management**: Organizations can view, add, edit, and delete emergency contacts for their clients via the Contacts tab in client details
 - **Client Password Reset**: Organizations can reset client passwords through the dashboard (requires org password verification)
 - **Security**: Bundle ownership verification prevents cross-organization access; password-protected actions for timer changes, contact deletion, and client password resets
 - **Separate Navigation**: Organization users have distinct navigation from individual users
 
 Organization API endpoints are prefixed with `/api/org/` and require organization account type.
+
+API endpoints for client contact management:
+- `GET /api/org/clients/:orgClientId/contacts` - List client's emergency contacts
+- `POST /api/org/clients/:orgClientId/contacts` - Add emergency contact
+- `PATCH /api/org/clients/:orgClientId/contacts/:contactId` - Update contact
+- `DELETE /api/org/clients/:orgClientId/contacts/:contactId` - Delete contact
 
 ### Key Design Decisions
 
