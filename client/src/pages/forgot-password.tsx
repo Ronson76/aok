@@ -8,13 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Loader2, ArrowLeft, CheckCircle, MoreVertical, Mail } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Shield, Loader2, ArrowLeft, CheckCircle } from "lucide-react";
 import { forgotPasswordSchema, type ForgotPasswordInput } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 

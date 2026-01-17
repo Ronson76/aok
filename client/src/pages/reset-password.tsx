@@ -8,13 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { PasswordInput } from "@/components/password-input";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Loader2, CheckCircle, ArrowLeft, AlertCircle, MoreVertical, Mail } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Shield, Loader2, CheckCircle, ArrowLeft, AlertCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 

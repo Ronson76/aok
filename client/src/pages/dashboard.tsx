@@ -4,13 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon, Users, MoreVertical, Mail } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon, Users } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import type { StatusData } from "@shared/schema";

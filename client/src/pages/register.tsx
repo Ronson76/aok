@@ -11,13 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PasswordInput } from "@/components/password-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Loader2, User, Building2, MapPin, AlertTriangle, MoreVertical, Mail } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ShieldCheck, Loader2, User, Building2, MapPin, AlertTriangle } from "lucide-react";
 import { insertUserSchema, type InsertUser } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -26,6 +20,15 @@ export default function Register() {
   const { toast } = useToast();
   const [locationPermission, setLocationPermission] = useState<'pending' | 'granted' | 'denied' | 'unavailable'>('pending');
   const [requestingLocation, setRequestingLocation] = useState(false);
+  const [isPWA, setIsPWA] = useState(false);
+
+  // Detect if running as installed PWA (mobile app)
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
+      || (window.navigator as any).standalone === true
+      || document.referrer.includes('android-app://');
+    setIsPWA(isStandalone);
+  }, []);
 
   // Check location permission status on mount
   useEffect(() => {
@@ -106,7 +109,11 @@ export default function Register() {
   });
 
   const accountType = form.watch("accountType");
-  const canSubmit = locationPermission === 'granted' || locationPermission === 'unavailable';
+  // For PWA (mobile app): require location permission (granted or unavailable)
+  // For web browser: allow signup without location (always true)
+  const canSubmit = isPWA 
+    ? (locationPermission === 'granted' || locationPermission === 'unavailable')
+    : true; // Web browsers can sign up without location
 
   const registerMutation = useMutation({
     mutationFn: async (data: InsertUser) => {
@@ -442,7 +449,7 @@ export default function Register() {
               <div className="space-y-3 pt-2">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <MapPin className="h-4 w-4" />
-                  Location Access (Required)
+                  Location Access {isPWA ? "(Required)" : "(Optional)"}
                 </div>
                 
                 {locationPermission === 'granted' ? (
@@ -453,10 +460,13 @@ export default function Register() {
                     </AlertDescription>
                   </Alert>
                 ) : locationPermission === 'denied' ? (
-                  <Alert variant="destructive">
+                  <Alert variant={isPWA ? "destructive" : "default"}>
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
-                      Location access was denied. Please enable it in your browser settings to use aok. This is required for emergency alerts.
+                      {isPWA 
+                        ? "Location access was denied. Please enable it in your device settings to use aok. This is required for the mobile app."
+                        : "Location access was denied. You can still sign up, but emergency alerts will be sent without your location."
+                      }
                     </AlertDescription>
                   </Alert>
                 ) : locationPermission === 'unavailable' ? (
@@ -466,10 +476,10 @@ export default function Register() {
                       Location services are not available on this device. Emergency alerts will be sent without location data.
                     </AlertDescription>
                   </Alert>
-                ) : (
+                ) : isPWA ? (
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">
-                      aok needs your location to share with emergency contacts if you need help. This is essential for your safety.
+                      aok needs your location to share with emergency contacts if you need help. This is required for the mobile app.
                     </p>
                     <Button
                       type="button"
@@ -488,6 +498,32 @@ export default function Register() {
                         <>
                           <MapPin className="mr-2 h-4 w-4" />
                           Grant Location Access
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Location sharing is optional when using the web browser. You can grant access now or later in settings.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={requestLocationPermission}
+                      disabled={requestingLocation}
+                      data-testid="button-grant-location"
+                    >
+                      {requestingLocation ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Requesting access...
+                        </>
+                      ) : (
+                        <>
+                          <MapPin className="mr-2 h-4 w-4" />
+                          Grant Location Access (Optional)
                         </>
                       )}
                     </Button>
