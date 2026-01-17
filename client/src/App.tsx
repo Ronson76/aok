@@ -318,17 +318,19 @@ function Router() {
   const [location, setLocation] = useLocation();
   const { isAuthenticated, isLoading } = useAuth();
 
+  useEffect(() => {
+    if (location === "/" && !isLoading && isAuthenticated) {
+      setLocation("/app");
+    }
+  }, [location, isLoading, isAuthenticated, setLocation]);
+
   if (location === "/") {
-    if (isLoading) {
+    if (isLoading || isAuthenticated) {
       return (
         <div className="flex items-center justify-center h-screen">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       );
-    }
-    if (isAuthenticated) {
-      setLocation("/app");
-      return null;
     }
     return <Landing />;
   }
