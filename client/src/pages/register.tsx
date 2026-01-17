@@ -290,11 +290,68 @@ export default function Register() {
                     )}
                   />
                   
+                  {/* Location Permission for Org Clients */}
+                  <div className="space-y-3 pt-4 border-t">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <MapPin className="h-4 w-4" />
+                      Location Access (Required)
+                    </div>
+                    
+                    {locationPermission === 'granted' ? (
+                      <Alert className="border-green-500 bg-green-50 dark:bg-green-950/20">
+                        <MapPin className="h-4 w-4 text-green-600" />
+                        <AlertDescription className="text-green-700 dark:text-green-400">
+                          Location access granted. Your location will be shared during emergencies.
+                        </AlertDescription>
+                      </Alert>
+                    ) : locationPermission === 'denied' ? (
+                      <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          Location access was denied. Please enable it in your device settings to use aok.
+                        </AlertDescription>
+                      </Alert>
+                    ) : locationPermission === 'unavailable' ? (
+                      <Alert>
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          Location services are not available on this device.
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          aok needs your location to share with emergency contacts if you need help.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          onClick={requestLocationPermission}
+                          disabled={requestingLocation}
+                          data-testid="button-grant-location-org"
+                        >
+                          {requestingLocation ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Requesting access...
+                            </>
+                          ) : (
+                            <>
+                              <MapPin className="mr-2 h-4 w-4" />
+                              Grant Location Access
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
                   <Button
                     type="button"
                     className="w-full"
                     onClick={handleOrgActivation}
-                    disabled={!referenceId || referenceId.length !== 6 || activateMutation.isPending}
+                    disabled={!referenceId || referenceId.length !== 6 || activateMutation.isPending || (locationPermission !== 'granted' && locationPermission !== 'unavailable')}
                     data-testid="button-org-continue"
                   >
                     {activateMutation.isPending ? (
@@ -302,6 +359,8 @@ export default function Register() {
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Signing in...
                       </>
+                    ) : locationPermission !== 'granted' && locationPermission !== 'unavailable' ? (
+                      "Grant Location Access to Continue"
                     ) : (
                       "Continue"
                     )}
