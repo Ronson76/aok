@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, KeyRound } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { OrganizationDashboardStats, OrganizationClientWithDetails, OrganizationBundle } from "@shared/schema";
+import type { OrganizationDashboardStats, OrganizationClientWithDetails, OrganizationBundle, OrganizationClientProfile, AlertLog, OrgClientStatus } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
 import { useState } from "react";
 
@@ -36,6 +38,17 @@ function getStatusBadge(status: "safe" | "pending" | "overdue") {
   }
 }
 
+function getClientStatusBadge(status: OrgClientStatus) {
+  switch (status) {
+    case "active":
+      return <Badge variant="outline" className="text-primary border-primary" data-testid="badge-client-active">Active</Badge>;
+    case "paused":
+      return <Badge variant="outline" className="text-yellow-600 border-yellow-600" data-testid="badge-client-paused">Paused</Badge>;
+    case "terminated":
+      return <Badge variant="outline" className="text-muted-foreground border-muted-foreground" data-testid="badge-client-terminated">Terminated</Badge>;
+  }
+}
+
 export default function OrganizationDashboard() {
   const { toast } = useToast();
   const [showAddClientDialog, setShowAddClientDialog] = useState(false);
@@ -50,6 +63,14 @@ export default function OrganizationDashboard() {
   const [newClientPassword, setNewClientPassword] = useState("");
   const [confirmClientPassword, setConfirmClientPassword] = useState("");
   const [orgPassword, setOrgPassword] = useState("");
+  
+  // Profile editing state
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileData, setProfileData] = useState<Partial<OrganizationClientProfile>>({});
+  
+  // Alert view state
+  const [clientAlerts, setClientAlerts] = useState<{ alerts: AlertLog[]; counts: { total: number; emails: number; calls: number; emergencies: number } } | null>(null);
+  const [loadingAlerts, setLoadingAlerts] = useState(false);
 
   const { data: stats, isLoading: statsLoading } = useQuery<OrganizationDashboardStats>({
     queryKey: ["/api/org/dashboard"],
@@ -138,6 +159,70 @@ export default function OrganizationDashboard() {
       });
     },
   });
+
+  const updateClientStatusMutation = useMutation({
+    mutationFn: async ({ orgClientId, status }: { orgClientId: string; status: OrgClientStatus }) => {
+      const response = await apiRequest("PATCH", `/api/org/clients/${orgClientId}/status`, { status });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
+      toast({
+        title: "Status updated",
+        description: "Client status has been updated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update status",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async ({ orgClientId, profile }: { orgClientId: string; profile: Partial<OrganizationClientProfile> }) => {
+      const response = await apiRequest("PUT", `/api/org/clients/${orgClientId}/profile`, profile);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      setEditingProfile(false);
+      toast({
+        title: "Profile saved",
+        description: "Client profile has been updated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to save profile",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const fetchClientAlerts = async (clientId: string) => {
+    setLoadingAlerts(true);
+    try {
+      const response = await apiRequest("GET", `/api/org/clients/${clientId}/alerts`);
+      const data = await response.json();
+      setClientAlerts(data);
+    } catch (error) {
+      console.error("Failed to fetch alerts:", error);
+    } finally {
+      setLoadingAlerts(false);
+    }
+  };
+
+  const handleViewClientDetails = (client: OrganizationClientWithDetails) => {
+    setSelectedClient(client);
+    setProfileData(client.profile || {});
+    setEditingProfile(false);
+    fetchClientAlerts(client.clientId);
+  };
 
   const handleResetPasswordClick = (client: OrganizationClientWithDetails) => {
     setResetPasswordClientId(client.clientId);
@@ -355,24 +440,33 @@ export default function OrganizationDashboard() {
               {clients.map((client) => (
                 <div 
                   key={client.id} 
-                  className="flex items-center justify-between p-4 border rounded-lg hover-elevate"
+                  className={`flex items-center justify-between p-4 border rounded-lg hover-elevate ${client.clientStatus !== "active" ? "opacity-60" : ""}`}
                   data-testid={`card-client-${client.clientId}`}
                 >
                   <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted text-muted-foreground font-medium text-sm">
+                      {client.clientOrdinal}
+                    </div>
                     {getStatusIcon(client.status.status, "md")}
                     <div>
-                      <div className="font-medium">
+                      <div className="font-medium flex items-center gap-2">
                         {client.nickname || client.client.name}
                         {client.nickname && (
-                          <span className="text-muted-foreground ml-2 text-sm">({client.client.name})</span>
+                          <span className="text-muted-foreground text-sm">({client.client.name})</span>
                         )}
+                        {getClientStatusBadge(client.clientStatus)}
                       </div>
                       <div className="text-sm text-muted-foreground">{client.client.email}</div>
-                      {client.status.lastCheckIn && (
-                        <div className="text-xs text-muted-foreground">
-                          Last check-in: {formatDistanceToNow(new Date(client.status.lastCheckIn), { addSuffix: true })}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                        {client.status.lastCheckIn && (
+                          <span>Last check-in: {formatDistanceToNow(new Date(client.status.lastCheckIn), { addSuffix: true })}</span>
+                        )}
+                        {client.alertCounts && client.alertCounts.total > 0 && (
+                          <span className="text-destructive">
+                            {client.alertCounts.total} alert{client.alertCounts.total !== 1 ? "s" : ""}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -383,10 +477,33 @@ export default function OrganizationDashboard() {
                         Alert
                       </Badge>
                     )}
+                    {client.clientStatus === "active" ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => updateClientStatusMutation.mutate({ orgClientId: client.id, status: "paused" })}
+                        disabled={updateClientStatusMutation.isPending}
+                        data-testid={`button-pause-client-${client.clientId}`}
+                        title="Pause monitoring"
+                      >
+                        <Pause className="h-4 w-4 text-yellow-600" />
+                      </Button>
+                    ) : client.clientStatus === "paused" ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => updateClientStatusMutation.mutate({ orgClientId: client.id, status: "active" })}
+                        disabled={updateClientStatusMutation.isPending}
+                        data-testid={`button-resume-client-${client.clientId}`}
+                        title="Resume monitoring"
+                      >
+                        <Play className="h-4 w-4 text-primary" />
+                      </Button>
+                    ) : null}
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setSelectedClient(client)}
+                      onClick={() => handleViewClientDetails(client)}
                       data-testid={`button-view-client-${client.clientId}`}
                       title="View details"
                     >
@@ -419,68 +536,329 @@ export default function OrganizationDashboard() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!selectedClient} onOpenChange={() => setSelectedClient(null)}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={!!selectedClient} onOpenChange={() => { setSelectedClient(null); setEditingProfile(false); setClientAlerts(null); }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Client Details</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground font-medium text-sm">
+                {selectedClient?.clientOrdinal}
+              </span>
               {selectedClient?.nickname || selectedClient?.client.name}
+              {selectedClient && getClientStatusBadge(selectedClient.clientStatus)}
+            </DialogTitle>
+            <DialogDescription className="flex items-center gap-2">
+              <Mail className="h-3 w-3" />
+              {selectedClient?.client.email}
+              {selectedClient?.client.mobileNumber && (
+                <>
+                  <Phone className="h-3 w-3 ml-2" />
+                  {selectedClient.client.mobileNumber}
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
           {selectedClient && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                {getStatusIcon(selectedClient.status.status, "md")}
-                <div>
-                  <div className="font-medium">{selectedClient.client.name}</div>
-                  <div className="text-sm text-muted-foreground">{selectedClient.client.email}</div>
-                </div>
-                {getStatusBadge(selectedClient.status.status)}
-              </div>
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+                <TabsTrigger value="profile" data-testid="tab-profile">Profile</TabsTrigger>
+                <TabsTrigger value="alerts" data-testid="tab-alerts">
+                  Alerts {clientAlerts?.counts?.total ? `(${clientAlerts.counts.total})` : ""}
+                </TabsTrigger>
+              </TabsList>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Last Check-in</p>
-                  <p className="font-medium">
-                    {selectedClient.status.lastCheckIn 
-                      ? format(new Date(selectedClient.status.lastCheckIn), "MMM d, yyyy h:mm a")
-                      : "Never"
-                    }
-                  </p>
+              <TabsContent value="overview" className="space-y-4 mt-4">
+                <div className="flex items-center gap-4">
+                  {getStatusIcon(selectedClient.status.status, "md")}
+                  <div>
+                    <div className="font-medium">Check-in Status</div>
+                    <div className="text-sm text-muted-foreground">{getStatusBadge(selectedClient.status.status)}</div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Next Due</p>
-                  <p className="font-medium">
-                    {selectedClient.status.nextCheckInDue 
-                      ? format(new Date(selectedClient.status.nextCheckInDue), "MMM d, yyyy h:mm a")
-                      : "Not set"
-                    }
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Streak</p>
-                  <p className="font-medium">{selectedClient.status.streak} check-ins</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Added</p>
-                  <p className="font-medium">
-                    {format(new Date(selectedClient.addedAt), "MMM d, yyyy")}
-                  </p>
-                </div>
-              </div>
-
-              {selectedClient.lastAlert && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm text-muted-foreground mb-2">Last Alert</p>
-                  <div className={`p-3 rounded-lg ${selectedClient.lastAlert.message.includes("EMERGENCY") ? "bg-destructive/10" : "bg-muted"}`}>
-                    <p className="text-sm">{selectedClient.lastAlert.message}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {format(new Date(selectedClient.lastAlert.timestamp), "MMM d, yyyy h:mm a")}
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Last Check-in</p>
+                    <p className="font-medium">
+                      {selectedClient.status.lastCheckIn 
+                        ? format(new Date(selectedClient.status.lastCheckIn), "MMM d, yyyy h:mm a")
+                        : "Never"
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Next Due</p>
+                    <p className="font-medium">
+                      {selectedClient.status.nextCheckInDue 
+                        ? format(new Date(selectedClient.status.nextCheckInDue), "MMM d, yyyy h:mm a")
+                        : "Not set"
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Streak</p>
+                    <p className="font-medium">{selectedClient.status.streak} check-ins</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Added</p>
+                    <p className="font-medium">
+                      {format(new Date(selectedClient.addedAt), "MMM d, yyyy")}
                     </p>
                   </div>
                 </div>
-              )}
-            </div>
+
+                {selectedClient.lastAlert && (
+                  <div className="pt-4 border-t">
+                    <p className="text-sm text-muted-foreground mb-2">Last Alert</p>
+                    <div className={`p-3 rounded-lg ${selectedClient.lastAlert.message.includes("EMERGENCY") ? "bg-destructive/10" : "bg-muted"}`}>
+                      <p className="text-sm">{selectedClient.lastAlert.message}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {format(new Date(selectedClient.lastAlert.timestamp), "MMM d, yyyy h:mm a")}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="profile" className="space-y-4 mt-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Personal Information
+                  </h4>
+                  {!editingProfile && (
+                    <Button variant="outline" size="sm" onClick={() => setEditingProfile(true)} data-testid="button-edit-profile">
+                      <Edit2 className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
+                
+                {editingProfile ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Date of Birth</Label>
+                        <Input
+                          type="date"
+                          value={profileData.dateOfBirth || ""}
+                          onChange={(e) => setProfileData({ ...profileData, dateOfBirth: e.target.value })}
+                          data-testid="input-dob"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        Address
+                      </Label>
+                      <Input
+                        placeholder="Address Line 1"
+                        value={profileData.addressLine1 || ""}
+                        onChange={(e) => setProfileData({ ...profileData, addressLine1: e.target.value })}
+                        data-testid="input-address1"
+                      />
+                      <Input
+                        placeholder="Address Line 2"
+                        value={profileData.addressLine2 || ""}
+                        onChange={(e) => setProfileData({ ...profileData, addressLine2: e.target.value })}
+                        data-testid="input-address2"
+                      />
+                      <div className="grid grid-cols-3 gap-2">
+                        <Input
+                          placeholder="City"
+                          value={profileData.city || ""}
+                          onChange={(e) => setProfileData({ ...profileData, city: e.target.value })}
+                          data-testid="input-city"
+                        />
+                        <Input
+                          placeholder="Postal Code"
+                          value={profileData.postalCode || ""}
+                          onChange={(e) => setProfileData({ ...profileData, postalCode: e.target.value })}
+                          data-testid="input-postal"
+                        />
+                        <Input
+                          placeholder="Country"
+                          value={profileData.country || ""}
+                          onChange={(e) => setProfileData({ ...profileData, country: e.target.value })}
+                          data-testid="input-country"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Vulnerabilities / Special Needs
+                      </Label>
+                      <Textarea
+                        placeholder="Any vulnerabilities, medical conditions, or special needs to be aware of..."
+                        value={profileData.vulnerabilities || ""}
+                        onChange={(e) => setProfileData({ ...profileData, vulnerabilities: e.target.value })}
+                        rows={3}
+                        data-testid="input-vulnerabilities"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Medical Notes</Label>
+                      <Textarea
+                        placeholder="Medical conditions, medications, allergies..."
+                        value={profileData.medicalNotes || ""}
+                        onChange={(e) => setProfileData({ ...profileData, medicalNotes: e.target.value })}
+                        rows={3}
+                        data-testid="input-medical"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Emergency Instructions</Label>
+                      <Textarea
+                        placeholder="Special instructions for emergency situations..."
+                        value={profileData.emergencyInstructions || ""}
+                        onChange={(e) => setProfileData({ ...profileData, emergencyInstructions: e.target.value })}
+                        rows={3}
+                        data-testid="input-emergency-instructions"
+                      />
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditingProfile(false);
+                          setProfileData(selectedClient.profile || {});
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => updateProfileMutation.mutate({ orgClientId: selectedClient.id, profile: profileData })}
+                        disabled={updateProfileMutation.isPending}
+                        data-testid="button-save-profile"
+                      >
+                        {updateProfileMutation.isPending ? (
+                          <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Saving...</>
+                        ) : (
+                          "Save Profile"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {selectedClient.profile ? (
+                      <>
+                        {selectedClient.profile.dateOfBirth && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Date of Birth</p>
+                            <p className="font-medium">{selectedClient.profile.dateOfBirth}</p>
+                          </div>
+                        )}
+                        
+                        {(selectedClient.profile.addressLine1 || selectedClient.profile.city) && (
+                          <div>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              Address
+                            </p>
+                            <p className="font-medium">
+                              {[
+                                selectedClient.profile.addressLine1,
+                                selectedClient.profile.addressLine2,
+                                selectedClient.profile.city,
+                                selectedClient.profile.postalCode,
+                                selectedClient.profile.country
+                              ].filter(Boolean).join(", ")}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {selectedClient.profile.vulnerabilities && (
+                          <div>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <FileText className="h-3 w-3" />
+                              Vulnerabilities / Special Needs
+                            </p>
+                            <p className="font-medium whitespace-pre-wrap">{selectedClient.profile.vulnerabilities}</p>
+                          </div>
+                        )}
+                        
+                        {selectedClient.profile.medicalNotes && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Medical Notes</p>
+                            <p className="font-medium whitespace-pre-wrap">{selectedClient.profile.medicalNotes}</p>
+                          </div>
+                        )}
+                        
+                        {selectedClient.profile.emergencyInstructions && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Emergency Instructions</p>
+                            <p className="font-medium whitespace-pre-wrap">{selectedClient.profile.emergencyInstructions}</p>
+                          </div>
+                        )}
+                        
+                        {!selectedClient.profile.dateOfBirth && !selectedClient.profile.addressLine1 && !selectedClient.profile.vulnerabilities && !selectedClient.profile.medicalNotes && (
+                          <p className="text-muted-foreground text-center py-4">No profile information recorded yet.</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">No profile information recorded yet. Click Edit to add details.</p>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="alerts" className="space-y-4 mt-4">
+                {loadingAlerts ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : clientAlerts ? (
+                  <>
+                    <div className="grid grid-cols-4 gap-2">
+                      <div className="p-3 bg-muted rounded-lg text-center">
+                        <div className="text-xl font-bold">{clientAlerts.counts.total}</div>
+                        <div className="text-xs text-muted-foreground">Total</div>
+                      </div>
+                      <div className="p-3 bg-muted rounded-lg text-center">
+                        <div className="text-xl font-bold">{clientAlerts.counts.emails}</div>
+                        <div className="text-xs text-muted-foreground">Emails</div>
+                      </div>
+                      <div className="p-3 bg-muted rounded-lg text-center">
+                        <div className="text-xl font-bold">{clientAlerts.counts.calls}</div>
+                        <div className="text-xs text-muted-foreground">Calls</div>
+                      </div>
+                      <div className="p-3 bg-destructive/10 rounded-lg text-center">
+                        <div className="text-xl font-bold text-destructive">{clientAlerts.counts.emergencies}</div>
+                        <div className="text-xs text-muted-foreground">Emergencies</div>
+                      </div>
+                    </div>
+                    
+                    {clientAlerts.alerts.length === 0 ? (
+                      <p className="text-muted-foreground text-center py-4">No alerts recorded.</p>
+                    ) : (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {clientAlerts.alerts.map((alert) => (
+                          <div
+                            key={alert.id}
+                            className={`p-3 rounded-lg ${alert.message.includes("EMERGENCY") ? "bg-destructive/10" : "bg-muted"}`}
+                          >
+                            <p className="text-sm">{alert.message}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {format(new Date(alert.timestamp), "MMM d, yyyy h:mm a")}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-muted-foreground text-center py-4">Click to load alert history.</p>
+                )}
+              </TabsContent>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>
