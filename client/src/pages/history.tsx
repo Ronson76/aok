@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { History as HistoryIcon, CheckCircle, XCircle, Loader2, Calendar, Bell, AlertTriangle, ChevronDown } from "lucide-react";
+import { History as HistoryIcon, CheckCircle, XCircle, Loader2, Bell, AlertTriangle, ChevronDown } from "lucide-react";
 import type { CheckIn, AlertLog } from "@shared/schema";
 import { format, isToday, startOfDay, subDays, isSameDay } from "date-fns";
 import { useState } from "react";
@@ -10,23 +10,19 @@ interface DayData {
   date: Date;
   checkIns: CheckIn[];
   alerts: AlertLog[];
+  label: string;
 }
 
-function getTodayItems(checkIns: CheckIn[], alerts: AlertLog[]) {
-  return {
-    checkIns: checkIns.filter(c => isToday(new Date(c.timestamp))),
-    alerts: alerts.filter(a => isToday(new Date(a.timestamp)))
-  };
-}
-
-function getPreviousDays(checkIns: CheckIn[], alerts: AlertLog[]): DayData[] {
+function getDays(checkIns: CheckIn[], alerts: AlertLog[]): DayData[] {
   const days: DayData[] = [];
   
-  for (let i = 1; i <= 6; i++) {
+  for (let i = 0; i <= 6; i++) {
     const date = startOfDay(subDays(new Date(), i));
+    const label = i === 0 ? "Today" : format(date, "EEEE");
     
     days.push({
       date,
+      label,
       checkIns: checkIns.filter(c => isSameDay(new Date(c.timestamp), date)),
       alerts: alerts.filter(a => isSameDay(new Date(a.timestamp), date))
     });
@@ -97,82 +93,8 @@ function ActivityList({ checkIns, alerts }: { checkIns: CheckIn[], alerts: Alert
   );
 }
 
-function TodaySection({ checkIns, alerts }: { checkIns: CheckIn[], alerts: AlertLog[] }) {
-  const hasActivity = checkIns.length > 0 || alerts.length > 0;
-  
-  if (!hasActivity) {
-    return (
-      <Card className="border-dashed">
-        <CardContent className="py-6 text-center">
-          <p className="text-muted-foreground">No activity today yet</p>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  const sortedItems = [
-    ...checkIns.map(c => ({ type: 'checkin' as const, data: c, time: new Date(c.timestamp) })),
-    ...alerts.map(a => ({ type: 'alert' as const, data: a, time: new Date(a.timestamp) }))
-  ].sort((a, b) => b.time.getTime() - a.time.getTime());
-  
-  return (
-    <div className="space-y-2">
-      {sortedItems.map((item) => {
-        if (item.type === 'checkin') {
-          const checkIn = item.data as CheckIn;
-          const isSuccess = checkIn.status === "success";
-          return (
-            <Card key={`checkin-${checkIn.id}`}>
-              <CardContent className="py-3 flex items-center gap-3">
-                <div className={`rounded-full p-1.5 ${isSuccess ? "bg-primary/10" : "bg-destructive/10"}`}>
-                  {isSuccess ? (
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-destructive" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <span className="font-medium text-sm">
-                    {isSuccess ? "Checked In" : "Missed Check-In"}
-                  </span>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {format(new Date(checkIn.timestamp), "h:mm a")}
-                </span>
-              </CardContent>
-            </Card>
-          );
-        } else {
-          const alert = item.data as AlertLog;
-          const isEmergency = alert.message.includes("EMERGENCY");
-          return (
-            <Card key={`alert-${alert.id}`} className={isEmergency ? "border-red-500/50" : "border-destructive/50"}>
-              <CardContent className="py-3 flex items-center gap-3">
-                <div className={`rounded-full p-1.5 ${isEmergency ? "bg-red-500/10" : "bg-destructive/10"}`}>
-                  <AlertTriangle className={`h-4 w-4 ${isEmergency ? "text-red-500" : "text-destructive"}`} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="font-medium text-sm">
-                    {isEmergency ? "Emergency Alert" : "Alert Sent"}
-                  </span>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {alert.contactsNotified.join(", ")}
-                  </p>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {format(new Date(alert.timestamp), "h:mm a")}
-                </span>
-              </CardContent>
-            </Card>
-          );
-        }
-      })}
-    </div>
-  );
-}
-
-function DayRow({ day }: { day: DayData }) {
-  const [isOpen, setIsOpen] = useState(false);
+function DayRow({ day, defaultOpen = false }: { day: DayData, defaultOpen?: boolean }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   
   const successCount = day.checkIns.filter(c => c.status === "success").length;
   const missedCount = day.checkIns.filter(c => c.status === "missed").length;
@@ -186,7 +108,7 @@ function DayRow({ day }: { day: DayData }) {
         <CollapsibleTrigger className="w-full" data-testid={`day-row-${format(day.date, "yyyy-MM-dd")}`}>
           <CardContent className="py-3 flex items-center gap-3">
             <div className="text-left min-w-[80px]">
-              <p className="font-medium text-sm">{format(day.date, "EEEE")}</p>
+              <p className="font-medium text-sm">{day.label}</p>
               <p className="text-xs text-muted-foreground">{format(day.date, "MMM d")}</p>
             </div>
             
@@ -245,8 +167,7 @@ export default function History() {
     );
   }
 
-  const todayItems = getTodayItems(checkIns, alerts);
-  const previousDays = getPreviousDays(checkIns, alerts);
+  const days = getDays(checkIns, alerts);
   
   const totalCheckIns = checkIns.filter(c => c.status === "success").length;
   const totalMissed = checkIns.filter(c => c.status === "missed").length;
@@ -279,24 +200,10 @@ export default function History() {
         </CardContent>
       </Card>
 
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <h2 className="text-sm font-medium text-muted-foreground">Today</h2>
-        </div>
-        <TodaySection checkIns={todayItems.checkIns} alerts={todayItems.alerts} />
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <h2 className="text-sm font-medium text-muted-foreground">Previous 6 Days</h2>
-        </div>
-        <div className="space-y-2">
-          {previousDays.map((day) => (
-            <DayRow key={format(day.date, "yyyy-MM-dd")} day={day} />
-          ))}
-        </div>
+      <div className="space-y-2">
+        {days.map((day, index) => (
+          <DayRow key={format(day.date, "yyyy-MM-dd")} day={day} />
+        ))}
       </div>
     </div>
   );
