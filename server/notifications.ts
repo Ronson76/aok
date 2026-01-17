@@ -411,21 +411,23 @@ If you didn't request this, you can safely ignore this email.
 
 interface TwilioCredentials {
   accountSid: string;
-  authToken: string;
+  apiKey: string;
+  apiKeySecret: string;
   phoneNumber: string;
 }
 
 async function getTwilioCredentials(): Promise<TwilioCredentials | null> {
-  // Check for environment variables
+  // Check for environment variables (legacy support)
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
   if (accountSid && authToken && phoneNumber) {
-    return { accountSid, authToken, phoneNumber };
+    // Legacy auth token mode - use as API key
+    return { accountSid, apiKey: accountSid, apiKeySecret: authToken, phoneNumber };
   }
 
-  // Try Replit connector
+  // Try Replit connector (uses API Key authentication)
   try {
     const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
     const xReplitToken = process.env.REPL_IDENTITY 
@@ -451,10 +453,11 @@ async function getTwilioCredentials(): Promise<TwilioCredentials | null> {
     const data = await response.json();
     const twilioSettings = data.items?.[0]?.settings;
 
-    if (twilioSettings?.account_sid && twilioSettings?.auth_token && twilioSettings?.phone_number) {
+    if (twilioSettings?.account_sid && twilioSettings?.api_key && twilioSettings?.api_key_secret && twilioSettings?.phone_number) {
       return {
         accountSid: twilioSettings.account_sid,
-        authToken: twilioSettings.auth_token,
+        apiKey: twilioSettings.api_key,
+        apiKeySecret: twilioSettings.api_key_secret,
         phoneNumber: twilioSettings.phone_number
       };
     }
@@ -490,8 +493,8 @@ export async function makeVoiceCall(
   <Pause length="2"/>
 </Response>`;
 
-    // Make API call to Twilio
-    const auth = Buffer.from(`${credentials.accountSid}:${credentials.authToken}`).toString('base64');
+    // Make API call to Twilio using API key authentication
+    const auth = Buffer.from(`${credentials.apiKey}:${credentials.apiKeySecret}`).toString('base64');
     
     const response = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${credentials.accountSid}/Calls.json`,
