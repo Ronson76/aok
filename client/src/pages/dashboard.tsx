@@ -183,14 +183,24 @@ export default function Dashboard() {
     if (!status?.nextCheckInDue) {
       setCountdown("");
       setIsLocallyOverdue(false);
+      hasPlayedInitialAlarm.current = false;
       return;
     }
 
     const targetDate = new Date(status.nextCheckInDue);
     
+    // When nextCheckInDue changes (e.g., user adjusted timer), immediately reset overdue state
+    // if the new due time is in the future
+    const now = new Date();
+    const initialDiff = differenceInSeconds(targetDate, now);
+    if (initialDiff > 0) {
+      setIsLocallyOverdue(false);
+      hasPlayedInitialAlarm.current = false;
+    }
+    
     const updateCountdown = () => {
-      const now = new Date();
-      const diffInSeconds = differenceInSeconds(targetDate, now);
+      const currentTime = new Date();
+      const diffInSeconds = differenceInSeconds(targetDate, currentTime);
       
       if (diffInSeconds <= 0) {
         setCountdown("Due now");
@@ -209,8 +219,7 @@ export default function Dashboard() {
         }
       } else {
         setCountdown(formatCountdown(targetDate));
-        setIsLocallyOverdue(false);
-        hasPlayedInitialAlarm.current = false;
+        // Don't reset isLocallyOverdue here in the interval - only reset when nextCheckInDue actually changes
       }
     };
     
@@ -218,7 +227,7 @@ export default function Dashboard() {
     const interval = setInterval(updateCountdown, 1000);
     
     return () => clearInterval(interval);
-  }, [status?.nextCheckInDue, status?.status, isLocallyOverdue]);
+  }, [status?.nextCheckInDue, status?.status]);
 
   // Determine if we should show overdue state (server says overdue OR local countdown reached zero)
   const effectivelyOverdue = status?.status === "overdue" || isLocallyOverdue;
