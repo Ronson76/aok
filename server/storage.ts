@@ -1,9 +1,10 @@
 import { 
   contacts, checkIns, settings, alertLogs, users, sessions, passwordResetTokens,
-  adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs, organizationClients,
+  adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs, organizationClients, organizationClientProfiles,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
   AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo,
-  OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData
+  OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData, OrgClientStatus,
+  OrganizationClientProfile, UpdateOrganizationClientProfile, AdminOrganizationClientView, AdminOrganizationView
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, desc, and, isNull, lt, gte, count, sql } from "drizzle-orm";
@@ -853,9 +854,18 @@ export interface IOrganizationStorage {
   // Organization clients
   getClients(organizationId: string): Promise<OrganizationClient[]>;
   getClientsWithDetails(organizationId: string): Promise<OrganizationClientWithDetails[]>;
+  getClientById(organizationClientId: string): Promise<OrganizationClient | undefined>;
   addClient(organizationId: string, clientId: string, bundleId?: string, nickname?: string): Promise<OrganizationClient>;
   removeClient(organizationId: string, clientId: string): Promise<boolean>;
   isClientOfOrganization(organizationId: string, clientId: string): Promise<boolean>;
+  updateClientStatus(organizationClientId: string, status: OrgClientStatus): Promise<OrganizationClient | undefined>;
+  
+  // Client profiles
+  getClientProfile(organizationClientId: string): Promise<OrganizationClientProfile | undefined>;
+  updateClientProfile(organizationClientId: string, profile: UpdateOrganizationClientProfile): Promise<OrganizationClientProfile>;
+  
+  // Alert aggregation
+  getClientAlertCounts(clientId: string): Promise<{ total: number; emails: number; calls: number; emergencies: number }>;
   
   // Dashboard
   getOrganizationDashboardStats(organizationId: string): Promise<OrganizationDashboardStats>;
@@ -863,6 +873,10 @@ export interface IOrganizationStorage {
   // Client details
   getClientStatus(clientId: string): Promise<StatusData>;
   getClientAlertLogs(clientId: string): Promise<AlertLog[]>;
+  
+  // Admin views
+  getOrganizationsWithClientSummary(): Promise<AdminOrganizationView[]>;
+  getOrganizationClientsForAdmin(organizationId: string): Promise<AdminOrganizationClientView[]>;
 }
 
 class OrganizationStorage implements IOrganizationStorage {
@@ -885,7 +899,7 @@ class OrganizationStorage implements IOrganizationStorage {
       .from(organizationClients)
       .leftJoin(users, eq(organizationClients.clientId, users.id))
       .where(eq(organizationClients.organizationId, organizationId))
-      .orderBy(desc(organizationClients.addedAt));
+      .orderBy(organizationClients.clientOrdinal);
 
     const results: OrganizationClientWithDetails[] = [];
     
@@ -895,23 +909,39 @@ class OrganizationStorage implements IOrganizationStorage {
       const status = await this.getClientStatus(row.client.id);
       const alertLogs = await this.getClientAlertLogs(row.client.id);
       const lastAlert = alertLogs.length > 0 ? alertLogs[0] : null;
+      const profile = await this.getClientProfile(row.orgClient.id);
+      const alertCounts = await this.getClientAlertCounts(row.client.id);
       
       results.push({
         id: row.orgClient.id,
         clientId: row.orgClient.clientId,
         nickname: row.orgClient.nickname,
+        clientOrdinal: row.orgClient.clientOrdinal,
+        clientStatus: row.orgClient.status,
         addedAt: row.orgClient.addedAt,
         client: {
           id: row.client.id,
           name: row.client.name,
           email: row.client.email,
+          mobileNumber: row.client.mobileNumber,
         },
+        profile: profile || null,
         status,
         lastAlert,
+        alertCounts,
       });
     }
     
     return results;
+  }
+
+  // Get a single organization client by its ID
+  async getClientById(organizationClientId: string): Promise<OrganizationClient | undefined> {
+    const result = await getDb()
+      .select()
+      .from(organizationClients)
+      .where(eq(organizationClients.id, organizationClientId));
+    return result[0];
   }
 
   // Add a client to an organization
@@ -956,6 +986,14 @@ class OrganizationStorage implements IOrganizationStorage {
         .where(eq(organizationBundles.id, bundleId));
     }
 
+    // Get the next ordinal number for this organization
+    const maxOrdinalResult = await getDb()
+      .select({ maxOrdinal: sql<number>`COALESCE(MAX(${organizationClients.clientOrdinal}), 0)` })
+      .from(organizationClients)
+      .where(eq(organizationClients.organizationId, organizationId));
+    
+    const nextOrdinal = (maxOrdinalResult[0]?.maxOrdinal ?? 0) + 1;
+
     const result = await getDb()
       .insert(organizationClients)
       .values({
@@ -963,6 +1001,8 @@ class OrganizationStorage implements IOrganizationStorage {
         clientId,
         bundleId: bundleId || null,
         nickname: nickname || null,
+        clientOrdinal: nextOrdinal,
+        status: "active",
       })
       .returning();
     
@@ -1021,6 +1061,185 @@ class OrganizationStorage implements IOrganizationStorage {
       ));
     
     return result.length > 0;
+  }
+
+  // Update client status (active/paused/terminated)
+  async updateClientStatus(organizationClientId: string, status: OrgClientStatus): Promise<OrganizationClient | undefined> {
+    const result = await getDb()
+      .update(organizationClients)
+      .set({ status })
+      .where(eq(organizationClients.id, organizationClientId))
+      .returning();
+    return result[0];
+  }
+
+  // Get client profile
+  async getClientProfile(organizationClientId: string): Promise<OrganizationClientProfile | undefined> {
+    const result = await getDb()
+      .select()
+      .from(organizationClientProfiles)
+      .where(eq(organizationClientProfiles.organizationClientId, organizationClientId));
+    return result[0];
+  }
+
+  // Update (or create) client profile
+  async updateClientProfile(organizationClientId: string, profile: UpdateOrganizationClientProfile): Promise<OrganizationClientProfile> {
+    // Check if profile exists
+    const existing = await this.getClientProfile(organizationClientId);
+    
+    if (existing) {
+      // Update existing
+      const result = await getDb()
+        .update(organizationClientProfiles)
+        .set({ ...profile, updatedAt: new Date() })
+        .where(eq(organizationClientProfiles.id, existing.id))
+        .returning();
+      return result[0];
+    } else {
+      // Create new
+      const result = await getDb()
+        .insert(organizationClientProfiles)
+        .values({
+          organizationClientId,
+          ...profile,
+        })
+        .returning();
+      return result[0];
+    }
+  }
+
+  // Get alert counts for a client
+  async getClientAlertCounts(clientId: string): Promise<{ total: number; emails: number; calls: number; emergencies: number }> {
+    const alerts = await getDb()
+      .select()
+      .from(alertLogs)
+      .where(eq(alertLogs.userId, clientId));
+    
+    let emails = 0;
+    let calls = 0;
+    let emergencies = 0;
+    
+    for (const alert of alerts) {
+      if (alert.message.includes("EMERGENCY")) {
+        emergencies++;
+      }
+      // Count emails (any alert that doesn't mention "voice call" is an email)
+      if (!alert.message.toLowerCase().includes("voice call")) {
+        emails++;
+      }
+      // Count voice calls
+      if (alert.message.toLowerCase().includes("voice call")) {
+        calls++;
+      }
+    }
+    
+    return {
+      total: alerts.length,
+      emails,
+      calls,
+      emergencies,
+    };
+  }
+
+  // Get all organizations with client summaries for admin view
+  async getOrganizationsWithClientSummary(): Promise<AdminOrganizationView[]> {
+    // Get all organization users
+    const orgs = await getDb()
+      .select()
+      .from(users)
+      .where(eq(users.accountType, "organization"))
+      .orderBy(desc(users.createdAt));
+    
+    const results: AdminOrganizationView[] = [];
+    
+    for (const org of orgs) {
+      // Get bundles for this org
+      const bundles = await getDb()
+        .select()
+        .from(organizationBundles)
+        .where(eq(organizationBundles.userId, org.id));
+      
+      // Get clients for this org
+      const clients = await getDb()
+        .select()
+        .from(organizationClients)
+        .where(eq(organizationClients.organizationId, org.id));
+      
+      // Count by status
+      let activeClients = 0;
+      let pausedClients = 0;
+      for (const client of clients) {
+        if (client.status === "active") activeClients++;
+        else if (client.status === "paused") pausedClients++;
+      }
+      
+      // Count total alerts for all clients
+      let totalAlerts = 0;
+      for (const client of clients) {
+        const alertCount = await getDb()
+          .select({ count: count() })
+          .from(alertLogs)
+          .where(eq(alertLogs.userId, client.clientId));
+        totalAlerts += alertCount[0]?.count || 0;
+      }
+      
+      results.push({
+        id: org.id,
+        name: org.name,
+        email: org.email,
+        createdAt: org.createdAt,
+        disabled: org.disabled,
+        bundles: bundles.map(b => ({
+          id: b.id,
+          name: b.name,
+          seatLimit: b.seatLimit,
+          seatsUsed: b.seatsUsed,
+          status: b.status,
+        })),
+        totalClients: clients.length,
+        activeClients,
+        pausedClients,
+        totalAlerts,
+      });
+    }
+    
+    return results;
+  }
+
+  // Get organization clients for admin view (privacy-limited)
+  async getOrganizationClientsForAdmin(organizationId: string): Promise<AdminOrganizationClientView[]> {
+    const clients = await getDb()
+      .select({
+        orgClient: organizationClients,
+        client: users,
+      })
+      .from(organizationClients)
+      .leftJoin(users, eq(organizationClients.clientId, users.id))
+      .where(eq(organizationClients.organizationId, organizationId))
+      .orderBy(organizationClients.clientOrdinal);
+    
+    const results: AdminOrganizationClientView[] = [];
+    
+    for (const row of clients) {
+      if (!row.client) continue;
+      
+      const status = await this.getClientStatus(row.client.id);
+      const alertCounts = await this.getClientAlertCounts(row.client.id);
+      
+      results.push({
+        id: row.orgClient.id,
+        clientOrdinal: row.orgClient.clientOrdinal,
+        clientStatus: row.orgClient.status,
+        email: row.client.email,
+        mobileNumber: row.client.mobileNumber,
+        userDisabled: row.client.disabled,
+        addedAt: row.orgClient.addedAt,
+        status,
+        alertCounts,
+      });
+    }
+    
+    return results;
   }
 
   // Get organization dashboard statistics
