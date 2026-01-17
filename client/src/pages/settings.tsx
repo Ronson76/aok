@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle, Smartphone } from "lucide-react";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle, Smartphone, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
@@ -48,6 +48,7 @@ export default function Settings() {
   
   const [logoutStep, setLogoutStep] = useState<"none" | "confirm" | "password">("none");
   const [logoutPassword, setLogoutPassword] = useState("");
+  const [showLogoutPassword, setShowLogoutPassword] = useState(false);
   const [logoutLocation, setLogoutLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [gettingLocation, setGettingLocation] = useState(false);
   
@@ -722,17 +723,34 @@ export default function Settings() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="logout-password">Password</Label>
-              <Input
-                id="logout-password"
-                type="password"
-                placeholder="Enter your password"
-                value={logoutPassword}
-                onChange={(e) => setLogoutPassword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleLogoutSubmit();
-                }}
-                data-testid="input-logout-password"
-              />
+              <div className="relative">
+                <Input
+                  id="logout-password"
+                  type={showLogoutPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={logoutPassword}
+                  onChange={(e) => setLogoutPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleLogoutSubmit();
+                  }}
+                  className="pr-10"
+                  data-testid="input-logout-password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowLogoutPassword(!showLogoutPassword)}
+                  data-testid="button-toggle-logout-password"
+                >
+                  {showLogoutPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
           <DialogFooter className="gap-2">
