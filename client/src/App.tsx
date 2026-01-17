@@ -31,6 +31,7 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminBundles from "@/pages/admin/bundles";
 import OrganizationDashboard from "@/pages/org/dashboard";
+import Activate from "@/pages/activate";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -349,6 +350,10 @@ function Router() {
 
   if (location.startsWith("/reset-password")) {
     return <ResetPassword />;
+  }
+
+  if (location === "/activate") {
+    return <Activate />;
   }
 
   if (location === "/admin/login") {

@@ -14,11 +14,23 @@ const organizationNavItems = [
   { path: "/app/settings", icon: Settings, label: "Settings" },
 ];
 
+// Restricted nav for org-managed clients (only home/dashboard)
+const orgManagedClientNavItems = [
+  { path: "/app", icon: Home, label: "Home" },
+];
+
 export function BottomNav() {
   const [location] = useLocation();
   const { user } = useAuth();
   const isOrganization = user?.accountType === "organization";
-  const navItems = isOrganization ? organizationNavItems : individualNavItems;
+  const isOrgManagedClient = !!user?.referenceId;
+  
+  // Determine which nav items to show
+  const navItems = isOrganization 
+    ? organizationNavItems 
+    : isOrgManagedClient 
+      ? orgManagedClientNavItems 
+      : individualNavItems;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-card-border z-50">

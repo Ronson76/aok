@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon, Users } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon, Users, Moon, Sun } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/auth-context";
+import { useTheme } from "@/components/theme-provider";
 import type { StatusData } from "@shared/schema";
 import { formatDistanceToNow, format, differenceInSeconds } from "date-fns";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -224,6 +226,8 @@ function getStatusLabel(status: StatusData["status"]) {
 
 export default function Dashboard() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [cachedLocation, setCachedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -231,6 +235,9 @@ export default function Dashboard() {
   const [isLocallyOverdue, setIsLocallyOverdue] = useState(false);
   const alarmIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasPlayedInitialAlarm = useRef(false);
+
+  // Check if user is org-managed (activated via reference code)
+  const isOrgManagedClient = !!user?.referenceId;
 
   const { data: status, isLoading } = useQuery<StatusData>({
     queryKey: ["/api/status"],
@@ -431,6 +438,147 @@ export default function Dashboard() {
   // Use effectivelyOverdue for immediate UI updates (doesn't wait for server)
   const displayStatus = effectivelyOverdue ? "overdue" : status?.status;
   const statusInfo = displayStatus ? getStatusLabel(displayStatus) : { text: "Loading", variant: "secondary" as const };
+
+  // Restricted view for org-managed clients (activated via reference code)
+  if (isOrgManagedClient) {
+    return (
+      <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">
+        {/* Status Card */}
+        <Card className={`border-2 ${effectivelyOverdue ? "border-destructive bg-destructive/5" : ""}`}>
+          <CardContent className="flex flex-col items-center gap-6 py-8">
+            <div className={`rounded-full p-4 ${effectivelyOverdue ? "bg-destructive/10" : "bg-primary/10"}`}>
+              <ShieldCheck className={`h-16 w-16 ${effectivelyOverdue ? "text-destructive" : "text-primary"}`} />
+            </div>
+            
+            <div className="text-center space-y-2">
+              <Badge variant={statusInfo.variant} className="text-sm px-4 py-1" data-testid="badge-status">
+                {statusInfo.text}
+              </Badge>
+              
+              {status?.streak !== undefined && status.streak > 0 && (
+                <p className="text-sm text-muted-foreground" data-testid="text-streak">
+                  {status.streak} day streak
+                </p>
+              )}
+            </div>
+
+            {/* Check-In Timer */}
+            <div className="w-full max-w-xs text-center space-y-4">
+              {countdown && (
+                <div className={`text-3xl font-mono font-bold ${effectivelyOverdue ? "text-destructive" : "text-foreground"}`} data-testid="text-countdown">
+                  {countdown}
+                </div>
+              )}
+              
+              {/* Check-In Button */}
+              <Button
+                size="lg"
+                className="w-full px-8 py-6 text-lg font-semibold"
+                onClick={() => checkInMutation.mutate()}
+                disabled={checkInMutation.isPending}
+                data-testid="button-check-in"
+              >
+                {checkInMutation.isPending ? (
+                  <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Checking In...</>
+                ) : (
+                  <>
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    I'm OK
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Emergency Button */}
+        <Card className="border-destructive bg-destructive/5">
+          <CardContent className="py-4">
+            <Button
+              variant="destructive"
+              size="lg"
+              className="w-full py-6 text-lg font-semibold"
+              onClick={() => setShowEmergencyDialog(true)}
+              data-testid="button-emergency"
+            >
+              <AlertOctagon className="h-6 w-6 mr-2" />
+              Emergency Alert
+            </Button>
+            <p className="text-xs text-center text-muted-foreground mt-2">
+              Sends immediate alert to all emergency contacts
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Theme Toggle */}
+        <Card>
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {theme === "dark" ? (
+                  <Moon className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <Sun className="h-5 w-5 text-muted-foreground" />
+                )}
+                <span className="text-sm font-medium">
+                  {theme === "dark" ? "Dark Mode" : "Light Mode"}
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleTheme}
+                data-testid="button-toggle-theme"
+              >
+                {theme === "dark" ? "Switch to Light" : "Switch to Dark"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* User Reference Code Display */}
+        <div className="text-center text-xs text-muted-foreground" data-testid="text-reference-code">
+          Reference: {user?.referenceId}
+        </div>
+
+        {/* Emergency Dialog */}
+        <Dialog open={showEmergencyDialog} onOpenChange={setShowEmergencyDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertOctagon className="h-5 w-5" />
+                Emergency Alert
+              </DialogTitle>
+              <DialogDescription>
+                This will immediately notify all your emergency contacts via email and phone call. 
+                {gettingLocation && " Getting your location..."}
+                {cachedLocation && " Your location will be shared."}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setShowEmergencyDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleEmergencyAlert}
+                disabled={emergencyMutation.isPending || gettingLocation}
+                data-testid="button-confirm-emergency"
+              >
+                {gettingLocation ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Getting Location...</>
+                ) : emergencyMutation.isPending ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending Alert...</>
+                ) : (
+                  "Send Emergency Alert"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">

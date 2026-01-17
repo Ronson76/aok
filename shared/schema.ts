@@ -352,14 +352,24 @@ export const bundleUsage = pgTable("bundle_usage", {
 export type BundleUsage = typeof bundleUsage.$inferSelect;
 
 // Organization clients table (links organizations to individual users they monitor)
+// Registration status for org-managed clients
+export const orgClientRegistrationStatuses = ["pending_sms", "pending_registration", "registered"] as const;
+export type OrgClientRegistrationStatus = typeof orgClientRegistrationStatuses[number];
+
 export const organizationClients = pgTable("organization_clients", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  clientId: varchar("client_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  clientId: varchar("client_id").references(() => users.id, { onDelete: "cascade" }),
   bundleId: varchar("bundle_id").references(() => organizationBundles.id, { onDelete: "set null" }),
   nickname: text("nickname"),
   clientOrdinal: integer("client_ordinal").notNull().default(0),
   status: text("status").notNull().$type<OrgClientStatus>().default("active"),
+  registrationStatus: text("registration_status").notNull().$type<OrgClientRegistrationStatus>().default("pending_sms"),
+  referenceCode: varchar("reference_code", { length: 8 }).unique(),
+  clientPhone: text("client_phone"),
+  clientName: text("client_name"),
+  scheduleStartTime: timestamp("schedule_start_time"),
+  checkInIntervalHours: integer("check_in_interval_hours").default(24),
   addedAt: timestamp("added_at").notNull().defaultNow(),
 });
 
@@ -368,6 +378,27 @@ export const insertOrganizationClientSchema = createInsertSchema(organizationCli
   addedAt: true,
   clientOrdinal: true,
   status: true,
+  registrationStatus: true,
+  referenceCode: true,
+  clientId: true,
+});
+
+// Schema for org to register a new client
+export const registerOrgClientSchema = z.object({
+  clientName: z.string().min(1, "Client name is required"),
+  clientPhone: z.string().min(10, "Valid phone number is required"),
+  dateOfBirth: z.string().optional(),
+  bundleId: z.string().optional(),
+  scheduleStartTime: z.string().optional(),
+  checkInIntervalHours: z.number().min(1).max(48).default(24),
+  emergencyContacts: z.array(z.object({
+    name: z.string().min(1),
+    email: z.string().email(),
+    phone: z.string().optional(),
+    phoneType: z.enum(["mobile", "landline"]).optional(),
+    relationship: z.string().optional(),
+    isPrimary: z.boolean().optional(),
+  })).optional(),
 });
 
 export type InsertOrganizationClient = z.infer<typeof insertOrganizationClientSchema>;
@@ -414,20 +445,41 @@ export type InsertOrganizationClientProfile = z.infer<typeof insertOrganizationC
 export type UpdateOrganizationClientProfile = z.infer<typeof updateOrganizationClientProfileSchema>;
 export type OrganizationClientProfile = typeof organizationClientProfiles.$inferSelect;
 
+// Pending client contacts table (contacts added by org before client registers)
+export const pendingClientContacts = pgTable("pending_client_contacts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationClientId: varchar("organization_client_id").notNull().references(() => organizationClients.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  phoneType: text("phone_type").$type<PhoneType>(),
+  relationship: text("relationship"),
+  isPrimary: boolean("is_primary").default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type PendingClientContact = typeof pendingClientContacts.$inferSelect;
+
 // Organization client with user details (for dashboard display)
 export interface OrganizationClientWithDetails {
   id: string;
-  clientId: string;
+  clientId: string | null;
   nickname: string | null;
   clientOrdinal: number;
   clientStatus: OrgClientStatus;
+  registrationStatus?: OrgClientRegistrationStatus;
+  referenceCode?: string | null;
+  clientName?: string | null;
+  clientPhone?: string | null;
+  scheduleStartTime?: Date | null;
+  checkInIntervalHours?: number | null;
   addedAt: Date;
   client: {
     id: string;
     name: string;
     email: string;
     mobileNumber: string | null;
-  };
+  } | null;
   profile: OrganizationClientProfile | null;
   status: StatusData;
   lastAlert: AlertLog | null;
