@@ -176,15 +176,15 @@ export default function Contacts() {
               <Plus className="h-5 w-5" />
             </Button>
           </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
+          <DialogContent className="max-h-[85vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle className="flex items-center gap-2">
                 <UserPlus className="h-5 w-5" />
                 Add Emergency Contact
               </DialogTitle>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto flex-1 pr-1 pb-2">
                 <FormField
                   control={form.control}
                   name="name"
