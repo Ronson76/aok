@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert } from "lucide-react";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
@@ -28,16 +28,14 @@ function formatInterval(hours: number): string {
 
 export default function Settings() {
   const { toast } = useToast();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [localInterval, setLocalInterval] = useState<number>(24);
   const [showDisableDialog, setShowDisableDialog] = useState(false);
   const [disablePassword, setDisablePassword] = useState("");
-
-  const handleLogout = async () => {
-    await logout();
-    setLocation("/");
-  };
+  
+  const [logoutStep, setLogoutStep] = useState<"none" | "confirm" | "password">("none");
+  const [logoutPassword, setLogoutPassword] = useState("");
 
   const { data: settings, isLoading } = useQuery<SettingsType>({
     queryKey: ["/api/settings"],
@@ -72,6 +70,28 @@ export default function Settings() {
     },
   });
 
+  const logoutMutation = useMutation({
+    mutationFn: async (password: string) => {
+      const res = await apiRequest("POST", "/api/auth/logout-confirmed", { password });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      queryClient.clear();
+      setLogoutStep("none");
+      setLogoutPassword("");
+      setLocation("/");
+    },
+    onError: (error: any) => {
+      const message = error?.message || "Please try again.";
+      toast({
+        title: "Failed to sign out",
+        description: message.includes("password") ? "Incorrect password" : message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAlertsToggle = (checked: boolean) => {
     if (checked) {
       updateMutation.mutate({ alertsEnabled: true });
@@ -98,6 +118,31 @@ export default function Settings() {
 
   const handleIntervalCommit = (value: number[]) => {
     updateMutation.mutate({ intervalHours: value[0] });
+  };
+
+  const handleLogoutClick = () => {
+    setLogoutStep("confirm");
+  };
+
+  const handleLogoutConfirm = () => {
+    setLogoutStep("password");
+  };
+
+  const handleLogoutSubmit = () => {
+    if (!logoutPassword.trim()) {
+      toast({
+        title: "Password required",
+        description: "Please enter your password to sign out.",
+        variant: "destructive",
+      });
+      return;
+    }
+    logoutMutation.mutate(logoutPassword);
+  };
+
+  const handleLogoutCancel = () => {
+    setLogoutStep("none");
+    setLogoutPassword("");
   };
 
   if (isLoading) {
@@ -226,7 +271,7 @@ export default function Settings() {
         <CardContent>
           <Button
             variant="destructive"
-            onClick={handleLogout}
+            onClick={handleLogoutClick}
             className="w-full"
             data-testid="button-logout"
           >
@@ -288,6 +333,98 @@ export default function Settings() {
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
               Disable Alerts
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={logoutStep === "confirm"} onOpenChange={(open) => {
+        if (!open) handleLogoutCancel();
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LogOut className="h-5 w-5 text-muted-foreground" />
+              Sign Out?
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to sign out of aok?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={handleLogoutCancel}
+              data-testid="button-cancel-logout"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleLogoutConfirm}
+              data-testid="button-confirm-logout-step1"
+            >
+              Yes, Sign Out
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={logoutStep === "password"} onOpenChange={(open) => {
+        if (!open) handleLogoutCancel();
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Important Warning
+            </DialogTitle>
+            <DialogDescription className="space-y-3">
+              <span className="block font-medium text-destructive">
+                Once you sign out, your emergency contacts will NOT be notified of any missed check-ins or emergencies.
+              </span>
+              <span className="block">
+                Your primary contact will be notified that you have signed out and will no longer receive safety alerts.
+              </span>
+              <span className="block">
+                Enter your password to confirm sign out.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="logout-password">Password</Label>
+              <Input
+                id="logout-password"
+                type="password"
+                placeholder="Enter your password"
+                value={logoutPassword}
+                onChange={(e) => setLogoutPassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleLogoutSubmit();
+                }}
+                data-testid="input-logout-password"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={handleLogoutCancel}
+              data-testid="button-cancel-logout-final"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleLogoutSubmit}
+              disabled={logoutMutation.isPending}
+              data-testid="button-confirm-logout-final"
+            >
+              {logoutMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Sign Out
             </Button>
           </DialogFooter>
         </DialogContent>
