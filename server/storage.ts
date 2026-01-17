@@ -234,9 +234,14 @@ class DatabaseStorage implements IStorage {
   }
 
   async createContact(userId: string, contact: InsertContact): Promise<Contact> {
+    // Check if user has any existing contacts - if not, make this the primary
+    const existingContacts = await this.getContacts(userId);
+    const shouldBePrimary = existingContacts.length === 0;
+    
     const result = await getDb().insert(contacts).values({
       ...contact,
       userId,
+      isPrimary: shouldBePrimary,
     }).returning();
     return result[0];
   }
