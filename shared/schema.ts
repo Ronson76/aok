@@ -140,6 +140,7 @@ export const settings = pgTable("settings", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   frequency: text("frequency").notNull().$type<CheckInFrequency>().default("daily"),
   intervalHours: text("interval_hours").notNull().default("24"),
+  scheduleStartTime: timestamp("schedule_start_time"),
   lastCheckIn: timestamp("last_check_in"),
   nextCheckInDue: timestamp("next_check_in_due"),
   lastMissedDueAt: timestamp("last_missed_due_at"),
@@ -150,6 +151,7 @@ export const settings = pgTable("settings", {
 export type Settings = {
   frequency: CheckInFrequency;
   intervalHours: number;
+  scheduleStartTime: string | null;
   lastCheckIn: string | null;
   nextCheckInDue: string | null;
   alertsEnabled: boolean;
@@ -158,6 +160,7 @@ export type Settings = {
 export const updateSettingsSchema = z.object({
   frequency: z.enum(checkInFrequencies).optional(),
   intervalHours: z.number().min(1).max(48).optional(),
+  scheduleStartTime: z.string().optional(),
   alertsEnabled: z.boolean().optional(),
   password: z.string().optional(),
 });

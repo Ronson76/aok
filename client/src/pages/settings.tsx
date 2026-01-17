@@ -59,6 +59,9 @@ export default function Settings() {
   const [pushLoading, setPushLoading] = useState(true);
   const [pushSupported, setPushSupported] = useState(false);
   
+  const [scheduleStartInput, setScheduleStartInput] = useState("");
+  const [pendingScheduleStart, setPendingScheduleStart] = useState<string | null>(null);
+  
   const isOrganization = user?.accountType === "organization";
 
   const { data: settings, isLoading } = useQuery<SettingsType>({
@@ -171,7 +174,7 @@ export default function Settings() {
   }, [toast]);
 
   const updateMutation = useMutation({
-    mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean; password?: string }) =>
+    mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean; scheduleStartTime?: string; password?: string }) =>
       apiRequest("PATCH", "/api/settings", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
@@ -181,6 +184,8 @@ export default function Settings() {
       setShowIntervalPasswordDialog(false);
       setIntervalPassword("");
       setPendingInterval(null);
+      setPendingScheduleStart(null);
+      setScheduleStartInput("");
       toast({
         title: "Settings updated",
         description: "Your preferences have been saved.",
@@ -255,13 +260,15 @@ export default function Settings() {
     if (!intervalPassword.trim()) {
       toast({
         title: "Password required",
-        description: "Please enter your password to change the check-in interval.",
+        description: "Please enter your password to make this change.",
         variant: "destructive",
       });
       return;
     }
     if (pendingInterval !== null) {
       updateMutation.mutate({ intervalHours: pendingInterval, password: intervalPassword });
+    } else if (pendingScheduleStart !== null) {
+      updateMutation.mutate({ scheduleStartTime: pendingScheduleStart, password: intervalPassword });
     }
   };
 
@@ -269,9 +276,22 @@ export default function Settings() {
     setShowIntervalPasswordDialog(false);
     setIntervalPassword("");
     setPendingInterval(null);
+    setPendingScheduleStart(null);
     // Reset slider to current saved value
     if (settings?.intervalHours) {
       setLocalInterval(settings.intervalHours);
+    }
+  };
+
+  const handleScheduleStartSubmit = () => {
+    if (!scheduleStartInput) return;
+    
+    if (isOrganization) {
+      setPendingInterval(null);
+      setPendingScheduleStart(scheduleStartInput);
+      setShowIntervalPasswordDialog(true);
+    } else {
+      updateMutation.mutate({ scheduleStartTime: scheduleStartInput });
     }
   };
 
@@ -376,6 +396,39 @@ export default function Settings() {
             <p className="text-sm text-muted-foreground">
               If you don't check in within {formatInterval(localInterval)}, your emergency contacts will be notified.
             </p>
+          </div>
+
+          <div className="border-t pt-4 space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="schedule-start" className="font-medium">
+                Schedule Start Time
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Set when your check-in schedule begins. The timer will calculate from this time.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                id="schedule-start"
+                type="datetime-local"
+                value={scheduleStartInput}
+                onChange={(e) => setScheduleStartInput(e.target.value)}
+                className="flex-1"
+                data-testid="input-schedule-start"
+              />
+              <Button
+                onClick={handleScheduleStartSubmit}
+                disabled={!scheduleStartInput || updateMutation.isPending}
+                data-testid="button-set-schedule"
+              >
+                {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Set"}
+              </Button>
+            </div>
+            {settings?.scheduleStartTime && (
+              <p className="text-xs text-muted-foreground">
+                Current schedule started: {new Date(settings.scheduleStartTime).toLocaleString()}
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
