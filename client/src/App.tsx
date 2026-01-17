@@ -31,6 +31,7 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminBundles from "@/pages/admin/bundles";
 import OrganizationDashboard from "@/pages/org/dashboard";
+import OrganizationLogin from "@/pages/org/login";
 import Activate from "@/pages/activate";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -354,6 +355,10 @@ function Router() {
 
   if (location === "/activate") {
     return <Activate />;
+  }
+
+  if (location === "/org/login") {
+    return <AuthRoute component={OrganizationLogin} />;
   }
 
   if (location === "/admin/login") {
