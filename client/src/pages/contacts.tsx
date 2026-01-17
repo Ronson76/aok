@@ -10,8 +10,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -27,13 +25,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Mail, Phone, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall, ShieldAlert } from "lucide-react";
+import { Plus, Mail, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import type { Contact, InsertContact, PhoneType } from "@shared/schema";
-import { insertContactSchema, phoneTypes } from "@shared/schema";
+import type { Contact, InsertContact } from "@shared/schema";
+import { insertContactSchema } from "@shared/schema";
 
 function getInitials(name: string) {
   return name
@@ -71,12 +69,6 @@ export default function Contacts() {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [deleteRequiresPassword, setDeleteRequiresPassword] = useState(false);
-  const [deletePassword, setDeletePassword] = useState("");
-  
-  const [primaryDialogOpen, setPrimaryDialogOpen] = useState(false);
-  const [pendingPrimaryId, setPendingPrimaryId] = useState<string | null>(null);
-  const [primaryPassword, setPrimaryPassword] = useState("");
 
   const form = useForm<InsertContact>({
     resolver: zodResolver(insertContactSchema),
@@ -116,67 +108,41 @@ export default function Contacts() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async ({ id, password }: { id: string; password?: string }) => {
-      const options: RequestInit = {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      };
-      if (password) {
-        options.body = JSON.stringify({ password });
-      }
-      const res = await fetch(`/api/contacts/${id}`, options);
-      if (!res.ok) {
-        const data = await res.json();
-        if (data.requiresPassword) {
-          throw new Error("PASSWORD_REQUIRED");
-        }
-        throw new Error(data.error || "Failed to delete");
-      }
-      return res;
-    },
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/contacts/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
       setDeleteId(null);
-      setDeleteRequiresPassword(false);
-      setDeletePassword("");
       toast({
         title: "Contact removed",
         description: "The contact has been deleted.",
       });
     },
     onError: (error: any) => {
-      if (error.message === "PASSWORD_REQUIRED") {
-        setDeleteRequiresPassword(true);
-        return;
-      }
+      setDeleteId(null);
       const message = error?.message || "Please try again.";
       toast({
-        title: "Failed to delete contact",
-        description: message.includes("password") ? "Incorrect password" : message,
+        title: "Cannot remove contact",
+        description: message.includes("one emergency contact") 
+          ? "At least one emergency contact is required for aok to function properly."
+          : message,
         variant: "destructive",
       });
     },
   });
 
   const setPrimaryMutation = useMutation({
-    mutationFn: ({ id, password }: { id: string; password: string }) => 
-      apiRequest("POST", `/api/contacts/${id}/primary`, { password }),
+    mutationFn: (id: string) => apiRequest("POST", `/api/contacts/${id}/primary`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
-      setPrimaryDialogOpen(false);
-      setPendingPrimaryId(null);
-      setPrimaryPassword("");
       toast({
         title: "Primary contact set",
         description: "This contact will now receive notifications for every check-in.",
       });
     },
-    onError: (error: any) => {
-      const message = error?.message || "Please try again.";
+    onError: () => {
       toast({
         title: "Failed to set primary contact",
-        description: message.includes("password") ? "Incorrect password" : message,
+        description: "Please try again.",
         variant: "destructive",
       });
     },
@@ -184,55 +150,6 @@ export default function Contacts() {
 
   const onSubmit = (data: InsertContact) => {
     createMutation.mutate(data);
-  };
-
-  const handleSetPrimaryClick = (contactId: string) => {
-    setPendingPrimaryId(contactId);
-    setPrimaryDialogOpen(true);
-  };
-
-  const handleConfirmSetPrimary = () => {
-    if (!primaryPassword.trim()) {
-      toast({
-        title: "Password required",
-        description: "Please enter your password to set a new primary contact.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (pendingPrimaryId) {
-      setPrimaryMutation.mutate({ id: pendingPrimaryId, password: primaryPassword });
-    }
-  };
-
-  const handleDeleteClick = (contactId: string) => {
-    setDeleteId(contactId);
-    setDeleteRequiresPassword(false);
-    setDeletePassword("");
-  };
-
-  const handleConfirmDelete = () => {
-    if (!deleteId) return;
-    
-    if (deleteRequiresPassword) {
-      if (!deletePassword.trim()) {
-        toast({
-          title: "Password required",
-          description: "Please enter your password to delete your last contact.",
-          variant: "destructive",
-        });
-        return;
-      }
-      deleteMutation.mutate({ id: deleteId, password: deletePassword });
-    } else {
-      deleteMutation.mutate({ id: deleteId });
-    }
-  };
-
-  const handleDeleteDialogClose = () => {
-    setDeleteId(null);
-    setDeleteRequiresPassword(false);
-    setDeletePassword("");
   };
 
   if (isLoading) {
@@ -243,7 +160,6 @@ export default function Contacts() {
     );
   }
 
-  const contactToDelete = contacts.find(c => c.id === deleteId);
   const isLastContact = contacts.length === 1;
 
   return (
@@ -447,7 +363,7 @@ export default function Contacts() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => handleSetPrimaryClick(contact.id)}
+                      onClick={() => setPrimaryMutation.mutate(contact.id)}
                       disabled={setPrimaryMutation.isPending}
                       title="Set as primary contact"
                       data-testid={`button-set-primary-${contact.id}`}
@@ -458,7 +374,7 @@ export default function Contacts() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => handleDeleteClick(contact.id)}
+                    onClick={() => setDeleteId(contact.id)}
                     data-testid={`button-delete-contact-${contact.id}`}
                   >
                     <Trash2 className="h-4 w-4 text-muted-foreground" />
@@ -470,123 +386,33 @@ export default function Contacts() {
         </div>
       )}
 
-      <Dialog open={primaryDialogOpen} onOpenChange={(open) => {
-        setPrimaryDialogOpen(open);
-        if (!open) {
-          setPendingPrimaryId(null);
-          setPrimaryPassword("");
-        }
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-primary" />
-              Set Primary Contact
-            </DialogTitle>
-            <DialogDescription>
-              Your primary contact receives notifications for every successful check-in.
-              For security, please enter your password to confirm this change.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="primary-password">Password</Label>
-              <Input
-                id="primary-password"
-                type="password"
-                placeholder="Enter your password"
-                value={primaryPassword}
-                onChange={(e) => setPrimaryPassword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleConfirmSetPrimary();
-                }}
-                data-testid="input-primary-password"
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setPrimaryDialogOpen(false);
-                setPendingPrimaryId(null);
-                setPrimaryPassword("");
-              }}
-              data-testid="button-cancel-primary"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleConfirmSetPrimary}
-              disabled={setPrimaryMutation.isPending}
-              data-testid="button-confirm-primary"
-            >
-              {setPrimaryMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
-              Set as Primary
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => {
-        if (!open) handleDeleteDialogClose();
-      }}>
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {deleteRequiresPassword ? "Remove Last Contact" : "Remove Contact"}
+              {isLastContact ? "Cannot Remove Contact" : "Remove Contact"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {deleteRequiresPassword ? (
-                <>
-                  <span className="block font-medium text-destructive mb-2">
-                    Warning: This is your only emergency contact!
-                  </span>
-                  <span className="block mb-2">
-                    If you remove them, no one will be notified if you miss a check-in or trigger an emergency.
-                  </span>
-                  <span className="block">
-                    Enter your password to confirm removal.
-                  </span>
-                </>
-              ) : (
-                "Are you sure you want to remove this contact? They will no longer receive alerts when you miss a check-in."
-              )}
+              {isLastContact 
+                ? "At least one emergency contact is required for aok to function properly. Please add another contact before removing this one."
+                : "Are you sure you want to remove this contact? They will no longer receive alerts when you miss a check-in."
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
-          
-          {deleteRequiresPassword && (
-            <div className="py-4">
-              <Label htmlFor="delete-password">Password</Label>
-              <Input
-                id="delete-password"
-                type="password"
-                placeholder="Enter your password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleConfirmDelete();
-                }}
-                className="mt-2"
-                data-testid="input-delete-password"
-              />
-            </div>
-          )}
-          
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleDeleteDialogClose}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              data-testid="button-confirm-delete"
-            >
-              {deleteMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
-              Remove
-            </AlertDialogAction>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            {!isLastContact && (
+              <AlertDialogAction
+                onClick={() => deleteId && deleteMutation.mutate(deleteId)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                data-testid="button-confirm-delete"
+              >
+                {deleteMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Remove
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
