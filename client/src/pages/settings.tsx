@@ -36,6 +36,8 @@ export default function Settings() {
   
   const [logoutStep, setLogoutStep] = useState<"none" | "confirm" | "password">("none");
   const [logoutPassword, setLogoutPassword] = useState("");
+  const [logoutLocation, setLogoutLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [gettingLocation, setGettingLocation] = useState(false);
   
   const [showIntervalPasswordDialog, setShowIntervalPasswordDialog] = useState(false);
   const [intervalPassword, setIntervalPassword] = useState("");
@@ -80,8 +82,8 @@ export default function Settings() {
   });
 
   const logoutMutation = useMutation({
-    mutationFn: async (password: string) => {
-      const res = await apiRequest("POST", "/api/auth/logout-confirmed", { password });
+    mutationFn: async ({ password, location }: { password: string; location?: { latitude: number; longitude: number } | null }) => {
+      const res = await apiRequest("POST", "/api/auth/logout-confirmed", { password, location });
       return res.json();
     },
     onSuccess: () => {
@@ -160,6 +162,26 @@ export default function Settings() {
 
   const handleLogoutClick = () => {
     setLogoutStep("confirm");
+    setLogoutLocation(null);
+    
+    // Start capturing location when logout is initiated
+    if ("geolocation" in navigator) {
+      setGettingLocation(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setGettingLocation(false);
+          setLogoutLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.log('[GPS] Location error during logout:', error.message);
+          setGettingLocation(false);
+        },
+        { timeout: 10000, enableHighAccuracy: true, maximumAge: 60000 }
+      );
+    }
   };
 
   const handleLogoutConfirm = () => {
@@ -175,12 +197,13 @@ export default function Settings() {
       });
       return;
     }
-    logoutMutation.mutate(logoutPassword);
+    logoutMutation.mutate({ password: logoutPassword, location: logoutLocation });
   };
 
   const handleLogoutCancel = () => {
     setLogoutStep("none");
     setLogoutPassword("");
+    setLogoutLocation(null);
   };
 
   if (isLoading) {

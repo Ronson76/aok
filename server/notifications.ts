@@ -529,7 +529,8 @@ export async function sendVoiceAlerts(
 
 export async function sendLogoutNotification(
   primaryContact: Contact,
-  user: User
+  user: User,
+  location?: { latitude: number; longitude: number }
 ): Promise<{ sent: boolean; error?: string }> {
   const result = { sent: false, error: undefined as string | undefined };
 
@@ -540,12 +541,22 @@ export async function sendLogoutNotification(
 
   const subject = `aok Alert: ${identifier} has signed out`;
   
+  // Include location information if available
+  const locationSection = location 
+    ? `
+
+LAST KNOWN LOCATION:
+Google Maps: https://www.google.com/maps?q=${location.latitude},${location.longitude}
+Coordinates: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}
+`
+    : "";
+  
   const body = `Hello ${primaryContact.name},
 
 This is an automated notification from aok.
 
 ${identifier} has signed out of their aok safety check-in account.
-
+${locationSection}
 IMPORTANT: While they are signed out, you will NOT receive any alerts if they miss a check-in or trigger an emergency.
 
 This means their safety check-ins are currently paused and no notifications will be sent to you or any other emergency contacts.
