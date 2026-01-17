@@ -439,9 +439,26 @@ export async function registerRoutes(
   });
 
   // Set a contact as the primary contact (receives notifications for every check-in)
+  // Requires password confirmation for security
   app.post("/api/contacts/:id/primary", async (req, res) => {
     try {
       const { id } = req.params;
+      const { password } = req.body;
+
+      if (!password) {
+        return res.status(400).json({ error: "Password required" });
+      }
+
+      const user = await storage.getUserById(req.userId!);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+      if (!isValidPassword) {
+        return res.status(401).json({ error: "Incorrect password" });
+      }
+
       const contact = await storage.setPrimaryContact(req.userId!, id);
       if (!contact) {
         return res.status(404).json({ error: "Contact not found" });
@@ -455,10 +472,46 @@ export async function registerRoutes(
   app.delete("/api/contacts/:id", async (req, res) => {
     try {
       const { id } = req.params;
+      const { password } = req.body;
+
+      const contacts = await storage.getContacts(req.userId!);
+      const contactToDelete = contacts.find(c => c.id === id);
+      
+      if (!contactToDelete) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+
+      // If this is the last contact (and it's primary), require password
+      if (contacts.length === 1 && contactToDelete.isPrimary) {
+        if (!password) {
+          return res.status(400).json({ error: "Password required to delete last contact", requiresPassword: true });
+        }
+
+        const user = await storage.getUserById(req.userId!);
+        if (!user) {
+          return res.status(401).json({ error: "User not found" });
+        }
+
+        const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+        if (!isValidPassword) {
+          return res.status(401).json({ error: "Incorrect password" });
+        }
+      }
+
       const deleted = await storage.deleteContact(req.userId!, id);
       if (!deleted) {
         return res.status(404).json({ error: "Contact not found" });
       }
+
+      // If we deleted the primary contact and there are other contacts, 
+      // promote the first remaining contact to primary
+      if (contactToDelete.isPrimary && contacts.length > 1) {
+        const remainingContacts = contacts.filter(c => c.id !== id);
+        if (remainingContacts.length > 0) {
+          await storage.setPrimaryContact(req.userId!, remainingContacts[0].id);
+        }
+      }
+
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete contact" });
