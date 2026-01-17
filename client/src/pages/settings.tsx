@@ -207,11 +207,11 @@ export default function Settings() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       queryClient.clear();
       setLogoutStep("none");
       setLogoutPassword("");
-      setLocation("/");
+      // Force a full page navigation to ensure clean logout
+      window.location.href = "/";
     },
     onError: (error: any) => {
       const message = error?.message || "Please try again.";
