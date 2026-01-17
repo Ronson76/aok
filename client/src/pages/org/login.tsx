@@ -18,7 +18,7 @@ export default function OrganizationLogin() {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/login", { email, password });
+      const response = await apiRequest("POST", "/api/auth/login", { email, password });
       return response.json();
     },
     onSuccess: async (data) => {
@@ -28,7 +28,7 @@ export default function OrganizationLogin() {
           description: "This login is for organisations only. Please use the main sign in page.",
           variant: "destructive",
         });
-        await apiRequest("POST", "/api/logout");
+        await apiRequest("POST", "/api/auth/logout");
         return;
       }
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
