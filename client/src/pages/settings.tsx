@@ -292,7 +292,8 @@ export default function Settings() {
     scheduleDate.setHours(hours, minutes, 0, 0);
     const fullDateTime = scheduleDate.toISOString();
     
-    if (isOrganization) {
+    // Require password if schedule is already set (for all users) or if organization
+    if (isOrganization || settings?.scheduleStartTime) {
       setPendingInterval(null);
       setPendingScheduleStart(fullDateTime);
       setShowIntervalPasswordDialog(true);
@@ -377,34 +378,7 @@ export default function Settings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">1 hour</span>
-              <span className="text-lg font-semibold text-primary">
-                {formatInterval(localInterval)}
-              </span>
-              <span className="text-sm text-muted-foreground">48 hours</span>
-            </div>
-            <Slider
-              value={[localInterval]}
-              onValueChange={handleIntervalChange}
-              onValueCommit={handleIntervalCommit}
-              min={1}
-              max={48}
-              step={1}
-              className="w-full"
-              data-testid="slider-interval"
-            />
-          </div>
-          
-          <div className="flex items-start gap-2 p-3 rounded-md bg-muted/50">
-            <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-muted-foreground">
-              If you don't check in within {formatInterval(localInterval)}, your emergency contacts will be notified.
-            </p>
-          </div>
-
-          <div className="border-t pt-4 space-y-3">
+          <div className="space-y-3">
             <div className="space-y-1">
               <Label htmlFor="schedule-start" className="font-medium">
                 Schedule Start Time
@@ -432,9 +406,36 @@ export default function Settings() {
             </div>
             {settings?.scheduleStartTime && (
               <p className="text-xs text-muted-foreground">
-                Schedule time: {new Date(settings.scheduleStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                Current schedule: {new Date(settings.scheduleStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
             )}
+          </div>
+
+          <div className="border-t pt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">1 hour</span>
+              <span className="text-lg font-semibold text-primary">
+                {formatInterval(localInterval)}
+              </span>
+              <span className="text-sm text-muted-foreground">48 hours</span>
+            </div>
+            <Slider
+              value={[localInterval]}
+              onValueChange={handleIntervalChange}
+              onValueCommit={handleIntervalCommit}
+              min={1}
+              max={48}
+              step={1}
+              className="w-full"
+              data-testid="slider-interval"
+            />
+          </div>
+          
+          <div className="flex items-start gap-2 p-3 rounded-md bg-muted/50">
+            <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              If you don't check in within {formatInterval(localInterval)}, your emergency contacts will be notified.
+            </p>
           </div>
         </CardContent>
       </Card>

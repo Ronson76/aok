@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
-import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification } from "./notifications";
+import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
 
@@ -647,10 +647,14 @@ export async function registerRoutes(
         return res.status(404).json({ error: "User not found" });
       }
 
+      // Get current settings to check if schedule is already set
+      const currentSettings = await storage.getSettings(req.userId!);
+      
       // Check if password is required for this change
       const requiresPassword = 
         settingsData.alertsEnabled === false || // Disabling alerts always requires password
-        (user.accountType === "organization" && settingsData.intervalHours !== undefined); // Organizations need password for timer changes
+        (user.accountType === "organization" && settingsData.intervalHours !== undefined) || // Organizations need password for timer changes
+        (currentSettings.scheduleStartTime && settingsData.scheduleStartTime !== undefined); // Password required to change schedule once set
 
       if (requiresPassword) {
         if (!password) {
@@ -664,6 +668,23 @@ export async function registerRoutes(
       }
 
       const settings = await storage.updateSettings(req.userId!, settingsData);
+      
+      // Send schedule preferences notification to primary contacts when schedule is set
+      if (settingsData.scheduleStartTime) {
+        const primaryContacts = await storage.getPrimaryContacts(req.userId!);
+        if (primaryContacts.length > 0) {
+          sendSchedulePreferencesNotification(
+            primaryContacts,
+            user as any,
+            settingsData.scheduleStartTime,
+            settings.intervalHours
+          ).catch(err => {
+            console.error('[SETTINGS] Failed to send schedule notification:', err);
+          });
+          console.log(`[SETTINGS] Notifying ${primaryContacts.length} primary contact(s) of schedule preferences`);
+        }
+      }
+      
       res.json(settings);
     } catch (error) {
       res.status(500).json({ error: "Failed to update settings" });

@@ -242,6 +242,64 @@ This is an automated notification confirming their safety. No action is required
   }
 }
 
+export async function sendSchedulePreferencesNotification(
+  primaryContacts: Contact[],
+  user: User,
+  scheduleTime: string,
+  intervalHours: number
+): Promise<{ emailsSent: number; emailsFailed: number }> {
+  const isOrganization = user.accountType === "organization";
+  const identifier = isOrganization 
+    ? `Reference ${user.referenceId}` 
+    : user.name;
+  
+  const scheduleDate = new Date(scheduleTime);
+  const formattedTime = scheduleDate.toLocaleTimeString('en-US', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: true 
+  });
+  
+  const intervalDisplay = intervalHours === 1 ? "1 hour" : 
+    intervalHours < 24 ? `${intervalHours} hours` :
+    intervalHours === 24 ? "24 hours (daily)" :
+    intervalHours === 48 ? "48 hours (every 2 days)" :
+    `${intervalHours} hours`;
+
+  let emailsSent = 0;
+  let emailsFailed = 0;
+
+  for (const contact of primaryContacts) {
+    const subject = `aok: Check-in schedule set for ${identifier}`;
+    const body = `Hi ${contact.name},
+
+${identifier} has set up their check-in schedule on aok.
+
+Schedule Details:
+- Check-in starts at: ${formattedTime}
+- Check-in interval: Every ${intervalDisplay}
+
+As a primary contact, you will be notified:
+- When ${identifier} successfully checks in
+- If ${identifier} misses a scheduled check-in
+
+This is an automated notification. No action is required from you.
+
+- The aok Team`;
+
+    try {
+      await sendEmail(contact.email, subject, body);
+      emailsSent++;
+      console.log(`[SCHEDULE NOTIFICATION] Sent to ${contact.name} (${contact.email})`);
+    } catch (error) {
+      emailsFailed++;
+      console.error(`[SCHEDULE NOTIFICATION] Failed to send to ${contact.email}:`, error);
+    }
+  }
+
+  return { emailsSent, emailsFailed };
+}
+
 export async function sendEmergencyAlert(
   contacts: Contact[],
   user: User,
