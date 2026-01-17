@@ -9,7 +9,116 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import type { StatusData } from "@shared/schema";
 import { formatDistanceToNow, format, differenceInSeconds } from "date-fns";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+
+// Shared AudioContext that gets unlocked on user interaction
+let sharedAudioContext: AudioContext | null = null;
+let audioUnlocked = false;
+
+// Unlock audio context on first user interaction
+async function unlockAudio() {
+  if (audioUnlocked) return;
+  
+  try {
+    if (!sharedAudioContext) {
+      sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    
+    // Resume context if suspended (happens on mobile) - await the promise
+    if (sharedAudioContext.state === 'suspended') {
+      await sharedAudioContext.resume();
+    }
+    
+    // Verify context is running before marking as unlocked
+    if (sharedAudioContext.state !== 'running') {
+      console.log('[Audio] Context not running after resume, state:', sharedAudioContext.state);
+      return; // Don't mark as unlocked
+    }
+    
+    // Play a silent sound to fully unlock
+    const buffer = sharedAudioContext.createBuffer(1, 1, 22050);
+    const source = sharedAudioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(sharedAudioContext.destination);
+    source.start(0);
+    
+    audioUnlocked = true;
+    console.log('[Audio] Context unlocked successfully');
+  } catch (e) {
+    console.error('[Audio] Failed to unlock:', e);
+    // Don't mark as unlocked on error
+  }
+}
+
+// Set up unlock listeners
+if (typeof window !== 'undefined') {
+  const unlockEvents = ['touchstart', 'touchend', 'mousedown', 'keydown', 'click'];
+  const handleUnlock = () => {
+    unlockAudio();
+    // Remove listeners after unlock
+    unlockEvents.forEach(event => {
+      document.removeEventListener(event, handleUnlock, true);
+    });
+  };
+  unlockEvents.forEach(event => {
+    document.addEventListener(event, handleUnlock, true);
+  });
+}
+
+// Play alarm beep using the shared (unlocked) AudioContext
+function playAlarmBeep() {
+  try {
+    if (!sharedAudioContext) {
+      sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    
+    // Try to resume if suspended
+    if (sharedAudioContext.state === 'suspended') {
+      sharedAudioContext.resume();
+    }
+    
+    const playBeep = (delay: number = 0) => {
+      const oscillator = sharedAudioContext!.createOscillator();
+      const gainNode = sharedAudioContext!.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(sharedAudioContext!.destination);
+      
+      oscillator.frequency.value = 880; // A5 note - attention-grabbing
+      oscillator.type = 'square';
+      
+      const startTime = sharedAudioContext!.currentTime + delay;
+      gainNode.gain.setValueAtTime(0.3, startTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.5);
+      
+      oscillator.start(startTime);
+      oscillator.stop(startTime + 0.5);
+    };
+    
+    // Play two beeps
+    playBeep(0);
+    playBeep(0.25);
+    
+    console.log('[Audio] Alarm beep played');
+  } catch (e) {
+    console.error('[Audio] Failed to play alarm:', e);
+  }
+}
+
+// Update PWA badge on app icon
+async function updateAppBadge(count: number) {
+  try {
+    if ('setAppBadge' in navigator) {
+      if (count > 0) {
+        await (navigator as any).setAppBadge(count);
+      } else {
+        await (navigator as any).clearAppBadge();
+      }
+    }
+  } catch (e) {
+    console.error('Failed to update app badge:', e);
+  }
+}
 
 function formatCountdown(targetDate: Date): string {
   const now = new Date();
@@ -60,30 +169,101 @@ export default function Dashboard() {
   const [gettingLocation, setGettingLocation] = useState(false);
   const [cachedLocation, setCachedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [countdown, setCountdown] = useState<string>("");
+  const [isLocallyOverdue, setIsLocallyOverdue] = useState(false);
+  const alarmIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hasPlayedInitialAlarm = useRef(false);
 
   const { data: status, isLoading } = useQuery<StatusData>({
     queryKey: ["/api/status"],
     refetchInterval: 30000,
   });
 
-  // Live countdown timer
+  // Live countdown timer with auto-refresh when hitting zero
   useEffect(() => {
     if (!status?.nextCheckInDue) {
       setCountdown("");
+      setIsLocallyOverdue(false);
       return;
     }
 
     const targetDate = new Date(status.nextCheckInDue);
     
     const updateCountdown = () => {
-      setCountdown(formatCountdown(targetDate));
+      const now = new Date();
+      const diffInSeconds = differenceInSeconds(targetDate, now);
+      
+      if (diffInSeconds <= 0) {
+        setCountdown("Due now");
+        
+        // Immediately mark as locally overdue and refresh status
+        if (!isLocallyOverdue && status?.status !== "overdue") {
+          setIsLocallyOverdue(true);
+          // Refresh status from server to get official overdue state
+          queryClient.invalidateQueries({ queryKey: ["/api/status"] });
+          
+          // Play initial alarm when first becoming overdue
+          if (!hasPlayedInitialAlarm.current) {
+            hasPlayedInitialAlarm.current = true;
+            playAlarmBeep();
+          }
+        }
+      } else {
+        setCountdown(formatCountdown(targetDate));
+        setIsLocallyOverdue(false);
+        hasPlayedInitialAlarm.current = false;
+      }
     };
     
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     
     return () => clearInterval(interval);
-  }, [status?.nextCheckInDue]);
+  }, [status?.nextCheckInDue, status?.status, isLocallyOverdue]);
+
+  // Determine if we should show overdue state (server says overdue OR local countdown reached zero)
+  const effectivelyOverdue = status?.status === "overdue" || isLocallyOverdue;
+
+  // Alarm that repeats every 2 minutes while overdue
+  useEffect(() => {
+    // Always clear existing interval first to prevent duplicates
+    if (alarmIntervalRef.current) {
+      clearInterval(alarmIntervalRef.current);
+      alarmIntervalRef.current = null;
+    }
+    
+    if (effectivelyOverdue) {
+      // Play alarm immediately if we just became overdue
+      if (!hasPlayedInitialAlarm.current) {
+        hasPlayedInitialAlarm.current = true;
+        playAlarmBeep();
+      }
+      
+      // Set up repeating alarm every 2 minutes
+      alarmIntervalRef.current = setInterval(() => {
+        playAlarmBeep();
+      }, 2 * 60 * 1000); // 2 minutes
+      
+      // Update app badge to show "1"
+      updateAppBadge(1);
+    } else {
+      // Clear alarm interval when not overdue
+      if (alarmIntervalRef.current) {
+        clearInterval(alarmIntervalRef.current);
+        alarmIntervalRef.current = null;
+      }
+      hasPlayedInitialAlarm.current = false;
+      
+      // Clear app badge
+      updateAppBadge(0);
+    }
+    
+    return () => {
+      if (alarmIntervalRef.current) {
+        clearInterval(alarmIntervalRef.current);
+        alarmIntervalRef.current = null;
+      }
+    };
+  }, [effectivelyOverdue]);
 
   const checkInMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/checkins"),
@@ -165,15 +345,16 @@ export default function Dashboard() {
     );
   }
 
-  const statusInfo = status ? getStatusLabel(status.status) : { text: "Loading", variant: "secondary" as const };
-  const isOverdue = status?.status === "overdue";
+  // Use effectivelyOverdue for immediate UI updates (doesn't wait for server)
+  const displayStatus = effectivelyOverdue ? "overdue" : status?.status;
+  const statusInfo = displayStatus ? getStatusLabel(displayStatus) : { text: "Loading", variant: "secondary" as const };
 
   return (
     <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">
-      <Card className={`border-2 ${isOverdue ? "border-destructive bg-destructive/5" : ""}`}>
+      <Card className={`border-2 ${effectivelyOverdue ? "border-destructive bg-destructive/5" : ""}`}>
         <CardContent className="flex flex-col items-center gap-6 py-8">
-          <div className={`rounded-full p-4 ${isOverdue ? "bg-destructive/10" : "bg-primary/10"}`}>
-            <ShieldCheck className={`h-16 w-16 ${isOverdue ? "text-destructive" : "text-primary"}`} />
+          <div className={`rounded-full p-4 ${effectivelyOverdue ? "bg-destructive/10" : "bg-primary/10"}`}>
+            <ShieldCheck className={`h-16 w-16 ${effectivelyOverdue ? "text-destructive" : "text-primary"}`} />
           </div>
           
           <div className="text-center space-y-2">
