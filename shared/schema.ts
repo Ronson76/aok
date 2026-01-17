@@ -280,6 +280,10 @@ export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
 export const bundleStatuses = ["active", "expired", "cancelled"] as const;
 export type BundleStatus = typeof bundleStatuses[number];
 
+// Organization client status options
+export const orgClientStatuses = ["active", "paused", "terminated"] as const;
+export type OrgClientStatus = typeof orgClientStatuses[number];
+
 // Organization bundles table (subscription packages for organizations)
 export const organizationBundles = pgTable("organization_bundles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -325,30 +329,123 @@ export const organizationClients = pgTable("organization_clients", {
   clientId: varchar("client_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   bundleId: varchar("bundle_id").references(() => organizationBundles.id, { onDelete: "set null" }),
   nickname: text("nickname"),
+  clientOrdinal: integer("client_ordinal").notNull().default(0),
+  status: text("status").notNull().$type<OrgClientStatus>().default("active"),
   addedAt: timestamp("added_at").notNull().defaultNow(),
 });
 
 export const insertOrganizationClientSchema = createInsertSchema(organizationClients).omit({
   id: true,
   addedAt: true,
+  clientOrdinal: true,
+  status: true,
 });
 
 export type InsertOrganizationClient = z.infer<typeof insertOrganizationClientSchema>;
 export type OrganizationClient = typeof organizationClients.$inferSelect;
+
+// Organization client profiles table (detailed info about clients, managed by org)
+export const organizationClientProfiles = pgTable("organization_client_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationClientId: varchar("organization_client_id").notNull().references(() => organizationClients.id, { onDelete: "cascade" }),
+  displayName: text("display_name"),
+  addressLine1: text("address_line1"),
+  addressLine2: text("address_line2"),
+  city: text("city"),
+  postalCode: text("postal_code"),
+  country: text("country"),
+  dateOfBirth: date("date_of_birth"),
+  vulnerabilities: text("vulnerabilities"),
+  medicalNotes: text("medical_notes"),
+  emergencyInstructions: text("emergency_instructions"),
+  notes: text("notes"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertOrganizationClientProfileSchema = createInsertSchema(organizationClientProfiles).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const updateOrganizationClientProfileSchema = z.object({
+  displayName: z.string().optional(),
+  addressLine1: z.string().optional(),
+  addressLine2: z.string().optional(),
+  city: z.string().optional(),
+  postalCode: z.string().optional(),
+  country: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  vulnerabilities: z.string().optional(),
+  medicalNotes: z.string().optional(),
+  emergencyInstructions: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export type InsertOrganizationClientProfile = z.infer<typeof insertOrganizationClientProfileSchema>;
+export type UpdateOrganizationClientProfile = z.infer<typeof updateOrganizationClientProfileSchema>;
+export type OrganizationClientProfile = typeof organizationClientProfiles.$inferSelect;
 
 // Organization client with user details (for dashboard display)
 export interface OrganizationClientWithDetails {
   id: string;
   clientId: string;
   nickname: string | null;
+  clientOrdinal: number;
+  clientStatus: OrgClientStatus;
   addedAt: Date;
   client: {
     id: string;
     name: string;
     email: string;
+    mobileNumber: string | null;
   };
+  profile: OrganizationClientProfile | null;
   status: StatusData;
   lastAlert: AlertLog | null;
+  alertCounts: {
+    total: number;
+    emails: number;
+    calls: number;
+    emergencies: number;
+  };
+}
+
+// Admin view of organization client (privacy-limited)
+export interface AdminOrganizationClientView {
+  id: string;
+  clientOrdinal: number;
+  clientStatus: OrgClientStatus;
+  email: string;
+  mobileNumber: string | null;
+  userDisabled: boolean;
+  addedAt: Date;
+  status: StatusData;
+  alertCounts: {
+    total: number;
+    emails: number;
+    calls: number;
+    emergencies: number;
+  };
+}
+
+// Admin view of organization with client summary
+export interface AdminOrganizationView {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: Date;
+  disabled: boolean;
+  bundles: {
+    id: string;
+    name: string;
+    seatLimit: number;
+    seatsUsed: number;
+    status: BundleStatus;
+  }[];
+  totalClients: number;
+  activeClients: number;
+  pausedClients: number;
+  totalAlerts: number;
 }
 
 // Admin audit logs (track admin actions)
