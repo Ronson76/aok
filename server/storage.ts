@@ -1,10 +1,11 @@
 import { 
-  contacts, checkIns, settings, alertLogs, users, sessions, passwordResetTokens,
+  contacts, checkIns, settings, alertLogs, users, sessions, passwordResetTokens, pushSubscriptions,
   adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs, organizationClients, organizationClientProfiles,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
   AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo,
   OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData, OrgClientStatus,
-  OrganizationClientProfile, UpdateOrganizationClientProfile, AdminOrganizationClientView, AdminOrganizationView
+  OrganizationClientProfile, UpdateOrganizationClientProfile, AdminOrganizationClientView, AdminOrganizationView,
+  PushSubscription, InsertPushSubscription
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, desc, and, isNull, lt, gte, count, sql } from "drizzle-orm";
@@ -78,6 +79,12 @@ export interface IStorage {
 
   // Missed check-in processing
   processOverdueCheckIn(userId: string): Promise<{ wasMissed: boolean; alertSent: boolean }>;
+
+  // Push subscriptions
+  getPushSubscriptions(userId: string): Promise<PushSubscription[]>;
+  createPushSubscription(userId: string, subscription: InsertPushSubscription): Promise<PushSubscription>;
+  deletePushSubscription(userId: string, endpoint: string): Promise<boolean>;
+  deleteAllPushSubscriptions(userId: string): Promise<void>;
 }
 
 class DatabaseStorage implements IStorage {
@@ -571,6 +578,41 @@ class DatabaseStorage implements IStorage {
       .where(eq(settings.userId, userId));
 
     return { wasMissed: true, alertSent };
+  }
+
+  // Push subscriptions
+  async getPushSubscriptions(userId: string): Promise<PushSubscription[]> {
+    return await getDb().select().from(pushSubscriptions)
+      .where(eq(pushSubscriptions.userId, userId));
+  }
+
+  async createPushSubscription(userId: string, subscription: InsertPushSubscription): Promise<PushSubscription> {
+    // Delete existing subscription with same endpoint (in case of re-subscription)
+    await getDb().delete(pushSubscriptions)
+      .where(eq(pushSubscriptions.endpoint, subscription.endpoint));
+    
+    const result = await getDb().insert(pushSubscriptions).values({
+      userId,
+      endpoint: subscription.endpoint,
+      p256dh: subscription.keys.p256dh,
+      auth: subscription.keys.auth,
+    }).returning();
+    return result[0];
+  }
+
+  async deletePushSubscription(userId: string, endpoint: string): Promise<boolean> {
+    const result = await getDb().delete(pushSubscriptions)
+      .where(and(
+        eq(pushSubscriptions.userId, userId),
+        eq(pushSubscriptions.endpoint, endpoint)
+      ))
+      .returning();
+    return result.length > 0;
+  }
+
+  async deleteAllPushSubscriptions(userId: string): Promise<void> {
+    await getDb().delete(pushSubscriptions)
+      .where(eq(pushSubscriptions.userId, userId));
   }
 }
 
