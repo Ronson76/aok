@@ -746,3 +746,26 @@ export async function sendPushNotification(
   
   return { sent, failed };
 }
+
+// Send app download invite SMS to org-managed client
+export async function sendAppInviteSMS(
+  phoneNumber: string,
+  referenceCode: string,
+  organizationName: string
+): Promise<{ success: boolean; error?: string }> {
+  const appStoreLink = "https://apps.apple.com/app/aok";
+  const playStoreLink = "https://play.google.com/store/apps/details?id=com.aok";
+  
+  const message = `Hi! ${organizationName} has registered you for aok safety check-ins.
+
+Download the app:
+iPhone: ${appStoreLink}
+Android: ${playStoreLink}
+
+Your reference code: ${referenceCode}
+
+Enter this code when you open the app to get started.`;
+
+  console.log(`[SMS INVITE] Sending app invite to ${phoneNumber} with code ${referenceCode}`);
+  return await sendSMS(phoneNumber, message);
+}

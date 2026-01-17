@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { OrganizationDashboardStats, OrganizationClientWithDetails, OrganizationBundle, OrganizationClientProfile, AlertLog, OrgClientStatus } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
@@ -56,6 +56,23 @@ export default function OrganizationDashboard() {
   const [nickname, setNickname] = useState("");
   const [selectedBundleId, setSelectedBundleId] = useState<string>("");
   const [selectedClient, setSelectedClient] = useState<OrganizationClientWithDetails | null>(null);
+  
+  // New client registration form state
+  const [showRegisterClientDialog, setShowRegisterClientDialog] = useState(false);
+  const [regClientName, setRegClientName] = useState("");
+  const [regClientPhone, setRegClientPhone] = useState("");
+  const [regClientDOB, setRegClientDOB] = useState("");
+  const [regBundleId, setRegBundleId] = useState("");
+  const [regScheduleStart, setRegScheduleStart] = useState("");
+  const [regIntervalHours, setRegIntervalHours] = useState(24);
+  const [regEmergencyContacts, setRegEmergencyContacts] = useState<Array<{
+    name: string;
+    email: string;
+    phone: string;
+    phoneType: "mobile" | "landline";
+    relationship: string;
+    isPrimary: boolean;
+  }>>([]);
   
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [resetPasswordClientId, setResetPasswordClientId] = useState<string | null>(null);
@@ -130,6 +147,71 @@ export default function OrganizationDashboard() {
       });
     },
   });
+
+  const registerClientMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/org/clients/register", {
+        clientName: regClientName,
+        clientPhone: regClientPhone,
+        dateOfBirth: regClientDOB || undefined,
+        bundleId: regBundleId || undefined,
+        scheduleStartTime: regScheduleStart || undefined,
+        checkInIntervalHours: regIntervalHours,
+        emergencyContacts: regEmergencyContacts.length > 0 ? regEmergencyContacts : undefined,
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      setShowRegisterClientDialog(false);
+      resetRegisterForm();
+      toast({
+        title: "Client registered",
+        description: data.smsSent 
+          ? `SMS sent to ${regClientPhone}. Reference code: ${data.referenceCode}`
+          : `Client registered. Reference code: ${data.referenceCode}. SMS could not be sent.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to register client",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetRegisterForm = () => {
+    setRegClientName("");
+    setRegClientPhone("");
+    setRegClientDOB("");
+    setRegBundleId("");
+    setRegScheduleStart("");
+    setRegIntervalHours(24);
+    setRegEmergencyContacts([]);
+  };
+
+  const addEmergencyContact = () => {
+    setRegEmergencyContacts([...regEmergencyContacts, {
+      name: "",
+      email: "",
+      phone: "",
+      phoneType: "mobile",
+      relationship: "",
+      isPrimary: regEmergencyContacts.length === 0,
+    }]);
+  };
+
+  const updateEmergencyContact = (index: number, field: string, value: any) => {
+    const updated = [...regEmergencyContacts];
+    updated[index] = { ...updated[index], [field]: value };
+    setRegEmergencyContacts(updated);
+  };
+
+  const removeEmergencyContact = (index: number) => {
+    setRegEmergencyContacts(regEmergencyContacts.filter((_, i) => i !== index));
+  };
 
   const resetClientPasswordMutation = useMutation({
     mutationFn: async ({ clientId, newPassword, orgPassword }: { clientId: string; newPassword: string; orgPassword: string }) => {
@@ -221,10 +303,13 @@ export default function OrganizationDashboard() {
     setSelectedClient(client);
     setProfileData(client.profile || {});
     setEditingProfile(false);
-    fetchClientAlerts(client.clientId);
+    if (client.clientId) {
+      fetchClientAlerts(client.clientId);
+    }
   };
 
   const handleResetPasswordClick = (client: OrganizationClientWithDetails) => {
+    if (!client.clientId || !client.client) return;
     setResetPasswordClientId(client.clientId);
     setResetPasswordClientName(client.nickname || client.client.name);
     setShowResetPasswordDialog(true);
@@ -282,13 +367,22 @@ export default function OrganizationDashboard() {
           <h1 className="text-2xl font-bold" data-testid="text-org-dashboard-title">Organization Dashboard</h1>
           <p className="text-muted-foreground">Monitor your clients' safety and check-in status</p>
         </div>
-        <Dialog open={showAddClientDialog} onOpenChange={setShowAddClientDialog}>
+        <div className="flex gap-2">
+          <Button 
+            data-testid="button-register-client" 
+            disabled={!hasSeatsAvailable}
+            onClick={() => setShowRegisterClientDialog(true)}
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            Register Client
+          </Button>
+          <Dialog open={showAddClientDialog} onOpenChange={setShowAddClientDialog}>
             <DialogTrigger asChild>
-              <Button data-testid="button-add-client" disabled={!hasSeatsAvailable}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add Client
-            </Button>
-          </DialogTrigger>
+              <Button variant="outline" data-testid="button-add-client" disabled={!hasSeatsAvailable}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add Existing
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add a Client</DialogTitle>
@@ -358,7 +452,210 @@ export default function OrganizationDashboard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
+      {/* Register Client Dialog */}
+      <Dialog open={showRegisterClientDialog} onOpenChange={(open) => {
+        setShowRegisterClientDialog(open);
+        if (!open) resetRegisterForm();
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Register New Client</DialogTitle>
+            <DialogDescription>
+              Enter client details. They will receive an SMS with a link to download the app and their unique reference code.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="regClientName">Full Name *</Label>
+                <Input
+                  id="regClientName"
+                  placeholder="John Smith"
+                  value={regClientName}
+                  onChange={(e) => setRegClientName(e.target.value)}
+                  data-testid="input-reg-client-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="regClientPhone">Mobile Number *</Label>
+                <Input
+                  id="regClientPhone"
+                  type="tel"
+                  placeholder="+44 7700 900000"
+                  value={regClientPhone}
+                  onChange={(e) => setRegClientPhone(e.target.value)}
+                  data-testid="input-reg-client-phone"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="regClientDOB">Date of Birth</Label>
+                <Input
+                  id="regClientDOB"
+                  type="date"
+                  value={regClientDOB}
+                  onChange={(e) => setRegClientDOB(e.target.value)}
+                  data-testid="input-reg-client-dob"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="regScheduleStart">Schedule Start Time</Label>
+                <Input
+                  id="regScheduleStart"
+                  type="time"
+                  value={regScheduleStart}
+                  onChange={(e) => setRegScheduleStart(e.target.value)}
+                  data-testid="input-reg-schedule-start"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="regIntervalHours">Check-in Interval (hours)</Label>
+                <Select 
+                  value={regIntervalHours.toString()} 
+                  onValueChange={(v) => setRegIntervalHours(parseInt(v))}
+                >
+                  <SelectTrigger data-testid="select-reg-interval">
+                    <SelectValue placeholder="Select interval" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Every 1 hour</SelectItem>
+                    <SelectItem value="2">Every 2 hours</SelectItem>
+                    <SelectItem value="4">Every 4 hours</SelectItem>
+                    <SelectItem value="6">Every 6 hours</SelectItem>
+                    <SelectItem value="8">Every 8 hours</SelectItem>
+                    <SelectItem value="12">Every 12 hours</SelectItem>
+                    <SelectItem value="24">Every 24 hours</SelectItem>
+                    <SelectItem value="48">Every 48 hours</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {activeBundles.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="regBundleId">Bundle</Label>
+                  <Select value={regBundleId} onValueChange={setRegBundleId}>
+                    <SelectTrigger data-testid="select-reg-bundle">
+                      <SelectValue placeholder="Select a bundle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeBundles.map((bundle) => (
+                        <SelectItem 
+                          key={bundle.id} 
+                          value={bundle.id}
+                          disabled={bundle.seatsUsed >= bundle.seatLimit}
+                        >
+                          {bundle.name} ({bundle.seatsUsed}/{bundle.seatLimit} seats)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            {/* Emergency Contacts Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Emergency Contacts</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addEmergencyContact}
+                  data-testid="button-add-emergency-contact"
+                >
+                  <UserPlus className="h-4 w-4 mr-1" />
+                  Add Contact
+                </Button>
+              </div>
+              
+              {regEmergencyContacts.map((contact, index) => (
+                <Card key={index} className="p-3">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Contact {index + 1}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeEmergencyContact(index)}
+                        data-testid={`button-remove-contact-${index}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        placeholder="Name"
+                        value={contact.name}
+                        onChange={(e) => updateEmergencyContact(index, 'name', e.target.value)}
+                        data-testid={`input-contact-name-${index}`}
+                      />
+                      <Input
+                        placeholder="Email"
+                        type="email"
+                        value={contact.email}
+                        onChange={(e) => updateEmergencyContact(index, 'email', e.target.value)}
+                        data-testid={`input-contact-email-${index}`}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        placeholder="Phone"
+                        type="tel"
+                        value={contact.phone}
+                        onChange={(e) => updateEmergencyContact(index, 'phone', e.target.value)}
+                        data-testid={`input-contact-phone-${index}`}
+                      />
+                      <Select 
+                        value={contact.phoneType} 
+                        onValueChange={(v) => updateEmergencyContact(index, 'phoneType', v)}
+                      >
+                        <SelectTrigger data-testid={`select-contact-type-${index}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="mobile">Mobile</SelectItem>
+                          <SelectItem value="landline">Landline</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Input
+                      placeholder="Relationship (e.g., Spouse, Parent)"
+                      value={contact.relationship}
+                      onChange={(e) => updateEmergencyContact(index, 'relationship', e.target.value)}
+                      data-testid={`input-contact-relationship-${index}`}
+                    />
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRegisterClientDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => registerClientMutation.mutate()}
+              disabled={!regClientName || !regClientPhone || registerClientMutation.isPending}
+              data-testid="button-confirm-register-client"
+            >
+              {registerClientMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Registering...</>
+              ) : (
+                "Register & Send SMS"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -450,13 +747,20 @@ export default function OrganizationDashboard() {
                     {getStatusIcon(client.status.status, "md")}
                     <div>
                       <div className="font-medium flex items-center gap-2">
-                        {client.nickname || client.client.name}
-                        {client.nickname && (
+                        {client.nickname || client.clientName || client.client?.name || "Pending"}
+                        {client.nickname && client.client && (
                           <span className="text-muted-foreground text-sm">({client.client.name})</span>
                         )}
                         {getClientStatusBadge(client.clientStatus)}
+                        {client.registrationStatus && client.registrationStatus !== "registered" && (
+                          <Badge variant="outline" className="text-xs">
+                            {client.registrationStatus === "pending_sms" ? "SMS Pending" : "Awaiting Registration"}
+                          </Badge>
+                        )}
                       </div>
-                      <div className="text-sm text-muted-foreground">{client.client.email}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {client.client?.email || client.clientPhone || "No contact info"}
+                      </div>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                         {client.status.lastCheckIn && (
                           <span>Last check-in: {formatDistanceToNow(new Date(client.status.lastCheckIn), { addSuffix: true })}</span>
@@ -509,21 +813,23 @@ export default function OrganizationDashboard() {
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
+                    {client.client && client.clientId && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleResetPasswordClick(client)}
+                        data-testid={`button-reset-password-${client.clientId}`}
+                        title="Reset password"
+                      >
+                        <KeyRound className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleResetPasswordClick(client)}
-                      data-testid={`button-reset-password-${client.clientId}`}
-                      title="Reset password"
-                    >
-                      <KeyRound className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeClientMutation.mutate(client.clientId)}
-                      disabled={removeClientMutation.isPending}
-                      data-testid={`button-remove-client-${client.clientId}`}
+                      onClick={() => client.clientId && removeClientMutation.mutate(client.clientId)}
+                      disabled={removeClientMutation.isPending || !client.clientId}
+                      data-testid={`button-remove-client-${client.clientId || client.id}`}
                       title="Remove client"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -543,16 +849,21 @@ export default function OrganizationDashboard() {
               <span className="flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground font-medium text-sm">
                 {selectedClient?.clientOrdinal}
               </span>
-              {selectedClient?.nickname || selectedClient?.client.name}
+              {selectedClient?.nickname || selectedClient?.clientName || selectedClient?.client?.name || "Client"}
               {selectedClient && getClientStatusBadge(selectedClient.clientStatus)}
+              {selectedClient?.registrationStatus && selectedClient.registrationStatus !== "registered" && (
+                <Badge variant="outline" className="ml-2 text-xs">
+                  {selectedClient.registrationStatus === "pending_sms" ? "SMS Pending" : "Awaiting Registration"}
+                </Badge>
+              )}
             </DialogTitle>
             <DialogDescription className="flex items-center gap-2">
               <Mail className="h-3 w-3" />
-              {selectedClient?.client.email}
-              {selectedClient?.client.mobileNumber && (
+              {selectedClient?.client?.email || selectedClient?.clientPhone || "No contact info"}
+              {(selectedClient?.client?.mobileNumber || selectedClient?.clientPhone) && (
                 <>
                   <Phone className="h-3 w-3 ml-2" />
-                  {selectedClient.client.mobileNumber}
+                  {selectedClient?.client?.mobileNumber || selectedClient?.clientPhone}
                 </>
               )}
             </DialogDescription>

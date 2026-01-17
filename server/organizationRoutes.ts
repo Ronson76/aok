@@ -2,7 +2,18 @@ import { Express, Request, Response } from "express";
 import { organizationStorage, storage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { updateOrganizationClientProfileSchema, orgClientStatuses } from "@shared/schema";
+import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema } from "@shared/schema";
+import { sendAppInviteSMS } from "./notifications";
+
+// Generate a unique 6-character reference code
+function generateReferenceCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
 
 // Middleware to ensure user is an organization
 function requireOrganization(req: Request, res: Response, next: () => void) {
@@ -78,6 +89,112 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error: any) {
       console.error("[ORG] Failed to add client:", error);
       res.status(400).json({ error: error.message || "Failed to add client" });
+    }
+  });
+
+  // Register a new org-managed client (creates pending registration, sends SMS)
+  app.post("/api/org/clients/register", requireOrganization, async (req, res) => {
+    try {
+      const parsed = registerOrgClientSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+
+      const { clientName, clientPhone, dateOfBirth, bundleId, scheduleStartTime, checkInIntervalHours, emergencyContacts } = parsed.data;
+
+      // Get the organization details
+      const org = await storage.getUserById(req.userId!);
+      if (!org) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+
+      // Generate unique reference code
+      let referenceCode = generateReferenceCode();
+      let attempts = 0;
+      while (await organizationStorage.getClientByReferenceCode(referenceCode) && attempts < 10) {
+        referenceCode = generateReferenceCode();
+        attempts++;
+      }
+
+      if (attempts >= 10) {
+        return res.status(500).json({ error: "Failed to generate unique reference code" });
+      }
+
+      // Create the pending org client record
+      const orgClient = await organizationStorage.createPendingClient({
+        organizationId: req.userId!,
+        bundleId: bundleId || null,
+        clientName,
+        clientPhone,
+        referenceCode,
+        scheduleStartTime: scheduleStartTime ? new Date(scheduleStartTime) : null,
+        checkInIntervalHours: checkInIntervalHours || 24,
+      });
+
+      // Create the client profile with date of birth
+      if (dateOfBirth) {
+        await organizationStorage.createOrUpdateClientProfile(orgClient.id, {
+          organizationClientId: orgClient.id,
+          dateOfBirth: dateOfBirth,
+        });
+      }
+
+      // Create emergency contacts for the pending client
+      if (emergencyContacts && emergencyContacts.length > 0) {
+        for (const contact of emergencyContacts) {
+          await organizationStorage.addPendingClientContact(orgClient.id, contact);
+        }
+      }
+
+      // Send SMS with app download link and reference code
+      const smsResult = await sendAppInviteSMS(clientPhone, referenceCode, org.name);
+      
+      // Update registration status based on SMS result
+      if (smsResult.success) {
+        await organizationStorage.updateClientRegistrationStatus(orgClient.id, "pending_registration");
+      }
+
+      res.status(201).json({
+        success: true,
+        orgClientId: orgClient.id,
+        referenceCode,
+        smsSent: smsResult.success,
+        smsError: smsResult.error,
+      });
+    } catch (error: any) {
+      console.error("[ORG] Failed to register client:", error);
+      res.status(400).json({ error: error.message || "Failed to register client" });
+    }
+  });
+
+  // Resend SMS invite to a pending client
+  app.post("/api/org/clients/:orgClientId/resend-invite", requireOrganization, async (req, res) => {
+    try {
+      const { orgClientId } = req.params;
+      
+      const orgClient = await organizationStorage.getClientById(orgClientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      if (!orgClient.clientPhone || !orgClient.referenceCode) {
+        return res.status(400).json({ error: "Client does not have phone or reference code" });
+      }
+
+      const org = await storage.getUserById(req.userId!);
+      if (!org) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+
+      const smsResult = await sendAppInviteSMS(orgClient.clientPhone, orgClient.referenceCode, org.name);
+      
+      res.json({
+        success: smsResult.success,
+        error: smsResult.error,
+      });
+    } catch (error) {
+      console.error("[ORG] Failed to resend invite:", error);
+      res.status(500).json({ error: "Failed to resend invite" });
     }
   });
 

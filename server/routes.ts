@@ -1,6 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage, organizationStorage } from "./storage";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
@@ -164,6 +164,95 @@ export async function registerRoutes(
     }
     res.clearCookie("session");
     res.json({ success: true });
+  });
+
+  // Activate org-managed client account with reference code
+  app.post("/api/activate", async (req, res) => {
+    try {
+      const { referenceCode, email, password } = req.body;
+      
+      if (!referenceCode || !email || !password) {
+        return res.status(400).json({ error: "Reference code, email, and password are required" });
+      }
+      
+      if (password.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      }
+      
+      // Find the pending client by reference code
+      const pendingClient = await organizationStorage.getClientByReferenceCode(referenceCode.toUpperCase());
+      if (!pendingClient) {
+        return res.status(404).json({ error: "Invalid reference code. Please check and try again." });
+      }
+      
+      // Check if already registered (either registered or pending_registration means code was already used)
+      if (pendingClient.registrationStatus === "registered") {
+        return res.status(400).json({ error: "This reference code has already been used." });
+      }
+      
+      // Check if email is already taken
+      const existingUser = await storage.getUserByEmail(email.toLowerCase());
+      if (existingUser) {
+        return res.status(400).json({ error: "Email is already registered. Please use a different email or login." });
+      }
+      
+      // Create the user account
+      const passwordHash = await bcrypt.hash(password, 10);
+      const user = await storage.createUser({
+        email: email.toLowerCase(),
+        passwordHash,
+        name: pendingClient.clientName || "User",
+        accountType: "individual",
+        referenceId: pendingClient.referenceCode || undefined,
+        mobileNumber: pendingClient.clientPhone || undefined,
+      });
+      
+      // Link the client to the new user
+      await organizationStorage.linkClientToUser(pendingClient.id, user.id);
+      
+      // Create initial settings using org-defined schedule
+      const now = new Date();
+      let nextDue = new Date();
+      
+      if (pendingClient.scheduleStartTime) {
+        // scheduleStartTime is a Date object, extract time from it
+        const scheduleTime = new Date(pendingClient.scheduleStartTime);
+        nextDue.setHours(scheduleTime.getHours(), scheduleTime.getMinutes(), 0, 0);
+        if (nextDue <= now) {
+          nextDue.setDate(nextDue.getDate() + 1);
+        }
+      } else {
+        nextDue.setHours(now.getHours() + (pendingClient.checkInIntervalHours || 24));
+      }
+      
+      await storage.updateSettings(user.id, {
+        frequency: pendingClient.checkInIntervalHours === 24 ? "daily" : 
+                   pendingClient.checkInIntervalHours === 48 ? "every_two_days" : "daily",
+        alertsEnabled: true,
+      });
+      
+      // Copy pending contacts to user's contacts
+      const pendingContacts = await organizationStorage.getPendingClientContacts(pendingClient.id);
+      for (const contact of pendingContacts) {
+        if (contact.email && contact.name) {
+          await storage.createContact(user.id, {
+            name: contact.name,
+            email: contact.email,
+            phone: contact.phone ?? undefined,
+            phoneType: (contact.phoneType ?? "mobile") as "mobile" | "landline",
+            relationship: contact.relationship ?? "Emergency Contact",
+          });
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: "Account activated successfully. Please log in to continue." 
+      });
+    } catch (error) {
+      console.error("Activation error:", error);
+      res.status(500).json({ error: "Failed to activate account" });
+    }
   });
 
   app.post("/api/auth/logout-confirmed", async (req, res) => {

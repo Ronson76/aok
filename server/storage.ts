@@ -1,9 +1,11 @@
 import { 
   contacts, checkIns, settings, alertLogs, users, sessions, passwordResetTokens, pushSubscriptions,
   adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs, organizationClients, organizationClientProfiles,
+  pendingClientContacts,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
   AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo,
   OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData, OrgClientStatus,
+  OrgClientRegistrationStatus,
   OrganizationClientProfile, UpdateOrganizationClientProfile, AdminOrganizationClientView, AdminOrganizationView,
   PushSubscription, InsertPushSubscription
 } from "@shared/schema";
@@ -964,14 +966,45 @@ export interface IOrganizationStorage {
   getClients(organizationId: string): Promise<OrganizationClient[]>;
   getClientsWithDetails(organizationId: string): Promise<OrganizationClientWithDetails[]>;
   getClientById(organizationClientId: string): Promise<OrganizationClient | undefined>;
+  getClientByReferenceCode(referenceCode: string): Promise<OrganizationClient | undefined>;
   addClient(organizationId: string, clientId: string, bundleId?: string, nickname?: string): Promise<OrganizationClient>;
   removeClient(organizationId: string, clientId: string): Promise<boolean>;
   isClientOfOrganization(organizationId: string, clientId: string): Promise<boolean>;
   updateClientStatus(organizationClientId: string, status: OrgClientStatus): Promise<OrganizationClient | undefined>;
   
+  // Pending client registration (org-managed flow)
+  createPendingClient(data: {
+    organizationId: string;
+    bundleId: string | null;
+    clientName: string;
+    clientPhone: string;
+    referenceCode: string;
+    scheduleStartTime: Date | null;
+    checkInIntervalHours: number;
+  }): Promise<OrganizationClient>;
+  updateClientRegistrationStatus(orgClientId: string, status: OrgClientRegistrationStatus): Promise<void>;
+  addPendingClientContact(orgClientId: string, contact: {
+    name: string;
+    email: string;
+    phone?: string;
+    phoneType?: "mobile" | "landline";
+    relationship?: string;
+    isPrimary?: boolean;
+  }): Promise<void>;
+  getPendingClientContacts(orgClientId: string): Promise<Array<{
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    phoneType: "mobile" | "landline" | null;
+    relationship: string | null;
+    isPrimary: boolean | null;
+  }>>;
+  linkClientToUser(orgClientId: string, userId: string): Promise<OrganizationClient | undefined>;
+  
   // Client profiles
   getClientProfile(organizationClientId: string): Promise<OrganizationClientProfile | undefined>;
   updateClientProfile(organizationClientId: string, profile: UpdateOrganizationClientProfile): Promise<OrganizationClientProfile>;
+  createOrUpdateClientProfile(organizationClientId: string, profile: { organizationClientId: string; dateOfBirth?: string }): Promise<OrganizationClientProfile>;
   
   // Alert aggregation
   getClientAlertCounts(clientId: string): Promise<{ total: number; emails: number; calls: number; emergencies: number }>;
@@ -1013,12 +1046,49 @@ class OrganizationStorage implements IOrganizationStorage {
     const results: OrganizationClientWithDetails[] = [];
     
     for (const row of clients) {
-      if (!row.client) continue;
+      const profile = await this.getClientProfile(row.orgClient.id);
       
+      // Handle pending clients (no linked user yet)
+      if (!row.client) {
+        // Get pending contact count
+        const pendingContacts = await getDb()
+          .select()
+          .from(pendingClientContacts)
+          .where(eq(pendingClientContacts.organizationClientId, row.orgClient.id));
+        
+        results.push({
+          id: row.orgClient.id,
+          clientId: null,
+          nickname: row.orgClient.nickname,
+          clientOrdinal: row.orgClient.clientOrdinal,
+          clientStatus: row.orgClient.status,
+          registrationStatus: row.orgClient.registrationStatus,
+          referenceCode: row.orgClient.referenceCode,
+          clientName: row.orgClient.clientName,
+          clientPhone: row.orgClient.clientPhone,
+          scheduleStartTime: row.orgClient.scheduleStartTime,
+          checkInIntervalHours: row.orgClient.checkInIntervalHours,
+          addedAt: row.orgClient.addedAt,
+          client: null,
+          profile: profile || null,
+          status: {
+            status: "pending" as const,
+            lastCheckIn: null,
+            nextCheckInDue: null,
+            streak: 0,
+            hoursUntilDue: null,
+            contactCount: pendingContacts.length,
+          },
+          lastAlert: null,
+          alertCounts: { total: 0, emails: 0, calls: 0, emergencies: 0 },
+        });
+        continue;
+      }
+      
+      // Handle registered clients with linked user
       const status = await this.getClientStatus(row.client.id);
       const alertLogs = await this.getClientAlertLogs(row.client.id);
       const lastAlert = alertLogs.length > 0 ? alertLogs[0] : null;
-      const profile = await this.getClientProfile(row.orgClient.id);
       const alertCounts = await this.getClientAlertCounts(row.client.id);
       
       results.push({
@@ -1027,6 +1097,12 @@ class OrganizationStorage implements IOrganizationStorage {
         nickname: row.orgClient.nickname,
         clientOrdinal: row.orgClient.clientOrdinal,
         clientStatus: row.orgClient.status,
+        registrationStatus: row.orgClient.registrationStatus,
+        referenceCode: row.orgClient.referenceCode,
+        clientName: row.orgClient.clientName,
+        clientPhone: row.orgClient.clientPhone,
+        scheduleStartTime: row.orgClient.scheduleStartTime,
+        checkInIntervalHours: row.orgClient.checkInIntervalHours,
         addedAt: row.orgClient.addedAt,
         client: {
           id: row.client.id,
@@ -1285,6 +1361,7 @@ class OrganizationStorage implements IOrganizationStorage {
       // Count total alerts for all clients
       let totalAlerts = 0;
       for (const client of clients) {
+        if (!client.clientId) continue;
         const alertCount = await getDb()
           .select({ count: count() })
           .from(alertLogs)
@@ -1373,15 +1450,17 @@ class OrganizationStorage implements IOrganizationStorage {
       else if (client.status.status === "pending") clientsPending++;
       else if (client.status.status === "overdue") clientsOverdue++;
       
-      // Count emergency alerts for this client
-      const alerts = await getDb()
-        .select({ count: count() })
-        .from(alertLogs)
-        .where(and(
-          eq(alertLogs.userId, client.clientId),
-          sql`${alertLogs.message} LIKE '%EMERGENCY%'`
-        ));
-      totalEmergencyAlerts += alerts[0]?.count || 0;
+      // Count emergency alerts for this client (only if linked to a user)
+      if (client.clientId) {
+        const alerts = await getDb()
+          .select({ count: count() })
+          .from(alertLogs)
+          .where(and(
+            eq(alertLogs.userId, client.clientId),
+            sql`${alertLogs.message} LIKE '%EMERGENCY%'`
+          ));
+        totalEmergencyAlerts += alerts[0]?.count || 0;
+      }
     }
     
     return {
@@ -1474,6 +1553,147 @@ class OrganizationStorage implements IOrganizationStorage {
       .where(eq(alertLogs.userId, clientId))
       .orderBy(desc(alertLogs.timestamp))
       .limit(10);
+  }
+
+  // Get client by reference code
+  async getClientByReferenceCode(referenceCode: string): Promise<OrganizationClient | undefined> {
+    const result = await getDb()
+      .select()
+      .from(organizationClients)
+      .where(eq(organizationClients.referenceCode, referenceCode));
+    return result[0];
+  }
+
+  // Create a pending client (org-managed flow)
+  async createPendingClient(data: {
+    organizationId: string;
+    bundleId: string | null;
+    clientName: string;
+    clientPhone: string;
+    referenceCode: string;
+    scheduleStartTime: Date | null;
+    checkInIntervalHours: number;
+  }): Promise<OrganizationClient> {
+    // Get next ordinal number
+    const existingClients = await this.getClients(data.organizationId);
+    const nextOrdinal = existingClients.length + 1;
+
+    const result = await getDb()
+      .insert(organizationClients)
+      .values({
+        organizationId: data.organizationId,
+        bundleId: data.bundleId,
+        clientName: data.clientName,
+        clientPhone: data.clientPhone,
+        referenceCode: data.referenceCode,
+        scheduleStartTime: data.scheduleStartTime,
+        checkInIntervalHours: data.checkInIntervalHours,
+        clientOrdinal: nextOrdinal,
+        status: "active",
+        registrationStatus: "pending_sms",
+      })
+      .returning();
+    
+    // Update bundle seat count if assigned
+    if (data.bundleId) {
+      await getDb()
+        .update(organizationBundles)
+        .set({ seatsUsed: sql`${organizationBundles.seatsUsed} + 1` })
+        .where(eq(organizationBundles.id, data.bundleId));
+    }
+    
+    return result[0];
+  }
+
+  // Update client registration status
+  async updateClientRegistrationStatus(orgClientId: string, status: OrgClientRegistrationStatus): Promise<void> {
+    await getDb()
+      .update(organizationClients)
+      .set({ registrationStatus: status })
+      .where(eq(organizationClients.id, orgClientId));
+  }
+
+  // Add emergency contact for pending client
+  async addPendingClientContact(orgClientId: string, contact: {
+    name: string;
+    email: string;
+    phone?: string;
+    phoneType?: "mobile" | "landline";
+    relationship?: string;
+    isPrimary?: boolean;
+  }): Promise<void> {
+    await getDb()
+      .insert(pendingClientContacts)
+      .values({
+        organizationClientId: orgClientId,
+        name: contact.name,
+        email: contact.email,
+        phone: contact.phone || null,
+        phoneType: contact.phoneType || null,
+        relationship: contact.relationship || null,
+        isPrimary: contact.isPrimary || false,
+      });
+  }
+
+  // Get pending client contacts
+  async getPendingClientContacts(orgClientId: string): Promise<Array<{
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    phoneType: "mobile" | "landline" | null;
+    relationship: string | null;
+    isPrimary: boolean | null;
+  }>> {
+    const contacts = await getDb()
+      .select()
+      .from(pendingClientContacts)
+      .where(eq(pendingClientContacts.organizationClientId, orgClientId));
+    return contacts;
+  }
+
+  // Link a client to a user account (when they register via reference code)
+  async linkClientToUser(orgClientId: string, userId: string): Promise<OrganizationClient | undefined> {
+    const result = await getDb()
+      .update(organizationClients)
+      .set({ 
+        clientId: userId,
+        registrationStatus: "registered",
+      })
+      .where(eq(organizationClients.id, orgClientId))
+      .returning();
+    return result[0];
+  }
+
+  // Create or update client profile
+  async createOrUpdateClientProfile(organizationClientId: string, profile: { organizationClientId: string; dateOfBirth?: string }): Promise<OrganizationClientProfile> {
+    // Check if profile exists
+    const existing = await getDb()
+      .select()
+      .from(organizationClientProfiles)
+      .where(eq(organizationClientProfiles.organizationClientId, organizationClientId));
+    
+    if (existing[0]) {
+      // Update
+      const result = await getDb()
+        .update(organizationClientProfiles)
+        .set({
+          dateOfBirth: profile.dateOfBirth || null,
+          updatedAt: new Date(),
+        })
+        .where(eq(organizationClientProfiles.organizationClientId, organizationClientId))
+        .returning();
+      return result[0];
+    } else {
+      // Create
+      const result = await getDb()
+        .insert(organizationClientProfiles)
+        .values({
+          organizationClientId,
+          dateOfBirth: profile.dateOfBirth || null,
+        })
+        .returning();
+      return result[0];
+    }
   }
 }
 
