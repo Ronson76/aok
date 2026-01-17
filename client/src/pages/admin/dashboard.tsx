@@ -6,11 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Users, Building2, User, CheckCircle, XCircle, Package, 
-  LogOut, Shield, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone
+  LogOut, Shield, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { useState } from "react";
@@ -47,6 +49,15 @@ export default function AdminDashboard() {
   const [selectedOrg, setSelectedOrg] = useState<AdminOrganizationView | null>(null);
   const [orgClients, setOrgClients] = useState<AdminOrganizationClientView[]>([]);
   const [loadingClients, setLoadingClients] = useState(false);
+  
+  // State for creating organization
+  const [showCreateOrgDialog, setShowCreateOrgDialog] = useState(false);
+  const [newOrgName, setNewOrgName] = useState("");
+  const [newOrgEmail, setNewOrgEmail] = useState("");
+  const [newOrgPassword, setNewOrgPassword] = useState("");
+  const [showNewOrgPassword, setShowNewOrgPassword] = useState(false);
+  
+  const isSuperAdmin = admin?.role === "super_admin";
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/admin/dashboard/stats"],
@@ -102,6 +113,49 @@ export default function AdminDashboard() {
       });
     },
   });
+  
+  const createOrgMutation = useMutation({
+    mutationFn: async (data: { name: string; email: string; password: string }) => {
+      const response = await apiRequest("POST", "/api/admin/organizations", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard/stats"] });
+      setShowCreateOrgDialog(false);
+      setNewOrgName("");
+      setNewOrgEmail("");
+      setNewOrgPassword("");
+      toast({
+        title: "Organization created",
+        description: "The organization account has been created successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to create organization",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const handleCreateOrganization = () => {
+    if (!newOrgName.trim() || !newOrgEmail.trim() || !newOrgPassword.trim()) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill in all fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+    createOrgMutation.mutate({
+      name: newOrgName.trim(),
+      email: newOrgEmail.trim(),
+      password: newOrgPassword,
+    });
+  };
   
   const fetchOrgClients = async (orgId: string) => {
     setLoadingClients(true);
@@ -177,6 +231,17 @@ export default function AdminDashboard() {
                 Bundles
               </Button>
             </nav>
+            {isSuperAdmin && (
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={() => setShowCreateOrgDialog(true)}
+                data-testid="button-create-organization"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Organization
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={handleLogout} data-testid="button-admin-logout">
               <LogOut className="w-4 h-4 mr-2" />
               Logout
@@ -622,6 +687,94 @@ export default function AdminDashboard() {
                 ))}
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+        
+        {/* Create Organization Dialog */}
+        <Dialog open={showCreateOrgDialog} onOpenChange={setShowCreateOrgDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Create Organization
+              </DialogTitle>
+              <DialogDescription>
+                Create a new organization account. Once created, you can assign bundles to it.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="org-name">Organization Name</Label>
+                <Input
+                  id="org-name"
+                  placeholder="e.g., Care Home ABC"
+                  value={newOrgName}
+                  onChange={(e) => setNewOrgName(e.target.value)}
+                  data-testid="input-org-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="org-email">Email Address</Label>
+                <Input
+                  id="org-email"
+                  type="email"
+                  placeholder="e.g., admin@organization.com"
+                  value={newOrgEmail}
+                  onChange={(e) => setNewOrgEmail(e.target.value)}
+                  data-testid="input-org-email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="org-password">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="org-password"
+                    type={showNewOrgPassword ? "text" : "password"}
+                    placeholder="Minimum 6 characters"
+                    value={newOrgPassword}
+                    onChange={(e) => setNewOrgPassword(e.target.value)}
+                    className="pr-10"
+                    data-testid="input-org-password"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowNewOrgPassword(!showNewOrgPassword)}
+                    data-testid="button-toggle-org-password"
+                  >
+                    {showNewOrgPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <EyeIcon className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setShowCreateOrgDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateOrganization}
+                disabled={createOrgMutation.isPending}
+                data-testid="button-submit-organization"
+              >
+                {createOrgMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Organization
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </main>

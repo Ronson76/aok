@@ -268,11 +268,17 @@ export default function AdminBundles() {
                           <SelectValue placeholder="Select an organization" />
                         </SelectTrigger>
                         <SelectContent>
-                          {organizationUsers.map((org) => (
-                            <SelectItem key={org.id} value={org.id}>
-                              {org.name} ({org.email})
-                            </SelectItem>
-                          ))}
+                          {organizationUsers.length === 0 ? (
+                            <div className="p-2 text-sm text-muted-foreground text-center">
+                              No organization accounts found
+                            </div>
+                          ) : (
+                            organizationUsers.map((org) => (
+                              <SelectItem key={org.id} value={org.id}>
+                                {org.name} ({org.email})
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                     </div>

@@ -1,6 +1,6 @@
 import { Express, Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
-import { adminStorage, organizationStorage } from "./storage";
+import { adminStorage, organizationStorage, storage } from "./storage";
 import { adminLoginSchema, AdminUserProfile, orgClientStatuses } from "@shared/schema";
 import { z } from "zod";
 
@@ -132,6 +132,52 @@ export function registerAdminRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Create organization (super admin only)
+  const createOrganizationSchema = z.object({
+    name: z.string().min(1, "Name is required").max(100),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+  });
+
+  app.post("/api/admin/organizations", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const validation = createOrganizationSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors[0].message });
+      }
+
+      const { name, email, password } = validation.data;
+
+      const existingUser = await storage.getUserByEmail(email.toLowerCase());
+      if (existingUser) {
+        return res.status(400).json({ error: "An account with this email already exists" });
+      }
+
+      const passwordHash = await bcrypt.hash(password, 10);
+      
+      const user = await storage.createUser({
+        email: email.toLowerCase(),
+        passwordHash,
+        accountType: "organization",
+        name,
+      });
+
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "create",
+        "organization",
+        user.id,
+        `Created organization: ${name} (${email})`
+      );
+
+      const { passwordHash: _, ...profile } = user;
+      res.status(201).json(profile);
+    } catch (error) {
+      console.error("Error creating organization:", error);
+      res.status(500).json({ error: "Failed to create organization" });
     }
   });
 
