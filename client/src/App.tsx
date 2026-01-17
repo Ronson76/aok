@@ -114,6 +114,7 @@ function AppRoutes() {
     <Switch>
       <Route path="/app" component={() => <ProtectedRoute component={isOrganization ? OrganizationDashboard : Dashboard} />} />
       <Route path="/app/org" component={() => <ProtectedRoute component={OrganizationDashboard} />} />
+      <Route path="/org/dashboard" component={() => <ProtectedRoute component={OrganizationDashboard} />} />
       <Route path="/app/contacts" component={() => <ProtectedRoute component={Contacts} />} />
       <Route path="/app/history" component={() => <ProtectedRoute component={History} />} />
       <Route path="/app/settings" component={() => <ProtectedRoute component={Settings} />} />
