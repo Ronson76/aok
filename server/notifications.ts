@@ -526,3 +526,44 @@ export async function sendVoiceAlerts(
 
   return { callsMade, callsFailed };
 }
+
+export async function sendLogoutNotification(
+  primaryContact: Contact,
+  user: User
+): Promise<{ sent: boolean; error?: string }> {
+  const result = { sent: false, error: undefined as string | undefined };
+
+  const isOrganization = user.accountType === "organization";
+  const identifier = isOrganization 
+    ? `${user.name} (Reference ID: ${user.referenceId})`
+    : user.name;
+
+  const subject = `aok Alert: ${identifier} has signed out`;
+  
+  const body = `Hello ${primaryContact.name},
+
+This is an automated notification from aok.
+
+${identifier} has signed out of their aok safety check-in account.
+
+IMPORTANT: While they are signed out, you will NOT receive any alerts if they miss a check-in or trigger an emergency.
+
+This means their safety check-ins are currently paused and no notifications will be sent to you or any other emergency contacts.
+
+If you are concerned about ${isOrganization ? "this user's" : `${user.name}'s`} wellbeing, please reach out to them directly.
+
+---
+This notification was sent because you are listed as their primary emergency contact.
+aok - Personal Safety Check-In`;
+
+  try {
+    await sendEmail(primaryContact.email, subject, body);
+    result.sent = true;
+    console.log(`[LOGOUT NOTIFICATION] Sent to primary contact ${primaryContact.name} (${primaryContact.email})`);
+  } catch (error) {
+    result.error = error instanceof Error ? error.message : "Unknown error";
+    console.error(`[LOGOUT NOTIFICATION] Failed to send to ${primaryContact.email}:`, error);
+  }
+
+  return result;
+}

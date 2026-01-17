@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
-import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts } from "./notifications";
+import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
 
@@ -164,6 +164,49 @@ export async function registerRoutes(
     }
     res.clearCookie("session");
     res.json({ success: true });
+  });
+
+  app.post("/api/auth/logout-confirmed", async (req, res) => {
+    try {
+      const sessionId = req.cookies?.session;
+      if (!sessionId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const session = await storage.getSession(sessionId);
+      if (!session) {
+        return res.status(401).json({ error: "Invalid session" });
+      }
+
+      const user = await storage.getUserById(session.userId);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      const { password } = req.body;
+      if (!password) {
+        return res.status(400).json({ error: "Password required" });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+      if (!isValidPassword) {
+        return res.status(401).json({ error: "Incorrect password" });
+      }
+
+      const contacts = await storage.getContacts(user.id);
+      const primaryContact = contacts.find(c => c.isPrimary);
+
+      if (primaryContact) {
+        await sendLogoutNotification(primaryContact, user);
+      }
+
+      await storage.deleteSession(sessionId);
+      res.clearCookie("session");
+      res.json({ success: true, notificationSent: !!primaryContact });
+    } catch (error) {
+      console.error("Logout confirmation error:", error);
+      res.status(500).json({ error: "Failed to process logout" });
+    }
   });
 
   app.get("/api/auth/me", async (req, res) => {
