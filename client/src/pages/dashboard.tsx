@@ -66,7 +66,20 @@ if (typeof window !== 'undefined') {
 }
 
 // Track which overdue period we've already alarmed for (persisted across page reloads)
+// We use a normalized timestamp (just the ISO string date part) to avoid format mismatches
 const ALARM_STORAGE_KEY = 'aok_last_alarm_due_time';
+const ALARM_DEBOUNCE_KEY = 'aok_last_alarm_timestamp';
+const ALARM_DEBOUNCE_MS = 60000; // Don't play initial alarm more than once per minute
+
+function normalizeDueTime(dueTime: string | undefined | null): string | null {
+  if (!dueTime) return null;
+  try {
+    // Normalize to timestamp to avoid string format differences
+    return new Date(dueTime).getTime().toString();
+  } catch {
+    return dueTime;
+  }
+}
 
 function getLastAlarmedDueTime(): string | null {
   try {
@@ -76,9 +89,30 @@ function getLastAlarmedDueTime(): string | null {
   }
 }
 
-function setLastAlarmedDueTime(dueTime: string) {
+function wasAlarmPlayedRecently(): boolean {
   try {
-    localStorage.setItem(ALARM_STORAGE_KEY, dueTime);
+    const lastPlayed = localStorage.getItem(ALARM_DEBOUNCE_KEY);
+    if (!lastPlayed) return false;
+    const elapsed = Date.now() - parseInt(lastPlayed, 10);
+    return elapsed < ALARM_DEBOUNCE_MS;
+  } catch {
+    return false;
+  }
+}
+
+function markAlarmPlayed() {
+  try {
+    localStorage.setItem(ALARM_DEBOUNCE_KEY, Date.now().toString());
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+function setLastAlarmedDueTime(dueTime: string | undefined | null) {
+  const normalized = normalizeDueTime(dueTime);
+  if (!normalized) return;
+  try {
+    localStorage.setItem(ALARM_STORAGE_KEY, normalized);
   } catch {
     // Ignore storage errors
   }
@@ -125,8 +159,6 @@ function playAlarmBeep() {
     // Play two beeps
     playBeep(0);
     playBeep(0.25);
-    
-    console.log('[Audio] Alarm beep played');
   } catch (e) {
     console.error('[Audio] Failed to play alarm:', e);
   }
@@ -233,21 +265,11 @@ export default function Dashboard() {
         setCountdown("Due now");
         
         // Immediately mark as locally overdue and refresh status
+        // NOTE: Alarm playing is handled by the dedicated alarm useEffect below
         if (!isLocallyOverdue && status?.status !== "overdue") {
           setIsLocallyOverdue(true);
           // Refresh status from server to get official overdue state
           queryClient.invalidateQueries({ queryKey: ["/api/status"] });
-          
-          // Play initial alarm when first becoming overdue (check localStorage too)
-          const lastAlarmedDueTime = getLastAlarmedDueTime();
-          const currentDueTime = status.nextCheckInDue;
-          const alreadyAlarmedForThisPeriod = currentDueTime && lastAlarmedDueTime === currentDueTime;
-          
-          if (!hasPlayedInitialAlarm.current && !alreadyAlarmedForThisPeriod && currentDueTime) {
-            hasPlayedInitialAlarm.current = true;
-            setLastAlarmedDueTime(currentDueTime);
-            playAlarmBeep();
-          }
         }
       } else {
         setCountdown(formatCountdown(targetDate));
@@ -274,19 +296,24 @@ export default function Dashboard() {
     }
     
     const currentDueTime = status?.nextCheckInDue;
+    const normalizedCurrentDueTime = normalizeDueTime(currentDueTime);
     
-    if (effectivelyOverdue && currentDueTime) {
+    if (effectivelyOverdue && normalizedCurrentDueTime) {
       // Check if we've already alarmed for this specific overdue period (persisted across page reloads)
       const lastAlarmedDueTime = getLastAlarmedDueTime();
-      const alreadyAlarmedForThisPeriod = lastAlarmedDueTime === currentDueTime;
+      const alreadyAlarmedForThisPeriod = lastAlarmedDueTime === normalizedCurrentDueTime;
       
       // Play alarm immediately only if we haven't already for this overdue period
-      if (!hasPlayedInitialAlarm.current && !alreadyAlarmedForThisPeriod) {
+      // Also check debounce to prevent rapid replays during page reloads/hot updates
+      const recentlyPlayed = wasAlarmPlayedRecently();
+      
+      if (!hasPlayedInitialAlarm.current && !alreadyAlarmedForThisPeriod && !recentlyPlayed) {
         hasPlayedInitialAlarm.current = true;
         setLastAlarmedDueTime(currentDueTime);
+        markAlarmPlayed();
         playAlarmBeep();
-      } else if (alreadyAlarmedForThisPeriod) {
-        // If we already alarmed for this period (from localStorage), sync the ref
+      } else if (alreadyAlarmedForThisPeriod || recentlyPlayed) {
+        // If we already alarmed for this period (from localStorage) or recently, sync the ref
         hasPlayedInitialAlarm.current = true;
       }
       
@@ -297,8 +324,9 @@ export default function Dashboard() {
       
       // Update app badge to show "1"
       updateAppBadge(1);
-    } else {
-      // Clear alarm interval when not overdue
+    } else if (status && !effectivelyOverdue) {
+      // Only clear when we have status data AND user is definitely not overdue
+      // This prevents clearing localStorage during initial page load when status is undefined
       if (alarmIntervalRef.current) {
         clearInterval(alarmIntervalRef.current);
         alarmIntervalRef.current = null;
@@ -318,7 +346,7 @@ export default function Dashboard() {
         alarmIntervalRef.current = null;
       }
     };
-  }, [effectivelyOverdue, status?.nextCheckInDue]);
+  }, [effectivelyOverdue, status?.nextCheckInDue, status]);
 
   const checkInMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/checkins"),
