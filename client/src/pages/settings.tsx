@@ -286,12 +286,18 @@ export default function Settings() {
   const handleScheduleStartSubmit = () => {
     if (!scheduleStartInput) return;
     
+    // Convert time-only input (HH:MM) to full datetime using today's date
+    const [hours, minutes] = scheduleStartInput.split(':').map(Number);
+    const scheduleDate = new Date();
+    scheduleDate.setHours(hours, minutes, 0, 0);
+    const fullDateTime = scheduleDate.toISOString();
+    
     if (isOrganization) {
       setPendingInterval(null);
-      setPendingScheduleStart(scheduleStartInput);
+      setPendingScheduleStart(fullDateTime);
       setShowIntervalPasswordDialog(true);
     } else {
-      updateMutation.mutate({ scheduleStartTime: scheduleStartInput });
+      updateMutation.mutate({ scheduleStartTime: fullDateTime });
     }
   };
 
@@ -404,13 +410,13 @@ export default function Settings() {
                 Schedule Start Time
               </Label>
               <p className="text-xs text-muted-foreground">
-                Set when your check-in schedule begins. The timer will calculate from this time.
+                Set the time of day your check-in schedule starts from.
               </p>
             </div>
             <div className="flex gap-2">
               <Input
                 id="schedule-start"
-                type="datetime-local"
+                type="time"
                 value={scheduleStartInput}
                 onChange={(e) => setScheduleStartInput(e.target.value)}
                 className="flex-1"
@@ -426,7 +432,7 @@ export default function Settings() {
             </div>
             {settings?.scheduleStartTime && (
               <p className="text-xs text-muted-foreground">
-                Current schedule started: {new Date(settings.scheduleStartTime).toLocaleString()}
+                Schedule time: {new Date(settings.scheduleStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
             )}
           </div>
