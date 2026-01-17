@@ -257,7 +257,7 @@ export default function Dashboard() {
                 <Users className="h-5 w-5" />
                 <p className="text-sm">Add an emergency contact to check in</p>
               </div>
-              <Link href="/contacts">
+              <Link href="/app/contacts">
                 <Button
                   size="lg"
                   className="w-full px-8 py-6 text-lg font-semibold"
@@ -346,7 +346,7 @@ export default function Dashboard() {
               </p>
             </div>
             {status?.contactCount === 0 ? (
-              <Link href="/contacts">
+              <Link href="/app/contacts">
                 <Button
                   variant="destructive"
                   size="lg"
