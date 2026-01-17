@@ -667,6 +667,57 @@ export async function registerRoutes(
     }
   });
 
+  // Push subscription endpoints
+  app.get("/api/push/vapid-public-key", async (req, res) => {
+    const publicKey = process.env.VAPID_PUBLIC_KEY;
+    if (!publicKey) {
+      return res.status(500).json({ error: "VAPID public key not configured" });
+    }
+    res.json({ publicKey });
+  });
+
+  app.get("/api/push/subscription", async (req, res) => {
+    try {
+      const subscriptions = await storage.getPushSubscriptions(req.userId!);
+      res.json({ hasSubscription: subscriptions.length > 0 });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get subscription status" });
+    }
+  });
+
+  app.post("/api/push/subscribe", async (req, res) => {
+    try {
+      const { endpoint, keys } = req.body;
+      if (!endpoint || !keys?.p256dh || !keys?.auth) {
+        return res.status(400).json({ error: "Invalid subscription data" });
+      }
+      
+      const subscription = await storage.createPushSubscription(req.userId!, {
+        endpoint,
+        keys: { p256dh: keys.p256dh, auth: keys.auth }
+      });
+      
+      res.status(201).json({ success: true, id: subscription.id });
+    } catch (error) {
+      console.error('[PUSH] Failed to create subscription:', error);
+      res.status(500).json({ error: "Failed to save subscription" });
+    }
+  });
+
+  app.delete("/api/push/unsubscribe", async (req, res) => {
+    try {
+      const { endpoint } = req.body;
+      if (endpoint) {
+        await storage.deletePushSubscription(req.userId!, endpoint);
+      } else {
+        await storage.deleteAllPushSubscriptions(req.userId!);
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to remove subscription" });
+    }
+  });
+
   // Test email endpoint (temporary for debugging)
   app.post("/api/test-email", async (req, res) => {
     try {

@@ -8,12 +8,12 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle } from "lucide-react";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
 import type { Settings as SettingsType } from "@shared/schema";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 function formatInterval(hours: number): string {
   if (hours === 1) return "1 hour";
@@ -42,6 +42,10 @@ export default function Settings() {
   const [showIntervalPasswordDialog, setShowIntervalPasswordDialog] = useState(false);
   const [intervalPassword, setIntervalPassword] = useState("");
   const [pendingInterval, setPendingInterval] = useState<number | null>(null);
+  
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(true);
+  const [pushSupported, setPushSupported] = useState(false);
   
   const isOrganization = user?.accountType === "organization";
 
