@@ -26,6 +26,18 @@ function formatInterval(hours: number): string {
   return `${days} day${days > 1 ? 's' : ''} ${remainingHours} hour${remainingHours > 1 ? 's' : ''}`;
 }
 
+// Helper to convert VAPID key to Uint8Array
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 export default function Settings() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -58,6 +70,105 @@ export default function Settings() {
       setLocalInterval(settings.intervalHours);
     }
   }, [settings?.intervalHours]);
+
+  // Check push notification support and current status
+  useEffect(() => {
+    const checkPushSupport = async () => {
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        setPushSupported(true);
+        try {
+          const response = await fetch('/api/push/subscription', { credentials: 'include' });
+          if (response.ok) {
+            const data = await response.json();
+            setPushEnabled(data.hasSubscription);
+          }
+        } catch (error) {
+          console.error('Failed to check push subscription:', error);
+        }
+      }
+      setPushLoading(false);
+    };
+    checkPushSupport();
+  }, []);
+
+  const handlePushToggle = useCallback(async (enabled: boolean) => {
+    setPushLoading(true);
+    try {
+      if (enabled) {
+        // Request permission and subscribe
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          toast({
+            title: "Permission denied",
+            description: "Please allow notifications in your browser settings.",
+            variant: "destructive",
+          });
+          setPushLoading(false);
+          return;
+        }
+
+        // Get VAPID public key
+        const keyResponse = await fetch('/api/push/vapid-public-key', { credentials: 'include' });
+        if (!keyResponse.ok) throw new Error('Failed to get VAPID key');
+        const { publicKey } = await keyResponse.json();
+
+        // Subscribe to push
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        });
+
+        // Send subscription to server
+        const subJson = subscription.toJSON();
+        const response = await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            endpoint: subJson.endpoint,
+            keys: subJson.keys,
+          }),
+        });
+
+        if (!response.ok) throw new Error('Failed to save subscription');
+        
+        setPushEnabled(true);
+        toast({
+          title: "Notifications enabled",
+          description: "You'll receive alerts when check-ins are due.",
+        });
+      } else {
+        // Unsubscribe
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        if (subscription) {
+          await subscription.unsubscribe();
+        }
+
+        await fetch('/api/push/unsubscribe', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({}),
+        });
+
+        setPushEnabled(false);
+        toast({
+          title: "Notifications disabled",
+          description: "You won't receive push notifications.",
+        });
+      }
+    } catch (error) {
+      console.error('Push toggle error:', error);
+      toast({
+        title: "Failed to update notifications",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+    setPushLoading(false);
+  }, [toast]);
 
   const updateMutation = useMutation({
     mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean; password?: string }) =>
@@ -305,6 +416,46 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      {pushSupported && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+              Push Notifications
+            </CardTitle>
+            <CardDescription>
+              Get notified on your phone when check-ins are due.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="push-enabled" className="font-medium">
+                  Phone Alerts
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Receive push notifications when overdue
+                </p>
+              </div>
+              <Switch
+                id="push-enabled"
+                checked={pushEnabled}
+                onCheckedChange={handlePushToggle}
+                disabled={pushLoading}
+                data-testid="switch-push-enabled"
+              />
+            </div>
+
+            <div className="flex items-start gap-2 p-3 rounded-md bg-muted/50">
+              <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                When enabled, you'll receive a notification on this device when your check-in becomes overdue.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
