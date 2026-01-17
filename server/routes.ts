@@ -455,6 +455,7 @@ export async function registerRoutes(
   app.delete("/api/contacts/:id", async (req, res) => {
     try {
       const { id } = req.params;
+      const { password } = req.body;
 
       const contacts = await storage.getContacts(req.userId!);
       const contactToDelete = contacts.find(c => c.id === id);
@@ -466,6 +467,19 @@ export async function registerRoutes(
       // Don't allow deletion of the last contact
       if (contacts.length === 1) {
         return res.status(400).json({ error: "At least one emergency contact is required for aok to function properly." });
+      }
+
+      // Organizations require password to delete contacts (protect vulnerable individuals)
+      const user = await storage.getUserById(req.userId!);
+      if (user?.accountType === "organization") {
+        if (!password) {
+          return res.status(400).json({ error: "Password required to remove contacts", requiresPassword: true });
+        }
+
+        const isValid = await bcrypt.compare(password, user.passwordHash);
+        if (!isValid) {
+          return res.status(401).json({ error: "Incorrect password" });
+        }
       }
 
       const deleted = await storage.deleteContact(req.userId!, id);
@@ -593,15 +607,19 @@ export async function registerRoutes(
 
       const { password, ...settingsData } = parsed.data;
 
-      // If trying to disable alerts, require password verification
-      if (settingsData.alertsEnabled === false) {
-        if (!password) {
-          return res.status(400).json({ error: "Password required to disable alerts" });
-        }
+      const user = await storage.getUserById(req.userId!);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
 
-        const user = await storage.getUserById(req.userId!);
-        if (!user) {
-          return res.status(404).json({ error: "User not found" });
+      // Check if password is required for this change
+      const requiresPassword = 
+        settingsData.alertsEnabled === false || // Disabling alerts always requires password
+        (user.accountType === "organization" && settingsData.intervalHours !== undefined); // Organizations need password for timer changes
+
+      if (requiresPassword) {
+        if (!password) {
+          return res.status(400).json({ error: "Password required for this change" });
         }
 
         const isValid = await bcrypt.compare(password, user.passwordHash);

@@ -36,6 +36,12 @@ export default function Settings() {
   
   const [logoutStep, setLogoutStep] = useState<"none" | "confirm" | "password">("none");
   const [logoutPassword, setLogoutPassword] = useState("");
+  
+  const [showIntervalPasswordDialog, setShowIntervalPasswordDialog] = useState(false);
+  const [intervalPassword, setIntervalPassword] = useState("");
+  const [pendingInterval, setPendingInterval] = useState<number | null>(null);
+  
+  const isOrganization = user?.accountType === "organization";
 
   const { data: settings, isLoading } = useQuery<SettingsType>({
     queryKey: ["/api/settings"],
@@ -55,6 +61,9 @@ export default function Settings() {
       queryClient.invalidateQueries({ queryKey: ["/api/status"] });
       setShowDisableDialog(false);
       setDisablePassword("");
+      setShowIntervalPasswordDialog(false);
+      setIntervalPassword("");
+      setPendingInterval(null);
       toast({
         title: "Settings updated",
         description: "Your preferences have been saved.",
@@ -117,7 +126,36 @@ export default function Settings() {
   };
 
   const handleIntervalCommit = (value: number[]) => {
-    updateMutation.mutate({ intervalHours: value[0] });
+    if (isOrganization) {
+      setPendingInterval(value[0]);
+      setShowIntervalPasswordDialog(true);
+    } else {
+      updateMutation.mutate({ intervalHours: value[0] });
+    }
+  };
+
+  const handleConfirmIntervalChange = () => {
+    if (!intervalPassword.trim()) {
+      toast({
+        title: "Password required",
+        description: "Please enter your password to change the check-in interval.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (pendingInterval !== null) {
+      updateMutation.mutate({ intervalHours: pendingInterval, password: intervalPassword });
+    }
+  };
+
+  const handleCancelIntervalChange = () => {
+    setShowIntervalPasswordDialog(false);
+    setIntervalPassword("");
+    setPendingInterval(null);
+    // Reset slider to current saved value
+    if (settings?.intervalHours) {
+      setLocalInterval(settings.intervalHours);
+    }
   };
 
   const handleLogoutClick = () => {
@@ -280,6 +318,58 @@ export default function Settings() {
           </Button>
         </CardContent>
       </Card>
+
+      <Dialog open={showIntervalPasswordDialog} onOpenChange={(open) => {
+        if (!open) handleCancelIntervalChange();
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              Confirm Timer Change
+            </DialogTitle>
+            <DialogDescription>
+              As an organization account, changing the check-in timer requires password verification 
+              to protect the safety settings of monitored individuals.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="interval-password">Password</Label>
+              <Input
+                id="interval-password"
+                type="password"
+                placeholder="Enter your password"
+                value={intervalPassword}
+                onChange={(e) => setIntervalPassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleConfirmIntervalChange();
+                }}
+                data-testid="input-interval-password"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={handleCancelIntervalChange}
+              data-testid="button-cancel-interval"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmIntervalChange}
+              disabled={updateMutation.isPending}
+              data-testid="button-confirm-interval"
+            >
+              {updateMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Confirm Change
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showDisableDialog} onOpenChange={(open) => {
         setShowDisableDialog(open);
