@@ -212,11 +212,19 @@ export default function Landing() {
             <span className="text-xs text-muted-foreground">&copy; Ghuman</span>
           </div>
           <p className="text-sm mb-4">Your personal safety check-in companion</p>
-          <Link href="/admin/login">
-            <span className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors cursor-pointer" data-testid="link-admin">
-              Admin
-            </span>
-          </Link>
+          <div className="flex items-center justify-center gap-4">
+            <Link href="/org/login">
+              <span className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors cursor-pointer" data-testid="link-org-login">
+                Organisation
+              </span>
+            </Link>
+            <span className="text-xs text-muted-foreground/40">|</span>
+            <Link href="/admin/login">
+              <span className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors cursor-pointer" data-testid="link-admin">
+                Admin
+              </span>
+            </Link>
+          </div>
         </div>
       </footer>
     </div>
