@@ -1,7 +1,8 @@
 import { Express, Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
-import { adminStorage } from "./storage";
-import { adminLoginSchema, AdminUserProfile } from "@shared/schema";
+import { adminStorage, organizationStorage } from "./storage";
+import { adminLoginSchema, AdminUserProfile, orgClientStatuses } from "@shared/schema";
+import { z } from "zod";
 
 const ADMIN_SESSION_COOKIE = "admin_session";
 
@@ -322,6 +323,98 @@ export function registerAdminRoutes(app: Express) {
     } catch (error) {
       console.error("Error creating admin:", error);
       res.status(500).json({ error: "Failed to create admin" });
+    }
+  });
+
+  // Get all organizations with client summaries (privacy-conscious view)
+  app.get("/api/admin/organizations", adminAuthMiddleware, async (req, res) => {
+    try {
+      const organizations = await organizationStorage.getOrganizationsWithClientSummary();
+      res.json(organizations);
+    } catch (error) {
+      console.error("Error fetching organizations:", error);
+      res.status(500).json({ error: "Failed to fetch organizations" });
+    }
+  });
+
+  // Get organization clients with privacy-limited details (ordinal, email, mobile only)
+  app.get("/api/admin/organizations/:organizationId/clients", adminAuthMiddleware, async (req, res) => {
+    try {
+      const { organizationId } = req.params;
+      const clients = await organizationStorage.getOrganizationClientsForAdmin(organizationId);
+      res.json(clients);
+    } catch (error) {
+      console.error("Error fetching organization clients:", error);
+      res.status(500).json({ error: "Failed to fetch organization clients" });
+    }
+  });
+
+  // Update organization client status (super admin only)
+  const updateClientStatusSchema = z.object({
+    status: z.enum(orgClientStatuses),
+  });
+
+  app.patch("/api/admin/organizations/:organizationId/clients/:clientId/status", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { organizationId, clientId } = req.params;
+      const parsed = updateClientStatusSchema.safeParse(req.body);
+      
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid status" });
+      }
+
+      // Get the org client to verify it belongs to this organization
+      const orgClient = await organizationStorage.getClientById(clientId);
+      if (!orgClient || orgClient.organizationId !== organizationId) {
+        return res.status(404).json({ error: "Client not found in this organization" });
+      }
+
+      const updated = await organizationStorage.updateClientStatus(clientId, parsed.data.status);
+      
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "update",
+        "organization_client",
+        clientId,
+        `Updated client status to ${parsed.data.status} in organization ${organizationId}`
+      );
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating client status:", error);
+      res.status(500).json({ error: "Failed to update client status" });
+    }
+  });
+
+  // Remove client from organization (super admin only)
+  app.delete("/api/admin/organizations/:organizationId/clients/:clientId", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { organizationId, clientId } = req.params;
+      
+      // Get the org client to verify it belongs to this organization
+      const orgClient = await organizationStorage.getClientById(clientId);
+      if (!orgClient || orgClient.organizationId !== organizationId) {
+        return res.status(404).json({ error: "Client not found in this organization" });
+      }
+
+      const success = await organizationStorage.removeClient(organizationId, orgClient.clientId);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Failed to remove client" });
+      }
+
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "delete",
+        "organization_client",
+        clientId,
+        `Removed client from organization ${organizationId}`
+      );
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing client:", error);
+      res.status(500).json({ error: "Failed to remove client" });
     }
   });
 }
