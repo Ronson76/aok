@@ -22,7 +22,7 @@ export default function OrganizationLogin() {
       return response.json();
     },
     onSuccess: async (data) => {
-      if (data.user?.accountType !== "organization") {
+      if (data.accountType !== "organization") {
         toast({
           title: "Access Denied",
           description: "This login is for organisations only. Please use the main sign in page.",
@@ -31,12 +31,12 @@ export default function OrganizationLogin() {
         await apiRequest("POST", "/api/auth/logout");
         return;
       }
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast({
         title: "Welcome back",
         description: "You've successfully signed in to your organisation account.",
       });
-      setLocation("/app");
+      setLocation("/org/dashboard");
     },
     onError: (error: any) => {
       toast({
