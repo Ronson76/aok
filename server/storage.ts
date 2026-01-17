@@ -377,6 +377,7 @@ class DatabaseStorage implements IStorage {
         frequency: "daily",
         intervalHours: 24,
         lastCheckIn: null,
+        scheduleStartTime: null,
         nextCheckInDue: null,
         alertsEnabled: true,
       };
@@ -386,6 +387,7 @@ class DatabaseStorage implements IStorage {
     return {
       frequency: row.frequency as "daily" | "every_two_days",
       intervalHours: parseInt(row.intervalHours) || 24,
+      scheduleStartTime: row.scheduleStartTime?.toISOString() || null,
       lastCheckIn: row.lastCheckIn?.toISOString() || null,
       nextCheckInDue: row.nextCheckInDue?.toISOString() || null,
       alertsEnabled: row.alertsEnabled,
@@ -398,12 +400,42 @@ class DatabaseStorage implements IStorage {
     if (updates.intervalHours !== undefined) dbUpdates.intervalHours = String(updates.intervalHours);
     if (updates.alertsEnabled !== undefined) dbUpdates.alertsEnabled = updates.alertsEnabled;
     
-    // If interval is changing, recalculate nextCheckInDue based on lastCheckIn
-    if (updates.intervalHours !== undefined) {
+    // Handle schedule start time - this is the initial check-in time
+    if (updates.scheduleStartTime !== undefined) {
+      const startTime = new Date(updates.scheduleStartTime);
+      dbUpdates.scheduleStartTime = startTime;
+      
+      // Get current interval to calculate next due
       const currentSettings = await this.getSettings(userId);
-      if (currentSettings.lastCheckIn) {
-        const lastCheckIn = new Date(currentSettings.lastCheckIn);
-        const nextDue = new Date(lastCheckIn.getTime() + updates.intervalHours * 60 * 60 * 1000);
+      const intervalHours = updates.intervalHours ?? currentSettings.intervalHours;
+      
+      // Calculate the next check-in due time from the start time
+      let nextDue = new Date(startTime.getTime() + intervalHours * 60 * 60 * 1000);
+      
+      // If the calculated next due is in the past, advance it to the future
+      const now = new Date();
+      while (nextDue < now) {
+        nextDue = new Date(nextDue.getTime() + intervalHours * 60 * 60 * 1000);
+      }
+      
+      dbUpdates.nextCheckInDue = nextDue;
+      dbUpdates.lastCheckIn = startTime;
+    }
+    // If only interval is changing (no new start time), recalculate based on existing schedule
+    else if (updates.intervalHours !== undefined) {
+      const currentSettings = await this.getSettings(userId);
+      // Use scheduleStartTime if available, otherwise use lastCheckIn
+      const baseTime = currentSettings.scheduleStartTime || currentSettings.lastCheckIn;
+      if (baseTime) {
+        const baseDate = new Date(baseTime);
+        let nextDue = new Date(baseDate.getTime() + updates.intervalHours * 60 * 60 * 1000);
+        
+        // If the calculated next due is in the past, advance it to the future
+        const now = new Date();
+        while (nextDue < now) {
+          nextDue = new Date(nextDue.getTime() + updates.intervalHours * 60 * 60 * 1000);
+        }
+        
         dbUpdates.nextCheckInDue = nextDue;
       }
     }

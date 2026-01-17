@@ -553,13 +553,16 @@ export async function registerRoutes(
       
       const checkIn = await storage.createCheckIn(req.userId!);
       
-      // Notify primary contact if one exists
-      const primaryContact = await storage.getPrimaryContact(req.userId!);
-      if (primaryContact && req.user) {
-        // Send notification asynchronously (don't wait for it)
-        sendSuccessfulCheckInNotification(primaryContact, req.user as any).catch(err => {
-          console.error('[CHECK-IN] Failed to notify primary contact:', err);
-        });
+      // Notify ALL primary contacts
+      const primaryContacts = await storage.getPrimaryContacts(req.userId!);
+      if (primaryContacts.length > 0 && req.user) {
+        // Send notifications to all primary contacts asynchronously
+        for (const contact of primaryContacts) {
+          sendSuccessfulCheckInNotification(contact, req.user as any).catch(err => {
+            console.error('[CHECK-IN] Failed to notify primary contact:', contact.email, err);
+          });
+        }
+        console.log(`[CHECK-IN] Notifying ${primaryContacts.length} primary contact(s) of successful check-in`);
       }
       
       res.status(201).json(checkIn);
