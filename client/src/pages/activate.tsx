@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,29 +13,29 @@ export default function Activate() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [referenceCode, setReferenceCode] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   const activateMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/activate", {
         referenceCode: referenceCode.toUpperCase(),
-        email,
-        password,
       });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Activation failed");
+      }
       return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast({
-        title: "Account activated",
-        description: "Your account is now active. Please log in to continue.",
+        title: "Welcome to aok",
+        description: "You're now signed in.",
       });
-      setLocation("/login");
+      setLocation("/app");
     },
     onError: (error: any) => {
       toast({
-        title: "Activation failed",
+        title: "Invalid code",
         description: error.message || "Please check your reference code and try again.",
         variant: "destructive",
       });
@@ -45,19 +45,10 @@ export default function Activate() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (password !== confirmPassword) {
+    if (referenceCode.length !== 6) {
       toast({
-        title: "Passwords don't match",
-        description: "Please make sure your passwords match.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (password.length < 8) {
-      toast({
-        title: "Password too short",
-        description: "Password must be at least 8 characters.",
+        title: "Invalid code",
+        description: "Please enter your 6-character reference code.",
         variant: "destructive",
       });
       return;
@@ -79,10 +70,10 @@ export default function Activate() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserCheck className="h-5 w-5" />
-              Activate Your Account
+              Enter Your Code
             </CardTitle>
             <CardDescription>
-              Enter the reference code you received via SMS to activate your account.
+              Enter the reference code you received via SMS to get started.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -95,72 +86,29 @@ export default function Activate() {
                   value={referenceCode}
                   onChange={(e) => setReferenceCode(e.target.value.toUpperCase())}
                   maxLength={6}
-                  className="text-center text-xl font-mono tracking-widest uppercase"
+                  className="text-center text-2xl font-mono tracking-widest uppercase"
                   data-testid="input-reference-code"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground text-center">
                   The 6-character code sent to your phone
                 </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your.email@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  data-testid="input-activate-email"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">Create Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="At least 8 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  data-testid="input-activate-password"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Confirm your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  data-testid="input-activate-confirm-password"
-                />
               </div>
               
               <Button
                 type="submit"
                 className="w-full"
-                disabled={!referenceCode || !email || !password || !confirmPassword || activateMutation.isPending}
+                disabled={referenceCode.length !== 6 || activateMutation.isPending}
                 data-testid="button-activate"
               >
                 {activateMutation.isPending ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Activating...</>
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Signing in...</>
                 ) : (
-                  "Activate Account"
+                  "Continue"
                 )}
               </Button>
             </form>
           </CardContent>
         </Card>
-        
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          Already have an account?{" "}
-          <a href="/login" className="text-primary hover:underline">
-            Sign in
-          </a>
-        </p>
       </div>
     </div>
   );

@@ -109,6 +109,8 @@ export default function Register() {
   });
 
   const accountType = form.watch("accountType");
+  const referenceId = form.watch("referenceId");
+  
   // For PWA (mobile app): require location permission (granted or unavailable)
   // For web browser: allow signup without location (always true)
   const canSubmit = isPWA 
@@ -151,8 +153,50 @@ export default function Register() {
     },
   });
 
+  // Org client activation - just reference code
+  const activateMutation = useMutation({
+    mutationFn: async (referenceCode: string) => {
+      const res = await apiRequest("POST", "/api/activate", {
+        referenceCode: referenceCode.toUpperCase(),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Activation failed");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      toast({
+        title: "Welcome to aok",
+        description: "You're now signed in.",
+      });
+      setLocation("/app");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Invalid code",
+        description: error.message || "Please check your reference code and try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: InsertUser) => {
     registerMutation.mutate(data);
+  };
+
+  const handleOrgActivation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (referenceId && referenceId.length === 6) {
+      activateMutation.mutate(referenceId);
+    } else {
+      toast({
+        title: "Invalid code",
+        description: "Please enter your 6-character reference code.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -219,20 +263,6 @@ export default function Register() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="you@example.com" {...field} data-testid="input-email" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               {accountType === "organization" ? (
                 <>
                   <FormField
@@ -240,22 +270,42 @@ export default function Register() {
                     name="referenceId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Reference Number</FormLabel>
+                        <FormLabel>Reference Code</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="Enter your reference number" 
+                            placeholder="ABC123" 
                             {...field} 
-                            value={field.value || ""}
-                            data-testid="input-reference-number" 
+                            value={(field.value || "").toUpperCase()}
+                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                            maxLength={6}
+                            className="text-center text-2xl font-mono tracking-widest uppercase"
+                            data-testid="input-reference-code" 
                           />
                         </FormControl>
-                        <FormDescription>
-                          Your unique reference number provided by your organisation
+                        <FormDescription className="text-center">
+                          The 6-character code sent to your phone
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  
+                  <Button
+                    type="button"
+                    className="w-full"
+                    onClick={handleOrgActivation}
+                    disabled={!referenceId || referenceId.length !== 6 || activateMutation.isPending}
+                    data-testid="button-org-continue"
+                  >
+                    {activateMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      "Continue"
+                    )}
+                  </Button>
                 </>
               ) : (
                 <>
@@ -317,39 +367,42 @@ export default function Register() {
                 </>
               )}
 
-              <div className="space-y-4 border-t pt-4">
-                <h3 className="font-medium text-sm text-muted-foreground">Password</h3>
+              {accountType !== "organization" && (
+                <div className="space-y-4 border-t pt-4">
+                  <h3 className="font-medium text-sm text-muted-foreground">Password</h3>
 
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <PasswordInput placeholder="At least 6 characters" {...field} data-testid="input-password" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <PasswordInput placeholder="At least 6 characters" {...field} data-testid="input-password" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
-                      <FormControl>
-                        <PasswordInput placeholder="Re-enter your password" {...field} data-testid="input-confirm-password" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                          <PasswordInput placeholder="Re-enter your password" {...field} data-testid="input-confirm-password" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
 
-              {/* Location Permission Section */}
+              {/* Location Permission Section - only for individual accounts */}
+              {accountType !== "organization" && (
               <div className="space-y-3 pt-2">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <MapPin className="h-4 w-4" />
@@ -434,24 +487,27 @@ export default function Register() {
                   </div>
                 )}
               </div>
+              )}
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={registerMutation.isPending || !canSubmit}
-                data-testid="button-register"
-              >
-                {registerMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating account...
-                  </>
-                ) : !canSubmit ? (
-                  "Grant Location Access to Continue"
-                ) : (
-                  "Create Account"
-                )}
-              </Button>
+              {accountType !== "organization" && (
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={registerMutation.isPending || !canSubmit}
+                  data-testid="button-register"
+                >
+                  {registerMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : !canSubmit ? (
+                    "Grant Location Access to Continue"
+                  ) : (
+                    "Create Account"
+                  )}
+                </Button>
+              )}
             </form>
           </Form>
 

@@ -166,92 +166,104 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
-  // Activate org-managed client account with reference code
+  // Activate/login org-managed client with reference code only
   app.post("/api/activate", async (req, res) => {
     try {
-      const { referenceCode, email, password } = req.body;
+      const { referenceCode } = req.body;
       
-      if (!referenceCode || !email || !password) {
-        return res.status(400).json({ error: "Reference code, email, and password are required" });
+      if (!referenceCode) {
+        return res.status(400).json({ error: "Reference code is required" });
       }
       
-      if (password.length < 8) {
-        return res.status(400).json({ error: "Password must be at least 8 characters" });
-      }
-      
-      // Find the pending client by reference code
-      const pendingClient = await organizationStorage.getClientByReferenceCode(referenceCode.toUpperCase());
-      if (!pendingClient) {
+      // Find the client by reference code
+      const orgClient = await organizationStorage.getClientByReferenceCode(referenceCode.toUpperCase());
+      if (!orgClient) {
         return res.status(404).json({ error: "Invalid reference code. Please check and try again." });
       }
       
-      // Check if already registered (either registered or pending_registration means code was already used)
-      if (pendingClient.registrationStatus === "registered") {
-        return res.status(400).json({ error: "This reference code has already been used." });
-      }
+      let user;
       
-      // Check if email is already taken
-      const existingUser = await storage.getUserByEmail(email.toLowerCase());
-      if (existingUser) {
-        return res.status(400).json({ error: "Email is already registered. Please use a different email or login." });
-      }
-      
-      // Create the user account
-      const passwordHash = await bcrypt.hash(password, 10);
-      const user = await storage.createUser({
-        email: email.toLowerCase(),
-        passwordHash,
-        name: pendingClient.clientName || "User",
-        accountType: "individual",
-        referenceId: pendingClient.referenceCode || undefined,
-        mobileNumber: pendingClient.clientPhone || undefined,
-      });
-      
-      // Link the client to the new user
-      await organizationStorage.linkClientToUser(pendingClient.id, user.id);
-      
-      // Create initial settings using org-defined schedule
-      const now = new Date();
-      let nextDue = new Date();
-      
-      if (pendingClient.scheduleStartTime) {
-        // scheduleStartTime is a Date object, extract time from it
-        const scheduleTime = new Date(pendingClient.scheduleStartTime);
-        nextDue.setHours(scheduleTime.getHours(), scheduleTime.getMinutes(), 0, 0);
-        if (nextDue <= now) {
-          nextDue.setDate(nextDue.getDate() + 1);
+      // Check if client already has a linked user account
+      if (orgClient.clientId) {
+        // Already activated - just log them in
+        user = await storage.getUserById(orgClient.clientId);
+        if (!user) {
+          return res.status(404).json({ error: "Account not found. Please contact your organization." });
         }
       } else {
-        nextDue.setHours(now.getHours() + (pendingClient.checkInIntervalHours || 24));
-      }
-      
-      await storage.updateSettings(user.id, {
-        frequency: pendingClient.checkInIntervalHours === 24 ? "daily" : 
-                   pendingClient.checkInIntervalHours === 48 ? "every_two_days" : "daily",
-        alertsEnabled: true,
-      });
-      
-      // Copy pending contacts to user's contacts
-      const pendingContacts = await organizationStorage.getPendingClientContacts(pendingClient.id);
-      for (const contact of pendingContacts) {
-        if (contact.email && contact.name) {
-          await storage.createContact(user.id, {
-            name: contact.name,
-            email: contact.email,
-            phone: contact.phone ?? undefined,
-            phoneType: (contact.phoneType ?? "mobile") as "mobile" | "landline",
-            relationship: contact.relationship ?? "Emergency Contact",
-          });
+        // First time activation - create a minimal user account
+        // Use reference code as email placeholder (clients don't need real email)
+        const placeholderEmail = `${referenceCode.toLowerCase()}@client.aok.local`;
+        
+        // Create user with no password (reference code is the auth method)
+        user = await storage.createUser({
+          email: placeholderEmail,
+          passwordHash: "", // No password needed - reference code is auth
+          name: orgClient.clientName || "Client",
+          accountType: "individual",
+          referenceId: orgClient.referenceCode || undefined,
+          mobileNumber: orgClient.clientPhone || undefined,
+        });
+        
+        // Link the client to the new user
+        await organizationStorage.linkClientToUser(orgClient.id, user.id);
+        
+        // Create initial settings using org-defined schedule
+        const now = new Date();
+        let nextDue = new Date();
+        
+        if (orgClient.scheduleStartTime) {
+          const scheduleTime = new Date(orgClient.scheduleStartTime);
+          nextDue.setHours(scheduleTime.getHours(), scheduleTime.getMinutes(), 0, 0);
+          if (nextDue <= now) {
+            nextDue.setDate(nextDue.getDate() + 1);
+          }
+        } else {
+          nextDue.setHours(now.getHours() + (orgClient.checkInIntervalHours || 24));
+        }
+        
+        await storage.updateSettings(user.id, {
+          frequency: orgClient.checkInIntervalHours === 24 ? "daily" : 
+                     orgClient.checkInIntervalHours === 48 ? "every_two_days" : "daily",
+          alertsEnabled: true,
+        });
+        
+        // Copy pending contacts to user's contacts
+        const pendingContacts = await organizationStorage.getPendingClientContacts(orgClient.id);
+        for (const contact of pendingContacts) {
+          if (contact.email && contact.name) {
+            await storage.createContact(user.id, {
+              name: contact.name,
+              email: contact.email,
+              phone: contact.phone ?? undefined,
+              phoneType: (contact.phoneType ?? "mobile") as "mobile" | "landline",
+              relationship: contact.relationship ?? "Emergency Contact",
+            });
+          }
         }
       }
+      
+      // Create session and log them in directly
+      const session = await storage.createSession(user.id);
+      
+      res.cookie("session", session.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        expires: session.expiresAt,
+      });
       
       res.json({ 
         success: true, 
-        message: "Account activated successfully. Please log in to continue." 
+        user: {
+          id: user.id,
+          name: user.name,
+          referenceId: user.referenceId,
+        }
       });
     } catch (error) {
       console.error("Activation error:", error);
-      res.status(500).json({ error: "Failed to activate account" });
+      res.status(500).json({ error: "Failed to sign in. Please try again." });
     }
   });
 
