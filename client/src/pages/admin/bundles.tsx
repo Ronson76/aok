@@ -141,11 +141,19 @@ export default function AdminBundles() {
 
   const handleCreateBundle = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newBundle.userId || !newBundle.name || newBundle.seatLimit < 1) {
+    if (!newBundle.userId || !newBundle.name) {
       toast({
         variant: "destructive",
         title: "Invalid data",
         description: "Please fill in all required fields",
+      });
+      return;
+    }
+    if (newBundle.seatLimit < 1 || newBundle.seatLimit > 1000) {
+      toast({
+        variant: "destructive",
+        title: "Invalid seat count",
+        description: "Number of users must be between 1 and 1000",
       });
       return;
     }
@@ -279,15 +287,20 @@ export default function AdminBundles() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="seatLimit">Number of Seats</Label>
+                      <Label htmlFor="seatLimit">Number of Users (1-1000)</Label>
                       <Input
                         id="seatLimit"
                         type="number"
                         min={1}
+                        max={1000}
                         value={newBundle.seatLimit}
-                        onChange={(e) => setNewBundle({ ...newBundle, seatLimit: parseInt(e.target.value) || 1 })}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 1;
+                          setNewBundle({ ...newBundle, seatLimit: Math.min(1000, Math.max(1, value)) });
+                        }}
                         data-testid="input-seat-limit"
                       />
+                      <p className="text-xs text-muted-foreground">Maximum 1000 users per bundle</p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="expiresAt">Expiry Date (Optional)</Label>
