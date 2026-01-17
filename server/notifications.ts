@@ -416,7 +416,7 @@ If you cannot reach them, consider contacting local emergency services.
       console.error(`[EMERGENCY ALERT] Failed to send email to ${contact.email}:`, error);
     }
 
-    if (contact.phone && contact.phoneType !== "landline") {
+    if (contact.phone) {
       const smsBody = `EMERGENCY ALERT from aok: ${identifier} needs immediate help! ${smsLocationInfo} ${user.mobileNumber ? `Call them: ${user.mobileNumber}` : "Contact them immediately."}`;
       
       const smsResult = await sendSMS(contact.phone, smsBody);
@@ -603,10 +603,14 @@ export async function sendVoiceAlerts(
   user: User,
   alertType: 'missed_checkin' | 'emergency'
 ): Promise<{ callsMade: number; callsFailed: number }> {
-  const landlineContacts = contacts.filter(c => c.phone && c.phoneType === 'landline');
+  // For emergencies, call ALL contacts with phone numbers
+  // For missed check-ins, only call landline contacts
+  const contactsToCall = alertType === 'emergency' 
+    ? contacts.filter(c => c.phone)
+    : contacts.filter(c => c.phone && c.phoneType === 'landline');
   
-  if (landlineContacts.length === 0) {
-    console.log('[VOICE ALERT] No landline contacts to call');
+  if (contactsToCall.length === 0) {
+    console.log(`[VOICE ALERT] No contacts to call for ${alertType}`);
     return { callsMade: 0, callsFailed: 0 };
   }
 
@@ -628,7 +632,7 @@ export async function sendVoiceAlerts(
   let callsMade = 0;
   let callsFailed = 0;
 
-  for (const contact of landlineContacts) {
+  for (const contact of contactsToCall) {
     if (!contact.phone) continue;
     
     const result = await makeVoiceCall(contact.phone, message);
