@@ -127,8 +127,7 @@ export default function OrganizationDashboard() {
           <h1 className="text-2xl font-bold" data-testid="text-org-dashboard-title">Organization Dashboard</h1>
           <p className="text-muted-foreground">Monitor your clients' safety and check-in status</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Dialog open={showAddClientDialog} onOpenChange={setShowAddClientDialog}>
+        <Dialog open={showAddClientDialog} onOpenChange={setShowAddClientDialog}>
             <DialogTrigger asChild>
               <Button data-testid="button-add-client" disabled={!hasSeatsAvailable}>
               <UserPlus className="h-4 w-4 mr-2" />
@@ -204,22 +203,6 @@ export default function OrganizationDashboard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" data-testid="button-menu">
-                <MoreVertical className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <a href="mailto:support@aok.app" className="flex items-center gap-2" data-testid="link-contact-us">
-                  <Mail className="h-4 w-4" />
-                  Contact Us
-                </a>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
