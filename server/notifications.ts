@@ -1,5 +1,6 @@
 import type { Contact, User } from "@shared/schema";
 import { Resend } from 'resend';
+import twilio from 'twilio';
 
 interface NotificationResult {
   email: { sent: boolean; error?: string };
@@ -88,38 +89,24 @@ async function sendSMS(to: string, body: string): Promise<{ success: boolean; er
   }
 
   try {
-    const auth = Buffer.from(`${credentials.apiKey}:${credentials.apiKeySecret}`).toString('base64');
+    // Use official Twilio SDK with API Key authentication
+    const client = twilio(credentials.apiKey, credentials.apiKeySecret, {
+      accountSid: credentials.accountSid
+    });
     
-    const response = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${credentials.accountSid}/Messages.json`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          To: to,
-          From: credentials.phoneNumber,
-          Body: body,
-        }).toString(),
-      }
-    );
+    const message = await client.messages.create({
+      to: to,
+      from: credentials.phoneNumber,
+      body: body,
+    });
 
-    const result = await response.json();
-
-    if (response.ok) {
-      console.log(`[SMS] Successfully sent SMS to ${to}, SID: ${result.sid}`);
-      return { success: true };
-    } else {
-      console.error(`[SMS] Failed to send to ${to}:`, result);
-      return { success: false, error: result.message || 'SMS failed' };
-    }
-  } catch (error) {
+    console.log(`[SMS] Successfully sent SMS to ${to}, SID: ${message.sid}`);
+    return { success: true };
+  } catch (error: any) {
     console.error(`[SMS] Error sending to ${to}:`, error);
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+      error: error.message || 'Unknown error' 
     };
   }
 }
@@ -783,6 +770,59 @@ Enter this code when you open the app to get started.`;
 }
 
 /**
+ * Diagnostic function to check Twilio credentials without sending
+ */
+export async function diagnoseTwilioCredentials(): Promise<{
+  connectorFound: boolean;
+  accountSid?: string;
+  apiKeyPrefix?: string;
+  apiSecretLength?: number;
+  phoneNumber?: string;
+  rawSettings?: any;
+  error?: string;
+}> {
+  try {
+    const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+    const xReplitToken = process.env.REPL_IDENTITY 
+      ? 'repl ' + process.env.REPL_IDENTITY 
+      : process.env.WEB_REPL_RENEWAL 
+      ? 'depl ' + process.env.WEB_REPL_RENEWAL 
+      : null;
+
+    if (!xReplitToken || !hostname) {
+      return { connectorFound: false, error: "Missing hostname or token" };
+    }
+
+    const response = await fetch(
+      `https://${hostname}/api/v2/connection?include_secrets=true&connector_names=twilio`,
+      {
+        headers: {
+          'Accept': 'application/json',
+          'X_REPLIT_TOKEN': xReplitToken
+        }
+      }
+    );
+
+    const data = await response.json();
+    const settings = data.items?.[0]?.settings;
+
+    if (!settings) {
+      return { connectorFound: false, error: "No Twilio settings in connector", rawSettings: data };
+    }
+
+    return {
+      connectorFound: true,
+      accountSid: settings.account_sid ? `${settings.account_sid.substring(0, 8)}...` : undefined,
+      apiKeyPrefix: settings.api_key ? `${settings.api_key.substring(0, 8)}...` : undefined,
+      apiSecretLength: settings.api_key_secret ? settings.api_key_secret.length : 0,
+      phoneNumber: settings.phone_number,
+    };
+  } catch (error) {
+    return { connectorFound: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+/**
  * Test SMS functionality - sends a test message to verify Twilio is working
  */
 export async function testSMSDelivery(phoneNumber: string): Promise<{ 
@@ -791,71 +831,59 @@ export async function testSMSDelivery(phoneNumber: string): Promise<{
   fromNumber?: string;
   error?: string;
   twilioResponse?: any;
+  diagnostics?: any;
 }> {
   console.log(`[TEST SMS] Starting test to ${phoneNumber}`);
   
   const credentials = await getTwilioCredentials();
+  const diagnostics = await diagnoseTwilioCredentials();
   
   if (!credentials) {
     console.log('[TEST SMS] No Twilio credentials found');
     return { 
       success: false, 
       credentialsFound: false,
-      error: "Twilio credentials not found. Check connector setup."
+      error: "Twilio credentials not found. Check connector setup.",
+      diagnostics
     };
   }
   
   console.log(`[TEST SMS] Credentials found - From number: ${credentials.phoneNumber}`);
+  console.log(`[TEST SMS] Account SID starts with: ${credentials.accountSid.substring(0, 8)}`);
+  console.log(`[TEST SMS] API Key starts with: ${credentials.apiKey.substring(0, 8)}`);
+  console.log(`[TEST SMS] API Secret length: ${credentials.apiKeySecret.length}`);
   
   try {
-    const auth = Buffer.from(`${credentials.apiKey}:${credentials.apiKeySecret}`).toString('base64');
+    // Use official Twilio SDK with API Key authentication
+    const client = twilio(credentials.apiKey, credentials.apiKeySecret, {
+      accountSid: credentials.accountSid
+    });
     
     const testMessage = `aok Test Message: Your SMS notifications are working correctly. Sent at ${new Date().toLocaleString('en-GB')}`;
     
-    const response = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${credentials.accountSid}/Messages.json`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          To: phoneNumber,
-          From: credentials.phoneNumber,
-          Body: testMessage,
-        }).toString(),
-      }
-    );
+    const message = await client.messages.create({
+      to: phoneNumber,
+      from: credentials.phoneNumber,
+      body: testMessage,
+    });
 
-    const result = await response.json();
-    console.log(`[TEST SMS] Twilio response:`, JSON.stringify(result, null, 2));
-
-    if (response.ok) {
-      console.log(`[TEST SMS] SUCCESS - SID: ${result.sid}, Status: ${result.status}`);
-      return { 
-        success: true, 
-        credentialsFound: true,
-        fromNumber: credentials.phoneNumber,
-        twilioResponse: { sid: result.sid, status: result.status }
-      };
-    } else {
-      console.error(`[TEST SMS] FAILED:`, result);
-      return { 
-        success: false, 
-        credentialsFound: true,
-        fromNumber: credentials.phoneNumber,
-        error: result.message || result.error_message || 'Unknown Twilio error',
-        twilioResponse: result
-      };
-    }
-  } catch (error) {
+    console.log(`[TEST SMS] SUCCESS - SID: ${message.sid}, Status: ${message.status}`);
+    return { 
+      success: true, 
+      credentialsFound: true,
+      fromNumber: credentials.phoneNumber,
+      twilioResponse: { sid: message.sid, status: message.status },
+      diagnostics
+    };
+  } catch (error: any) {
     console.error(`[TEST SMS] Exception:`, error);
     return { 
       success: false, 
       credentialsFound: true,
       fromNumber: credentials.phoneNumber,
-      error: error instanceof Error ? error.message : 'Unknown error' 
+      error: error.message || 'Unknown error',
+      twilioResponse: error.code ? { code: error.code, moreInfo: error.moreInfo } : undefined,
+      diagnostics
     };
   }
 }
