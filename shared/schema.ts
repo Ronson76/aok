@@ -491,16 +491,16 @@ export interface OrganizationClientWithDetails {
   };
 }
 
-// Admin view of organization client (privacy-limited)
+// Admin view of organization client (privacy-limited - no personal details)
 export interface AdminOrganizationClientView {
   id: string;
   clientOrdinal: number;
   clientStatus: OrgClientStatus;
-  email: string;
   mobileNumber: string | null;
-  userDisabled: boolean;
+  clientDisabled: boolean;
+  registrationStatus: OrgClientRegistrationStatus;
   addedAt: Date;
-  status: StatusData;
+  status: StatusData | null;
   alertCounts: {
     total: number;
     emails: number;
