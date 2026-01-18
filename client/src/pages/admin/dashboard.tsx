@@ -576,10 +576,10 @@ export default function AdminDashboard() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
-                {selectedOrg?.name} - Clients
+                {selectedOrg?.name} - Clients ({orgClients.length})
               </DialogTitle>
               <DialogDescription>
-                Privacy-limited view showing ordinal number, email, and mobile only.
+                Privacy-protected view. Only client number and mobile are visible.
               </DialogDescription>
             </DialogHeader>
             
@@ -601,25 +601,28 @@ export default function AdminDashboard() {
                     data-testid={`admin-client-${client.id}`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted text-muted-foreground font-medium">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted text-muted-foreground font-bold">
                         {client.clientOrdinal}
                       </div>
                       <div>
                         <div className="font-medium flex items-center gap-2">
-                          User {client.clientOrdinal}
+                          Client #{client.clientOrdinal}
                           {getClientStatusBadge(client.clientStatus)}
-                          {client.userDisabled && <Badge variant="destructive">Account Disabled</Badge>}
+                          {client.clientDisabled && <Badge variant="destructive">Disabled</Badge>}
+                          {client.registrationStatus !== "registered" && (
+                            <Badge variant="outline" className="text-xs">
+                              {client.registrationStatus === "pending_sms" ? "SMS Pending" : "Awaiting Registration"}
+                            </Badge>
+                          )}
                         </div>
                         <div className="text-sm text-muted-foreground flex items-center gap-4">
-                          <span className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {client.email}
-                          </span>
-                          {client.mobileNumber && (
+                          {client.mobileNumber ? (
                             <span className="flex items-center gap-1">
                               <Phone className="h-3 w-3" />
                               {client.mobileNumber}
                             </span>
+                          ) : (
+                            <span className="text-muted-foreground">No mobile</span>
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1 flex items-center gap-4">
@@ -634,7 +637,7 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {getCheckInStatusBadge(client.status.status)}
+                      {client.status && getCheckInStatusBadge(client.status.status)}
                       
                       {admin?.role === "super_admin" && (
                         <>

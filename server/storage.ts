@@ -1392,7 +1392,7 @@ class OrganizationStorage implements IOrganizationStorage {
     return results;
   }
 
-  // Get organization clients for admin view (privacy-limited)
+  // Get organization clients for admin view (privacy-limited - only ordinal, phone, status)
   async getOrganizationClientsForAdmin(organizationId: string): Promise<AdminOrganizationClientView[]> {
     const clients = await getDb()
       .select({
@@ -1407,18 +1407,22 @@ class OrganizationStorage implements IOrganizationStorage {
     const results: AdminOrganizationClientView[] = [];
     
     for (const row of clients) {
-      if (!row.client) continue;
+      // Get phone from org client record (privacy-safe) or user's mobile if linked
+      const mobileNumber = row.orgClient.clientPhone || row.client?.mobileNumber || null;
       
-      const status = await this.getClientStatus(row.client.id);
-      const alertCounts = await this.getClientAlertCounts(row.client.id);
+      // Get status only if client is linked to a user
+      const status = row.client ? await this.getClientStatus(row.client.id) : null;
+      const alertCounts = row.client 
+        ? await this.getClientAlertCounts(row.client.id)
+        : { total: 0, emails: 0, calls: 0, emergencies: 0 };
       
       results.push({
         id: row.orgClient.id,
         clientOrdinal: row.orgClient.clientOrdinal,
         clientStatus: row.orgClient.status,
-        email: row.client.email,
-        mobileNumber: row.client.mobileNumber,
-        userDisabled: row.client.disabled,
+        mobileNumber,
+        clientDisabled: row.client?.disabled || false,
+        registrationStatus: row.orgClient.registrationStatus,
         addedAt: row.orgClient.addedAt,
         status,
         alertCounts,
