@@ -1058,13 +1058,19 @@ export default function OrganizationDashboard() {
                 </Badge>
               )}
             </DialogTitle>
-            <DialogDescription className="flex items-center gap-2">
+            <DialogDescription className="flex items-center gap-2 flex-wrap">
               <Mail className="h-3 w-3" />
               {selectedClient?.client?.email || selectedClient?.clientPhone || "No contact info"}
               {(selectedClient?.client?.mobileNumber || selectedClient?.clientPhone) && (
                 <>
                   <Phone className="h-3 w-3 ml-2" />
                   {selectedClient?.client?.mobileNumber || selectedClient?.clientPhone}
+                </>
+              )}
+              {selectedClient?.referenceCode && (
+                <>
+                  <KeyRound className="h-3 w-3 ml-2" />
+                  <span className="font-mono font-medium">{selectedClient.referenceCode}</span>
                 </>
               )}
             </DialogDescription>
@@ -1083,6 +1089,36 @@ export default function OrganizationDashboard() {
               </TabsList>
               
               <TabsContent value="overview" className="space-y-4 mt-4">
+                {selectedClient.referenceCode && (
+                  <div className="p-4 bg-muted rounded-lg border">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Reference Code</p>
+                        <p className="text-2xl font-mono font-bold tracking-wider" data-testid="text-client-reference-code">
+                          {selectedClient.referenceCode}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Client uses this code to sign in to the app
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(selectedClient.referenceCode!);
+                          toast({
+                            title: "Copied",
+                            description: "Reference code copied to clipboard",
+                          });
+                        }}
+                        data-testid="button-copy-reference-code"
+                      >
+                        Copy
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex items-center gap-4">
                   {getStatusIcon(selectedClient.status.status, "md")}
                   <div>
