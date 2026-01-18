@@ -4,7 +4,7 @@ import { storage, organizationStorage } from "./storage";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
-import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery } from "./notifications";
+import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
 
@@ -889,6 +889,16 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error('[TEST EMAIL] Error:', error);
       res.status(500).json({ error: error.message, stack: error.stack });
+    }
+  });
+
+  // Diagnose Twilio credentials (no SMS sent)
+  app.get("/api/diagnose-twilio", async (req, res) => {
+    try {
+      const result = await diagnoseTwilioCredentials();
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 
