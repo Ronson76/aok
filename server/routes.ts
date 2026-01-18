@@ -4,7 +4,7 @@ import { storage, organizationStorage } from "./storage";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
-import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification } from "./notifications";
+import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
 
@@ -889,6 +889,36 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error('[TEST EMAIL] Error:', error);
       res.status(500).json({ error: error.message, stack: error.stack });
+    }
+  });
+
+  // Test SMS endpoint - requires phone number
+  app.post("/api/test-sms", async (req, res) => {
+    try {
+      const { phoneNumber } = req.body;
+      if (!phoneNumber) {
+        return res.status(400).json({ error: "Phone number required" });
+      }
+      
+      console.log(`[TEST SMS ENDPOINT] Testing SMS to ${phoneNumber}`);
+      const result = await testSMSDelivery(phoneNumber);
+      
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          message: "Test SMS sent successfully",
+          ...result 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "SMS delivery failed",
+          ...result 
+        });
+      }
+    } catch (error: any) {
+      console.error('[TEST SMS ENDPOINT] Error:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 

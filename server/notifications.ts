@@ -781,3 +781,81 @@ Enter this code when you open the app to get started.`;
   console.log(`[SMS INVITE] Sending app invite to ${phoneNumber} with code ${referenceCode}`);
   return await sendSMS(phoneNumber, message);
 }
+
+/**
+ * Test SMS functionality - sends a test message to verify Twilio is working
+ */
+export async function testSMSDelivery(phoneNumber: string): Promise<{ 
+  success: boolean; 
+  credentialsFound: boolean;
+  fromNumber?: string;
+  error?: string;
+  twilioResponse?: any;
+}> {
+  console.log(`[TEST SMS] Starting test to ${phoneNumber}`);
+  
+  const credentials = await getTwilioCredentials();
+  
+  if (!credentials) {
+    console.log('[TEST SMS] No Twilio credentials found');
+    return { 
+      success: false, 
+      credentialsFound: false,
+      error: "Twilio credentials not found. Check connector setup."
+    };
+  }
+  
+  console.log(`[TEST SMS] Credentials found - From number: ${credentials.phoneNumber}`);
+  
+  try {
+    const auth = Buffer.from(`${credentials.apiKey}:${credentials.apiKeySecret}`).toString('base64');
+    
+    const testMessage = `aok Test Message: Your SMS notifications are working correctly. Sent at ${new Date().toLocaleString('en-GB')}`;
+    
+    const response = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${credentials.accountSid}/Messages.json`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          To: phoneNumber,
+          From: credentials.phoneNumber,
+          Body: testMessage,
+        }).toString(),
+      }
+    );
+
+    const result = await response.json();
+    console.log(`[TEST SMS] Twilio response:`, JSON.stringify(result, null, 2));
+
+    if (response.ok) {
+      console.log(`[TEST SMS] SUCCESS - SID: ${result.sid}, Status: ${result.status}`);
+      return { 
+        success: true, 
+        credentialsFound: true,
+        fromNumber: credentials.phoneNumber,
+        twilioResponse: { sid: result.sid, status: result.status }
+      };
+    } else {
+      console.error(`[TEST SMS] FAILED:`, result);
+      return { 
+        success: false, 
+        credentialsFound: true,
+        fromNumber: credentials.phoneNumber,
+        error: result.message || result.error_message || 'Unknown Twilio error',
+        twilioResponse: result
+      };
+    }
+  } catch (error) {
+    console.error(`[TEST SMS] Exception:`, error);
+    return { 
+      success: false, 
+      credentialsFound: true,
+      fromNumber: credentials.phoneNumber,
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+}
