@@ -460,22 +460,22 @@ interface TwilioCredentials {
 }
 
 async function getTwilioCredentials(): Promise<TwilioCredentials | null> {
-  // Check for environment variable secrets (API Key authentication)
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const apiKey = process.env.aokapp || process.env.TWILIO_API_KEY; // API Key SID
-  const apiKeySecret = process.env.TWILIO_API_SECRET;
   const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
-
-  if (accountSid && apiKey && apiKeySecret && phoneNumber) {
-    console.log('[TWILIO] Using environment variable credentials with API Key auth');
-    return { accountSid, apiKey, apiKeySecret, phoneNumber };
-  }
   
-  // Legacy: Check for Auth Token auth
+  // Priority 1: Auth Token authentication (simpler, more reliable)
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   if (accountSid && authToken && phoneNumber) {
-    console.log('[TWILIO] Using environment variable credentials with Auth Token');
+    console.log('[TWILIO] Using Auth Token authentication');
     return { accountSid, apiKey: accountSid, apiKeySecret: authToken, phoneNumber };
+  }
+  
+  // Priority 2: API Key authentication
+  const apiKey = process.env.TWILIO_API_KEY;
+  const apiKeySecret = process.env.TWILIO_API_SECRET;
+  if (accountSid && apiKey && apiKeySecret && phoneNumber) {
+    console.log('[TWILIO] Using API Key authentication');
+    return { accountSid, apiKey, apiKeySecret, phoneNumber };
   }
 
   // Try Replit connector (uses API Key authentication)
