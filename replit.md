@@ -73,7 +73,14 @@ The app supports SMS and automated voice calls via Twilio:
 - **Voice Calls**: Landline contacts receive automated phone calls for emergencies and missed check-ins
 - **Text-to-Speech**: Voice calls use Twilio's TTS to announce the alert message including the user's name or reference ID
 - **Emergency Priority**: Emergency alerts trigger immediate SMS to mobile contacts and voice calls to landlines
-- **Configuration**: Uses Replit Twilio connector with API key authentication (credentials managed automatically)
+- **Configuration**: Uses Twilio Auth Token authentication (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER)
+
+### what3words Integration
+Emergency alerts include precise location information using what3words:
+- **GPS Conversion**: Converts latitude/longitude to three-word addresses (e.g., ///filled.count.soap)
+- **Location Sharing**: Emergency alert emails and SMS include both the what3words address and a link to its map
+- **Fallback**: If what3words conversion fails, alerts still include Google Maps coordinates link
+- **API Key**: Requires WHAT3WORDS_API_KEY secret
 
 ### Admin Dashboard
 The app includes a separate admin system for platform management:
