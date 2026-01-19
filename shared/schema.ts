@@ -108,8 +108,8 @@ export const contacts = pgTable("contacts", {
 
 export const insertContactSchema = createInsertSchema(contacts).omit({ id: true, userId: true, isPrimary: true }).extend({
   phoneType: z.enum(phoneTypes).optional(),
-  phone: z.string().optional().refine(
-    (val) => !val || /^\+\d{7,15}$/.test(val.replace(/[\s\-\(\)]/g, "")),
+  phone: z.string().min(1, "Phone number is required").refine(
+    (val) => /^\+\d{7,15}$/.test(val.replace(/[\s\-\(\)]/g, "")),
     { message: "Phone must be in international format with country code (e.g., +447123456789)" }
   ),
 });
