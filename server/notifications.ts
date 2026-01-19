@@ -1,7 +1,6 @@
 import type { Contact, User } from "@shared/schema";
 import { Resend } from 'resend';
 import twilio from 'twilio';
-import what3words, { ApiVersion, fetchTransport } from '@what3words/api';
 
 async function getWhat3WordsAddress(lat: number, lng: number): Promise<string | null> {
   const apiKey = process.env.WHAT3WORDS_API_KEY;
@@ -11,19 +10,19 @@ async function getWhat3WordsAddress(lat: number, lng: number): Promise<string | 
   }
 
   try {
-    const w3wService = what3words(apiKey, {
-      host: 'https://api.what3words.com',
-      apiVersion: ApiVersion.Version3
-    }, { transport: fetchTransport() });
-
-    const result = await w3wService.convertTo3wa({
-      coordinates: { lat, lng },
-      language: 'en'
-    });
-
-    if (result.words) {
-      console.log(`[WHAT3WORDS] Converted ${lat},${lng} to ///${result.words}`);
-      return result.words;
+    const url = `https://api.what3words.com/v3/convert-to-3wa?coordinates=${lat},${lng}&key=${apiKey}`;
+    console.log(`[WHAT3WORDS] Calling API for coordinates ${lat},${lng}`);
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (data.words) {
+      console.log(`[WHAT3WORDS] Converted to ///${data.words}`);
+      return data.words;
+    }
+    
+    if (data.error) {
+      console.error(`[WHAT3WORDS] API error: ${data.error.code} - ${data.error.message}`);
     }
     return null;
   } catch (error) {
