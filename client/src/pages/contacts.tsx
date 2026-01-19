@@ -571,22 +571,15 @@ export default function Contacts() {
               <AlertDialogAction
                 onClick={() => {
                   if (deleteId) {
-                    if (isOrganization) {
-                      setPendingDeleteId(deleteId);
-                      setShowDeletePasswordDialog(true);
-                      setDeleteId(null);
-                    } else {
-                      deleteMutation.mutate({ id: deleteId });
-                    }
+                    setPendingDeleteId(deleteId);
+                    setShowDeletePasswordDialog(true);
+                    setDeleteId(null);
                   }
                 }}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 data-testid="button-confirm-delete"
               >
-                {deleteMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : null}
-                Remove
+                Continue
               </AlertDialogAction>
             )}
           </AlertDialogFooter>
@@ -607,8 +600,7 @@ export default function Contacts() {
               Confirm Contact Removal
             </DialogTitle>
             <DialogDescription>
-              As an organization account, removing contacts requires password verification 
-              to protect the safety settings of monitored individuals.
+              Removing contacts requires password verification to protect your safety settings.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
