@@ -90,11 +90,8 @@ async function sendSMS(to: string, body: string): Promise<{ success: boolean; er
 
   try {
     // Use official Twilio SDK with API Key authentication
-    // Configure for Ireland (IE1) region since phone number is UK-based
     const client = twilio(credentials.apiKey, credentials.apiKeySecret, {
-      accountSid: credentials.accountSid,
-      region: 'ie1',
-      edge: 'dublin'
+      accountSid: credentials.accountSid
     });
     
     const message = await client.messages.create({
@@ -858,11 +855,8 @@ export async function testSMSDelivery(phoneNumber: string): Promise<{
   
   try {
     // Use official Twilio SDK with API Key authentication
-    // Configure for Ireland (IE1) region since phone number is UK-based
     const client = twilio(credentials.apiKey, credentials.apiKeySecret, {
-      accountSid: credentials.accountSid,
-      region: 'ie1',
-      edge: 'dublin'
+      accountSid: credentials.accountSid
     });
     
     const testMessage = `aok Test Message: Your SMS notifications are working correctly. Sent at ${new Date().toLocaleString('en-GB')}`;
