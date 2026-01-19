@@ -602,17 +602,15 @@ export async function registerRoutes(
         return res.status(400).json({ error: "At least one emergency contact is required for aok to function properly." });
       }
 
-      // Organizations require password to delete contacts (protect vulnerable individuals)
+      // All users require password to delete contacts (security protection)
       const user = await storage.getUserById(req.userId!);
-      if (user?.accountType === "organization") {
-        if (!password) {
-          return res.status(400).json({ error: "Password required to remove contacts", requiresPassword: true });
-        }
+      if (!password) {
+        return res.status(400).json({ error: "Password required to remove contacts", requiresPassword: true });
+      }
 
-        const isValid = await bcrypt.compare(password, user.passwordHash);
-        if (!isValid) {
-          return res.status(401).json({ error: "Incorrect password" });
-        }
+      const isValid = await bcrypt.compare(password, user!.passwordHash);
+      if (!isValid) {
+        return res.status(401).json({ error: "Incorrect password" });
       }
 
       const deleted = await storage.deleteContact(req.userId!, id);
