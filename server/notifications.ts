@@ -460,13 +460,21 @@ interface TwilioCredentials {
 }
 
 async function getTwilioCredentials(): Promise<TwilioCredentials | null> {
-  // Check for environment variables (legacy support)
+  // Check for environment variable secrets (API Key authentication)
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const apiKey = process.env.aokapp || process.env.TWILIO_API_KEY; // API Key SID
+  const apiKeySecret = process.env.TWILIO_API_SECRET;
   const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
+  if (accountSid && apiKey && apiKeySecret && phoneNumber) {
+    console.log('[TWILIO] Using environment variable credentials with API Key auth');
+    return { accountSid, apiKey, apiKeySecret, phoneNumber };
+  }
+  
+  // Legacy: Check for Auth Token auth
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
   if (accountSid && authToken && phoneNumber) {
-    console.log('[TWILIO] Using environment variable credentials');
+    console.log('[TWILIO] Using environment variable credentials with Auth Token');
     return { accountSid, apiKey: accountSid, apiKeySecret: authToken, phoneNumber };
   }
 
