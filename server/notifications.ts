@@ -1,6 +1,36 @@
 import type { Contact, User } from "@shared/schema";
 import { Resend } from 'resend';
 import twilio from 'twilio';
+import what3words, { ApiVersion, fetchTransport } from '@what3words/api';
+
+async function getWhat3WordsAddress(lat: number, lng: number): Promise<string | null> {
+  const apiKey = process.env.WHAT3WORDS_API_KEY;
+  if (!apiKey) {
+    console.log('[WHAT3WORDS] API key not configured');
+    return null;
+  }
+
+  try {
+    const w3wService = what3words(apiKey, {
+      host: 'https://api.what3words.com',
+      apiVersion: ApiVersion.Version3
+    }, { transport: fetchTransport() });
+
+    const result = await w3wService.convertTo3wa({
+      coordinates: { lat, lng },
+      language: 'en'
+    });
+
+    if (result.words) {
+      console.log(`[WHAT3WORDS] Converted ${lat},${lng} to ///${result.words}`);
+      return result.words;
+    }
+    return null;
+  } catch (error) {
+    console.error('[WHAT3WORDS] Error converting coordinates:', error);
+    return null;
+  }
+}
 
 interface NotificationResult {
   email: { sent: boolean; error?: string };
@@ -344,6 +374,11 @@ export async function sendEmergencyAlert(
   let smsSent = 0;
   let smsFailed = 0;
   
+  let what3wordsAddress: string | null = null;
+  if (gpsLocation) {
+    what3wordsAddress = await getWhat3WordsAddress(gpsLocation.latitude, gpsLocation.longitude);
+  }
+  
   for (const contact of contacts) {
     const emailSubject = `EMERGENCY ALERT: ${subjectIdentifier} needs help!`;
     
@@ -352,12 +387,17 @@ export async function sendEmergencyAlert(
     
     if (gpsLocation) {
       const mapsUrl = `https://www.google.com/maps?q=${gpsLocation.latitude},${gpsLocation.longitude}`;
+      const w3wUrl = what3wordsAddress ? `https://what3words.com/${what3wordsAddress}` : null;
       locationInfo = `
 CURRENT GPS LOCATION:
-Coordinates: ${gpsLocation.latitude.toFixed(6)}, ${gpsLocation.longitude.toFixed(6)}
-View on map: ${mapsUrl}
+Coordinates: ${gpsLocation.latitude.toFixed(6)}, ${gpsLocation.longitude.toFixed(6)}${what3wordsAddress ? `
+what3words: ///${what3wordsAddress}
+what3words map: ${w3wUrl}` : ''}
+View on Google Maps: ${mapsUrl}
 `;
-      smsLocationInfo = `Location: ${mapsUrl}`;
+      smsLocationInfo = what3wordsAddress 
+        ? `Location: ///${what3wordsAddress} (${w3wUrl})` 
+        : `Location: ${mapsUrl}`;
     }
     
     if (user.addressLine1) {
