@@ -833,6 +833,9 @@ export async function registerRoutes(
         keys: { p256dh: keys.p256dh, auth: keys.auth }
       });
       
+      // Update pushStatus to enabled
+      await storage.updateSettings(req.userId!, { pushStatus: "enabled" });
+      
       res.status(201).json({ success: true, id: subscription.id });
     } catch (error) {
       console.error('[PUSH] Failed to create subscription:', error);
@@ -848,6 +851,10 @@ export async function registerRoutes(
       } else {
         await storage.deleteAllPushSubscriptions(req.userId!);
       }
+      
+      // Update pushStatus to declined (user intentionally disabled)
+      await storage.updateSettings(req.userId!, { pushStatus: "declined" });
+      
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to remove subscription" });

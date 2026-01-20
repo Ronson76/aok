@@ -141,6 +141,10 @@ export const insertCheckInSchema = createInsertSchema(checkIns).omit({ id: true,
 export type InsertCheckIn = z.infer<typeof insertCheckInSchema>;
 export type CheckIn = typeof checkIns.$inferSelect;
 
+// Push notification status
+export const pushStatuses = ["unknown", "enabled", "declined"] as const;
+export type PushStatus = (typeof pushStatuses)[number];
+
 // Settings table (per-user settings)
 export const settings = pgTable("settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -153,6 +157,7 @@ export const settings = pgTable("settings", {
   lastMissedDueAt: timestamp("last_missed_due_at"),
   lastAlertSentAt: timestamp("last_alert_sent_at"),
   alertsEnabled: boolean("alerts_enabled").notNull().default(true),
+  pushStatus: text("push_status").notNull().$type<PushStatus>().default("unknown"),
 });
 
 export type Settings = {
@@ -162,6 +167,7 @@ export type Settings = {
   lastCheckIn: string | null;
   nextCheckInDue: string | null;
   alertsEnabled: boolean;
+  pushStatus: PushStatus;
 };
 
 export const updateSettingsSchema = z.object({
@@ -169,6 +175,7 @@ export const updateSettingsSchema = z.object({
   intervalHours: z.number().min(1).max(48).optional(),
   scheduleStartTime: z.string().optional(),
   alertsEnabled: z.boolean().optional(),
+  pushStatus: z.enum(pushStatuses).optional(),
   password: z.string().optional(),
 });
 
