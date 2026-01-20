@@ -18,6 +18,16 @@ async function cleanupOldLocationData(): Promise<void> {
   }
 }
 
+// Cleanup expired unconfirmed contacts (runs every minute)
+async function cleanupExpiredContacts(): Promise<void> {
+  try {
+    const deletedContacts = await storage.cleanupExpiredUnconfirmedContacts();
+    // Only log if contacts were deleted (reduce noise)
+  } catch (error) {
+    console.error('[CLEANUP] Error cleaning up expired contacts:', error);
+  }
+}
+
 export async function processOverdueEmergencyAlerts(): Promise<void> {
   try {
     const overdueAlerts = await storage.getOverdueActiveAlerts();
@@ -88,6 +98,7 @@ export function startEmergencyScheduler(): void {
   
   schedulerInterval = setInterval(async () => {
     await processOverdueEmergencyAlerts();
+    await cleanupExpiredContacts();
   }, 60 * 1000);
 
   // Run cleanup daily (every 24 hours)
@@ -98,6 +109,7 @@ export function startEmergencyScheduler(): void {
   // Run initial checks
   processOverdueEmergencyAlerts();
   cleanupOldLocationData();
+  cleanupExpiredContacts();
 }
 
 export function stopEmergencyScheduler(): void {

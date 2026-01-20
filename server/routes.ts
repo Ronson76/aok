@@ -4,9 +4,80 @@ import { storage, organizationStorage } from "./storage";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
-import { sendContactAddedNotification, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials } from "./notifications";
+import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
+
+// Helper function to render a simple HTML confirmation page
+function renderConfirmationPage(success: boolean, message: string): string {
+  const bgColor = success ? '#22c55e' : '#ef4444';
+  const icon = success ? '&#10004;' : '&#10008;';
+  
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>aok - Contact Confirmation</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: ${bgColor};
+      color: white;
+      font-size: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+    h1 {
+      color: #1e293b;
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+    p {
+      color: #64748b;
+      line-height: 1.6;
+      font-size: 16px;
+    }
+    .logo {
+      color: #3b82f6;
+      font-weight: bold;
+      font-size: 28px;
+      margin-bottom: 32px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">aok</div>
+    <div class="icon">${icon}</div>
+    <h1>${success ? 'Success' : 'Error'}</h1>
+    <p>${message}</p>
+  </div>
+</body>
+</html>`;
+}
 
 // Extend Express Request type
 declare global {
@@ -439,6 +510,60 @@ export async function registerRoutes(
     }
   });
 
+  // Contact confirmation endpoint (public - no auth required)
+  // This handles both accept and decline actions via query params
+  app.get("/api/contacts/confirm", async (req, res) => {
+    try {
+      const { token, action } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).send(renderConfirmationPage(false, "Invalid confirmation link."));
+      }
+      
+      const contact = await storage.getContactByToken(token);
+      
+      if (!contact) {
+        return res.status(404).send(renderConfirmationPage(false, "This confirmation link has expired or is invalid."));
+      }
+      
+      // Check if already confirmed
+      if (contact.confirmedAt) {
+        return res.send(renderConfirmationPage(true, "You have already confirmed this request."));
+      }
+      
+      // Check if expired
+      if (contact.confirmationExpiry && new Date(contact.confirmationExpiry) < new Date()) {
+        await storage.declineContact(contact.id);
+        return res.status(410).send(renderConfirmationPage(false, "This confirmation link has expired. Please ask to be added again."));
+      }
+      
+      if (action === 'decline') {
+        await storage.declineContact(contact.id);
+        return res.send(renderConfirmationPage(true, "You have declined to be an emergency contact. The request has been removed."));
+      }
+      
+      // Accept (confirm) the contact
+      const confirmedContact = await storage.confirmContact(contact.id);
+      
+      if (confirmedContact) {
+        // Send confirmation notification to the contact
+        const user = await storage.getUserById(confirmedContact.userId);
+        if (user) {
+          sendContactAddedNotification(confirmedContact, user).catch(err => {
+            console.error("Failed to send contact confirmed notification:", err);
+          });
+        }
+        
+        return res.send(renderConfirmationPage(true, "Thank you! You are now an emergency contact. You will receive notifications if the person misses a check-in."));
+      }
+      
+      return res.status(500).send(renderConfirmationPage(false, "Something went wrong. Please try again."));
+    } catch (error) {
+      console.error("Contact confirmation error:", error);
+      res.status(500).send(renderConfirmationPage(false, "Something went wrong. Please try again."));
+    }
+  });
+
   // Protected routes - all require authentication
   app.use("/api/status", authMiddleware);
   app.use("/api/alerts", authMiddleware);
@@ -530,18 +655,24 @@ export async function registerRoutes(
       if (!parsed.success) {
         return res.status(400).json({ error: parsed.error.message });
       }
-      const contact = await storage.createContact(req.userId!, parsed.data);
+      const { contact, confirmationToken } = await storage.createContact(req.userId!, parsed.data);
       
-      // Send notification to the new contact (email and SMS)
+      // Send confirmation email to the new contact (they must confirm before becoming active)
       const user = await storage.getUserById(req.userId!);
       if (user) {
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
         // Fire and forget - don't block the response
-        sendContactAddedNotification(contact, user).catch(err => {
-          console.error("Failed to send contact notification:", err);
+        sendContactConfirmationEmail(contact, user, confirmationToken, baseUrl).catch(err => {
+          console.error("Failed to send contact confirmation email:", err);
         });
       }
       
-      res.status(201).json(contact);
+      // Return the contact with a pending status indication
+      res.status(201).json({
+        ...contact,
+        pending: true,
+        message: "Confirmation email sent. Contact must confirm within 10 minutes."
+      });
     } catch (error) {
       res.status(500).json({ error: "Failed to create contact" });
     }
