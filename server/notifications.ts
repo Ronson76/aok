@@ -140,6 +140,72 @@ async function sendSMS(to: string, body: string): Promise<{ success: boolean; er
   }
 }
 
+export async function sendContactConfirmationEmail(
+  contact: Contact,
+  user: User,
+  confirmationToken: string,
+  baseUrl: string
+): Promise<{ sent: boolean; error?: string }> {
+  const isOrganization = user.accountType === "organization";
+  const contactName = contact.name;
+  
+  const confirmUrl = `${baseUrl}/api/contacts/confirm?token=${confirmationToken}&action=accept`;
+  const declineUrl = `${baseUrl}/api/contacts/confirm?token=${confirmationToken}&action=decline`;
+  
+  const emailSubject = `Please confirm: Emergency contact request from aok`;
+  const emailBody = isOrganization 
+    ? `Hi ${contactName},
+
+${user.name} would like to add you as an emergency contact for a person they are monitoring on aok.
+
+Reference ID: ${user.referenceId}
+
+aok is a personal safety check-in app. If this person misses a check-in, you will be notified automatically via email, SMS, or phone call.
+
+IMPORTANT: You must confirm within 10 minutes to become an emergency contact.
+
+To ACCEPT and become an emergency contact, click this link:
+${confirmUrl}
+
+To DECLINE and remove yourself, click this link:
+${declineUrl}
+
+If you do nothing, this request will expire automatically.
+
+Thank you,
+- The aok Team`
+    : `Hi ${contactName},
+
+${user.name} would like to add you as their emergency contact on aok.
+
+aok is a personal safety check-in app. If ${user.name} misses a check-in, you will be notified automatically via email, SMS, or phone call.
+
+This means ${user.name} trusts you to help ensure their safety.
+
+IMPORTANT: You must confirm within 10 minutes to become an emergency contact.
+
+To ACCEPT and become an emergency contact, click this link:
+${confirmUrl}
+
+To DECLINE and remove yourself, click this link:
+${declineUrl}
+
+If you do nothing, this request will expire automatically.
+
+Thank you,
+- The aok Team`;
+
+  try {
+    await sendEmail(contact.email, emailSubject, emailBody);
+    console.log(`[NOTIFICATION] Confirmation email sent to ${contact.email} for contact ${contactName}`);
+    return { sent: true };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : "Failed to send email";
+    console.log(`[NOTIFICATION] Confirmation email failed for ${contact.email}: ${errorMsg}`);
+    return { sent: false, error: errorMsg };
+  }
+}
+
 export async function sendContactAddedNotification(
   contact: Contact,
   user: User
@@ -156,36 +222,32 @@ export async function sendContactAddedNotification(
     : user.name;
   const contactName = contact.name;
 
-  const emailSubject = `You've been added as an emergency contact on aok`;
+  const emailSubject = `You are now an emergency contact on aok`;
   const emailBody = isOrganization 
     ? `Hi ${contactName},
 
-${user.name} has added you as an emergency contact for a person they are monitoring on aok.
+Thank you for confirming! You are now an emergency contact for a person monitored by ${user.name} on aok.
 
 Reference ID: ${user.referenceId}
 
-aok is a personal safety check-in app. If this person misses a check-in, you will be notified automatically.
-
-You don't need to do anything right now - you'll only be contacted if they miss a scheduled check-in.
+You will be notified if this person misses a scheduled check-in.
 
 Thank you for your support.
 
 - The aok Team`
     : `Hi ${contactName},
 
-${user.name} has added you as their emergency contact on aok.
+Thank you for confirming! You are now an emergency contact for ${user.name} on aok.
 
-aok is a personal safety check-in app. If ${user.name} misses a check-in, you will be notified automatically.
-
-This means ${user.name} trusts you to help ensure their safety. You don't need to do anything right now - you'll only be contacted if they miss a scheduled check-in.
+You will be notified if ${user.name} misses a scheduled check-in.
 
 Thank you for being there for ${user.name}.
 
 - The aok Team`;
 
   const smsBody = isOrganization
-    ? `Hi ${contactName}, you've been added as an emergency contact for Reference ${user.referenceId} on aok. You'll be notified if they miss a check-in.`
-    : `Hi ${contactName}, ${user.name} has added you as their emergency contact on aok. You'll be notified if they miss a check-in.`;
+    ? `You're now an emergency contact for Reference ${user.referenceId} on aok. You'll be notified if they miss a check-in.`
+    : `You're now an emergency contact for ${user.name} on aok. You'll be notified if they miss a check-in.`;
 
   try {
     await sendEmail(contact.email, emailSubject, emailBody);

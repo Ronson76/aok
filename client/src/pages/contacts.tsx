@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Mail, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall, ShieldAlert, Pencil } from "lucide-react";
+import { Plus, Mail, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall, ShieldAlert, Pencil, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -143,8 +143,8 @@ export default function Contacts() {
       setDialogOpen(false);
       form.reset();
       toast({
-        title: "Contact added",
-        description: "Your emergency contact has been saved.",
+        title: "Confirmation email sent",
+        description: "Your contact must click the link in their email to confirm within 10 minutes.",
       });
     },
     onError: () => {
@@ -449,9 +449,9 @@ export default function Contacts() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        These people will be notified if you miss a check-in. Primary contacts 
-        (marked with a filled star) will also receive notifications for every successful check-in. 
-        You can have multiple primary contacts, but at least one must remain.
+        These people will be notified if you miss a check-in. New contacts must confirm via email 
+        before they become active. Primary contacts (marked with a filled star) will also receive 
+        notifications for every successful check-in.
       </p>
 
       {contacts.length === 0 ? (
@@ -487,7 +487,13 @@ export default function Contacts() {
                     <Badge variant="secondary" className="text-xs">
                       {contact.relationship}
                     </Badge>
-                    {contact.isPrimary && (
+                    {!contact.confirmedAt && (
+                      <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Pending
+                      </Badge>
+                    )}
+                    {contact.isPrimary && contact.confirmedAt && (
                       <Badge variant="default" className="text-xs">
                         <Star className="h-3 w-3 mr-1 fill-current" />
                         Primary
@@ -522,11 +528,11 @@ export default function Contacts() {
                     size="icon"
                     variant="ghost"
                     onClick={() => setPrimaryMutation.mutate(contact.id)}
-                    disabled={setPrimaryMutation.isPending}
-                    title={contact.isPrimary ? "Remove primary status" : "Set as primary contact"}
+                    disabled={setPrimaryMutation.isPending || !contact.confirmedAt}
+                    title={!contact.confirmedAt ? "Contact must confirm first" : (contact.isPrimary ? "Remove primary status" : "Set as primary contact")}
                     data-testid={`button-toggle-primary-${contact.id}`}
                   >
-                    <Star className={`h-4 w-4 ${contact.isPrimary ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} />
+                    <Star className={`h-4 w-4 ${contact.isPrimary && contact.confirmedAt ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} />
                   </Button>
                   <Button
                     size="icon"
