@@ -100,7 +100,10 @@ export default function Settings() {
   const enablePushNotifications = useCallback(async () => {
     setPushLoading(true);
     try {
+      console.log('[PUSH] Requesting notification permission...');
       const permission = await Notification.requestPermission();
+      console.log('[PUSH] Permission result:', permission);
+      
       if (permission !== 'granted') {
         toast({
           title: "Permission denied",
@@ -111,17 +114,24 @@ export default function Settings() {
         return;
       }
 
+      console.log('[PUSH] Fetching VAPID key...');
       const keyResponse = await fetch('/api/push/vapid-public-key', { credentials: 'include' });
       if (!keyResponse.ok) throw new Error('Failed to get VAPID key');
       const { publicKey } = await keyResponse.json();
+      console.log('[PUSH] Got VAPID key');
 
+      console.log('[PUSH] Getting service worker registration...');
       const registration = await navigator.serviceWorker.ready;
+      console.log('[PUSH] Subscribing to push manager...');
+      
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
+      console.log('[PUSH] Subscribed to push manager');
 
       const subJson = subscription.toJSON();
+      console.log('[PUSH] Saving subscription to server...');
       const response = await fetch('/api/push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -132,18 +142,23 @@ export default function Settings() {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to save subscription');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[PUSH] Server error:', errorText);
+        throw new Error('Failed to save subscription');
+      }
       
+      console.log('[PUSH] Subscription saved successfully');
       setPushEnabled(true);
       toast({
         title: "Notifications enabled",
         description: "You'll receive alerts when check-ins are due.",
       });
     } catch (error) {
-      console.error('Push enable error:', error);
+      console.error('[PUSH] Enable error:', error);
       toast({
         title: "Failed to enable notifications",
-        description: "Please try again.",
+        description: error instanceof Error ? error.message : "Please try again.",
         variant: "destructive",
       });
     }
