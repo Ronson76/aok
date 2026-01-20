@@ -4,14 +4,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon, Users, Moon, Sun } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon, Users, Moon, Sun, Bell } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/components/theme-provider";
-import type { StatusData } from "@shared/schema";
+import type { StatusData, Settings as SettingsType } from "@shared/schema";
 import { formatDistanceToNow, format, differenceInSeconds } from "date-fns";
 import { useState, useEffect, useRef, useCallback } from "react";
+
+// Helper to convert VAPID key to Uint8Array
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 // Shared AudioContext that gets unlocked on user interaction
 let sharedAudioContext: AudioContext | null = null;
@@ -235,6 +247,11 @@ export default function Dashboard() {
   const [isLocallyOverdue, setIsLocallyOverdue] = useState(false);
   const alarmIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasPlayedInitialAlarm = useRef(false);
+  
+  // Push notification prompt state
+  const [showPushPrompt, setShowPushPrompt] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+  const [pushSupported, setPushSupported] = useState(false);
 
   // Check if user is org-managed (activated via reference code)
   const isOrgManagedClient = !!user?.referenceId;
@@ -243,6 +260,89 @@ export default function Dashboard() {
     queryKey: ["/api/status"],
     refetchInterval: 30000,
   });
+  
+  // Query settings to check pushStatus
+  const { data: settings } = useQuery<SettingsType>({
+    queryKey: ["/api/settings"],
+  });
+  
+  // Check push support and show prompt for new users
+  useEffect(() => {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      setPushSupported(true);
+      
+      // Show prompt if pushStatus is "unknown" (new user)
+      if (settings?.pushStatus === "unknown") {
+        setShowPushPrompt(true);
+      }
+    }
+  }, [settings?.pushStatus]);
+  
+  // Handle enabling push notifications
+  const handleEnablePush = useCallback(async () => {
+    setPushLoading(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        toast({
+          title: "Permission denied",
+          description: "Please allow notifications in your browser settings.",
+          variant: "destructive",
+        });
+        setPushLoading(false);
+        return;
+      }
+
+      const keyResponse = await fetch('/api/push/vapid-public-key', { credentials: 'include' });
+      if (!keyResponse.ok) throw new Error('Failed to get VAPID key');
+      const { publicKey } = await keyResponse.json();
+
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+
+      const subJson = subscription.toJSON();
+      const response = await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          endpoint: subJson.endpoint,
+          keys: subJson.keys,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save subscription');
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      setShowPushPrompt(false);
+      toast({
+        title: "Notifications enabled",
+        description: "You'll receive alerts when check-ins are due.",
+      });
+    } catch (error) {
+      console.error('Push enable error:', error);
+      toast({
+        title: "Failed to enable notifications",
+        description: "Please try again in Settings.",
+        variant: "destructive",
+      });
+    }
+    setPushLoading(false);
+  }, [toast]);
+  
+  // Handle declining push notifications
+  const handleDeclinePush = useCallback(async () => {
+    try {
+      await apiRequest("PATCH", "/api/settings", { pushStatus: "declined" });
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      setShowPushPrompt(false);
+    } catch (error) {
+      console.error('Failed to update push status:', error);
+    }
+  }, []);
 
   // Live countdown timer with auto-refresh when hitting zero
   useEffect(() => {
@@ -721,6 +821,54 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Push Notification Prompt Dialog */}
+      {pushSupported && (
+        <Dialog open={showPushPrompt} onOpenChange={setShowPushPrompt}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-primary" />
+                Enable Notifications?
+              </DialogTitle>
+              <DialogDescription>
+                Get notified on your device when your check-in is due. This helps ensure you never miss a check-in and keeps you safe.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-2">
+              <p className="text-sm text-muted-foreground">
+                You can change this setting at any time in Settings.
+              </p>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={handleDeclinePush}
+                data-testid="button-decline-push"
+              >
+                Not Now
+              </Button>
+              <Button
+                onClick={handleEnablePush}
+                disabled={pushLoading}
+                data-testid="button-enable-push"
+              >
+                {pushLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Enabling...
+                  </>
+                ) : (
+                  <>
+                    <Bell className="h-4 w-4 mr-2" />
+                    Enable Notifications
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <Dialog open={showEmergencyDialog} onOpenChange={setShowEmergencyDialog}>
         <DialogContent>
