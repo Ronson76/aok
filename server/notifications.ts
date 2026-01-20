@@ -343,7 +343,7 @@ Thank you for being there for ${user.name}.
 export async function sendMissedCheckInAlert(
   contacts: Contact[],
   user: User
-): Promise<{ emailsSent: number; emailsFailed: number }> {
+): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number }> {
   const isOrganization = user.accountType === "organization";
   const identifier = isOrganization 
     ? `Reference ID: ${user.referenceId}` 
@@ -354,8 +354,16 @@ export async function sendMissedCheckInAlert(
   
   let emailsSent = 0;
   let emailsFailed = 0;
+  let smsSent = 0;
+  let smsFailed = 0;
   
   for (const contact of contacts) {
+    // Only alert confirmed contacts
+    if (!contact.confirmedAt) {
+      console.log(`[ALERT] Skipping unconfirmed contact ${contact.name}`);
+      continue;
+    }
+    
     const emailSubject = `ALERT: ${subjectIdentifier} missed their aok check-in`;
     
     let locationInfo = "";
@@ -381,6 +389,7 @@ Please try to reach out to ensure their safety.
 
 - The aok Team`;
 
+    // Send email
     try {
       await sendEmail(contact.email, emailSubject, emailBody);
       emailsSent++;
@@ -389,9 +398,23 @@ Please try to reach out to ensure their safety.
       emailsFailed++;
       console.error(`[ALERT] Failed to send email to ${contact.email}:`, error);
     }
+    
+    // Send SMS to contacts with mobile phones
+    if (contact.phone && contact.phoneType !== 'landline') {
+      const smsBody = `ALERT from aok: ${identifier} has missed their scheduled check-in. Please try to reach out to ensure their safety.`;
+      
+      const smsResult = await sendSMS(contact.phone, smsBody);
+      if (smsResult.success) {
+        smsSent++;
+        console.log(`[ALERT] SMS sent to ${contact.name} (${contact.phone})`);
+      } else {
+        smsFailed++;
+        console.log(`[ALERT] SMS failed for ${contact.name}: ${smsResult.error}`);
+      }
+    }
   }
 
-  return { emailsSent, emailsFailed };
+  return { emailsSent, emailsFailed, smsSent, smsFailed };
 }
 
 export async function sendSuccessfulCheckInNotification(
