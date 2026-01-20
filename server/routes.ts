@@ -187,6 +187,17 @@ export async function registerRoutes(
       res.status(404).json({ error: "Video not found" });
     }
   });
+  
+  app.get("/promo-complete.mp4", (_req, res) => {
+    const videoPath = path.resolve(process.cwd(), "attached_assets/generated_videos/aok_complete_promo.mp4");
+    if (fs.existsSync(videoPath)) {
+      res.setHeader("Content-Type", "video/mp4");
+      res.setHeader("Content-Disposition", 'attachment; filename="aok-complete-promo.mp4"');
+      res.sendFile(videoPath);
+    } else {
+      res.status(404).json({ error: "Video not found" });
+    }
+  });
 
   // Register admin routes
   registerAdminRoutes(app);
