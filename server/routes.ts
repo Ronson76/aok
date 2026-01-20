@@ -198,6 +198,17 @@ export async function registerRoutes(
       res.status(404).json({ error: "Video not found" });
     }
   });
+  
+  app.get("/aok-logo.jpg", (_req, res) => {
+    const logoPath = path.resolve(process.cwd(), "attached_assets/generated_images/aok_shield_logo.jpg");
+    if (fs.existsSync(logoPath)) {
+      res.setHeader("Content-Type", "image/jpeg");
+      res.setHeader("Content-Disposition", 'attachment; filename="aok-shield-logo.jpg"');
+      res.sendFile(logoPath);
+    } else {
+      res.status(404).json({ error: "Logo not found" });
+    }
+  });
 
   // Register admin routes
   registerAdminRoutes(app);
