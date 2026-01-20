@@ -33,15 +33,15 @@ export function TermsModal({ open }: TermsModalProps) {
 
   return (
     <Dialog open={open}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col" onInteractOutside={(e) => e.preventDefault()}>
-        <DialogHeader>
+      <DialogContent className="max-w-2xl h-[85vh] flex flex-col overflow-hidden" onInteractOutside={(e) => e.preventDefault()}>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Terms & Conditions</DialogTitle>
           <DialogDescription>
             Please read and accept the terms and conditions to continue using aok.
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 max-h-[50vh] pr-4">
+        <ScrollArea className="flex-1 min-h-0 pr-4">
           <div className="space-y-6 text-sm">
             <section>
               <h3 className="font-semibold text-base mb-2">1. About aok</h3>
@@ -178,7 +178,7 @@ export function TermsModal({ open }: TermsModalProps) {
           </div>
         </ScrollArea>
 
-        <DialogFooter className="flex-col gap-4 sm:flex-col">
+        <DialogFooter className="flex-col gap-4 sm:flex-col flex-shrink-0 pt-4 border-t">
           <div className="flex items-start space-x-3">
             <Checkbox
               id="terms-agree"
