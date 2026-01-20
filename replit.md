@@ -60,11 +60,20 @@ Users can designate one contact as their "primary" contact:
 
 ### Email Notifications (Resend Integration)
 The app uses Resend for all email notifications:
-- **Contact Added Notification**: When a user adds an emergency contact, the contact receives an email explaining their role
+- **Contact Confirmation**: When a user adds an emergency contact, the contact receives a confirmation email with accept/decline links. Contacts must confirm within 10 minutes or they are automatically removed. Tokens are hashed with SHA-256 before storage and nulled after use.
 - **Successful Check-in Notification**: Primary contact receives notification for each successful check-in
-- **Missed Check-in Alerts**: When a check-in is missed, all emergency contacts receive alert emails with the user's registered address
+- **Missed Check-in Alerts**: When a check-in is missed, all confirmed emergency contacts receive alert emails with the user's registered address
 - **Password Reset**: Password reset links are sent via email
 - The Resend connector is configured via Replit's integration system (credentials managed automatically)
+
+### Contact Confirmation Flow
+Emergency contacts must confirm their role before receiving alerts:
+- **Confirmation Email**: Contains accept/decline buttons with secure tokens
+- **10-Minute Expiry**: Unconfirmed contacts are automatically deleted after 10 minutes
+- **Security**: Tokens are hashed with SHA-256 before storage; nulled after confirmation/decline
+- **UI Indicator**: Pending contacts show amber "Pending" badge; primary toggle disabled until confirmed
+- **Cleanup Scheduler**: Runs every minute to remove expired unconfirmed contacts
+- **API Endpoints**: `/api/contacts/confirm?token=X&action=accept|decline`
 
 ### Twilio Integration (SMS and Voice Calls)
 The app supports SMS and automated voice calls via Twilio:
