@@ -154,6 +154,39 @@ export async function registerRoutes(
       res.status(404).json({ error: "Video not found" });
     }
   });
+  
+  app.get("/promo-alerts.mp4", (_req, res) => {
+    const videoPath = path.resolve(process.cwd(), "attached_assets/generated_videos/contacts_receiving_alerts_scene.mp4");
+    if (fs.existsSync(videoPath)) {
+      res.setHeader("Content-Type", "video/mp4");
+      res.setHeader("Content-Disposition", 'attachment; filename="aok-alerts-scene.mp4"');
+      res.sendFile(videoPath);
+    } else {
+      res.status(404).json({ error: "Video not found" });
+    }
+  });
+  
+  app.get("/promo-org.mp4", (_req, res) => {
+    const videoPath = path.resolve(process.cwd(), "attached_assets/generated_videos/organization_dashboard_monitoring.mp4");
+    if (fs.existsSync(videoPath)) {
+      res.setHeader("Content-Type", "video/mp4");
+      res.setHeader("Content-Disposition", 'attachment; filename="aok-org-dashboard-scene.mp4"');
+      res.sendFile(videoPath);
+    } else {
+      res.status(404).json({ error: "Video not found" });
+    }
+  });
+  
+  app.get("/promo-family.mp4", (_req, res) => {
+    const videoPath = path.resolve(process.cwd(), "attached_assets/generated_videos/family_peace_of_mind_scene.mp4");
+    if (fs.existsSync(videoPath)) {
+      res.setHeader("Content-Type", "video/mp4");
+      res.setHeader("Content-Disposition", 'attachment; filename="aok-family-scene.mp4"');
+      res.sendFile(videoPath);
+    } else {
+      res.status(404).json({ error: "Video not found" });
+    }
+  });
 
   // Register admin routes
   registerAdminRoutes(app);
