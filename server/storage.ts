@@ -249,9 +249,26 @@ class DatabaseStorage implements IStorage {
     return await getDb().select().from(contacts).where(eq(contacts.userId, userId));
   }
 
+  async getConfirmedContacts(userId: string): Promise<Contact[]> {
+    // Get only confirmed contacts (confirmedAt is not null)
+    const result = await getDb().select().from(contacts).where(
+      and(eq(contacts.userId, userId), sql`${contacts.confirmedAt} IS NOT NULL`)
+    );
+    return result;
+  }
+
   async getContact(userId: string, id: string): Promise<Contact | undefined> {
     const result = await getDb().select().from(contacts).where(
       and(eq(contacts.id, id), eq(contacts.userId, userId))
+    );
+    return result[0];
+  }
+
+  async getContactByToken(token: string): Promise<Contact | undefined> {
+    // Hash the token and find the contact
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const result = await getDb().select().from(contacts).where(
+      eq(contacts.confirmationToken, tokenHash)
     );
     return result[0];
   }
@@ -263,17 +280,45 @@ class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async createContact(userId: string, contact: InsertContact): Promise<Contact> {
-    // Check if user has any existing contacts - if not, make this the primary
-    const existingContacts = await this.getContacts(userId);
+  async createContact(userId: string, contact: InsertContact): Promise<{ contact: Contact; confirmationToken: string }> {
+    // Check if user has any existing CONFIRMED contacts - if not, this will be primary once confirmed
+    const existingContacts = await this.getConfirmedContacts(userId);
     const shouldBePrimary = existingContacts.length === 0;
+    
+    // Generate a confirmation token (expires in 10 minutes)
+    const rawToken = randomBytes(32).toString("hex");
+    const tokenHash = createHash("sha256").update(rawToken).digest("hex");
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     
     const result = await getDb().insert(contacts).values({
       ...contact,
       userId,
       isPrimary: shouldBePrimary,
+      confirmationToken: tokenHash,
+      confirmationExpiry: expiresAt,
+      confirmedAt: null,
     }).returning();
+    
+    return { contact: result[0], confirmationToken: rawToken };
+  }
+
+  async confirmContact(contactId: string): Promise<Contact | undefined> {
+    const result = await getDb().update(contacts)
+      .set({ 
+        confirmedAt: new Date(),
+        confirmationToken: null,
+        confirmationExpiry: null,
+      })
+      .where(eq(contacts.id, contactId))
+      .returning();
     return result[0];
+  }
+
+  async declineContact(contactId: string): Promise<boolean> {
+    const result = await getDb().delete(contacts)
+      .where(eq(contacts.id, contactId))
+      .returning();
+    return result.length > 0;
   }
 
   async updateContact(userId: string, id: string, updates: Partial<InsertContact>): Promise<Contact | undefined> {
@@ -326,6 +371,27 @@ class DatabaseStorage implements IStorage {
       and(eq(contacts.id, id), eq(contacts.userId, userId))
     ).returning();
     return result.length > 0;
+  }
+
+  async cleanupExpiredUnconfirmedContacts(): Promise<number> {
+    // Delete contacts that:
+    // 1. Have never been confirmed (confirmedAt is null)
+    // 2. Have an expiry date that has passed
+    const now = new Date();
+    const result = await getDb().delete(contacts)
+      .where(
+        and(
+          isNull(contacts.confirmedAt),
+          lt(contacts.confirmationExpiry, now)
+        )
+      )
+      .returning();
+    
+    if (result.length > 0) {
+      console.log(`[CONTACT CLEANUP] Removed ${result.length} expired unconfirmed contacts`);
+    }
+    
+    return result.length;
   }
 
   // Check-ins
