@@ -54,13 +54,18 @@ export interface IStorage {
 
   // Contacts
   getContacts(userId: string): Promise<Contact[]>;
+  getConfirmedContacts(userId: string): Promise<Contact[]>;
   getContact(userId: string, id: string): Promise<Contact | undefined>;
+  getContactByToken(token: string): Promise<Contact | undefined>;
   getPrimaryContact(userId: string): Promise<Contact | undefined>;
   getPrimaryContacts(userId: string): Promise<Contact[]>;
-  createContact(userId: string, contact: InsertContact): Promise<Contact>;
+  createContact(userId: string, contact: InsertContact): Promise<{ contact: Contact; confirmationToken: string }>;
+  confirmContact(contactId: string): Promise<Contact | undefined>;
+  declineContact(contactId: string): Promise<boolean>;
   updateContact(userId: string, id: string, updates: Partial<InsertContact>): Promise<Contact | undefined>;
   setPrimaryContact(userId: string, contactId: string): Promise<Contact | undefined>;
   deleteContact(userId: string, id: string): Promise<boolean>;
+  cleanupExpiredUnconfirmedContacts(): Promise<number>;
 
   // Check-ins
   getCheckIns(userId: string): Promise<CheckIn[]>;

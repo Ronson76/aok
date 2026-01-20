@@ -106,6 +106,10 @@ export const contacts = pgTable("contacts", {
   phoneType: text("phone_type").$type<PhoneType>(),
   relationship: text("relationship").notNull(),
   isPrimary: boolean("is_primary").notNull().default(false),
+  // Confirmation fields - contact must confirm before becoming active
+  confirmedAt: timestamp("confirmed_at"),
+  confirmationToken: text("confirmation_token"),
+  confirmationExpiry: timestamp("confirmation_expiry"),
 });
 
 export const insertContactSchema = createInsertSchema(contacts).omit({ id: true, userId: true, isPrimary: true }).extend({
