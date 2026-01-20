@@ -235,7 +235,7 @@ export async function registerRoutes(
             await storage.createContact(user.id, {
               name: contact.name,
               email: contact.email,
-              phone: contact.phone ?? undefined,
+              phone: contact.phone || "",
               phoneType: (contact.phoneType ?? "mobile") as "mobile" | "landline",
               relationship: contact.relationship ?? "Emergency Contact",
             });
@@ -670,16 +670,10 @@ export async function registerRoutes(
     }
   });
 
-  // Emergency alert endpoint - activates red alert mode
+  // Emergency alert endpoint - activates red alert mode if continuous tracking is enabled
   app.post("/api/emergency", async (req, res) => {
     try {
       console.log('[EMERGENCY] Request from userId:', req.userId);
-      
-      // Check if user already has an active emergency alert
-      const existingAlert = await storage.getActiveEmergencyAlert(req.userId!);
-      if (existingAlert) {
-        return res.status(400).json({ error: "An emergency alert is already active" });
-      }
       
       const contacts = await storage.getContacts(req.userId!);
       console.log('[EMERGENCY] Found contacts:', contacts.length, contacts.map(c => c.name));
@@ -693,15 +687,31 @@ export async function registerRoutes(
         return res.status(404).json({ error: "User not found" });
       }
 
+      // Check if continuous location tracking is enabled
+      const userSettings = await storage.getSettings(req.userId!);
+      const continuousTrackingEnabled = userSettings.redAlertEnabled;
+
       const location = req.body?.location as { latitude: number; longitude: number } | undefined;
       
-      // Create active emergency alert (red alert mode)
-      const activeAlert = await storage.createActiveEmergencyAlert(
-        req.userId!,
-        location?.latitude?.toString() || null,
-        location?.longitude?.toString() || null
-      );
-      console.log('[EMERGENCY] Created active alert:', activeAlert.id);
+      let activeAlert = null;
+      
+      // Only create active emergency alert if continuous tracking is enabled
+      if (continuousTrackingEnabled) {
+        // Check if user already has an active emergency alert
+        const existingAlert = await storage.getActiveEmergencyAlert(req.userId!);
+        if (existingAlert) {
+          return res.status(400).json({ error: "An emergency alert is already active" });
+        }
+        
+        activeAlert = await storage.createActiveEmergencyAlert(
+          req.userId!,
+          location?.latitude?.toString() || null,
+          location?.longitude?.toString() || null
+        );
+        console.log('[EMERGENCY] Created active alert (continuous tracking):', activeAlert.id);
+      } else {
+        console.log('[EMERGENCY] Sending one-time alert (no continuous tracking)');
+      }
       
       // Send email and SMS alerts
       const alertResult = await sendEmergencyAlert(contacts, user, location);
@@ -721,10 +731,11 @@ export async function registerRoutes(
         notificationSummary.push(`${voiceResult.callsMade} voice call(s)`);
       }
       
+      const alertType = continuousTrackingEnabled ? 'EMERGENCY ALERT (continuous tracking)' : 'EMERGENCY ALERT (one-time)';
       await storage.createAlertLog(
         req.userId!, 
         contacts.map(c => c.email),
-        `EMERGENCY ALERT triggered - ${notificationSummary.join(', ') || 'no contacts'} notified`
+        `${alertType} triggered - ${notificationSummary.join(', ') || 'no contacts'} notified`
       );
 
       const totalNotified = alertResult.emailsSent + alertResult.smsSent + voiceResult.callsMade;
@@ -738,8 +749,8 @@ export async function registerRoutes(
 
       res.json({ 
         success: true, 
-        isRedAlert: true,
-        alertId: activeAlert.id,
+        isRedAlert: continuousTrackingEnabled,
+        alertId: activeAlert?.id || null,
         emailsSent: alertResult.emailsSent,
         smsSent: alertResult.smsSent,
         voiceCallsMade: voiceResult.callsMade,
@@ -1052,13 +1063,11 @@ export async function registerRoutes(
       
       if (result.success) {
         res.json({ 
-          success: true, 
           message: "Test SMS sent successfully",
           ...result 
         });
       } else {
         res.status(500).json({ 
-          success: false, 
           message: "SMS delivery failed",
           ...result 
         });

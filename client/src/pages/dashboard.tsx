@@ -406,10 +406,10 @@ export default function Dashboard() {
     },
   });
 
-  // Emergency alert activation - also activates Red Alert Mode
+  // Emergency alert activation - activates Red Alert Mode if continuous tracking is enabled
   const emergencyMutation = useMutation({
     mutationFn: async (location?: { latitude: number; longitude: number }) => {
-      // Send emergency notification (backend also activates red alert mode)
+      // Send emergency notification (backend activates red alert mode if continuous tracking enabled)
       const response = await apiRequest("POST", "/api/emergency", { location });
       return response.json();
     },
@@ -417,10 +417,18 @@ export default function Dashboard() {
       setShowEmergencyDialog(false);
       // Refresh red alert status
       queryClient.invalidateQueries({ queryKey: ["/api/emergency/status"] });
-      toast({
-        title: "Red Alert Mode Activated",
-        description: "Emergency alerts sent. Your location will be shared every 5 minutes until you enter your password to deactivate.",
-      });
+      
+      if (data.isRedAlert) {
+        toast({
+          title: "Emergency Alert Sent",
+          description: "Your location will be shared every 5 minutes until you enter your password to deactivate.",
+        });
+      } else {
+        toast({
+          title: "Emergency Alert Sent",
+          description: "Your emergency contacts have been notified.",
+        });
+      }
     },
     onError: (error: any) => {
       const message = error?.message || "Failed to send emergency alert";
@@ -909,30 +917,6 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-      ) : !isRedAlertEnabled ? (
-        <Card className="border-muted">
-          <CardContent className="py-6">
-            <div className="flex flex-col items-center gap-4 text-center">
-              <AlertOctagon className="h-8 w-8 text-muted-foreground" />
-              <div className="space-y-1">
-                <h3 className="font-semibold">Red Alert Mode Disabled</h3>
-                <p className="text-sm text-muted-foreground">
-                  Enable Red Alert Mode in settings to use the emergency alert feature
-                </p>
-              </div>
-              <Link href="/app/settings">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full max-w-xs"
-                  data-testid="button-enable-red-alert"
-                >
-                  Enable in Settings
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
       ) : (
         <Card className="border-destructive/50 bg-destructive/5">
           <CardContent className="py-6">
@@ -941,7 +925,10 @@ export default function Dashboard() {
               <div className="space-y-1">
                 <h3 className="font-semibold">Emergency Alert</h3>
                 <p className="text-sm text-muted-foreground">
-                  Immediately notify all your contacts if you need help
+                  {isRedAlertEnabled 
+                    ? "Notify contacts and share your location every 5 minutes"
+                    : "Immediately notify all your contacts if you need help"
+                  }
                 </p>
               </div>
               {status?.contactCount === 0 ? (
@@ -989,6 +976,14 @@ export default function Dashboard() {
             <p className="text-sm text-muted-foreground">
               Only use this in a real emergency. Your contacts will receive an urgent email asking them to contact you immediately.
             </p>
+            {isRedAlertEnabled && (
+              <div className="flex items-start gap-2 p-3 rounded-md bg-red-50 dark:bg-red-950/30">
+                <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  <strong>Continuous tracking enabled:</strong> Your location will be shared every 5 minutes until you enter your password to deactivate.
+                </p>
+              </div>
+            )}
             <div className="flex items-center gap-2 text-sm">
               {gettingLocation ? (
                 <>

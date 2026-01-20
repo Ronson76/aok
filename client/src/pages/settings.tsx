@@ -555,20 +555,20 @@ export default function Settings() {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <ShieldAlert className={`h-4 w-4 ${settings?.redAlertEnabled ? "text-red-500" : "text-muted-foreground"}`} />
-            Red Alert Mode
+            Continuous Location Tracking
           </CardTitle>
           <CardDescription>
-            Enable emergency location sharing during alerts.
+            Enhanced emergency alert with ongoing location updates.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-0.5">
               <Label htmlFor="red-alert-enabled" className="font-medium">
-                Enable Red Alert Mode
+                Enable 5-Minute Location Updates
               </Label>
               <p className="text-sm text-muted-foreground">
-                Allow emergency button to trigger continuous location sharing
+                Share your location every 5 minutes during emergencies
               </p>
             </div>
             <Switch
@@ -583,7 +583,7 @@ export default function Settings() {
           <div className="flex items-start gap-2 p-3 rounded-md bg-red-50 dark:bg-red-950/30">
             <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
             <p className="text-sm text-muted-foreground">
-              When Red Alert Mode is enabled and you press the emergency button, your location will be sent to all your emergency contacts every 5 minutes until you enter your password to deactivate it.
+              When enabled and you press the emergency button, your location will be sent to all your emergency contacts every 5 minutes until you enter your password to deactivate it.
             </p>
           </div>
         </CardContent>
@@ -892,14 +892,14 @@ export default function Settings() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShieldAlert className="h-5 w-5 text-red-500" />
-              Enable Red Alert Mode
+              Enable Continuous Location Tracking
             </DialogTitle>
             <DialogDescription className="space-y-3">
               <span className="block font-medium">
-                Are you sure you want to enable Red Alert Mode?
+                Are you sure you want to enable continuous location tracking?
               </span>
               <span className="block">
-                When you press the emergency button with Red Alert Mode enabled:
+                When you press the emergency button with this enabled:
               </span>
               <ul className="list-disc list-inside space-y-1 text-sm">
                 <li>Your location will be sent to all emergency contacts immediately</li>
@@ -928,7 +928,7 @@ export default function Settings() {
               {updateMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
-              Enable Red Alert Mode
+              Enable Tracking
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -939,10 +939,10 @@ export default function Settings() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShieldAlert className="h-5 w-5 text-muted-foreground" />
-              Disable Red Alert Mode
+              Disable Continuous Location Tracking
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to disable Red Alert Mode? When disabled, pressing the emergency button will send a single alert without continuous location sharing.
+              Are you sure you want to disable continuous location tracking? When disabled, pressing the emergency button will send a single alert without ongoing location updates.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
@@ -964,7 +964,7 @@ export default function Settings() {
               {updateMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
-              Disable Red Alert Mode
+              Disable Tracking
             </Button>
           </DialogFooter>
         </DialogContent>
