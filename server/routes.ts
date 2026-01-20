@@ -121,12 +121,34 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
 
-  // Serve promotional video for download
+  // Serve promotional videos for download
   app.get("/promo-video.mp4", (_req, res) => {
     const videoPath = path.resolve(process.cwd(), "attached_assets/generated_videos/safety_check-in_app_promo.mp4");
     if (fs.existsSync(videoPath)) {
       res.setHeader("Content-Type", "video/mp4");
       res.setHeader("Content-Disposition", 'attachment; filename="aok-promo-video.mp4"');
+      res.sendFile(videoPath);
+    } else {
+      res.status(404).json({ error: "Video not found" });
+    }
+  });
+  
+  app.get("/promo-checkin.mp4", (_req, res) => {
+    const videoPath = path.resolve(process.cwd(), "attached_assets/generated_videos/check-in_button_tap_scene.mp4");
+    if (fs.existsSync(videoPath)) {
+      res.setHeader("Content-Type", "video/mp4");
+      res.setHeader("Content-Disposition", 'attachment; filename="aok-checkin-scene.mp4"');
+      res.sendFile(videoPath);
+    } else {
+      res.status(404).json({ error: "Video not found" });
+    }
+  });
+  
+  app.get("/promo-emergency.mp4", (_req, res) => {
+    const videoPath = path.resolve(process.cwd(), "attached_assets/generated_videos/emergency_gps_tracking_scene.mp4");
+    if (fs.existsSync(videoPath)) {
+      res.setHeader("Content-Type", "video/mp4");
+      res.setHeader("Content-Disposition", 'attachment; filename="aok-emergency-scene.mp4"');
       res.sendFile(videoPath);
     } else {
       res.status(404).json({ error: "Video not found" });
