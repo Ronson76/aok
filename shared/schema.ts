@@ -158,6 +158,7 @@ export const settings = pgTable("settings", {
   lastAlertSentAt: timestamp("last_alert_sent_at"),
   alertsEnabled: boolean("alerts_enabled").notNull().default(true),
   pushStatus: text("push_status").notNull().$type<PushStatus>().default("unknown"),
+  redAlertEnabled: boolean("red_alert_enabled").notNull().default(false),
 });
 
 export type Settings = {
@@ -168,6 +169,7 @@ export type Settings = {
   nextCheckInDue: string | null;
   alertsEnabled: boolean;
   pushStatus: PushStatus;
+  redAlertEnabled: boolean;
 };
 
 export const updateSettingsSchema = z.object({
@@ -176,6 +178,7 @@ export const updateSettingsSchema = z.object({
   scheduleStartTime: z.string().optional(),
   alertsEnabled: z.boolean().optional(),
   pushStatus: z.enum(pushStatuses).optional(),
+  redAlertEnabled: z.boolean().optional(),
   password: z.string().optional(),
 });
 

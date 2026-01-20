@@ -391,6 +391,7 @@ class DatabaseStorage implements IStorage {
         nextCheckInDue: null,
         alertsEnabled: true,
         pushStatus: "unknown",
+        redAlertEnabled: false,
       };
     }
 
@@ -403,6 +404,7 @@ class DatabaseStorage implements IStorage {
       nextCheckInDue: row.nextCheckInDue?.toISOString() || null,
       alertsEnabled: row.alertsEnabled,
       pushStatus: (row.pushStatus as "unknown" | "enabled" | "declined") || "unknown",
+      redAlertEnabled: row.redAlertEnabled ?? false,
     };
   }
 
@@ -412,6 +414,7 @@ class DatabaseStorage implements IStorage {
     if (updates.intervalHours !== undefined) dbUpdates.intervalHours = String(updates.intervalHours);
     if (updates.alertsEnabled !== undefined) dbUpdates.alertsEnabled = updates.alertsEnabled;
     if (updates.pushStatus !== undefined) dbUpdates.pushStatus = updates.pushStatus;
+    if (updates.redAlertEnabled !== undefined) dbUpdates.redAlertEnabled = updates.redAlertEnabled;
     
     // Handle schedule start time - this is the initial check-in time
     if (updates.scheduleStartTime !== undefined) {
