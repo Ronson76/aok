@@ -4,14 +4,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon, Users, Moon, Sun } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon, Users, Moon, Sun, Lock } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/components/theme-provider";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type { StatusData } from "@shared/schema";
 import { formatDistanceToNow, format, differenceInSeconds } from "date-fns";
 import { useState, useEffect, useRef, useCallback } from "react";
+
+interface RedAlertStatus {
+  isRedAlert: boolean;
+  alertId: string | null;
+  activatedAt: string | null;
+  lastDispatchAt: string | null;
+  latitude: string | null;
+  longitude: string | null;
+}
 
 // Shared AudioContext that gets unlocked on user interaction
 let sharedAudioContext: AudioContext | null = null;
@@ -236,6 +247,11 @@ export default function Dashboard() {
   const alarmIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasPlayedInitialAlarm = useRef(false);
   
+  // Red alert mode state
+  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
+  const [deactivatePassword, setDeactivatePassword] = useState("");
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
 
   // Check if user is org-managed (activated via reference code)
   const isOrgManagedClient = !!user?.referenceId;
@@ -244,6 +260,14 @@ export default function Dashboard() {
     queryKey: ["/api/status"],
     refetchInterval: 30000,
   });
+  
+  // Query for red alert status
+  const { data: redAlertStatus } = useQuery<RedAlertStatus>({
+    queryKey: ["/api/emergency/status"],
+    refetchInterval: 10000, // Check every 10 seconds
+  });
+  
+  const isRedAlertMode = redAlertStatus?.isRedAlert ?? false;
   
 
   // Live countdown timer with auto-refresh when hitting zero
@@ -376,16 +400,20 @@ export default function Dashboard() {
     },
   });
 
+  // Emergency alert activation - also activates Red Alert Mode
   const emergencyMutation = useMutation({
     mutationFn: async (location?: { latitude: number; longitude: number }) => {
+      // Send emergency notification (backend also activates red alert mode)
       const response = await apiRequest("POST", "/api/emergency", { location });
       return response.json();
     },
     onSuccess: (data: any) => {
       setShowEmergencyDialog(false);
+      // Refresh red alert status
+      queryClient.invalidateQueries({ queryKey: ["/api/emergency/status"] });
       toast({
-        title: "Emergency alert sent!",
-        description: data.message || "All your contacts have been notified.",
+        title: "Red Alert Mode Activated",
+        description: "Emergency alerts sent. Your location will be shared every 5 minutes until you enter your password to deactivate.",
       });
     },
     onError: (error: any) => {
@@ -395,6 +423,31 @@ export default function Dashboard() {
         description: message.includes("No emergency contacts") 
           ? "Please add emergency contacts first." 
           : message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Deactivate red alert mode
+  const deactivateMutation = useMutation({
+    mutationFn: async (password: string) => {
+      const response = await apiRequest("POST", "/api/emergency/deactivate", { password });
+      return response.json();
+    },
+    onSuccess: () => {
+      setShowDeactivateDialog(false);
+      setDeactivatePassword("");
+      queryClient.invalidateQueries({ queryKey: ["/api/emergency/status"] });
+      toast({
+        title: "Red Alert Mode Deactivated",
+        description: "Your emergency alert has been cancelled. Location sharing has stopped.",
+      });
+    },
+    onError: (error: any) => {
+      const message = error?.message || "Failed to deactivate";
+      toast({
+        title: "Deactivation failed",
+        description: message.includes("Incorrect password") ? "Incorrect password. Please try again." : message,
         variant: "destructive",
       });
     },
@@ -428,6 +481,64 @@ export default function Dashboard() {
   const handleEmergencyAlert = () => {
     emergencyMutation.mutate(cachedLocation || undefined);
   };
+  
+  // Handle deactivation
+  const handleDeactivate = () => {
+    if (!deactivatePassword.trim()) {
+      toast({
+        title: "Password required",
+        description: "Please enter your password to deactivate Red Alert Mode.",
+        variant: "destructive",
+      });
+      return;
+    }
+    deactivateMutation.mutate(deactivatePassword);
+  };
+  
+  // Location heartbeat during Red Alert Mode - send location updates
+  useEffect(() => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+    
+    if (isRedAlertMode && redAlertStatus?.alertId) {
+      // Send location heartbeat every 30 seconds (server handles 5-min notification dispatch)
+      const sendHeartbeat = async () => {
+        if ("geolocation" in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              try {
+                await apiRequest("POST", "/api/emergency/heartbeat", {
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                });
+                console.log('[RedAlert] Heartbeat sent with location');
+              } catch (e) {
+                console.error('[RedAlert] Heartbeat failed:', e);
+              }
+            },
+            (error) => {
+              console.log('[RedAlert] Location unavailable for heartbeat:', error.message);
+            },
+            { timeout: 10000, enableHighAccuracy: true, maximumAge: 30000 }
+          );
+        }
+      };
+      
+      // Send initial heartbeat
+      sendHeartbeat();
+      // Then send every 30 seconds
+      heartbeatIntervalRef.current = setInterval(sendHeartbeat, 30000);
+    }
+    
+    return () => {
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+    };
+  }, [isRedAlertMode, redAlertStatus?.alertId]);
 
   if (isLoading) {
     return (
@@ -444,7 +555,7 @@ export default function Dashboard() {
   // Restricted view for org-managed clients (activated via reference code)
   if (isOrgManagedClient) {
     return (
-      <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">
+      <div className={`flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto min-h-screen ${isRedAlertMode ? "bg-destructive/10" : ""}`}>
         {/* Status Card */}
         <Card className={`border-2 ${effectivelyOverdue ? "border-destructive bg-destructive/5" : ""}`}>
           <CardContent className="flex flex-col items-center gap-6 py-8">
@@ -493,24 +604,55 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Emergency Button */}
-        <Card className="border-destructive bg-destructive/5">
-          <CardContent className="py-4">
-            <Button
-              variant="destructive"
-              size="lg"
-              className="w-full py-6 text-lg font-semibold"
-              onClick={() => setShowEmergencyDialog(true)}
-              data-testid="button-emergency"
-            >
-              <AlertOctagon className="h-6 w-6 mr-2" />
-              Emergency Alert
-            </Button>
-            <p className="text-xs text-center text-muted-foreground mt-2">
-              Sends immediate alert to all emergency contacts
-            </p>
-          </CardContent>
-        </Card>
+        {/* Emergency / Red Alert Section */}
+        {isRedAlertMode ? (
+          <Card className="border-destructive border-2 bg-destructive/20">
+            <CardContent className="py-6">
+              <div className="text-center space-y-4">
+                <div className="flex items-center justify-center gap-2 text-destructive animate-pulse">
+                  <AlertOctagon className="h-8 w-8" />
+                  <span className="text-xl font-bold">RED ALERT ACTIVE</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Your location is being shared with your emergency contacts every 5 minutes.
+                </p>
+                {redAlertStatus?.activatedAt && (
+                  <p className="text-xs text-muted-foreground">
+                    Started: {format(new Date(redAlertStatus.activatedAt), "dd/MM/yyyy HH:mm")}
+                  </p>
+                )}
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full py-4 font-semibold border-2"
+                  onClick={() => setShowDeactivateDialog(true)}
+                  data-testid="button-deactivate-alert"
+                >
+                  <Lock className="h-5 w-5 mr-2" />
+                  Deactivate Alert
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-destructive bg-destructive/5">
+            <CardContent className="py-4">
+              <Button
+                variant="destructive"
+                size="lg"
+                className="w-full py-6 text-lg font-semibold"
+                onClick={handleOpenEmergencyDialog}
+                data-testid="button-emergency"
+              >
+                <AlertOctagon className="h-6 w-6 mr-2" />
+                Emergency Alert
+              </Button>
+              <p className="text-xs text-center text-muted-foreground mt-2">
+                Sends immediate alert to all emergency contacts
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Theme Toggle */}
         <Card>
@@ -578,12 +720,56 @@ export default function Dashboard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Deactivate Red Alert Dialog */}
+        <Dialog open={showDeactivateDialog} onOpenChange={setShowDeactivateDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Deactivate Red Alert
+              </DialogTitle>
+              <DialogDescription>
+                Enter your password to confirm that you are safe and stop sharing your location.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="deactivate-password">Password</Label>
+                <Input
+                  id="deactivate-password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={deactivatePassword}
+                  onChange={(e) => setDeactivatePassword(e.target.value)}
+                  data-testid="input-deactivate-password"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => { setShowDeactivateDialog(false); setDeactivatePassword(""); }}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleDeactivate}
+                disabled={deactivateMutation.isPending}
+                data-testid="button-confirm-deactivate"
+              >
+                {deactivateMutation.isPending ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Deactivating...</>
+                ) : (
+                  "Confirm Deactivation"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">
+    <div className={`flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto min-h-screen ${isRedAlertMode ? "bg-destructive/10" : ""}`}>
       <Card className={`border-2 ${effectivelyOverdue ? "border-destructive bg-destructive/5" : ""}`}>
         <CardContent className="flex flex-col items-center gap-6 py-8">
           <div className={`rounded-full p-4 ${effectivelyOverdue ? "bg-destructive/10" : "bg-primary/10"}`}>
@@ -686,43 +872,75 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <Card className="border-destructive/50 bg-destructive/5">
-        <CardContent className="py-6">
-          <div className="flex flex-col items-center gap-4 text-center">
-            <AlertOctagon className="h-8 w-8 text-destructive" />
-            <div className="space-y-1">
-              <h3 className="font-semibold">Emergency Alert</h3>
+      {/* Emergency / Red Alert Section */}
+      {isRedAlertMode ? (
+        <Card className="border-destructive border-2 bg-destructive/20">
+          <CardContent className="py-6">
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center gap-2 text-destructive animate-pulse">
+                <AlertOctagon className="h-8 w-8" />
+                <span className="text-xl font-bold">RED ALERT ACTIVE</span>
+              </div>
               <p className="text-sm text-muted-foreground">
-                Immediately notify all your contacts if you need help
+                Your location is being shared with your emergency contacts every 5 minutes.
               </p>
+              {redAlertStatus?.activatedAt && (
+                <p className="text-xs text-muted-foreground">
+                  Started: {format(new Date(redAlertStatus.activatedAt), "dd/MM/yyyy HH:mm")}
+                </p>
+              )}
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full max-w-xs py-4 font-semibold border-2"
+                onClick={() => setShowDeactivateDialog(true)}
+                data-testid="button-deactivate-alert"
+              >
+                <Lock className="h-5 w-5 mr-2" />
+                Deactivate Alert
+              </Button>
             </div>
-            {status?.contactCount === 0 ? (
-              <Link href="/app/contacts">
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardContent className="py-6">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <AlertOctagon className="h-8 w-8 text-destructive" />
+              <div className="space-y-1">
+                <h3 className="font-semibold">Emergency Alert</h3>
+                <p className="text-sm text-muted-foreground">
+                  Immediately notify all your contacts if you need help
+                </p>
+              </div>
+              {status?.contactCount === 0 ? (
+                <Link href="/app/contacts">
+                  <Button
+                    variant="destructive"
+                    size="lg"
+                    className="w-full max-w-xs"
+                    data-testid="button-emergency-add-contact"
+                  >
+                    <Users className="h-5 w-5 mr-2" />
+                    Add Contact First
+                  </Button>
+                </Link>
+              ) : (
                 <Button
                   variant="destructive"
                   size="lg"
                   className="w-full max-w-xs"
-                  data-testid="button-emergency-add-contact"
+                  onClick={handleOpenEmergencyDialog}
+                  data-testid="button-emergency"
                 >
-                  <Users className="h-5 w-5 mr-2" />
-                  Add Contact First
+                  <AlertOctagon className="h-5 w-5 mr-2" />
+                  Emergency Alert
                 </Button>
-              </Link>
-            ) : (
-              <Button
-                variant="destructive"
-                size="lg"
-                className="w-full max-w-xs"
-                onClick={handleOpenEmergencyDialog}
-                data-testid="button-emergency"
-              >
-                <AlertOctagon className="h-5 w-5 mr-2" />
-                Emergency Alert
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Dialog open={showEmergencyDialog} onOpenChange={setShowEmergencyDialog}>
         <DialogContent>
@@ -783,6 +1001,50 @@ export default function Dashboard() {
                   <AlertOctagon className="h-4 w-4 mr-2" />
                   Yes, Send Alert
                 </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deactivate Red Alert Dialog */}
+      <Dialog open={showDeactivateDialog} onOpenChange={setShowDeactivateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Deactivate Red Alert
+            </DialogTitle>
+            <DialogDescription>
+              Enter your password to confirm that you are safe and stop sharing your location.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="deactivate-password-main">Password</Label>
+              <Input
+                id="deactivate-password-main"
+                type="password"
+                placeholder="Enter your password"
+                value={deactivatePassword}
+                onChange={(e) => setDeactivatePassword(e.target.value)}
+                data-testid="input-deactivate-password"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => { setShowDeactivateDialog(false); setDeactivatePassword(""); }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleDeactivate}
+              disabled={deactivateMutation.isPending}
+              data-testid="button-confirm-deactivate"
+            >
+              {deactivateMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Deactivating...</>
+              ) : (
+                "Confirm Deactivation"
               )}
             </Button>
           </DialogFooter>

@@ -674,6 +674,13 @@ export async function registerRoutes(
   app.post("/api/emergency", async (req, res) => {
     try {
       console.log('[EMERGENCY] Request from userId:', req.userId);
+      
+      // Check if user already has an active emergency alert
+      const existingAlert = await storage.getActiveEmergencyAlert(req.userId!);
+      if (existingAlert) {
+        return res.status(400).json({ error: "An emergency alert is already active" });
+      }
+      
       const contacts = await storage.getContacts(req.userId!);
       console.log('[EMERGENCY] Found contacts:', contacts.length, contacts.map(c => c.name));
       
@@ -787,10 +794,31 @@ export async function registerRoutes(
     }
   });
 
+  // Rate limiting for deactivation attempts - track failed attempts per user
+  const deactivationAttempts: Map<string, { attempts: number; lastAttempt: number }> = new Map();
+  const MAX_DEACTIVATION_ATTEMPTS = 5;
+  const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
   // Deactivate emergency alert with password verification
   app.post("/api/emergency/deactivate", async (req, res) => {
     try {
-      const activeAlert = await storage.getActiveEmergencyAlert(req.userId!);
+      const userId = req.userId!;
+      
+      // Check rate limiting
+      const attemptInfo = deactivationAttempts.get(userId);
+      if (attemptInfo && attemptInfo.attempts >= MAX_DEACTIVATION_ATTEMPTS) {
+        const timeSinceLockout = Date.now() - attemptInfo.lastAttempt;
+        if (timeSinceLockout < LOCKOUT_DURATION_MS) {
+          const remainingMinutes = Math.ceil((LOCKOUT_DURATION_MS - timeSinceLockout) / 60000);
+          console.log(`[EMERGENCY] Deactivation locked for user ${userId} - ${attemptInfo.attempts} failed attempts`);
+          return res.status(429).json({ error: `Too many failed attempts. Please try again in ${remainingMinutes} minutes.` });
+        } else {
+          // Lockout expired, reset attempts
+          deactivationAttempts.delete(userId);
+        }
+      }
+      
+      const activeAlert = await storage.getActiveEmergencyAlert(userId);
       if (!activeAlert) {
         return res.status(400).json({ error: "No active emergency alert" });
       }
@@ -801,22 +829,33 @@ export async function registerRoutes(
       }
 
       // Verify password
-      const user = await storage.getUserById(req.userId!);
+      const user = await storage.getUserById(userId);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
 
       const isValidPassword = await bcrypt.compare(password, user.passwordHash);
       if (!isValidPassword) {
-        return res.status(401).json({ error: "Incorrect password" });
+        // Track failed attempt
+        const current = deactivationAttempts.get(userId) || { attempts: 0, lastAttempt: 0 };
+        deactivationAttempts.set(userId, { 
+          attempts: current.attempts + 1, 
+          lastAttempt: Date.now() 
+        });
+        const remaining = MAX_DEACTIVATION_ATTEMPTS - (current.attempts + 1);
+        console.log(`[EMERGENCY] Failed deactivation attempt for user ${userId} - ${remaining} attempts remaining`);
+        return res.status(401).json({ error: remaining > 0 ? `Incorrect password. ${remaining} attempts remaining.` : "Incorrect password. Account locked for 15 minutes." });
       }
+
+      // Successful password verification - reset attempts
+      deactivationAttempts.delete(userId);
 
       // Deactivate the alert
       await storage.deactivateEmergencyAlert(activeAlert.id);
       
       // Log the deactivation
       await storage.createAlertLog(
-        req.userId!,
+        userId,
         [],
         `Emergency alert deactivated by user - confirmed safe`
       );
