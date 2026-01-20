@@ -341,6 +341,28 @@ export async function registerRoutes(
     res.json(userProfile);
   });
 
+  // Accept terms and conditions
+  app.post("/api/auth/accept-terms", async (req, res) => {
+    const sessionId = req.cookies?.session;
+    
+    if (!sessionId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const session = await storage.getSession(sessionId);
+    if (!session) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+
+    try {
+      await storage.acceptTerms(session.userId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('[ACCEPT TERMS] Error:', error);
+      res.status(500).json({ error: "Failed to accept terms" });
+    }
+  });
+
   // Forgot password (public) - always returns success to prevent email enumeration
   app.post("/api/auth/forgot-password", async (req, res) => {
     try {

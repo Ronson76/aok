@@ -33,9 +33,10 @@ import AdminBundles from "@/pages/admin/bundles";
 import OrganizationDashboard from "@/pages/org/dashboard";
 import OrganizationLogin from "@/pages/org/login";
 import Activate from "@/pages/activate";
+import { TermsModal } from "@/components/terms-modal";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   
   if (isLoading) {
     return (
@@ -49,7 +50,15 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
     return <Redirect to="/login" />;
   }
 
-  return <Component />;
+  // Show terms modal if user hasn't accepted terms yet
+  const hasAcceptedTerms = user?.termsAcceptedAt != null;
+
+  return (
+    <>
+      <TermsModal open={!hasAcceptedTerms} />
+      <Component />
+    </>
+  );
 }
 
 function AuthRoute({ component: Component }: { component: React.ComponentType }) {
