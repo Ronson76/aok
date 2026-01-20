@@ -59,6 +59,7 @@ export default function Settings() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(true);
   const [pushSupported, setPushSupported] = useState(false);
+  const [showDisablePushDialog, setShowDisablePushDialog] = useState(false);
   
   const [scheduleStartInput, setScheduleStartInput] = useState("");
   const [pendingScheduleStart, setPendingScheduleStart] = useState<string | null>(null);
@@ -95,84 +96,103 @@ export default function Settings() {
     checkPushSupport();
   }, []);
 
-  const handlePushToggle = useCallback(async (enabled: boolean) => {
+  // Handle enabling push notifications
+  const enablePushNotifications = useCallback(async () => {
     setPushLoading(true);
     try {
-      if (enabled) {
-        // Request permission and subscribe
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-          toast({
-            title: "Permission denied",
-            description: "Please allow notifications in your browser settings.",
-            variant: "destructive",
-          });
-          setPushLoading(false);
-          return;
-        }
-
-        // Get VAPID public key
-        const keyResponse = await fetch('/api/push/vapid-public-key', { credentials: 'include' });
-        if (!keyResponse.ok) throw new Error('Failed to get VAPID key');
-        const { publicKey } = await keyResponse.json();
-
-        // Subscribe to push
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey),
-        });
-
-        // Send subscription to server
-        const subJson = subscription.toJSON();
-        const response = await fetch('/api/push/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            endpoint: subJson.endpoint,
-            keys: subJson.keys,
-          }),
-        });
-
-        if (!response.ok) throw new Error('Failed to save subscription');
-        
-        setPushEnabled(true);
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
         toast({
-          title: "Notifications enabled",
-          description: "You'll receive alerts when check-ins are due.",
+          title: "Permission denied",
+          description: "Please allow notifications in your browser settings.",
+          variant: "destructive",
         });
-      } else {
-        // Unsubscribe
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
-        if (subscription) {
-          await subscription.unsubscribe();
-        }
-
-        await fetch('/api/push/unsubscribe', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({}),
-        });
-
-        setPushEnabled(false);
-        toast({
-          title: "Notifications disabled",
-          description: "You won't receive push notifications.",
-        });
+        setPushLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error('Push toggle error:', error);
+
+      const keyResponse = await fetch('/api/push/vapid-public-key', { credentials: 'include' });
+      if (!keyResponse.ok) throw new Error('Failed to get VAPID key');
+      const { publicKey } = await keyResponse.json();
+
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+
+      const subJson = subscription.toJSON();
+      const response = await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          endpoint: subJson.endpoint,
+          keys: subJson.keys,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save subscription');
+      
+      setPushEnabled(true);
       toast({
-        title: "Failed to update notifications",
+        title: "Notifications enabled",
+        description: "You'll receive alerts when check-ins are due.",
+      });
+    } catch (error) {
+      console.error('Push enable error:', error);
+      toast({
+        title: "Failed to enable notifications",
         description: "Please try again.",
         variant: "destructive",
       });
     }
     setPushLoading(false);
   }, [toast]);
+
+  // Handle disabling push notifications (after confirmation)
+  const disablePushNotifications = useCallback(async () => {
+    setPushLoading(true);
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        await subscription.unsubscribe();
+      }
+
+      await fetch('/api/push/unsubscribe', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({}),
+      });
+
+      setPushEnabled(false);
+      toast({
+        title: "Notifications disabled",
+        description: "You will no longer receive push notifications on this device.",
+      });
+    } catch (error) {
+      console.error('Push disable error:', error);
+      toast({
+        title: "Failed to disable notifications",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+    setPushLoading(false);
+    setShowDisablePushDialog(false);
+  }, [toast]);
+
+  const handlePushToggle = useCallback(async (enabled: boolean) => {
+    if (enabled) {
+      await enablePushNotifications();
+    } else {
+      // Show confirmation dialog before disabling
+      setShowDisablePushDialog(true);
+    }
+  }, [enablePushNotifications]);
+
 
   const updateMutation = useMutation({
     mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean; scheduleStartTime?: string; password?: string }) =>
@@ -662,6 +682,43 @@ export default function Settings() {
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
               Disable Alerts
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDisablePushDialog} onOpenChange={(open) => {
+        setShowDisablePushDialog(open);
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-destructive" />
+              Disable Push Notifications?
+            </DialogTitle>
+            <DialogDescription>
+              If you disable push notifications, you will no longer receive alerts on this device when your check-in is overdue. 
+              Your emergency contacts will still be notified via email and phone if you miss a check-in.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDisablePushDialog(false)}
+              data-testid="button-cancel-disable-push"
+            >
+              Keep Enabled
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={disablePushNotifications}
+              disabled={pushLoading}
+              data-testid="button-confirm-disable-push"
+            >
+              {pushLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Disable Notifications
             </Button>
           </DialogFooter>
         </DialogContent>
