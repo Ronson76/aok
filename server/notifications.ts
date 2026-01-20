@@ -358,7 +358,8 @@ This is an automated notification. No action is required from you.
 export async function sendEmergencyAlert(
   contacts: Contact[],
   user: User,
-  gpsLocation?: { latitude: number; longitude: number }
+  gpsLocation?: { latitude: number; longitude: number },
+  isLocationUpdate: boolean = false
 ): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number }> {
   const isOrganization = user.accountType === "organization";
   const identifier = isOrganization 
@@ -379,7 +380,9 @@ export async function sendEmergencyAlert(
   }
   
   for (const contact of contacts) {
-    const emailSubject = `EMERGENCY ALERT: ${subjectIdentifier} needs help!`;
+    const emailSubject = isLocationUpdate 
+      ? `EMERGENCY UPDATE: ${subjectIdentifier} - Location Update`
+      : `EMERGENCY ALERT: ${subjectIdentifier} needs help!`;
     
     let locationInfo = "";
     let smsLocationInfo = "";
@@ -418,7 +421,22 @@ Mobile number: ${user.mobileNumber}`;
       timeStyle: 'long' 
     });
     
-    const emailBody = `URGENT - EMERGENCY ALERT
+    const emailBody = isLocationUpdate 
+      ? `EMERGENCY LOCATION UPDATE
+
+Hi ${contact.name},
+
+This is an automatic location update for ${identifier}'s ongoing emergency alert as of ${alertTime}.
+
+The emergency alert is still active. Updated location information below:
+${locationInfo}
+
+PLEASE CONTINUE TRYING TO REACH THEM.
+
+If you cannot reach them, consider contacting local emergency services.
+
+- The aok Team`
+      : `URGENT - EMERGENCY ALERT
 
 Hi ${contact.name},
 
@@ -443,7 +461,9 @@ If you cannot reach them, consider contacting local emergency services.
     }
 
     if (contact.phone) {
-      const smsBody = `EMERGENCY ALERT from aok: ${identifier} needs immediate help! ${smsLocationInfo} ${user.mobileNumber ? `Call them: ${user.mobileNumber}` : "Contact them immediately."}`;
+      const smsBody = isLocationUpdate 
+        ? `EMERGENCY UPDATE: ${identifier}'s alert is still active. ${smsLocationInfo} ${user.mobileNumber ? `Call: ${user.mobileNumber}` : ""}`
+        : `EMERGENCY ALERT from aok: ${identifier} needs immediate help! ${smsLocationInfo} ${user.mobileNumber ? `Call them: ${user.mobileNumber}` : "Contact them immediately."}`;
       
       const smsResult = await sendSMS(contact.phone, smsBody);
       if (smsResult.success) {
