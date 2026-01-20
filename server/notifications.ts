@@ -381,7 +381,7 @@ export async function sendEmergencyAlert(
   
   for (const contact of contacts) {
     const emailSubject = isLocationUpdate 
-      ? `EMERGENCY UPDATE: ${subjectIdentifier} - Location Update`
+      ? `LOCATION UPDATE: ${subjectIdentifier} - Emergency Alert Still Active`
       : `EMERGENCY ALERT: ${subjectIdentifier} needs help!`;
     
     let locationInfo = "";
@@ -422,11 +422,11 @@ Mobile number: ${user.mobileNumber}`;
     });
     
     const emailBody = isLocationUpdate 
-      ? `EMERGENCY LOCATION UPDATE
+      ? `*** LOCATION UPDATE ***
 
 Hi ${contact.name},
 
-This is an automatic location update for ${identifier}'s ongoing emergency alert as of ${alertTime}.
+This is an automatic LOCATION UPDATE for ${identifier}'s ongoing emergency alert as of ${alertTime}.
 
 The emergency alert is still active. Updated location information below:
 ${locationInfo}
@@ -462,7 +462,7 @@ If you cannot reach them, consider contacting local emergency services.
 
     if (contact.phone) {
       const smsBody = isLocationUpdate 
-        ? `EMERGENCY UPDATE: ${identifier}'s alert is still active. ${smsLocationInfo} ${user.mobileNumber ? `Call: ${user.mobileNumber}` : ""}`
+        ? `LOCATION UPDATE: ${identifier}'s emergency alert is still active. ${smsLocationInfo} ${user.mobileNumber ? `Call: ${user.mobileNumber}` : ""}`
         : `EMERGENCY ALERT from aok: ${identifier} needs immediate help! ${smsLocationInfo} ${user.mobileNumber ? `Call them: ${user.mobileNumber}` : "Contact them immediately."}`;
       
       const smsResult = await sendSMS(contact.phone, smsBody);
