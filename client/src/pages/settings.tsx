@@ -61,6 +61,9 @@ export default function Settings() {
   const [pushSupported, setPushSupported] = useState(false);
   const [showDisablePushDialog, setShowDisablePushDialog] = useState(false);
   
+  const [showRedAlertConfirmDialog, setShowRedAlertConfirmDialog] = useState(false);
+  const [showRedAlertDisableDialog, setShowRedAlertDisableDialog] = useState(false);
+  
   const [scheduleStartInput, setScheduleStartInput] = useState("");
   const [pendingScheduleStart, setPendingScheduleStart] = useState<string | null>(null);
   
@@ -193,9 +196,19 @@ export default function Settings() {
     }
   }, [enablePushNotifications]);
 
+  // Handle Red Alert Mode toggle
+  const handleRedAlertToggle = useCallback((enabled: boolean) => {
+    if (enabled) {
+      // Show confirmation dialog before enabling
+      setShowRedAlertConfirmDialog(true);
+    } else {
+      // Show confirmation dialog before disabling
+      setShowRedAlertDisableDialog(true);
+    }
+  }, []);
 
   const updateMutation = useMutation({
-    mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean; scheduleStartTime?: string; password?: string }) =>
+    mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean; scheduleStartTime?: string; password?: string; redAlertEnabled?: boolean }) =>
       apiRequest("PATCH", "/api/settings", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
@@ -538,6 +551,44 @@ export default function Settings() {
         </Card>
       )}
 
+      <Card className={settings?.redAlertEnabled ? "border-red-500 dark:border-red-600" : ""}>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <ShieldAlert className={`h-4 w-4 ${settings?.redAlertEnabled ? "text-red-500" : "text-muted-foreground"}`} />
+            Red Alert Mode
+          </CardTitle>
+          <CardDescription>
+            Enable emergency location sharing during alerts.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="red-alert-enabled" className="font-medium">
+                Enable Red Alert Mode
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Allow emergency button to trigger continuous location sharing
+              </p>
+            </div>
+            <Switch
+              id="red-alert-enabled"
+              checked={settings?.redAlertEnabled ?? false}
+              onCheckedChange={handleRedAlertToggle}
+              disabled={updateMutation.isPending}
+              data-testid="switch-red-alert-enabled"
+            />
+          </div>
+
+          <div className="flex items-start gap-2 p-3 rounded-md bg-red-50 dark:bg-red-950/30">
+            <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              When Red Alert Mode is enabled and you press the emergency button, your location will be sent to all your emergency contacts every 5 minutes until you enter your password to deactivate it.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Appearance</CardTitle>
@@ -828,6 +879,89 @@ export default function Settings() {
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
               Sign Out
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showRedAlertConfirmDialog} onOpenChange={setShowRedAlertConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-red-500" />
+              Enable Red Alert Mode
+            </DialogTitle>
+            <DialogDescription className="space-y-3">
+              <span className="block font-medium">
+                Are you sure you want to enable Red Alert Mode?
+              </span>
+              <span className="block">
+                When you press the emergency button with Red Alert Mode enabled:
+              </span>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Your location will be sent to all emergency contacts immediately</li>
+                <li>Your location will continue to be shared every 5 minutes</li>
+                <li>Location sharing only stops when you enter your password to deactivate</li>
+              </ul>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowRedAlertConfirmDialog(false)}
+              data-testid="button-cancel-red-alert-enable"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                updateMutation.mutate({ redAlertEnabled: true });
+                setShowRedAlertConfirmDialog(false);
+              }}
+              disabled={updateMutation.isPending}
+              data-testid="button-confirm-red-alert-enable"
+            >
+              {updateMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Enable Red Alert Mode
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showRedAlertDisableDialog} onOpenChange={setShowRedAlertDisableDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-muted-foreground" />
+              Disable Red Alert Mode
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to disable Red Alert Mode? When disabled, pressing the emergency button will send a single alert without continuous location sharing.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowRedAlertDisableDialog(false)}
+              data-testid="button-cancel-red-alert-disable"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                updateMutation.mutate({ redAlertEnabled: false });
+                setShowRedAlertDisableDialog(false);
+              }}
+              disabled={updateMutation.isPending}
+              data-testid="button-confirm-red-alert-disable"
+            >
+              {updateMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Disable Red Alert Mode
             </Button>
           </DialogFooter>
         </DialogContent>

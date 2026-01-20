@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/components/theme-provider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { StatusData } from "@shared/schema";
+import type { StatusData, Settings } from "@shared/schema";
 import { formatDistanceToNow, format, differenceInSeconds } from "date-fns";
 import { useState, useEffect, useRef, useCallback } from "react";
 
@@ -267,7 +267,13 @@ export default function Dashboard() {
     refetchInterval: 10000, // Check every 10 seconds
   });
   
+  // Query for settings to check if Red Alert Mode is enabled
+  const { data: userSettings } = useQuery<Settings>({
+    queryKey: ["/api/settings"],
+  });
+  
   const isRedAlertMode = redAlertStatus?.isRedAlert ?? false;
+  const isRedAlertEnabled = userSettings?.redAlertEnabled ?? false;
   
 
   // Live countdown timer with auto-refresh when hitting zero
@@ -899,6 +905,30 @@ export default function Dashboard() {
                 <Lock className="h-5 w-5 mr-2" />
                 Deactivate Alert
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : !isRedAlertEnabled ? (
+        <Card className="border-muted">
+          <CardContent className="py-6">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <AlertOctagon className="h-8 w-8 text-muted-foreground" />
+              <div className="space-y-1">
+                <h3 className="font-semibold">Red Alert Mode Disabled</h3>
+                <p className="text-sm text-muted-foreground">
+                  Enable Red Alert Mode in settings to use the emergency alert feature
+                </p>
+              </div>
+              <Link href="/app/settings">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full max-w-xs"
+                  data-testid="button-enable-red-alert"
+                >
+                  Enable in Settings
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
