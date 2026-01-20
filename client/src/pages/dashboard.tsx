@@ -748,6 +748,7 @@ export default function Dashboard() {
                   placeholder="Enter your password"
                   value={deactivatePassword}
                   onChange={(e) => setDeactivatePassword(e.target.value)}
+                  autoComplete="off"
                   data-testid="input-deactivate-password"
                 />
               </div>
@@ -1058,6 +1059,7 @@ export default function Dashboard() {
                 placeholder="Enter your password"
                 value={deactivatePassword}
                 onChange={(e) => setDeactivatePassword(e.target.value)}
+                autoComplete="off"
                 data-testid="input-deactivate-password"
               />
             </div>
