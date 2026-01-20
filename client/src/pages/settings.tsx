@@ -655,6 +655,7 @@ export default function Settings() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleConfirmIntervalChange();
                 }}
+                autoComplete="off"
                 data-testid="input-interval-password"
               />
             </div>
@@ -708,6 +709,7 @@ export default function Settings() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleConfirmDisable();
                 }}
+                autoComplete="off"
                 data-testid="input-disable-password"
               />
             </div>
@@ -842,6 +844,7 @@ export default function Settings() {
                     if (e.key === "Enter") handleLogoutSubmit();
                   }}
                   className="pr-10"
+                  autoComplete="off"
                   data-testid="input-logout-password"
                 />
                 <Button

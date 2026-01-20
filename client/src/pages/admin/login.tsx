@@ -141,6 +141,7 @@ export default function AdminLogin() {
                   required
                   minLength={needsSetup ? 8 : undefined}
                   className="pr-10"
+                  autoComplete="off"
                   data-testid="input-admin-password"
                 />
                 <Button

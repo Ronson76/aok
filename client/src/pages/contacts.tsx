@@ -617,6 +617,7 @@ export default function Contacts() {
                     deleteMutation.mutate({ id: pendingDeleteId, password: deletePassword });
                   }
                 }}
+                autoComplete="off"
                 data-testid="input-delete-password"
               />
             </div>

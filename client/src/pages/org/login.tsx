@@ -102,6 +102,7 @@ export default function OrganizationLogin() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     className="pr-10"
+                    autoComplete="off"
                     data-testid="input-org-password"
                   />
                   <Button

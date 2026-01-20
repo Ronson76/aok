@@ -737,6 +737,7 @@ export default function AdminDashboard() {
                     value={newOrgPassword}
                     onChange={(e) => setNewOrgPassword(e.target.value)}
                     className="pr-10"
+                    autoComplete="off"
                     data-testid="input-org-password"
                   />
                   <Button

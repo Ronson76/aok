@@ -1531,6 +1531,7 @@ export default function OrganizationDashboard() {
                 placeholder="Enter new password (min 8 characters)"
                 value={newClientPassword}
                 onChange={(e) => setNewClientPassword(e.target.value)}
+                autoComplete="off"
                 data-testid="input-new-client-password"
               />
             </div>
@@ -1542,6 +1543,7 @@ export default function OrganizationDashboard() {
                 placeholder="Confirm new password"
                 value={confirmClientPassword}
                 onChange={(e) => setConfirmClientPassword(e.target.value)}
+                autoComplete="off"
                 data-testid="input-confirm-client-password"
               />
             </div>
@@ -1556,6 +1558,7 @@ export default function OrganizationDashboard() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleResetPasswordSubmit();
                 }}
+                autoComplete="off"
                 data-testid="input-org-password"
               />
               <p className="text-xs text-muted-foreground">
