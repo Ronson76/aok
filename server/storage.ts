@@ -664,8 +664,8 @@ class DatabaseStorage implements IStorage {
       console.log(`[ALERT] ${alertType} missed check-in alert for user ${userId}! Sending to: ${contactNames.join(", ")}`);
       
       try {
-        // Send email alerts
-        const { emailsSent, emailsFailed } = await sendMissedCheckInAlert(contactsToAlert, user);
+        // Send email and SMS alerts
+        const { emailsSent, emailsFailed, smsSent, smsFailed } = await sendMissedCheckInAlert(contactsToAlert, user);
         
         // Send voice calls to landline contacts
         const { callsMade, callsFailed } = await sendVoiceAlerts(contactsToAlert, user, 'missed_checkin');
@@ -686,15 +686,17 @@ class DatabaseStorage implements IStorage {
           pushFailed = pushResult.failed;
         }
         
-        alertSent = emailsSent > 0 || callsMade > 0 || pushSent > 0;
+        alertSent = emailsSent > 0 || smsSent > 0 || callsMade > 0 || pushSent > 0;
         
         const notificationParts = [];
         if (emailsSent > 0) notificationParts.push(`${emailsSent} email(s)`);
+        if (smsSent > 0) notificationParts.push(`${smsSent} SMS`);
         if (callsMade > 0) notificationParts.push(`${callsMade} voice call(s)`);
         if (pushSent > 0) notificationParts.push(`${pushSent} push notification(s)`);
         
         const failedParts = [];
         if (emailsFailed > 0) failedParts.push(`${emailsFailed} email(s)`);
+        if (smsFailed > 0) failedParts.push(`${smsFailed} SMS`);
         if (callsFailed > 0) failedParts.push(`${callsFailed} call(s)`);
         if (pushFailed > 0) failedParts.push(`${pushFailed} push(es)`);
         
