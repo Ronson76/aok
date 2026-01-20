@@ -36,6 +36,8 @@ export const users = pgTable("users", {
   country: text("country"),
   // Admin can disable users to prevent them from logging in
   disabled: boolean("disabled").notNull().default(false),
+  // Track when user accepted terms and conditions (null = not accepted)
+  termsAcceptedAt: timestamp("terms_accepted_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
