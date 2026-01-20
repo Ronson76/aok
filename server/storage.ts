@@ -1,13 +1,13 @@
 import { 
   contacts, checkIns, settings, alertLogs, users, sessions, passwordResetTokens, pushSubscriptions,
   adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs, organizationClients, organizationClientProfiles,
-  pendingClientContacts,
+  pendingClientContacts, activeEmergencyAlerts,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
   AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo,
   OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData, OrgClientStatus,
   OrgClientRegistrationStatus,
   OrganizationClientProfile, UpdateOrganizationClientProfile, AdminOrganizationClientView, AdminOrganizationView,
-  PushSubscription, InsertPushSubscription
+  PushSubscription, InsertPushSubscription, ActiveEmergencyAlert
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, desc, and, isNull, lt, gte, count, sql } from "drizzle-orm";
@@ -87,6 +87,14 @@ export interface IStorage {
   createPushSubscription(userId: string, subscription: InsertPushSubscription): Promise<PushSubscription>;
   deletePushSubscription(userId: string, endpoint: string): Promise<boolean>;
   deleteAllPushSubscriptions(userId: string): Promise<void>;
+
+  // Active emergency alerts
+  getActiveEmergencyAlert(userId: string): Promise<ActiveEmergencyAlert | undefined>;
+  createActiveEmergencyAlert(userId: string, latitude: string | null, longitude: string | null): Promise<ActiveEmergencyAlert>;
+  updateEmergencyAlertLocation(alertId: string, latitude: string, longitude: string): Promise<void>;
+  updateEmergencyAlertDispatchTime(alertId: string): Promise<void>;
+  deactivateEmergencyAlert(alertId: string): Promise<void>;
+  getOverdueActiveAlerts(): Promise<ActiveEmergencyAlert[]>;
 }
 
 class DatabaseStorage implements IStorage {
@@ -668,6 +676,75 @@ class DatabaseStorage implements IStorage {
   async deleteAllPushSubscriptions(userId: string): Promise<void> {
     await getDb().delete(pushSubscriptions)
       .where(eq(pushSubscriptions.userId, userId));
+  }
+
+  // Active emergency alerts
+  async getActiveEmergencyAlert(userId: string): Promise<ActiveEmergencyAlert | undefined> {
+    const result = await getDb()
+      .select()
+      .from(activeEmergencyAlerts)
+      .where(and(
+        eq(activeEmergencyAlerts.userId, userId),
+        eq(activeEmergencyAlerts.isActive, true)
+      ));
+    return result[0];
+  }
+
+  async createActiveEmergencyAlert(userId: string, latitude: string | null, longitude: string | null): Promise<ActiveEmergencyAlert> {
+    // First deactivate any existing alerts for this user
+    await getDb()
+      .update(activeEmergencyAlerts)
+      .set({ isActive: false, deactivatedAt: new Date() })
+      .where(and(
+        eq(activeEmergencyAlerts.userId, userId),
+        eq(activeEmergencyAlerts.isActive, true)
+      ));
+
+    // Create new alert
+    const result = await getDb()
+      .insert(activeEmergencyAlerts)
+      .values({
+        userId,
+        latitude,
+        longitude,
+        isActive: true,
+      })
+      .returning();
+    return result[0];
+  }
+
+  async updateEmergencyAlertLocation(alertId: string, latitude: string, longitude: string): Promise<void> {
+    await getDb()
+      .update(activeEmergencyAlerts)
+      .set({ latitude, longitude })
+      .where(eq(activeEmergencyAlerts.id, alertId));
+  }
+
+  async updateEmergencyAlertDispatchTime(alertId: string): Promise<void> {
+    await getDb()
+      .update(activeEmergencyAlerts)
+      .set({ lastDispatchAt: new Date() })
+      .where(eq(activeEmergencyAlerts.id, alertId));
+  }
+
+  async deactivateEmergencyAlert(alertId: string): Promise<void> {
+    await getDb()
+      .update(activeEmergencyAlerts)
+      .set({ isActive: false, deactivatedAt: new Date() })
+      .where(eq(activeEmergencyAlerts.id, alertId));
+  }
+
+  async getOverdueActiveAlerts(): Promise<ActiveEmergencyAlert[]> {
+    // Get all active alerts where lastDispatchAt is more than 5 minutes ago
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const result = await getDb()
+      .select()
+      .from(activeEmergencyAlerts)
+      .where(and(
+        eq(activeEmergencyAlerts.isActive, true),
+        lt(activeEmergencyAlerts.lastDispatchAt, fiveMinutesAgo)
+      ));
+    return result;
   }
 }
 
