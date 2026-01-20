@@ -79,17 +79,25 @@ export default function Settings() {
   // Check push notification support and current status
   useEffect(() => {
     const checkPushSupport = async () => {
+      console.log('[PUSH] Checking support...', {
+        serviceWorker: 'serviceWorker' in navigator,
+        pushManager: 'PushManager' in window
+      });
       if ('serviceWorker' in navigator && 'PushManager' in window) {
+        console.log('[PUSH] Push notifications supported');
         setPushSupported(true);
         try {
           const response = await fetch('/api/push/subscription', { credentials: 'include' });
           if (response.ok) {
             const data = await response.json();
+            console.log('[PUSH] Subscription status:', data);
             setPushEnabled(data.hasSubscription);
           }
         } catch (error) {
-          console.error('Failed to check push subscription:', error);
+          console.error('[PUSH] Failed to check push subscription:', error);
         }
+      } else {
+        console.log('[PUSH] Push notifications NOT supported');
       }
       setPushLoading(false);
     };
