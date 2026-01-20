@@ -91,16 +91,37 @@ async function getResendClient() {
   };
 }
 
-async function sendEmail(to: string, subject: string, body: string): Promise<void> {
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+async function sendEmail(to: string, subject: string, body: string, html?: string): Promise<void> {
   try {
     const { client, fromEmail } = await getResendClient();
     
-    await client.emails.send({
+    const emailData: {
+      from: string;
+      to: string[];
+      subject: string;
+      text: string;
+      html?: string;
+    } = {
       from: fromEmail || 'aok <onboarding@resend.dev>',
       to: [to],
       subject: subject,
       text: body,
-    });
+    };
+    
+    if (html) {
+      emailData.html = html;
+    }
+    
+    await client.emails.send(emailData);
     
     console.log(`[EMAIL] Successfully sent email to ${to}`);
   } catch (error) {
@@ -147,14 +168,18 @@ export async function sendContactConfirmationEmail(
   baseUrl: string
 ): Promise<{ sent: boolean; error?: string }> {
   const isOrganization = user.accountType === "organization";
-  const contactName = contact.name;
+  const contactName = escapeHtml(contact.name);
+  const userName = escapeHtml(user.name);
+  const referenceId = escapeHtml(user.referenceId || '');
   
   const confirmUrl = `${baseUrl}/api/contacts/confirm?token=${confirmationToken}&action=accept`;
   const declineUrl = `${baseUrl}/api/contacts/confirm?token=${confirmationToken}&action=decline`;
   
   const emailSubject = `Please confirm: Emergency contact request from aok`;
+  
+  // Plain text version (fallback)
   const emailBody = isOrganization 
-    ? `Hi ${contactName},
+    ? `Hi ${contact.name},
 
 ${user.name} would like to add you as an emergency contact for a person they are monitoring on aok.
 
@@ -174,7 +199,7 @@ If you do nothing, this request will expire automatically.
 
 Thank you,
 - The aok Team`
-    : `Hi ${contactName},
+    : `Hi ${contact.name},
 
 ${user.name} would like to add you as their emergency contact on aok.
 
@@ -195,8 +220,54 @@ If you do nothing, this request will expire automatically.
 Thank you,
 - The aok Team`;
 
+  // HTML version with clickable buttons
+  const htmlBody = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h2 style="color: #2563eb;">Emergency Contact Request</h2>
+  
+  <p>Hi ${contactName},</p>
+  
+  ${isOrganization 
+    ? `<p><strong>${userName}</strong> would like to add you as an emergency contact for a person they are monitoring on aok.</p>
+       <p><strong>Reference ID:</strong> ${referenceId}</p>`
+    : `<p><strong>${userName}</strong> would like to add you as their emergency contact on aok.</p>
+       <p>This means ${userName} trusts you to help ensure their safety.</p>`
+  }
+  
+  <p><strong>aok</strong> is a personal safety check-in app. If ${isOrganization ? 'this person' : userName} misses a check-in, you will be notified automatically via email, SMS, or phone call.</p>
+  
+  <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 20px 0;">
+    <strong style="color: #92400e;">IMPORTANT:</strong> You must confirm within 10 minutes to become an emergency contact.
+  </div>
+  
+  <div style="text-align: center; margin: 30px 0;">
+    <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+      <tr>
+        <td style="padding: 0 10px;">
+          <a href="${confirmUrl}" style="display: inline-block; background-color: #22c55e; color: #ffffff; font-weight: bold; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-size: 16px;">Accept</a>
+        </td>
+        <td style="padding: 0 10px;">
+          <a href="${declineUrl}" style="display: inline-block; background-color: #ef4444; color: #ffffff; font-weight: bold; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-size: 16px;">Decline</a>
+        </td>
+      </tr>
+    </table>
+  </div>
+  
+  <p style="color: #6b7280; font-size: 14px;">If you do nothing, this request will expire automatically.</p>
+  
+  <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+  
+  <p style="color: #6b7280; font-size: 14px;">Thank you,<br>- The aok Team</p>
+</body>
+</html>`;
+
   try {
-    await sendEmail(contact.email, emailSubject, emailBody);
+    await sendEmail(contact.email, emailSubject, emailBody, htmlBody);
     console.log(`[NOTIFICATION] Confirmation email sent to ${contact.email} for contact ${contactName}`);
     return { sent: true };
   } catch (error) {
