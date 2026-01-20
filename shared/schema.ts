@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, date, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, date, integer, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -222,6 +222,36 @@ export type InsertPushSubscription = {
     auth: string;
   };
 };
+
+// Active emergency alerts table - tracks ongoing red alert states
+export const activeEmergencyAlerts = pgTable("active_emergency_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  activatedAt: timestamp("activated_at").notNull().defaultNow(),
+  lastDispatchAt: timestamp("last_dispatch_at").notNull().defaultNow(),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
+  isActive: boolean("is_active").notNull().default(true),
+  deactivatedAt: timestamp("deactivated_at"),
+});
+
+export type ActiveEmergencyAlert = typeof activeEmergencyAlerts.$inferSelect;
+
+export const insertActiveEmergencyAlertSchema = createInsertSchema(activeEmergencyAlerts).omit({
+  id: true,
+  activatedAt: true,
+  lastDispatchAt: true,
+  deactivatedAt: true,
+});
+
+export type InsertActiveEmergencyAlert = z.infer<typeof insertActiveEmergencyAlertSchema>;
+
+// Schema for deactivating emergency alert with password
+export const deactivateEmergencyAlertSchema = z.object({
+  password: z.string().min(1, "Password is required"),
+});
+
+export type DeactivateEmergencyAlertInput = z.infer<typeof deactivateEmergencyAlertSchema>;
 
 // Login schema
 export const loginSchema = z.object({
