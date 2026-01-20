@@ -50,15 +50,18 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
     return <Redirect to="/login" />;
   }
 
-  // Show terms modal if user hasn't accepted terms yet
+  // Block access entirely until terms are accepted
   const hasAcceptedTerms = user?.termsAcceptedAt != null;
 
-  return (
-    <>
-      <TermsModal open={!hasAcceptedTerms} />
-      <Component />
-    </>
-  );
+  if (!hasAcceptedTerms) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <TermsModal open={true} />
+      </div>
+    );
+  }
+
+  return <Component />;
 }
 
 function AuthRoute({ component: Component }: { component: React.ComponentType }) {
