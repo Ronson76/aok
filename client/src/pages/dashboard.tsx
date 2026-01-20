@@ -252,6 +252,7 @@ export default function Dashboard() {
   const [showPushPrompt, setShowPushPrompt] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
+  const hasShownPushPrompt = useRef(false);
 
   // Check if user is org-managed (activated via reference code)
   const isOrgManagedClient = !!user?.referenceId;
@@ -271,8 +272,9 @@ export default function Dashboard() {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       setPushSupported(true);
       
-      // Show prompt if pushStatus is "unknown" (new user)
-      if (settings?.pushStatus === "unknown") {
+      // Show prompt only once per session if pushStatus is "unknown" (new user)
+      if (settings?.pushStatus === "unknown" && !hasShownPushPrompt.current) {
+        hasShownPushPrompt.current = true;
         setShowPushPrompt(true);
       }
     }
@@ -338,10 +340,11 @@ export default function Dashboard() {
     try {
       await apiRequest("PATCH", "/api/settings", { pushStatus: "declined" });
       queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
-      setShowPushPrompt(false);
     } catch (error) {
       console.error('Failed to update push status:', error);
     }
+    // Always close the prompt, even on error (user has made their choice)
+    setShowPushPrompt(false);
   }, []);
 
   // Live countdown timer with auto-refresh when hitting zero
