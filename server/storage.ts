@@ -95,6 +95,9 @@ export interface IStorage {
   updateEmergencyAlertDispatchTime(alertId: string): Promise<void>;
   deactivateEmergencyAlert(alertId: string): Promise<void>;
   getOverdueActiveAlerts(): Promise<ActiveEmergencyAlert[]>;
+
+  // Terms and conditions
+  acceptTerms(userId: string): Promise<void>;
 }
 
 class DatabaseStorage implements IStorage {
@@ -748,6 +751,14 @@ class DatabaseStorage implements IStorage {
         lt(activeEmergencyAlerts.lastDispatchAt, fiveMinutesAgo)
       ));
     return result;
+  }
+
+  // Terms and conditions
+  async acceptTerms(userId: string): Promise<void> {
+    await getDb()
+      .update(users)
+      .set({ termsAcceptedAt: new Date() })
+      .where(eq(users.id, userId));
   }
 }
 
