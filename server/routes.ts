@@ -670,7 +670,7 @@ export async function registerRoutes(
     }
   });
 
-  // Emergency alert endpoint
+  // Emergency alert endpoint - activates red alert mode
   app.post("/api/emergency", async (req, res) => {
     try {
       console.log('[EMERGENCY] Request from userId:', req.userId);
@@ -687,6 +687,14 @@ export async function registerRoutes(
       }
 
       const location = req.body?.location as { latitude: number; longitude: number } | undefined;
+      
+      // Create active emergency alert (red alert mode)
+      const activeAlert = await storage.createActiveEmergencyAlert(
+        req.userId!,
+        location?.latitude?.toString() || null,
+        location?.longitude?.toString() || null
+      );
+      console.log('[EMERGENCY] Created active alert:', activeAlert.id);
       
       // Send email and SMS alerts
       const alertResult = await sendEmergencyAlert(contacts, user, location);
@@ -723,6 +731,8 @@ export async function registerRoutes(
 
       res.json({ 
         success: true, 
+        isRedAlert: true,
+        alertId: activeAlert.id,
         emailsSent: alertResult.emailsSent,
         smsSent: alertResult.smsSent,
         voiceCallsMade: voiceResult.callsMade,
@@ -732,6 +742,89 @@ export async function registerRoutes(
     } catch (error) {
       console.error('[EMERGENCY] Failed to send emergency alert:', error);
       res.status(500).json({ error: "Failed to send emergency alert" });
+    }
+  });
+
+  // Get emergency alert status (check if in red alert mode)
+  app.get("/api/emergency/status", async (req, res) => {
+    try {
+      const activeAlert = await storage.getActiveEmergencyAlert(req.userId!);
+      res.json({
+        isRedAlert: !!activeAlert,
+        alertId: activeAlert?.id || null,
+        activatedAt: activeAlert?.activatedAt || null,
+        lastDispatchAt: activeAlert?.lastDispatchAt || null,
+        latitude: activeAlert?.latitude || null,
+        longitude: activeAlert?.longitude || null,
+      });
+    } catch (error) {
+      console.error('[EMERGENCY] Failed to get alert status:', error);
+      res.status(500).json({ error: "Failed to get alert status" });
+    }
+  });
+
+  // Update location during red alert (heartbeat)
+  app.post("/api/emergency/heartbeat", async (req, res) => {
+    try {
+      const activeAlert = await storage.getActiveEmergencyAlert(req.userId!);
+      if (!activeAlert) {
+        return res.status(400).json({ error: "No active emergency alert" });
+      }
+
+      const { latitude, longitude } = req.body;
+      if (latitude && longitude) {
+        await storage.updateEmergencyAlertLocation(
+          activeAlert.id,
+          latitude.toString(),
+          longitude.toString()
+        );
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[EMERGENCY] Failed to update heartbeat:', error);
+      res.status(500).json({ error: "Failed to update location" });
+    }
+  });
+
+  // Deactivate emergency alert with password verification
+  app.post("/api/emergency/deactivate", async (req, res) => {
+    try {
+      const activeAlert = await storage.getActiveEmergencyAlert(req.userId!);
+      if (!activeAlert) {
+        return res.status(400).json({ error: "No active emergency alert" });
+      }
+
+      const { password } = req.body;
+      if (!password) {
+        return res.status(400).json({ error: "Password is required" });
+      }
+
+      // Verify password
+      const user = await storage.getUserById(req.userId!);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+      if (!isValidPassword) {
+        return res.status(401).json({ error: "Incorrect password" });
+      }
+
+      // Deactivate the alert
+      await storage.deactivateEmergencyAlert(activeAlert.id);
+      
+      // Log the deactivation
+      await storage.createAlertLog(
+        req.userId!,
+        [],
+        `Emergency alert deactivated by user - confirmed safe`
+      );
+
+      res.json({ success: true, message: "Emergency alert deactivated" });
+    } catch (error) {
+      console.error('[EMERGENCY] Failed to deactivate alert:', error);
+      res.status(500).json({ error: "Failed to deactivate alert" });
     }
   });
 
