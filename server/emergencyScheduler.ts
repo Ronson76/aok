@@ -48,8 +48,9 @@ export async function processOverdueEmergencyAlerts(): Promise<void> {
 
         console.log(`[EMERGENCY SCHEDULER] Sending location update for alert ${alert.id}`);
 
+        // For 5-minute location updates: only send email and SMS (no phone calls)
+        // Phone calls are only made on the initial emergency trigger
         const alertResult = await sendEmergencyAlert(contacts, user, location, true);
-        const voiceResult = await sendVoiceAlerts(contacts, user, 'emergency');
 
         await storage.updateEmergencyAlertDispatchTime(alert.id);
 
@@ -59,9 +60,6 @@ export async function processOverdueEmergencyAlerts(): Promise<void> {
         }
         if (alertResult.smsSent > 0) {
           notificationSummary.push(`${alertResult.smsSent} SMS(s)`);
-        }
-        if (voiceResult.callsMade > 0) {
-          notificationSummary.push(`${voiceResult.callsMade} voice call(s)`);
         }
 
         await storage.createAlertLog(
