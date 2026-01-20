@@ -113,10 +113,25 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+import path from "path";
+import fs from "fs";
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  // Serve promotional video for download
+  app.get("/promo-video.mp4", (_req, res) => {
+    const videoPath = path.resolve(process.cwd(), "attached_assets/generated_videos/safety_check-in_app_promo.mp4");
+    if (fs.existsSync(videoPath)) {
+      res.setHeader("Content-Type", "video/mp4");
+      res.setHeader("Content-Disposition", 'attachment; filename="aok-promo-video.mp4"');
+      res.sendFile(videoPath);
+    } else {
+      res.status(404).json({ error: "Video not found" });
+    }
+  });
 
   // Register admin routes
   registerAdminRoutes(app);
