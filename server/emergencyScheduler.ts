@@ -2,6 +2,21 @@ import { storage } from "./storage";
 import { sendEmergencyAlert, sendVoiceAlerts } from "./notifications";
 
 let schedulerInterval: NodeJS.Timeout | null = null;
+let cleanupInterval: NodeJS.Timeout | null = null;
+
+// Cleanup old emergency alerts (location data privacy - runs daily)
+async function cleanupOldLocationData(): Promise<void> {
+  try {
+    const deletedAlertLogs = await storage.cleanupOldAlerts();
+    const deletedEmergencyAlerts = await storage.cleanupOldEmergencyAlerts();
+    
+    if (deletedAlertLogs > 0 || deletedEmergencyAlerts > 0) {
+      console.log(`[CLEANUP] Deleted ${deletedAlertLogs} old alert logs and ${deletedEmergencyAlerts} old emergency alerts (30+ days old)`);
+    }
+  } catch (error) {
+    console.error('[CLEANUP] Error cleaning up old data:', error);
+  }
+}
 
 export async function processOverdueEmergencyAlerts(): Promise<void> {
   try {
@@ -77,13 +92,24 @@ export function startEmergencyScheduler(): void {
     await processOverdueEmergencyAlerts();
   }, 60 * 1000);
 
+  // Run cleanup daily (every 24 hours)
+  cleanupInterval = setInterval(async () => {
+    await cleanupOldLocationData();
+  }, 24 * 60 * 60 * 1000);
+
+  // Run initial checks
   processOverdueEmergencyAlerts();
+  cleanupOldLocationData();
 }
 
 export function stopEmergencyScheduler(): void {
   if (schedulerInterval) {
     clearInterval(schedulerInterval);
     schedulerInterval = null;
-    console.log('[EMERGENCY SCHEDULER] Scheduler stopped');
   }
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+  }
+  console.log('[EMERGENCY SCHEDULER] Scheduler stopped');
 }

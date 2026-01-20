@@ -98,6 +98,9 @@ export interface IStorage {
 
   // Terms and conditions
   acceptTerms(userId: string): Promise<void>;
+
+  // Cleanup old emergency alerts (location data privacy)
+  cleanupOldEmergencyAlerts(): Promise<number>;
 }
 
 class DatabaseStorage implements IStorage {
@@ -759,6 +762,22 @@ class DatabaseStorage implements IStorage {
       .update(users)
       .set({ termsAcceptedAt: new Date() })
       .where(eq(users.id, userId));
+  }
+
+  // Cleanup old emergency alerts (location data privacy - 30 days)
+  async cleanupOldEmergencyAlerts(): Promise<number> {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    // Delete deactivated emergency alerts older than 30 days
+    const result = await getDb().delete(activeEmergencyAlerts)
+      .where(and(
+        eq(activeEmergencyAlerts.isActive, false),
+        lt(activeEmergencyAlerts.deactivatedAt, thirtyDaysAgo)
+      ))
+      .returning();
+    
+    return result.length;
   }
 }
 
