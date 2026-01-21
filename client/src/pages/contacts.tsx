@@ -284,7 +284,7 @@ export default function Contacts() {
   const isLastContact = contacts.length === 1;
 
   return (
-    <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto">
+    <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto h-full overflow-y-auto">
       <div className="flex items-center justify-between pt-2">
         <div className="flex items-center gap-3">
           <Users className="h-7 w-7 text-primary" />
