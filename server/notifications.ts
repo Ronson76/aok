@@ -392,9 +392,16 @@ async function sendEmail(to: string, subject: string, body: string, html?: strin
   if (gmailSent) {
     return;
   }
-  console.log(`[EMAIL] Gmail not available, trying Resend`);
+  console.log(`[EMAIL] Gmail not available, trying Outlook`);
   
-  // Try Resend second (more reliable delivery)
+  // Try Outlook second (Microsoft's own servers)
+  const outlookSent = await sendEmailViaOutlook(to, subject, body, html);
+  if (outlookSent) {
+    return;
+  }
+  console.log(`[EMAIL] Outlook not available, trying Resend`);
+  
+  // Try Resend third (reliable delivery)
   try {
     const { client, fromEmail } = await getResendClient();
     
