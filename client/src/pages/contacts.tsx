@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
@@ -105,8 +105,34 @@ export default function Contacts() {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [selectedCountryCode, setSelectedCountryCode] = useState("+44");
   const [editSelectedCountryCode, setEditSelectedCountryCode] = useState("+44");
+  const [isPageVisible, setIsPageVisible] = useState(true);
   
   const isOrganization = user?.accountType === "organization";
+
+  // Screenshot protection: blur content when page loses focus or visibility
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(!document.hidden);
+    };
+
+    const handleBlur = () => {
+      setIsPageVisible(false);
+    };
+
+    const handleFocus = () => {
+      setIsPageVisible(true);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
 
   const form = useForm<InsertContact>({
     resolver: zodResolver(insertContactSchema),
@@ -291,7 +317,7 @@ export default function Contacts() {
   const isLastContact = contacts.length === 1;
 
   return (
-    <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto h-full overflow-y-auto">
+    <div className={`flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto h-full overflow-y-auto select-none ${!isPageVisible ? 'blur-lg pointer-events-none' : ''}`}>
       <div className="flex items-center justify-between pt-2">
         <div className="flex items-center gap-3">
           <Users className="h-7 w-7 text-primary" />
