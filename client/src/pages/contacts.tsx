@@ -239,8 +239,15 @@ export default function Contacts() {
   });
 
   const onSubmit = (data: InsertContact) => {
+    console.log("[CONTACTS] Form submitted with data:", data);
     createMutation.mutate(data);
   };
+  
+  // Debug: log form errors
+  const formErrors = form.formState.errors;
+  if (Object.keys(formErrors).length > 0) {
+    console.log("[CONTACTS] Form validation errors:", formErrors);
+  }
 
   const onEditSubmit = (data: InsertContact) => {
     if (editingContact) {
