@@ -244,6 +244,8 @@ export default function Settings() {
       queryClient.clear();
       setLogoutStep("none");
       setLogoutPassword("");
+      // Clear splash flag so it shows on next visit
+      sessionStorage.removeItem("splashShown");
       // Force a full page navigation to ensure clean logout
       window.location.href = "/";
     },
