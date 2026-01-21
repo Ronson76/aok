@@ -203,11 +203,14 @@ async function sendEmailViaOutlook(to: string, subject: string, body: string, ht
       ]
     };
 
-    await client.api('/me/sendMail').post({ message });
+    console.log(`[OUTLOOK] Sending email to ${to} with subject: ${subject}`);
+    const result = await client.api('/me/sendMail').post({ message });
+    console.log(`[OUTLOOK] API response:`, JSON.stringify(result));
     console.log(`[OUTLOOK] Successfully sent email to ${to}`);
     return true;
   } catch (error: any) {
     console.error('[OUTLOOK] Failed to send email:', error?.message || error);
+    console.error('[OUTLOOK] Full error:', JSON.stringify(error, null, 2));
     return false;
   }
 }
@@ -392,11 +395,12 @@ async function sendEmail(to: string, subject: string, body: string, html?: strin
   console.log(`[EMAIL] Gmail not available, trying Outlook`);
   
   // Try Outlook second (Microsoft's own servers - good for Hotmail recipients)
-  const outlookSent = await sendEmailViaOutlook(to, subject, body, html);
-  if (outlookSent) {
-    return;
-  }
-  console.log(`[EMAIL] Outlook not available, trying SendGrid`);
+  // Note: Temporarily disabled - emails not delivering despite API success
+  // const outlookSent = await sendEmailViaOutlook(to, subject, body, html);
+  // if (outlookSent) {
+  //   return;
+  // }
+  console.log(`[EMAIL] Skipping Outlook (temporarily disabled), trying SendGrid`);
   
   // Try SendGrid third
   const sendGridClient = await getSendGridClient();
