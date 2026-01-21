@@ -5,7 +5,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Mail } from "lucide-react";
+import { MoreVertical, Mail, Share2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface PageHeaderProps {
   title?: string;
@@ -13,6 +14,43 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, rightContent }: PageHeaderProps) {
+  const { toast } = useToast();
+
+  const handleShare = async () => {
+    const shareUrl = "https://aok.care";
+    const shareText = "Stay safe with aok - a personal safety check-in app that alerts your emergency contacts if something happens to you.";
+    
+    // Try Web Share API first (works on mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "aok - Personal Safety Check-in",
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      } catch (err) {
+        // User cancelled or share failed, fall through to clipboard
+        if ((err as Error).name === 'AbortError') return;
+      }
+    }
+    
+    // Fallback: copy to clipboard
+    try {
+      await navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
+      toast({
+        title: "Link copied",
+        description: "Share link copied to clipboard. Paste it in a text or email.",
+      });
+    } catch (err) {
+      toast({
+        title: "Unable to share",
+        description: "Please copy this link: " + shareUrl,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="flex items-center justify-between p-4 border-b">
       <div className="flex-1">
@@ -27,6 +65,10 @@ export function PageHeader({ title, rightContent }: PageHeaderProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleShare} data-testid="button-share">
+              <Share2 className="h-4 w-4 mr-2" />
+              Share aok
+            </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <a href="mailto:support@aok.app" className="flex items-center gap-2" data-testid="link-contact-us">
                 <Mail className="h-4 w-4" />
