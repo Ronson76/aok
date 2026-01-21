@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ShieldCheck } from "lucide-react";
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -30,11 +31,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       data-testid="splash-screen"
     >
       <div className="flex flex-col items-center gap-4">
-        <img
-          src="/aok-logo.png"
-          alt="aok"
-          className="w-32 h-32 object-contain animate-pulse"
-        />
+        <ShieldCheck className="w-24 h-24 text-primary animate-pulse" />
         <h1 className="text-2xl font-bold text-primary">aok</h1>
         <p className="text-sm text-muted-foreground">Stay Connected, Stay Safe</p>
       </div>
