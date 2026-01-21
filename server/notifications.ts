@@ -665,6 +665,7 @@ Thank you for being there for ${user.name}.
     ? `You're now an emergency contact for Reference ${user.referenceId} on aok. You'll be notified if they miss a check-in.`
     : `You're now an emergency contact for ${user.name} on aok. You'll be notified if they miss a check-in.`;
 
+  // Send email only for contact added notification (to save cost)
   try {
     await sendEmail(contact.email, emailSubject, emailBody);
     result.email.sent = true;
@@ -672,21 +673,6 @@ Thank you for being there for ${user.name}.
   } catch (error) {
     result.email.error = error instanceof Error ? error.message : "Failed to send email";
     console.log(`[NOTIFICATION] Email failed for ${contact.email}: ${result.email.error}`);
-  }
-
-  if (contact.phone && contact.phoneType !== "landline") {
-    const smsResult = await sendSMS(contact.phone, smsBody);
-    result.sms.sent = smsResult.success;
-    if (!smsResult.success) {
-      result.sms.error = smsResult.error || "Failed to send SMS";
-    }
-    
-    // Also send WhatsApp message
-    const whatsappResult = await sendWhatsApp(contact.phone, smsBody);
-    result.whatsapp.sent = whatsappResult.success;
-    if (!whatsappResult.success) {
-      result.whatsapp.error = whatsappResult.error || "Failed to send WhatsApp";
-    }
   }
 
   return result;
@@ -743,7 +729,7 @@ Please try to reach out to ensure their safety.
 
 - The aok Team`;
 
-    // Send email
+    // Send email only for missed check-in alerts (to save cost)
     try {
       await sendEmail(contact.email, emailSubject, emailBody);
       emailsSent++;
@@ -751,30 +737,6 @@ Please try to reach out to ensure their safety.
     } catch (error) {
       emailsFailed++;
       console.error(`[ALERT] Failed to send email to ${contact.email}:`, error);
-    }
-    
-    // Send SMS and WhatsApp to contacts with mobile phones
-    if (contact.phone && contact.phoneType !== 'landline') {
-      const smsBody = `ALERT from aok: ${identifier} has missed their scheduled check-in. Please try to reach out to ensure their safety.`;
-      
-      const smsResult = await sendSMS(contact.phone, smsBody);
-      if (smsResult.success) {
-        smsSent++;
-        console.log(`[ALERT] SMS sent to ${contact.name} (${contact.phone})`);
-      } else {
-        smsFailed++;
-        console.log(`[ALERT] SMS failed for ${contact.name}: ${smsResult.error}`);
-      }
-      
-      // Also send WhatsApp
-      const whatsappResult = await sendWhatsApp(contact.phone, smsBody);
-      if (whatsappResult.success) {
-        whatsappSent++;
-        console.log(`[ALERT] WhatsApp sent to ${contact.name} (${contact.phone})`);
-      } else {
-        whatsappFailed++;
-        console.log(`[ALERT] WhatsApp failed for ${contact.name}: ${whatsappResult.error}`);
-      }
     }
   }
 
