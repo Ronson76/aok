@@ -365,10 +365,10 @@ export default function Dashboard() {
         hasPlayedInitialAlarm.current = true;
       }
       
-      // Set up repeating alarm every 10 seconds until user checks in
+      // Set up repeating alarm every 5 seconds until user checks in
       alarmIntervalRef.current = setInterval(() => {
         playAlarmBeep();
-      }, 10 * 1000); // 10 seconds
+      }, 5 * 1000); // 5 seconds
       
       // Update app badge to show "1"
       updateAppBadge(1);
