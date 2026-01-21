@@ -528,15 +528,37 @@ Thank you,
 </body>
 </html>`;
 
+  let emailSent = false;
+  let smsSent = false;
+  
   try {
     await sendEmail(contact.email, emailSubject, emailBody, htmlBody);
+    emailSent = true;
     console.log(`[NOTIFICATION] Confirmation email sent to ${contact.email} for contact ${contactName}`);
-    return { sent: true };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : "Failed to send email";
     console.log(`[NOTIFICATION] Confirmation email failed for ${contact.email}: ${errorMsg}`);
-    return { sent: false, error: errorMsg };
   }
+  
+  // Send SMS backup if contact has a phone number
+  if (contact.phone && contact.phoneType !== "landline") {
+    const smsBody = isOrganization
+      ? `aok: ${user.name} wants to add you as an emergency contact for Reference ${user.referenceId}. Please check your email to confirm within 10 minutes.`
+      : `aok: ${user.name} wants to add you as their emergency contact. Please check your email to confirm within 10 minutes.`;
+    
+    const smsResult = await sendSMS(contact.phone, smsBody);
+    smsSent = smsResult.success;
+    if (smsResult.success) {
+      console.log(`[NOTIFICATION] Confirmation SMS sent to ${contact.phone} for contact ${contactName}`);
+    }
+  }
+  
+  // Success if either email or SMS was sent
+  if (emailSent || smsSent) {
+    return { sent: true };
+  }
+  
+  return { sent: false, error: "Failed to send email and SMS" };
 }
 
 export async function sendContactAddedNotification(
