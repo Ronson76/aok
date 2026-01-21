@@ -1,5 +1,6 @@
 import type { Contact, User } from "@shared/schema";
 import { Resend } from 'resend';
+import sgMail from '@sendgrid/mail';
 import twilio from 'twilio';
 
 async function getWhat3WordsAddress(lat: number, lng: number): Promise<string | null> {
@@ -92,6 +93,54 @@ async function getResendClient() {
   };
 }
 
+// SendGrid integration
+async function getSendGridCredentials() {
+  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+  const xReplitToken = process.env.REPL_IDENTITY 
+    ? 'repl ' + process.env.REPL_IDENTITY 
+    : process.env.WEB_REPL_RENEWAL 
+    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
+    : null;
+
+  if (!xReplitToken || !hostname) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(
+      'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=sendgrid',
+      {
+        headers: {
+          'Accept': 'application/json',
+          'X_REPLIT_TOKEN': xReplitToken
+        }
+      }
+    );
+    const data = await response.json();
+    const settings = data.items?.[0];
+
+    if (!settings || !settings.settings.api_key || !settings.settings.from_email) {
+      return null;
+    }
+    return { apiKey: settings.settings.api_key, fromEmail: settings.settings.from_email };
+  } catch (error) {
+    console.error('[SENDGRID] Failed to get credentials:', error);
+    return null;
+  }
+}
+
+async function getSendGridClient() {
+  const credentials = await getSendGridCredentials();
+  if (!credentials) {
+    return null;
+  }
+  sgMail.setApiKey(credentials.apiKey);
+  return {
+    client: sgMail,
+    fromEmail: credentials.fromEmail
+  };
+}
+
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, '&amp;')
@@ -102,6 +151,36 @@ function escapeHtml(text: string): string {
 }
 
 async function sendEmail(to: string, subject: string, body: string, html?: string): Promise<void> {
+  // Try SendGrid first
+  const sendGridClient = await getSendGridClient();
+  if (sendGridClient) {
+    try {
+      const msg: {
+        to: string;
+        from: string;
+        subject: string;
+        text: string;
+        html?: string;
+      } = {
+        to: to,
+        from: sendGridClient.fromEmail,
+        subject: subject,
+        text: body,
+      };
+      
+      if (html) {
+        msg.html = html;
+      }
+      
+      await sendGridClient.client.send(msg);
+      console.log(`[EMAIL] Successfully sent email via SendGrid to ${to}`);
+      return;
+    } catch (error) {
+      console.error(`[EMAIL] SendGrid failed for ${to}, trying Resend fallback:`, error);
+    }
+  }
+  
+  // Fallback to Resend
   try {
     const { client, fromEmail } = await getResendClient();
     
@@ -124,7 +203,7 @@ async function sendEmail(to: string, subject: string, body: string, html?: strin
     
     await client.emails.send(emailData);
     
-    console.log(`[EMAIL] Successfully sent email to ${to}`);
+    console.log(`[EMAIL] Successfully sent email via Resend to ${to}`);
   } catch (error) {
     console.error(`[EMAIL] Failed to send email to ${to}:`, error);
     throw error;
