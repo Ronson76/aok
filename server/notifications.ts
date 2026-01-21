@@ -722,6 +722,49 @@ Thank you for being there for ${user.name}.
   }
 }
 
+export async function sendContactRemovedNotification(
+  contact: Contact,
+  user: User
+): Promise<boolean> {
+  const isOrganization = user.accountType === "organization";
+  const identifier = isOrganization 
+    ? `Reference ${user.referenceId}` 
+    : user.name;
+  const contactName = contact.name;
+
+  const emailSubject = `You have been removed as an emergency contact on aok`;
+  const emailBody = isOrganization 
+    ? `Hi ${contactName},
+
+This is to inform you that you have been removed as an emergency contact for a person monitored by ${user.name} on aok.
+
+Reference ID: ${user.referenceId}
+
+You will no longer receive any check-in notifications or alerts for this person.
+
+Thank you for your support.
+
+- The aok Team`
+    : `Hi ${contactName},
+
+This is to inform you that you have been removed as an emergency contact for ${user.name} on aok.
+
+You will no longer receive any check-in notifications or alerts for ${user.name}.
+
+Thank you for being there.
+
+- The aok Team`;
+
+  try {
+    await sendEmail(contact.email, emailSubject, emailBody);
+    console.log(`[NOTIFICATION] Contact removed email sent to ${contact.email} for contact ${contactName}`);
+    return true;
+  } catch (error) {
+    console.error(`[NOTIFICATION] Failed to send contact removed email to ${contact.email}:`, error);
+    return false;
+  }
+}
+
 export async function sendMissedCheckInAlert(
   contacts: Contact[],
   user: User
