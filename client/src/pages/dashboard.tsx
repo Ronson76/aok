@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon, Users, Moon, Sun, Lock } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon, Users, Moon, Sun, Lock, Eye, EyeOff } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
@@ -250,6 +250,7 @@ export default function Dashboard() {
   // Red alert mode state
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
   const [deactivatePassword, setDeactivatePassword] = useState("");
+  const [showDeactivatePassword, setShowDeactivatePassword] = useState(false);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
 
@@ -451,6 +452,7 @@ export default function Dashboard() {
     onSuccess: () => {
       setShowDeactivateDialog(false);
       setDeactivatePassword("");
+      setShowDeactivatePassword(false);
       queryClient.invalidateQueries({ queryKey: ["/api/emergency/status"] });
       toast({
         title: "Red Alert Mode Deactivated",
@@ -750,19 +752,35 @@ export default function Dashboard() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="deactivate-password">Password</Label>
-                <Input
-                  id="deactivate-password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={deactivatePassword}
-                  onChange={(e) => setDeactivatePassword(e.target.value)}
-                  autoComplete="off"
-                  data-testid="input-deactivate-password"
-                />
+                <div className="relative">
+                  <Input
+                    id="deactivate-password"
+                    type={showDeactivatePassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={deactivatePassword}
+                    onChange={(e) => setDeactivatePassword(e.target.value)}
+                    autoComplete="off"
+                    data-testid="input-deactivate-password"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowDeactivatePassword(!showDeactivatePassword)}
+                    data-testid="button-toggle-deactivate-password"
+                  >
+                    {showDeactivatePassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={() => { setShowDeactivateDialog(false); setDeactivatePassword(""); }}>
+              <Button variant="outline" onClick={() => { setShowDeactivateDialog(false); setDeactivatePassword(""); setShowDeactivatePassword(false); }}>
                 Cancel
               </Button>
               <Button 
@@ -1048,19 +1066,35 @@ export default function Dashboard() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="deactivate-password-main">Password</Label>
-              <Input
-                id="deactivate-password-main"
-                type="password"
-                placeholder="Enter your password"
-                value={deactivatePassword}
-                onChange={(e) => setDeactivatePassword(e.target.value)}
-                autoComplete="off"
-                data-testid="input-deactivate-password"
-              />
+              <div className="relative">
+                <Input
+                  id="deactivate-password-main"
+                  type={showDeactivatePassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={deactivatePassword}
+                  onChange={(e) => setDeactivatePassword(e.target.value)}
+                  autoComplete="off"
+                  data-testid="input-deactivate-password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowDeactivatePassword(!showDeactivatePassword)}
+                  data-testid="button-toggle-deactivate-password-main"
+                >
+                  {showDeactivatePassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => { setShowDeactivateDialog(false); setDeactivatePassword(""); }}>
+            <Button variant="outline" onClick={() => { setShowDeactivateDialog(false); setDeactivatePassword(""); setShowDeactivatePassword(false); }}>
               Cancel
             </Button>
             <Button 
