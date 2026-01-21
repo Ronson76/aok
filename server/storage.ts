@@ -318,10 +318,10 @@ class DatabaseStorage implements IStorage {
   }
 
   async confirmContact(contactId: string): Promise<Contact | undefined> {
+    // Keep the token so subsequent clicks can still find the contact and show "already confirmed"
     const result = await getDb().update(contacts)
       .set({ 
         confirmedAt: new Date(),
-        confirmationToken: null,
         confirmationExpiry: null,
       })
       .where(eq(contacts.id, contactId))
