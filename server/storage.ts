@@ -290,6 +290,15 @@ class DatabaseStorage implements IStorage {
     const tokenHash = createHash("sha256").update(rawToken).digest("hex");
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     
+    console.log(`[STORAGE] Creating contact for user ${userId}:`, {
+      name: contact.name,
+      email: contact.email,
+      shouldBePrimary,
+      hasToken: !!tokenHash,
+      tokenHash: tokenHash.substring(0, 10) + '...',
+      expiresAt: expiresAt.toISOString()
+    });
+    
     const result = await getDb().insert(contacts).values({
       ...contact,
       userId,
@@ -298,6 +307,12 @@ class DatabaseStorage implements IStorage {
       confirmationExpiry: expiresAt,
       confirmedAt: null,
     }).returning();
+    
+    console.log(`[STORAGE] Contact created:`, {
+      id: result[0].id,
+      hasStoredToken: !!result[0].confirmationToken,
+      storedExpiry: result[0].confirmationExpiry
+    });
     
     return { contact: result[0], confirmationToken: rawToken };
   }
