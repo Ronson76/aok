@@ -16,6 +16,11 @@ import type { Settings as SettingsType } from "@shared/schema";
 import { useState, useEffect, useCallback } from "react";
 
 function formatInterval(hours: number): string {
+  // Handle minutes for testing (values less than 1 hour)
+  if (hours < 1) {
+    const minutes = Math.round(hours * 60);
+    return `${minutes} min${minutes !== 1 ? 's' : ''}`;
+  }
   if (hours === 1) return "1 hour";
   if (hours < 24) return `${hours} hours`;
   if (hours === 24) return "1 day";
@@ -449,7 +454,7 @@ export default function Settings() {
 
           <div className="border-t pt-4 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">1 hour</span>
+              <span className="text-sm text-muted-foreground">2 mins</span>
               <span className="text-lg font-semibold text-primary">
                 {formatInterval(localInterval)}
               </span>
@@ -459,9 +464,9 @@ export default function Settings() {
               value={[localInterval]}
               onValueChange={handleIntervalChange}
               onValueCommit={handleIntervalCommit}
-              min={1}
+              min={0.033}
               max={48}
-              step={1}
+              step={0.033}
               className="w-full"
               data-testid="slider-interval"
             />
