@@ -180,7 +180,7 @@ export type Settings = {
 
 export const updateSettingsSchema = z.object({
   frequency: z.enum(checkInFrequencies).optional(),
-  intervalHours: z.number().min(1).max(48).optional(),
+  intervalHours: z.number().min(0.08).max(48).optional(), // Min 0.08 (~5 mins) for testing
   scheduleStartTime: z.string().optional(),
   alertsEnabled: z.boolean().optional(),
   pushStatus: z.enum(pushStatuses).optional(),
