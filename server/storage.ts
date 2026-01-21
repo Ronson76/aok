@@ -490,7 +490,7 @@ class DatabaseStorage implements IStorage {
     const row = result[0];
     return {
       frequency: row.frequency as "daily" | "every_two_days",
-      intervalHours: parseInt(row.intervalHours) || 24,
+      intervalHours: parseFloat(row.intervalHours) || 24,
       scheduleStartTime: row.scheduleStartTime?.toISOString() || null,
       lastCheckIn: row.lastCheckIn?.toISOString() || null,
       nextCheckInDue: row.nextCheckInDue?.toISOString() || null,
