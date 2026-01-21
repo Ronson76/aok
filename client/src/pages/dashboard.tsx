@@ -139,7 +139,7 @@ function clearLastAlarmedDueTime() {
   }
 }
 
-// Play loud alarm siren using the shared (unlocked) AudioContext
+// Play a pleasant chime notification sound
 function playAlarmBeep() {
   try {
     if (!sharedAudioContext) {
@@ -154,57 +154,31 @@ function playAlarmBeep() {
     const ctx = sharedAudioContext!;
     const startTime = ctx.currentTime;
     
-    // Create a loud, attention-grabbing siren sound
-    // Uses two oscillators for a richer, more alarming tone
-    const createSirenBurst = (delay: number, duration: number) => {
-      // Primary oscillator - siren sweep
-      const osc1 = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
+    // Create a pleasant chime sound - like a doorbell or notification
+    const playChime = (delay: number, frequency: number, duration: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
       
-      osc1.type = 'sawtooth'; // Harsh, attention-grabbing waveform
+      osc.connect(gain);
+      gain.connect(ctx.destination);
       
-      // Siren frequency sweep from 800Hz to 1200Hz
+      osc.type = 'sine'; // Smooth, pleasant tone
+      osc.frequency.value = frequency;
+      
       const t = startTime + delay;
-      osc1.frequency.setValueAtTime(800, t);
-      osc1.frequency.linearRampToValueAtTime(1200, t + duration * 0.5);
-      osc1.frequency.linearRampToValueAtTime(800, t + duration);
+      // Bell-like envelope: quick attack, gradual decay
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.5, t + 0.01); // Quick attack
+      gain.gain.exponentialRampToValueAtTime(0.01, t + duration); // Gradual decay
       
-      // Loud volume with quick attack
-      gain1.gain.setValueAtTime(0, t);
-      gain1.gain.linearRampToValueAtTime(0.7, t + 0.02); // Quick attack, LOUD
-      gain1.gain.setValueAtTime(0.7, t + duration - 0.05);
-      gain1.gain.linearRampToValueAtTime(0, t + duration);
-      
-      osc1.start(t);
-      osc1.stop(t + duration);
-      
-      // Secondary oscillator - adds harmonic for more urgency
-      const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-      
-      osc2.type = 'square'; // Adds harshness
-      osc2.frequency.setValueAtTime(600, t);
-      osc2.frequency.linearRampToValueAtTime(900, t + duration * 0.5);
-      osc2.frequency.linearRampToValueAtTime(600, t + duration);
-      
-      gain2.gain.setValueAtTime(0, t);
-      gain2.gain.linearRampToValueAtTime(0.4, t + 0.02);
-      gain2.gain.setValueAtTime(0.4, t + duration - 0.05);
-      gain2.gain.linearRampToValueAtTime(0, t + duration);
-      
-      osc2.start(t);
-      osc2.stop(t + duration);
+      osc.start(t);
+      osc.stop(t + duration);
     };
     
-    // Play 4 rapid siren bursts for maximum attention
-    createSirenBurst(0, 0.4);
-    createSirenBurst(0.45, 0.4);
-    createSirenBurst(0.9, 0.4);
-    createSirenBurst(1.35, 0.4);
+    // Play a pleasant 3-note ascending chime (C5 - E5 - G5)
+    playChime(0, 523, 0.4);      // C5
+    playChime(0.15, 659, 0.4);   // E5
+    playChime(0.30, 784, 0.6);   // G5 (longer for a nice finish)
     
   } catch (e) {
     console.error('[Audio] Failed to play alarm:', e);
@@ -280,6 +254,7 @@ export default function Dashboard() {
   const [isLocallyOverdue, setIsLocallyOverdue] = useState(false);
   const alarmIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasPlayedInitialAlarm = useRef(false);
+  const alarmRepeatCount = useRef(0); // Track how many times alarm has played
   
   // Red alert mode state
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
@@ -391,10 +366,20 @@ export default function Dashboard() {
         hasPlayedInitialAlarm.current = true;
       }
       
-      // Set up repeating alarm every 2 minutes (this continues regardless)
+      // Set up repeating alarm every 10 seconds, maximum 4 times total
+      alarmRepeatCount.current = 1; // Already played once above
       alarmIntervalRef.current = setInterval(() => {
-        playAlarmBeep();
-      }, 2 * 60 * 1000); // 2 minutes
+        if (alarmRepeatCount.current < 4) {
+          playAlarmBeep();
+          alarmRepeatCount.current += 1;
+        } else {
+          // Stop after 4 plays
+          if (alarmIntervalRef.current) {
+            clearInterval(alarmIntervalRef.current);
+            alarmIntervalRef.current = null;
+          }
+        }
+      }, 10 * 1000); // 10 seconds
       
       // Update app badge to show "1"
       updateAppBadge(1);
@@ -406,6 +391,7 @@ export default function Dashboard() {
         alarmIntervalRef.current = null;
       }
       hasPlayedInitialAlarm.current = false;
+      alarmRepeatCount.current = 0; // Reset counter
       
       // Clear the persisted alarm state when no longer overdue (new check-in period started)
       clearLastAlarmedDueTime();
