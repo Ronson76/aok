@@ -397,11 +397,17 @@ async function sendEmail(to: string, subject: string, body: string, html?: strin
       subject: string;
       text: string;
       html?: string;
+      headers?: Record<string, string>;
     } = {
       from: fromEmail || 'aok <support@aok.care>',
       to: [to],
       subject: subject,
       text: body,
+      headers: {
+        'X-Priority': '1',
+        'X-MSMail-Priority': 'High',
+        'Importance': 'high'
+      }
     };
     
     if (html) {
