@@ -21,8 +21,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_animation.mp4";
-import alertsVideo from "@assets/generated_videos/multi-channel_alert_notification_sequence.mp4";
-import locationVideo from "@assets/generated_videos/gps_location_tracking_visualization.mp4";
+import alertsVideo from "@assets/generated_videos/english_sms_alert_notification.mp4";
+import locationVideo from "@assets/generated_videos/uk_streets_gps_map_tracking.mp4";
 
 export default function Landing() {
   const { toast } = useToast();
