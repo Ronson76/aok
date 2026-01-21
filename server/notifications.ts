@@ -597,18 +597,19 @@ Thank you,
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : "Failed to send email";
     console.log(`[NOTIFICATION] Confirmation email failed for ${contact.email}: ${errorMsg}`);
-  }
-  
-  // Send SMS with confirmation link if contact has a phone number
-  if (contact.phone && contact.phoneType !== "landline") {
-    const smsBody = isOrganization
-      ? `aok: ${user.name} wants to add you as an emergency contact for Reference ${user.referenceId}. Accept: ${confirmUrl} or Decline: ${declineUrl} (Expires in 10 mins)`
-      : `aok: ${user.name} wants to add you as their emergency contact. Accept: ${confirmUrl} or Decline: ${declineUrl} (Expires in 10 mins)`;
     
-    const smsResult = await sendSMS(contact.phone, smsBody);
-    smsSent = smsResult.success;
-    if (smsResult.success) {
-      console.log(`[NOTIFICATION] Confirmation SMS with links sent to ${contact.phone} for contact ${contactName}`);
+    // SMS fallback only if email fails and contact has a mobile number
+    if (contact.phone && contact.phoneType !== "landline") {
+      console.log(`[NOTIFICATION] Attempting SMS fallback for ${contactName}`);
+      const smsBody = isOrganization
+        ? `aok: ${user.name} wants to add you as an emergency contact for Reference ${user.referenceId}. Accept: ${confirmUrl} or Decline: ${declineUrl} (Expires in 10 mins)`
+        : `aok: ${user.name} wants to add you as their emergency contact. Accept: ${confirmUrl} or Decline: ${declineUrl} (Expires in 10 mins)`;
+      
+      const smsResult = await sendSMS(contact.phone, smsBody);
+      smsSent = smsResult.success;
+      if (smsResult.success) {
+        console.log(`[NOTIFICATION] Confirmation SMS fallback sent to ${contact.phone} for contact ${contactName}`);
+      }
     }
   }
   
