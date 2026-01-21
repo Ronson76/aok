@@ -402,12 +402,7 @@ async function sendEmail(to: string, subject: string, body: string, html?: strin
       from: fromEmail || 'aok <support@aok.care>',
       to: [to],
       subject: subject,
-      text: body,
-      headers: {
-        'X-Priority': '1',
-        'X-MSMail-Priority': 'High',
-        'Importance': 'high'
-      }
+      text: body
     };
     
     if (html) {
