@@ -34,6 +34,7 @@ async function getWhat3WordsAddress(lat: number, lng: number): Promise<string | 
 interface NotificationResult {
   email: { sent: boolean; error?: string };
   sms: { sent: boolean; error?: string };
+  whatsapp: { sent: boolean; error?: string };
   voiceCall: { sent: boolean; error?: string };
 }
 
@@ -154,6 +155,40 @@ async function sendSMS(to: string, body: string): Promise<{ success: boolean; er
     return { success: true };
   } catch (error: any) {
     console.error(`[SMS] Error sending to ${to}:`, error);
+    return { 
+      success: false, 
+      error: error.message || 'Unknown error' 
+    };
+  }
+}
+
+async function sendWhatsApp(to: string, body: string): Promise<{ success: boolean; error?: string }> {
+  const credentials = await getTwilioCredentials();
+  
+  if (!credentials) {
+    console.log(`[WHATSAPP] Twilio not configured. Would send to ${to}: ${body.substring(0, 50)}...`);
+    return { success: false, error: "Twilio not configured" };
+  }
+
+  try {
+    const client = twilio(credentials.apiKey, credentials.apiKeySecret, {
+      accountSid: credentials.accountSid
+    });
+    
+    // WhatsApp messages use whatsapp: prefix
+    const whatsappTo = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`;
+    const whatsappFrom = `whatsapp:${credentials.phoneNumber}`;
+    
+    const message = await client.messages.create({
+      to: whatsappTo,
+      from: whatsappFrom,
+      body: body,
+    });
+
+    console.log(`[WHATSAPP] Successfully sent WhatsApp to ${to}, SID: ${message.sid}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error(`[WHATSAPP] Error sending to ${to}:`, error);
     return { 
       success: false, 
       error: error.message || 'Unknown error' 
@@ -284,6 +319,7 @@ export async function sendContactAddedNotification(
   const result: NotificationResult = {
     email: { sent: false },
     sms: { sent: false },
+    whatsapp: { sent: false },
     voiceCall: { sent: false },
   };
 
@@ -335,6 +371,13 @@ Thank you for being there for ${user.name}.
     if (!smsResult.success) {
       result.sms.error = smsResult.error || "Failed to send SMS";
     }
+    
+    // Also send WhatsApp message
+    const whatsappResult = await sendWhatsApp(contact.phone, smsBody);
+    result.whatsapp.sent = whatsappResult.success;
+    if (!whatsappResult.success) {
+      result.whatsapp.error = whatsappResult.error || "Failed to send WhatsApp";
+    }
   }
 
   return result;
@@ -343,7 +386,7 @@ Thank you for being there for ${user.name}.
 export async function sendMissedCheckInAlert(
   contacts: Contact[],
   user: User
-): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number }> {
+): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number; whatsappSent: number; whatsappFailed: number }> {
   const isOrganization = user.accountType === "organization";
   const identifier = isOrganization 
     ? `Reference ID: ${user.referenceId}` 
@@ -356,6 +399,8 @@ export async function sendMissedCheckInAlert(
   let emailsFailed = 0;
   let smsSent = 0;
   let smsFailed = 0;
+  let whatsappSent = 0;
+  let whatsappFailed = 0;
   
   for (const contact of contacts) {
     // Only alert confirmed contacts
@@ -399,7 +444,7 @@ Please try to reach out to ensure their safety.
       console.error(`[ALERT] Failed to send email to ${contact.email}:`, error);
     }
     
-    // Send SMS to contacts with mobile phones
+    // Send SMS and WhatsApp to contacts with mobile phones
     if (contact.phone && contact.phoneType !== 'landline') {
       const smsBody = `ALERT from aok: ${identifier} has missed their scheduled check-in. Please try to reach out to ensure their safety.`;
       
@@ -411,10 +456,20 @@ Please try to reach out to ensure their safety.
         smsFailed++;
         console.log(`[ALERT] SMS failed for ${contact.name}: ${smsResult.error}`);
       }
+      
+      // Also send WhatsApp
+      const whatsappResult = await sendWhatsApp(contact.phone, smsBody);
+      if (whatsappResult.success) {
+        whatsappSent++;
+        console.log(`[ALERT] WhatsApp sent to ${contact.name} (${contact.phone})`);
+      } else {
+        whatsappFailed++;
+        console.log(`[ALERT] WhatsApp failed for ${contact.name}: ${whatsappResult.error}`);
+      }
     }
   }
 
-  return { emailsSent, emailsFailed, smsSent, smsFailed };
+  return { emailsSent, emailsFailed, smsSent, smsFailed, whatsappSent, whatsappFailed };
 }
 
 export async function sendSuccessfulCheckInNotification(
@@ -516,7 +571,7 @@ export async function sendEmergencyAlert(
   user: User,
   gpsLocation?: { latitude: number; longitude: number },
   isLocationUpdate: boolean = false
-): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number }> {
+): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number; whatsappSent: number; whatsappFailed: number }> {
   const isOrganization = user.accountType === "organization";
   const identifier = isOrganization 
     ? `Reference ID: ${user.referenceId}` 
@@ -529,6 +584,8 @@ export async function sendEmergencyAlert(
   let emailsFailed = 0;
   let smsSent = 0;
   let smsFailed = 0;
+  let whatsappSent = 0;
+  let whatsappFailed = 0;
   
   let what3wordsAddress: string | null = null;
   if (gpsLocation) {
@@ -629,10 +686,20 @@ If you cannot reach them, consider contacting local emergency services.
         smsFailed++;
         console.error(`[EMERGENCY ALERT] Failed to send SMS to ${contact.phone}:`, smsResult.error);
       }
+      
+      // Also send WhatsApp
+      const whatsappResult = await sendWhatsApp(contact.phone, smsBody);
+      if (whatsappResult.success) {
+        whatsappSent++;
+        console.log(`[EMERGENCY ALERT] WhatsApp sent to ${contact.name} (${contact.phone})`);
+      } else {
+        whatsappFailed++;
+        console.error(`[EMERGENCY ALERT] Failed to send WhatsApp to ${contact.phone}:`, whatsappResult.error);
+      }
     }
   }
 
-  return { emailsSent, emailsFailed, smsSent, smsFailed };
+  return { emailsSent, emailsFailed, smsSent, smsFailed, whatsappSent, whatsappFailed };
 }
 
 export async function sendPasswordResetEmail(
