@@ -20,6 +20,10 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_animation.mp4";
+import alertsVideo from "@assets/generated_videos/multi-channel_alert_notification_sequence.mp4";
+import locationVideo from "@assets/generated_videos/gps_location_tracking_visualization.mp4";
+
 export default function Landing() {
   const { toast } = useToast();
 
@@ -351,7 +355,65 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="video" className="py-20 px-4 bg-muted/30">
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Key Features in Motion</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              See how aok keeps you safe with these core features.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-card border shadow-xl mb-4 max-w-[240px] mx-auto">
+                <video 
+                  src={checkInVideo} 
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <h4 className="font-semibold mb-1">Easy Check-Ins</h4>
+              <p className="text-sm text-muted-foreground">One tap to confirm you're safe</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-card border shadow-xl mb-4 max-w-[240px] mx-auto">
+                <video 
+                  src={alertsVideo} 
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <h4 className="font-semibold mb-1">Multi-Channel Alerts</h4>
+              <p className="text-sm text-muted-foreground">Email, SMS, and phone calls</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-card border shadow-xl mb-4 max-w-[240px] mx-auto">
+                <video 
+                  src={locationVideo} 
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <h4 className="font-semibold mb-1">GPS Location Sharing</h4>
+              <p className="text-sm text-muted-foreground">Precise what3words addresses</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="video" className="py-20 px-4">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">See aok in Action</h2>
