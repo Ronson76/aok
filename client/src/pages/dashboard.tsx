@@ -139,7 +139,7 @@ function clearLastAlarmedDueTime() {
   }
 }
 
-// Play alarm beep using the shared (unlocked) AudioContext
+// Play loud alarm siren using the shared (unlocked) AudioContext
 function playAlarmBeep() {
   try {
     if (!sharedAudioContext) {
@@ -151,27 +151,61 @@ function playAlarmBeep() {
       sharedAudioContext.resume();
     }
     
-    const playBeep = (delay: number = 0) => {
-      const oscillator = sharedAudioContext!.createOscillator();
-      const gainNode = sharedAudioContext!.createGain();
+    const ctx = sharedAudioContext!;
+    const startTime = ctx.currentTime;
+    
+    // Create a loud, attention-grabbing siren sound
+    // Uses two oscillators for a richer, more alarming tone
+    const createSirenBurst = (delay: number, duration: number) => {
+      // Primary oscillator - siren sweep
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
       
-      oscillator.connect(gainNode);
-      gainNode.connect(sharedAudioContext!.destination);
+      osc1.type = 'sawtooth'; // Harsh, attention-grabbing waveform
       
-      oscillator.frequency.value = 880; // A5 note - attention-grabbing
-      oscillator.type = 'square';
+      // Siren frequency sweep from 800Hz to 1200Hz
+      const t = startTime + delay;
+      osc1.frequency.setValueAtTime(800, t);
+      osc1.frequency.linearRampToValueAtTime(1200, t + duration * 0.5);
+      osc1.frequency.linearRampToValueAtTime(800, t + duration);
       
-      const startTime = sharedAudioContext!.currentTime + delay;
-      gainNode.gain.setValueAtTime(0.3, startTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.5);
+      // Loud volume with quick attack
+      gain1.gain.setValueAtTime(0, t);
+      gain1.gain.linearRampToValueAtTime(0.7, t + 0.02); // Quick attack, LOUD
+      gain1.gain.setValueAtTime(0.7, t + duration - 0.05);
+      gain1.gain.linearRampToValueAtTime(0, t + duration);
       
-      oscillator.start(startTime);
-      oscillator.stop(startTime + 0.5);
+      osc1.start(t);
+      osc1.stop(t + duration);
+      
+      // Secondary oscillator - adds harmonic for more urgency
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      
+      osc2.type = 'square'; // Adds harshness
+      osc2.frequency.setValueAtTime(600, t);
+      osc2.frequency.linearRampToValueAtTime(900, t + duration * 0.5);
+      osc2.frequency.linearRampToValueAtTime(600, t + duration);
+      
+      gain2.gain.setValueAtTime(0, t);
+      gain2.gain.linearRampToValueAtTime(0.4, t + 0.02);
+      gain2.gain.setValueAtTime(0.4, t + duration - 0.05);
+      gain2.gain.linearRampToValueAtTime(0, t + duration);
+      
+      osc2.start(t);
+      osc2.stop(t + duration);
     };
     
-    // Play two beeps
-    playBeep(0);
-    playBeep(0.25);
+    // Play 4 rapid siren bursts for maximum attention
+    createSirenBurst(0, 0.4);
+    createSirenBurst(0.45, 0.4);
+    createSirenBurst(0.9, 0.4);
+    createSirenBurst(1.35, 0.4);
+    
   } catch (e) {
     console.error('[Audio] Failed to play alarm:', e);
   }
