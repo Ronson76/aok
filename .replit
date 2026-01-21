@@ -48,3 +48,4 @@ integrations = ["resend:1.0.0", "twilio:1.0.0", "sendgrid:1.0.0"]
 RESEND_API_KEY = "re_CvWGZtpF_HwRSetj8RaLWj9vzbv5hLBsH"
 VAPID_PUBLIC_KEY = "BPGwQLVVht7e8JtDeceUQcbziC8gHd8CWwnh0jyrI-_KKhdoqg8QtvDNrJjSdpVB3uIIYkuJiA4aGFSzVIIbdJY"
 VAPID_PRIVATE_KEY = "GrzjTQqk6ispv_pgiUZScEmU-XE9F9qfa5f665gaJzE"
+SENDGRID_FROM_EMAIL = "noreply@aok.care"
