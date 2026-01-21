@@ -254,7 +254,6 @@ export default function Dashboard() {
   const [isLocallyOverdue, setIsLocallyOverdue] = useState(false);
   const alarmIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasPlayedInitialAlarm = useRef(false);
-  const alarmRepeatCount = useRef(0); // Track how many times alarm has played
   
   // Red alert mode state
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
@@ -366,19 +365,9 @@ export default function Dashboard() {
         hasPlayedInitialAlarm.current = true;
       }
       
-      // Set up repeating alarm every 10 seconds, maximum 4 times total
-      alarmRepeatCount.current = 1; // Already played once above
+      // Set up repeating alarm every 10 seconds until user checks in
       alarmIntervalRef.current = setInterval(() => {
-        if (alarmRepeatCount.current < 4) {
-          playAlarmBeep();
-          alarmRepeatCount.current += 1;
-        } else {
-          // Stop after 4 plays
-          if (alarmIntervalRef.current) {
-            clearInterval(alarmIntervalRef.current);
-            alarmIntervalRef.current = null;
-          }
-        }
+        playAlarmBeep();
       }, 10 * 1000); // 10 seconds
       
       // Update app badge to show "1"
@@ -391,7 +380,6 @@ export default function Dashboard() {
         alarmIntervalRef.current = null;
       }
       hasPlayedInitialAlarm.current = false;
-      alarmRepeatCount.current = 0; // Reset counter
       
       // Clear the persisted alarm state when no longer overdue (new check-in period started)
       clearLastAlarmedDueTime();
