@@ -95,6 +95,16 @@ async function getResendClient() {
 
 // SendGrid integration
 async function getSendGridCredentials() {
+  // First check for direct environment variable (preferred)
+  const envApiKey = process.env.SENDGRID_API_KEY;
+  if (envApiKey && envApiKey.startsWith('SG.')) {
+    console.log('[SENDGRID] Using SENDGRID_API_KEY from environment');
+    // Use a default from email or get from env
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@aok.care';
+    return { apiKey: envApiKey, fromEmail };
+  }
+
+  // Fallback to Replit connector
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY 
     ? 'repl ' + process.env.REPL_IDENTITY 
@@ -102,7 +112,7 @@ async function getSendGridCredentials() {
     ? 'depl ' + process.env.WEB_REPL_RENEWAL 
     : null;
 
-  console.log(`[SENDGRID] Checking credentials - hostname: ${hostname ? 'present' : 'missing'}, token: ${xReplitToken ? 'present' : 'missing'}`);
+  console.log(`[SENDGRID] Checking connector credentials - hostname: ${hostname ? 'present' : 'missing'}, token: ${xReplitToken ? 'present' : 'missing'}`);
 
   if (!xReplitToken || !hostname) {
     console.log('[SENDGRID] Missing hostname or token, returning null');
@@ -120,14 +130,20 @@ async function getSendGridCredentials() {
       }
     );
     const data = await response.json();
-    console.log('[SENDGRID] API response:', JSON.stringify(data, null, 2));
     const settings = data.items?.[0];
 
     if (!settings || !settings.settings.api_key || !settings.settings.from_email) {
-      console.log('[SENDGRID] Missing api_key or from_email in response');
+      console.log('[SENDGRID] Missing api_key or from_email in connector response');
       return null;
     }
-    console.log(`[SENDGRID] Got credentials, from_email: ${settings.settings.from_email}`);
+    
+    // Validate the API key format
+    if (!settings.settings.api_key.startsWith('SG.')) {
+      console.log('[SENDGRID] Invalid API key format in connector (should start with SG.)');
+      return null;
+    }
+    
+    console.log(`[SENDGRID] Got credentials from connector, from_email: ${settings.settings.from_email}`);
     return { apiKey: settings.settings.api_key, fromEmail: settings.settings.from_email };
   } catch (error) {
     console.error('[SENDGRID] Failed to get credentials:', error);
