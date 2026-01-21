@@ -392,49 +392,9 @@ async function sendEmail(to: string, subject: string, body: string, html?: strin
   if (gmailSent) {
     return;
   }
-  console.log(`[EMAIL] Gmail not available, trying Outlook`);
+  console.log(`[EMAIL] Gmail not available, trying Resend`);
   
-  // Try Outlook second (Microsoft's own servers - good for Hotmail recipients)
-  // Note: Temporarily disabled - emails not delivering despite API success
-  // const outlookSent = await sendEmailViaOutlook(to, subject, body, html);
-  // if (outlookSent) {
-  //   return;
-  // }
-  console.log(`[EMAIL] Skipping Outlook (temporarily disabled), trying SendGrid`);
-  
-  // Try SendGrid third
-  const sendGridClient = await getSendGridClient();
-  if (sendGridClient) {
-    console.log(`[EMAIL] SendGrid client available, from: ${sendGridClient.fromEmail}`);
-    try {
-      const msg: {
-        to: string;
-        from: string;
-        subject: string;
-        text: string;
-        html?: string;
-      } = {
-        to: to,
-        from: sendGridClient.fromEmail,
-        subject: subject,
-        text: body,
-      };
-      
-      if (html) {
-        msg.html = html;
-      }
-      
-      const result = await sendGridClient.client.send(msg);
-      console.log(`[EMAIL] Successfully sent email via SendGrid to ${to}, status: ${result?.[0]?.statusCode}`);
-      return;
-    } catch (error: any) {
-      console.error(`[EMAIL] SendGrid failed for ${to}, trying Resend fallback:`, error?.response?.body || error?.message || error);
-    }
-  } else {
-    console.log(`[EMAIL] SendGrid client not available, will try Resend`);
-  }
-  
-  // Fallback to Resend
+  // Try Resend second (more reliable delivery)
   try {
     const { client, fromEmail } = await getResendClient();
     
