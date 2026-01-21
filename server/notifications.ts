@@ -2,6 +2,120 @@ import type { Contact, User } from "@shared/schema";
 import { Resend } from 'resend';
 import sgMail from '@sendgrid/mail';
 import twilio from 'twilio';
+import { google } from 'googleapis';
+
+// Gmail integration (Replit connector)
+let gmailConnectionSettings: any;
+
+async function getGmailAccessToken(): Promise<string | null> {
+  try {
+    if (gmailConnectionSettings && gmailConnectionSettings.settings.expires_at && 
+        new Date(gmailConnectionSettings.settings.expires_at).getTime() > Date.now()) {
+      return gmailConnectionSettings.settings.access_token;
+    }
+    
+    const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+    const xReplitToken = process.env.REPL_IDENTITY 
+      ? 'repl ' + process.env.REPL_IDENTITY 
+      : process.env.WEB_REPL_RENEWAL 
+      ? 'depl ' + process.env.WEB_REPL_RENEWAL 
+      : null;
+
+    if (!xReplitToken || !hostname) {
+      console.log('[GMAIL] Missing hostname or token');
+      return null;
+    }
+
+    const response = await fetch(
+      'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=google-mail',
+      {
+        headers: {
+          'Accept': 'application/json',
+          'X_REPLIT_TOKEN': xReplitToken
+        }
+      }
+    );
+    
+    const data = await response.json();
+    gmailConnectionSettings = data.items?.[0];
+
+    const accessToken = gmailConnectionSettings?.settings?.access_token || 
+                        gmailConnectionSettings?.settings?.oauth?.credentials?.access_token;
+
+    if (!gmailConnectionSettings || !accessToken) {
+      console.log('[GMAIL] Not connected or no access token');
+      return null;
+    }
+    
+    return accessToken;
+  } catch (error) {
+    console.error('[GMAIL] Error getting access token:', error);
+    return null;
+  }
+}
+
+async function getGmailClient() {
+  const accessToken = await getGmailAccessToken();
+  if (!accessToken) return null;
+
+  const oauth2Client = new google.auth.OAuth2();
+  oauth2Client.setCredentials({ access_token: accessToken });
+
+  return google.gmail({ version: 'v1', auth: oauth2Client });
+}
+
+async function sendEmailViaGmail(to: string, subject: string, body: string, html?: string): Promise<boolean> {
+  try {
+    const gmail = await getGmailClient();
+    if (!gmail) {
+      console.log('[GMAIL] Client not available');
+      return false;
+    }
+
+    // Get user's email address for the From field
+    const profile = await gmail.users.getProfile({ userId: 'me' });
+    const fromEmail = profile.data.emailAddress;
+    
+    // Create email in RFC 2822 format
+    const emailContent = html 
+      ? [
+          `From: ${fromEmail}`,
+          `To: ${to}`,
+          `Subject: ${subject}`,
+          'MIME-Version: 1.0',
+          'Content-Type: text/html; charset=utf-8',
+          '',
+          html
+        ].join('\r\n')
+      : [
+          `From: ${fromEmail}`,
+          `To: ${to}`,
+          `Subject: ${subject}`,
+          '',
+          body
+        ].join('\r\n');
+
+    // Base64 encode the email
+    const encodedMessage = Buffer.from(emailContent)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: {
+        raw: encodedMessage
+      }
+    });
+
+    console.log(`[GMAIL] Successfully sent email to ${to}`);
+    return true;
+  } catch (error: any) {
+    console.error('[GMAIL] Failed to send email:', error?.message || error);
+    return false;
+  }
+}
 
 async function getWhat3WordsAddress(lat: number, lng: number): Promise<string | null> {
   const apiKey = process.env.WHAT3WORDS_API_KEY;
@@ -175,7 +289,14 @@ function escapeHtml(text: string): string {
 async function sendEmail(to: string, subject: string, body: string, html?: string): Promise<void> {
   console.log(`[EMAIL] Attempting to send email to ${to}, subject: ${subject}`);
   
-  // Try SendGrid first
+  // Try Gmail first (primary)
+  const gmailSent = await sendEmailViaGmail(to, subject, body, html);
+  if (gmailSent) {
+    return;
+  }
+  console.log(`[EMAIL] Gmail not available, trying SendGrid`);
+  
+  // Try SendGrid second
   const sendGridClient = await getSendGridClient();
   if (sendGridClient) {
     console.log(`[EMAIL] SendGrid client available, from: ${sendGridClient.fromEmail}`);
