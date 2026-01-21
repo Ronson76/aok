@@ -684,6 +684,49 @@ Thank you for being there for ${user.name}.
   return result;
 }
 
+export async function sendPrimaryContactPromotionNotification(
+  contact: Contact,
+  user: User
+): Promise<boolean> {
+  const isOrganization = user.accountType === "organization";
+  const identifier = isOrganization 
+    ? `Reference ${user.referenceId}` 
+    : user.name;
+  const contactName = contact.name;
+
+  const emailSubject = `You are now the PRIMARY emergency contact on aok`;
+  const emailBody = isOrganization 
+    ? `Hi ${contactName},
+
+You have been promoted to PRIMARY emergency contact for a person monitored by ${user.name} on aok.
+
+Reference ID: ${user.referenceId}
+
+As the primary contact, you will receive a notification for every successful check-in, as well as any alerts if a check-in is missed.
+
+Thank you for your continued support.
+
+- The aok Team`
+    : `Hi ${contactName},
+
+You have been promoted to PRIMARY emergency contact for ${user.name} on aok.
+
+As the primary contact, you will receive a notification for every successful check-in, as well as any alerts if a check-in is missed.
+
+Thank you for being there for ${user.name}.
+
+- The aok Team`;
+
+  try {
+    await sendEmail(contact.email, emailSubject, emailBody);
+    console.log(`[NOTIFICATION] Primary promotion email sent to ${contact.email} for contact ${contactName}`);
+    return true;
+  } catch (error) {
+    console.error(`[NOTIFICATION] Failed to send primary promotion email to ${contact.email}:`, error);
+    return false;
+  }
+}
+
 export async function sendMissedCheckInAlert(
   contacts: Contact[],
   user: User
