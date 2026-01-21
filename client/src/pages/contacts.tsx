@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Mail, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall, ShieldAlert, Pencil, Clock } from "lucide-react";
+import { Plus, Mail, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall, ShieldAlert, Pencil, Clock, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -101,6 +101,7 @@ export default function Contacts() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showDeletePasswordDialog, setShowDeletePasswordDialog] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [selectedCountryCode, setSelectedCountryCode] = useState("+44");
   const [editSelectedCountryCode, setEditSelectedCountryCode] = useState("+44");
@@ -164,6 +165,7 @@ export default function Contacts() {
       setDeleteId(null);
       setShowDeletePasswordDialog(false);
       setDeletePassword("");
+      setShowDeletePassword(false);
       setPendingDeleteId(null);
       toast({
         title: "Contact removed",
@@ -180,6 +182,7 @@ export default function Contacts() {
       setDeleteId(null);
       setShowDeletePasswordDialog(false);
       setDeletePassword("");
+      setShowDeletePassword(false);
       setPendingDeleteId(null);
       toast({
         title: "Cannot remove contact",
@@ -596,6 +599,7 @@ export default function Contacts() {
         if (!open) {
           setShowDeletePasswordDialog(false);
           setDeletePassword("");
+          setShowDeletePassword(false);
           setPendingDeleteId(null);
         }
       }}>
@@ -612,20 +616,37 @@ export default function Contacts() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="delete-password">Password</Label>
-              <Input
-                id="delete-password"
-                type="password"
-                placeholder="Enter your password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && pendingDeleteId) {
-                    deleteMutation.mutate({ id: pendingDeleteId, password: deletePassword });
-                  }
-                }}
-                autoComplete="off"
-                data-testid="input-delete-password"
-              />
+              <div className="relative">
+                <Input
+                  id="delete-password"
+                  type={showDeletePassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && pendingDeleteId) {
+                      deleteMutation.mutate({ id: pendingDeleteId, password: deletePassword });
+                    }
+                  }}
+                  className="pr-10"
+                  autoComplete="off"
+                  data-testid="input-delete-password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowDeletePassword(!showDeletePassword)}
+                  data-testid="button-toggle-delete-password"
+                >
+                  {showDeletePassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
           <DialogFooter className="gap-2">
@@ -634,6 +655,7 @@ export default function Contacts() {
               onClick={() => {
                 setShowDeletePasswordDialog(false);
                 setDeletePassword("");
+                setShowDeletePassword(false);
                 setPendingDeleteId(null);
               }}
               data-testid="button-cancel-delete-password"
