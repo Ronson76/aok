@@ -15,18 +15,37 @@ import { useAuth } from "@/contexts/auth-context";
 import type { Settings as SettingsType } from "@shared/schema";
 import { useState, useEffect, useCallback } from "react";
 
+// Allowed interval values: 5 mins for testing, then 1-48 hours
+const INTERVAL_VALUES = [
+  0.0833, // 5 minutes (for testing)
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+  13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+  25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
+  37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48
+];
+
+// Convert hours value to slider index
+function hoursToIndex(hours: number): number {
+  const idx = INTERVAL_VALUES.findIndex(v => Math.abs(v - hours) < 0.01);
+  return idx >= 0 ? idx : 1; // Default to 1 hour if not found
+}
+
+// Convert slider index to hours value
+function indexToHours(index: number): number {
+  return INTERVAL_VALUES[Math.min(index, INTERVAL_VALUES.length - 1)];
+}
+
 function formatInterval(hours: number): string {
-  // Handle minutes for testing (values less than 1 hour)
-  if (hours < 1) {
-    const minutes = Math.round(hours * 60);
-    return `${minutes} min${minutes !== 1 ? 's' : ''}`;
+  // Handle 5 minutes for testing
+  if (hours < 0.1) {
+    return "5 mins";
   }
   if (hours === 1) return "1 hour";
-  if (hours < 24) return `${hours} hours`;
+  if (hours < 24) return `${Math.round(hours)} hours`;
   if (hours === 24) return "1 day";
   if (hours === 48) return "2 days";
   const days = Math.floor(hours / 24);
-  const remainingHours = hours % 24;
+  const remainingHours = Math.round(hours % 24);
   if (remainingHours === 0) return `${days} days`;
   return `${days} day${days > 1 ? 's' : ''} ${remainingHours} hour${remainingHours > 1 ? 's' : ''}`;
 }
@@ -285,15 +304,19 @@ export default function Settings() {
   };
 
   const handleIntervalChange = (value: number[]) => {
-    setLocalInterval(value[0]);
+    // Slider uses index, convert to hours for display
+    const hours = indexToHours(value[0]);
+    setLocalInterval(hours);
   };
 
   const handleIntervalCommit = (value: number[]) => {
+    // Slider uses index, convert to hours for API
+    const hours = indexToHours(value[0]);
     if (isOrganization) {
-      setPendingInterval(value[0]);
+      setPendingInterval(hours);
       setShowIntervalPasswordDialog(true);
     } else {
-      updateMutation.mutate({ intervalHours: value[0] });
+      updateMutation.mutate({ intervalHours: hours });
     }
   };
 
@@ -454,19 +477,19 @@ export default function Settings() {
 
           <div className="border-t pt-4 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">2 mins</span>
+              <span className="text-sm text-muted-foreground">5 mins</span>
               <span className="text-lg font-semibold text-primary">
                 {formatInterval(localInterval)}
               </span>
               <span className="text-sm text-muted-foreground">48 hours</span>
             </div>
             <Slider
-              value={[localInterval]}
+              value={[hoursToIndex(localInterval)]}
               onValueChange={handleIntervalChange}
               onValueCommit={handleIntervalCommit}
-              min={0.033}
-              max={48}
-              step={0.033}
+              min={0}
+              max={INTERVAL_VALUES.length - 1}
+              step={1}
               className="w-full"
               data-testid="slider-interval"
             />
