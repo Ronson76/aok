@@ -752,21 +752,30 @@ export async function registerRoutes(
   });
 
   app.post("/api/contacts", async (req, res) => {
+    console.log("[ROUTES] POST /api/contacts called for user:", req.userId);
     try {
       const parsed = insertContactSchema.safeParse(req.body);
       if (!parsed.success) {
+        console.log("[ROUTES] Validation failed:", parsed.error.message);
         return res.status(400).json({ error: parsed.error.message });
       }
+      console.log("[ROUTES] Creating contact:", parsed.data.name, parsed.data.email);
       const { contact, confirmationToken } = await storage.createContact(req.userId!, parsed.data);
+      console.log("[ROUTES] Contact created with ID:", contact.id, "Token length:", confirmationToken?.length);
       
       // Send confirmation email to the new contact (they must confirm before becoming active)
       const user = await storage.getUserById(req.userId!);
       if (user) {
         const baseUrl = `${req.protocol}://${req.get('host')}`;
+        console.log("[ROUTES] Sending confirmation email to:", contact.email, "baseUrl:", baseUrl);
         // Fire and forget - don't block the response
-        sendContactConfirmationEmail(contact, user, confirmationToken, baseUrl).catch(err => {
-          console.error("Failed to send contact confirmation email:", err);
+        sendContactConfirmationEmail(contact, user, confirmationToken, baseUrl).then(result => {
+          console.log("[ROUTES] Confirmation email result:", result);
+        }).catch(err => {
+          console.error("[ROUTES] Failed to send contact confirmation email:", err);
         });
+      } else {
+        console.log("[ROUTES] Could not find user for confirmation email");
       }
       
       // Return the contact with a pending status indication
@@ -776,6 +785,7 @@ export async function registerRoutes(
         message: "Confirmation email sent. Contact must confirm within 10 minutes."
       });
     } catch (error) {
+      console.error("[ROUTES] Error creating contact:", error);
       res.status(500).json({ error: "Failed to create contact" });
     }
   });
