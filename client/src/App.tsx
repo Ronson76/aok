@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/bottom-nav";
+import { SplashScreen } from "@/components/splash-screen";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
 import { Loader2, ShieldCheck, Volume2, MoreVertical, Mail, QrCode } from "lucide-react";
@@ -394,11 +395,21 @@ function Router() {
 }
 
 function App() {
+  const [showSplash, setShowSplash] = useState(() => {
+    return sessionStorage.getItem("splashShown") !== "true";
+  });
+
+  const handleSplashComplete = () => {
+    sessionStorage.setItem("splashShown", "true");
+    setShowSplash(false);
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
           <AuthProvider>
+            {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
             <Router />
             <Toaster />
           </AuthProvider>
