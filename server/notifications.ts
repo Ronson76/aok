@@ -394,12 +394,12 @@ async function sendEmail(to: string, subject: string, body: string, html?: strin
   }
   console.log(`[EMAIL] Gmail not available, trying Outlook`);
   
-  // Try Outlook second (Microsoft's own servers)
-  const outlookSent = await sendEmailViaOutlook(to, subject, body, html);
-  if (outlookSent) {
-    return;
-  }
-  console.log(`[EMAIL] Outlook not available, trying Resend`);
+  // Outlook disabled - API returns success but emails don't deliver
+  // const outlookSent = await sendEmailViaOutlook(to, subject, body, html);
+  // if (outlookSent) {
+  //   return;
+  // }
+  console.log(`[EMAIL] Skipping Outlook (not delivering), trying Resend`);
   
   // Try Resend third (reliable delivery)
   try {
