@@ -3,9 +3,13 @@ import { Resend } from 'resend';
 import sgMail from '@sendgrid/mail';
 import twilio from 'twilio';
 import { google } from 'googleapis';
+import { Client } from '@microsoft/microsoft-graph-client';
 
 // Gmail integration (Replit connector)
 let gmailConnectionSettings: any;
+
+// Outlook integration (Replit connector)
+let outlookConnectionSettings: any;
 
 async function getGmailAccessToken(): Promise<string | null> {
   try {
@@ -113,6 +117,97 @@ async function sendEmailViaGmail(to: string, subject: string, body: string, html
     return true;
   } catch (error: any) {
     console.error('[GMAIL] Failed to send email:', error?.message || error);
+    return false;
+  }
+}
+
+// Outlook integration functions
+async function getOutlookAccessToken(): Promise<string | null> {
+  try {
+    if (outlookConnectionSettings && outlookConnectionSettings.settings.expires_at && 
+        new Date(outlookConnectionSettings.settings.expires_at).getTime() > Date.now()) {
+      return outlookConnectionSettings.settings.access_token;
+    }
+    
+    const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+    const xReplitToken = process.env.REPL_IDENTITY 
+      ? 'repl ' + process.env.REPL_IDENTITY 
+      : process.env.WEB_REPL_RENEWAL 
+      ? 'depl ' + process.env.WEB_REPL_RENEWAL 
+      : null;
+
+    if (!xReplitToken || !hostname) {
+      console.log('[OUTLOOK] Missing hostname or token');
+      return null;
+    }
+
+    const response = await fetch(
+      'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=outlook',
+      {
+        headers: {
+          'Accept': 'application/json',
+          'X_REPLIT_TOKEN': xReplitToken
+        }
+      }
+    );
+    
+    const data = await response.json();
+    outlookConnectionSettings = data.items?.[0];
+
+    const accessToken = outlookConnectionSettings?.settings?.access_token || 
+                        outlookConnectionSettings?.settings?.oauth?.credentials?.access_token;
+
+    if (!outlookConnectionSettings || !accessToken) {
+      console.log('[OUTLOOK] Not connected or no access token');
+      return null;
+    }
+    
+    return accessToken;
+  } catch (error) {
+    console.error('[OUTLOOK] Error getting access token:', error);
+    return null;
+  }
+}
+
+async function getOutlookClient(): Promise<Client | null> {
+  const accessToken = await getOutlookAccessToken();
+  if (!accessToken) return null;
+
+  return Client.init({
+    authProvider: (done) => {
+      done(null, accessToken);
+    }
+  });
+}
+
+async function sendEmailViaOutlook(to: string, subject: string, body: string, html?: string): Promise<boolean> {
+  try {
+    const client = await getOutlookClient();
+    if (!client) {
+      console.log('[OUTLOOK] Client not available');
+      return false;
+    }
+
+    const message = {
+      subject: subject,
+      body: {
+        contentType: html ? 'HTML' : 'Text',
+        content: html || body
+      },
+      toRecipients: [
+        {
+          emailAddress: {
+            address: to
+          }
+        }
+      ]
+    };
+
+    await client.api('/me/sendMail').post({ message });
+    console.log(`[OUTLOOK] Successfully sent email to ${to}`);
+    return true;
+  } catch (error: any) {
+    console.error('[OUTLOOK] Failed to send email:', error?.message || error);
     return false;
   }
 }
@@ -294,9 +389,16 @@ async function sendEmail(to: string, subject: string, body: string, html?: strin
   if (gmailSent) {
     return;
   }
-  console.log(`[EMAIL] Gmail not available, trying SendGrid`);
+  console.log(`[EMAIL] Gmail not available, trying Outlook`);
   
-  // Try SendGrid second
+  // Try Outlook second (Microsoft's own servers - good for Hotmail recipients)
+  const outlookSent = await sendEmailViaOutlook(to, subject, body, html);
+  if (outlookSent) {
+    return;
+  }
+  console.log(`[EMAIL] Outlook not available, trying SendGrid`);
+  
+  // Try SendGrid third
   const sendGridClient = await getSendGridClient();
   if (sendGridClient) {
     console.log(`[EMAIL] SendGrid client available, from: ${sendGridClient.fromEmail}`);
