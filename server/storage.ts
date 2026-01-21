@@ -89,9 +89,20 @@ export interface IStorage {
 
   // Push subscriptions
   getPushSubscriptions(userId: string): Promise<PushSubscription[]>;
+  getAllPushSubscriptions(): Promise<PushSubscription[]>;
   createPushSubscription(userId: string, subscription: InsertPushSubscription): Promise<PushSubscription>;
   deletePushSubscription(userId: string, endpoint: string): Promise<boolean>;
   deleteAllPushSubscriptions(userId: string): Promise<void>;
+  
+  // Get overdue users with push subscriptions for server-side notifications
+  getOverdueUsersWithPushSubscriptions(): Promise<Array<{
+    userId: string;
+    userName: string;
+    subscriptions: Array<{ endpoint: string; p256dh: string; auth: string }>;
+    nextCheckInDue: Date;
+    lastPushSentAt: Date | null;
+  }>>;
+  updateLastPushSentAt(userId: string): Promise<void>;
 
   // Active emergency alerts
   getActiveEmergencyAlert(userId: string): Promise<ActiveEmergencyAlert | undefined>;
@@ -773,6 +784,76 @@ class DatabaseStorage implements IStorage {
   async deleteAllPushSubscriptions(userId: string): Promise<void> {
     await getDb().delete(pushSubscriptions)
       .where(eq(pushSubscriptions.userId, userId));
+  }
+
+  async getAllPushSubscriptions(): Promise<PushSubscription[]> {
+    return await getDb().select().from(pushSubscriptions);
+  }
+
+  async getOverdueUsersWithPushSubscriptions(): Promise<Array<{
+    userId: string;
+    userName: string;
+    subscriptions: Array<{ endpoint: string; p256dh: string; auth: string }>;
+    nextCheckInDue: Date;
+    lastPushSentAt: Date | null;
+  }>> {
+    const now = new Date();
+    
+    // Get all settings where user is overdue (nextCheckInDue < now) and alerts are enabled
+    const overdueSettings = await getDb()
+      .select({
+        userId: settings.userId,
+        nextCheckInDue: settings.nextCheckInDue,
+        lastPushSentAt: settings.lastPushSentAt,
+      })
+      .from(settings)
+      .where(and(
+        lt(settings.nextCheckInDue, now),
+        eq(settings.alertsEnabled, true)
+      ));
+
+    const result: Array<{
+      userId: string;
+      userName: string;
+      subscriptions: Array<{ endpoint: string; p256dh: string; auth: string }>;
+      nextCheckInDue: Date;
+      lastPushSentAt: Date | null;
+    }> = [];
+
+    for (const s of overdueSettings) {
+      // Get push subscriptions for this user
+      const subs = await getDb()
+        .select()
+        .from(pushSubscriptions)
+        .where(eq(pushSubscriptions.userId, s.userId));
+
+      if (subs.length === 0) continue;
+
+      // Get user info
+      const user = await this.getUserById(s.userId);
+      if (!user || user.disabled) continue;
+
+      result.push({
+        userId: s.userId,
+        userName: user.name || user.email,
+        subscriptions: subs.map(sub => ({
+          endpoint: sub.endpoint,
+          p256dh: sub.p256dh,
+          auth: sub.auth,
+        })),
+        nextCheckInDue: s.nextCheckInDue!,
+        lastPushSentAt: s.lastPushSentAt,
+      });
+    }
+
+    return result;
+  }
+
+  async updateLastPushSentAt(userId: string): Promise<void> {
+    await getDb()
+      .update(settings)
+      .set({ lastPushSentAt: new Date() })
+      .where(eq(settings.userId, userId));
   }
 
   // Active emergency alerts
