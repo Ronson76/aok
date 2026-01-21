@@ -62,17 +62,17 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold text-primary">aok</span>
           </div>
           <nav className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Features</a>
-            <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
-            <a href="#video" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Tutorial</a>
-            <a href="#use-cases" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Use Cases</a>
-            <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
+            <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-features">Features</a>
+            <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">How It Works</a>
+            <a href="#video" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-tutorial">Tutorial</a>
+            <a href="#use-cases" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-use-cases">Use Cases</a>
+            <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-faq">FAQ</a>
           </nav>
           <div className="flex items-center gap-2">
             <Link href="/login">
@@ -85,7 +85,7 @@ export default function Landing() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleShare}>
+                <DropdownMenuItem onClick={handleShare} data-testid="button-share">
                   <Share2 className="h-4 w-4 mr-2" />
                   Share aok
                 </DropdownMenuItem>
@@ -373,10 +373,13 @@ export default function Landing() {
                   loop 
                   muted 
                   playsInline
+                  controls
+                  aria-label="Demo video showing how easy check-ins work in the aok app"
                   className="w-full h-full object-cover"
+                  data-testid="video-checkin"
                 />
               </div>
-              <h4 className="font-semibold mb-1">Easy Check-Ins</h4>
+              <h4 className="font-semibold mb-1" data-testid="text-feature-checkin">Easy Check-Ins</h4>
               <p className="text-sm text-muted-foreground">One tap to confirm you're safe</p>
             </div>
             
@@ -388,10 +391,13 @@ export default function Landing() {
                   loop 
                   muted 
                   playsInline
+                  controls
+                  aria-label="Demo video showing multi-channel alert notifications"
                   className="w-full h-full object-cover"
+                  data-testid="video-alerts"
                 />
               </div>
-              <h4 className="font-semibold mb-1">Multi-Channel Alerts</h4>
+              <h4 className="font-semibold mb-1" data-testid="text-feature-alerts">Multi-Channel Alerts</h4>
               <p className="text-sm text-muted-foreground">Email, SMS, and phone calls</p>
             </div>
             
@@ -403,10 +409,13 @@ export default function Landing() {
                   loop 
                   muted 
                   playsInline
+                  controls
+                  aria-label="Demo video showing GPS location tracking and sharing"
                   className="w-full h-full object-cover"
+                  data-testid="video-location"
                 />
               </div>
-              <h4 className="font-semibold mb-1">GPS Location Sharing</h4>
+              <h4 className="font-semibold mb-1" data-testid="text-feature-location">GPS Location Sharing</h4>
               <p className="text-sm text-muted-foreground">Precise what3words addresses</p>
             </div>
           </div>
@@ -422,12 +431,17 @@ export default function Landing() {
             </p>
           </div>
           
-          <div className="relative aspect-video rounded-2xl overflow-hidden bg-card border shadow-2xl">
+          <div className="relative aspect-video rounded-2xl overflow-hidden bg-card border shadow-2xl" data-testid="video-tutorial-placeholder">
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-primary/20">
-              <div className="rounded-full bg-primary/10 p-6 mb-4 cursor-pointer hover:bg-primary/20 transition-colors">
+              <button 
+                type="button"
+                className="rounded-full bg-primary/10 p-6 mb-4 hover-elevate transition-colors"
+                aria-label="Play tutorial video (coming soon)"
+                data-testid="button-play-tutorial"
+              >
                 <Play className="h-12 w-12 text-primary" />
-              </div>
-              <p className="text-lg font-medium mb-2">Video Tutorial Coming Soon</p>
+              </button>
+              <p className="text-lg font-medium mb-2" data-testid="text-tutorial-status">Video Tutorial Coming Soon</p>
               <p className="text-sm text-muted-foreground max-w-md text-center px-4">
                 A step-by-step guide showing you how to sign up, add contacts, and use all the features of aok.
               </p>
@@ -524,75 +538,75 @@ export default function Landing() {
           </div>
           
           <Accordion type="single" collapsible className="space-y-4">
-            <AccordionItem value="item-1" className="bg-card rounded-lg border px-6">
-              <AccordionTrigger className="text-left font-semibold">
+            <AccordionItem value="item-1" className="bg-card rounded-lg border px-6" data-testid="faq-item-1">
+              <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-1">
                 Is aok free to use?
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
+              <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-1">
                 Yes! aok is completely free for individual users. You can add emergency contacts, 
                 set up check-in schedules, and receive all notifications at no cost.
               </AccordionContent>
             </AccordionItem>
             
-            <AccordionItem value="item-2" className="bg-card rounded-lg border px-6">
-              <AccordionTrigger className="text-left font-semibold">
+            <AccordionItem value="item-2" className="bg-card rounded-lg border px-6" data-testid="faq-item-2">
+              <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-2">
                 What happens if I miss a check-in?
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
+              <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-2">
                 If you miss a check-in, your emergency contacts are automatically notified via email. 
                 They'll receive your registered address and information to help locate you. You'll also 
                 hear an alert sound on your phone to remind you to check in.
               </AccordionContent>
             </AccordionItem>
             
-            <AccordionItem value="item-3" className="bg-card rounded-lg border px-6">
-              <AccordionTrigger className="text-left font-semibold">
+            <AccordionItem value="item-3" className="bg-card rounded-lg border px-6" data-testid="faq-item-3">
+              <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-3">
                 How do emergency alerts work?
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
+              <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-3">
                 When you activate an emergency alert, all your confirmed contacts are immediately notified 
                 via email, SMS text message, and automated phone calls. Your GPS location is shared and 
                 updated every 5 minutes until you deactivate the alert with your password.
               </AccordionContent>
             </AccordionItem>
             
-            <AccordionItem value="item-4" className="bg-card rounded-lg border px-6">
-              <AccordionTrigger className="text-left font-semibold">
+            <AccordionItem value="item-4" className="bg-card rounded-lg border px-6" data-testid="faq-item-4">
+              <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-4">
                 Do my contacts need to download the app?
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
+              <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-4">
                 No! Your emergency contacts don't need to download anything. They'll receive alerts via 
                 email, SMS, and phone calls. They just need to confirm they accept being your emergency 
                 contact when you add them.
               </AccordionContent>
             </AccordionItem>
             
-            <AccordionItem value="item-5" className="bg-card rounded-lg border px-6">
-              <AccordionTrigger className="text-left font-semibold">
+            <AccordionItem value="item-5" className="bg-card rounded-lg border px-6" data-testid="faq-item-5">
+              <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-5">
                 How often can I check in?
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
+              <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-5">
                 You can set your check-in interval anywhere from 5 minutes (great for testing) to 48 hours. 
                 Choose what works best for your lifestyle - daily check-ins are popular for most users.
               </AccordionContent>
             </AccordionItem>
             
-            <AccordionItem value="item-6" className="bg-card rounded-lg border px-6">
-              <AccordionTrigger className="text-left font-semibold">
+            <AccordionItem value="item-6" className="bg-card rounded-lg border px-6" data-testid="faq-item-6">
+              <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-6">
                 Is my data secure?
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
+              <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-6">
                 Yes! We take security seriously. Your data is encrypted, passwords are hashed, and we 
                 implement automatic session timeouts. Location data from emergency alerts is automatically 
                 deleted after 30 days. The contacts page also has screenshot protection.
               </AccordionContent>
             </AccordionItem>
             
-            <AccordionItem value="item-7" className="bg-card rounded-lg border px-6">
-              <AccordionTrigger className="text-left font-semibold">
+            <AccordionItem value="item-7" className="bg-card rounded-lg border px-6" data-testid="faq-item-7">
+              <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-7">
                 Can organisations use aok?
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
+              <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-7">
                 Yes! We offer organisation accounts for care homes, housing associations, and other 
                 organisations that need to monitor multiple individuals. Contact us for organisation 
                 bundles and pricing.
@@ -618,7 +632,7 @@ export default function Landing() {
               </Button>
             </Link>
             <Link href="/org/login">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" data-testid="button-org-signup">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto border-primary-foreground/30 text-primary-foreground" data-testid="button-org-signup">
                 Organisation Sign Up
               </Button>
             </Link>
@@ -642,40 +656,40 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
-                <li><a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a></li>
-                <li><a href="#video" className="hover:text-foreground transition-colors">Tutorial</a></li>
-                <li><a href="#faq" className="hover:text-foreground transition-colors">FAQ</a></li>
+                <li><a href="#features" className="hover:text-foreground transition-colors" data-testid="link-footer-features">Features</a></li>
+                <li><a href="#how-it-works" className="hover:text-foreground transition-colors" data-testid="link-footer-how-it-works">How It Works</a></li>
+                <li><a href="#video" className="hover:text-foreground transition-colors" data-testid="link-footer-tutorial">Tutorial</a></li>
+                <li><a href="#faq" className="hover:text-foreground transition-colors" data-testid="link-footer-faq">FAQ</a></li>
               </ul>
             </div>
             
             <div>
               <h4 className="font-semibold mb-4">For Users</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/register"><span className="hover:text-foreground transition-colors cursor-pointer">Sign Up</span></Link></li>
-                <li><Link href="/login"><span className="hover:text-foreground transition-colors cursor-pointer">Sign In</span></Link></li>
-                <li><Link href="/forgot-password"><span className="hover:text-foreground transition-colors cursor-pointer">Reset Password</span></Link></li>
+                <li><Link href="/register"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-signup">Sign Up</span></Link></li>
+                <li><Link href="/login"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-signin">Sign In</span></Link></li>
+                <li><Link href="/forgot-password"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-reset">Reset Password</span></Link></li>
               </ul>
             </div>
             
             <div>
               <h4 className="font-semibold mb-4">For Organisations</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/org/login"><span className="hover:text-foreground transition-colors cursor-pointer">Organisation Login</span></Link></li>
-                <li><a href="mailto:support@aok.app" className="hover:text-foreground transition-colors">Contact Sales</a></li>
+                <li><Link href="/org/login"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-org-login">Organisation Login</span></Link></li>
+                <li><a href="mailto:support@aok.app" className="hover:text-foreground transition-colors" data-testid="link-footer-sales">Contact Sales</a></li>
               </ul>
             </div>
           </div>
           
-          <div className="border-t pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
+          <div className="border-t pt-8 flex flex-col md:flex-row flex-wrap items-center justify-between gap-4">
+            <p className="text-sm text-muted-foreground" data-testid="text-copyright">
               &copy; {new Date().getFullYear()} aok by Ghuman. All rights reserved.
             </p>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <Link href="/admin/login">
-                <span className="hover:text-foreground transition-colors cursor-pointer">Admin</span>
+                <span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-admin">Admin</span>
               </Link>
-              <a href="mailto:support@aok.app" className="hover:text-foreground transition-colors">
+              <a href="mailto:support@aok.app" className="hover:text-foreground transition-colors" data-testid="link-footer-support">
                 support@aok.app
               </a>
             </div>
