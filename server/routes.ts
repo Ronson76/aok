@@ -608,13 +608,23 @@ export async function registerRoutes(
     try {
       const { token, action } = req.query;
       
+      console.log("[CONFIRM] Received confirmation request:", { 
+        token: token ? `${String(token).substring(0, 10)}...` : 'missing', 
+        action,
+        tokenLength: token ? String(token).length : 0
+      });
+      
       if (!token || typeof token !== 'string') {
+        console.log("[CONFIRM] Invalid token format");
         return res.status(400).send(renderConfirmationPage(false, "Invalid confirmation link."));
       }
       
       const contact = await storage.getContactByToken(token);
       
+      console.log("[CONFIRM] Contact lookup result:", contact ? { id: contact.id, name: contact.name, confirmedAt: contact.confirmedAt } : 'not found');
+      
       if (!contact) {
+        console.log("[CONFIRM] Contact not found for token");
         return res.status(404).send(renderConfirmationPage(false, "This confirmation link has expired or is invalid."));
       }
       
