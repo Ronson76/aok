@@ -102,7 +102,10 @@ async function getSendGridCredentials() {
     ? 'depl ' + process.env.WEB_REPL_RENEWAL 
     : null;
 
+  console.log(`[SENDGRID] Checking credentials - hostname: ${hostname ? 'present' : 'missing'}, token: ${xReplitToken ? 'present' : 'missing'}`);
+
   if (!xReplitToken || !hostname) {
+    console.log('[SENDGRID] Missing hostname or token, returning null');
     return null;
   }
 
@@ -117,11 +120,14 @@ async function getSendGridCredentials() {
       }
     );
     const data = await response.json();
+    console.log('[SENDGRID] API response:', JSON.stringify(data, null, 2));
     const settings = data.items?.[0];
 
     if (!settings || !settings.settings.api_key || !settings.settings.from_email) {
+      console.log('[SENDGRID] Missing api_key or from_email in response');
       return null;
     }
+    console.log(`[SENDGRID] Got credentials, from_email: ${settings.settings.from_email}`);
     return { apiKey: settings.settings.api_key, fromEmail: settings.settings.from_email };
   } catch (error) {
     console.error('[SENDGRID] Failed to get credentials:', error);
@@ -1259,5 +1265,27 @@ export async function testSMSDelivery(phoneNumber: string): Promise<{
       twilioResponse: error.code ? { code: error.code, moreInfo: error.moreInfo } : undefined,
       diagnostics
     };
+  }
+}
+
+export async function sendTestEmail(to: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    await sendEmail(
+      to,
+      "Test Email from aok",
+      `This is a test email from aok to verify email delivery is working.\n\nIf you received this, email sending is configured correctly!`,
+      `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #22c55e;">Test Email from aok</h2>
+        <p>This is a test email from <strong>aok</strong> to verify email delivery is working.</p>
+        <p style="color: #22c55e; font-weight: bold;">If you received this, email sending is configured correctly!</p>
+        <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 20px 0;">
+        <p style="color: #666; font-size: 12px;">This was a test email sent at ${new Date().toLocaleString()}</p>
+      </div>`
+    );
+    console.log(`[TEST EMAIL] Successfully sent test email to ${to}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error(`[TEST EMAIL] Failed to send to ${to}:`, error);
+    return { success: false, error: error?.message || "Unknown error" };
   }
 }

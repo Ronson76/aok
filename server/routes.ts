@@ -4,7 +4,7 @@ import { storage, organizationStorage } from "./storage";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
-import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials } from "./notifications";
+import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
 
@@ -1269,42 +1269,6 @@ export async function registerRoutes(
     }
   });
 
-  // Test email endpoint (temporary for debugging)
-  app.post("/api/test-email", async (req, res) => {
-    try {
-      const { email } = req.body;
-      if (!email) {
-        return res.status(400).json({ error: "Email required" });
-      }
-      
-      const { Resend } = await import('resend');
-      
-      // Use RESEND_API_KEY2 or RESEND_API_KEY secret
-      const apiKey = process.env.RESEND_API_KEY2 || process.env.RESEND_API_KEY;
-      if (!apiKey) {
-        return res.status(500).json({ error: 'RESEND_API_KEY not set' });
-      }
-
-      const resend = new Resend(apiKey);
-      const fromEmail = 'aok <onboarding@resend.dev>';
-      
-      console.log(`[TEST EMAIL] Sending to ${email} from ${fromEmail}`);
-      
-      const result = await resend.emails.send({
-        from: fromEmail,
-        to: [email],
-        subject: 'aok Test Email',
-        text: `This is a test email from aok to verify the email system is working correctly.\n\nSent at: ${new Date().toISOString()}`,
-      });
-      
-      console.log(`[TEST EMAIL] Result:`, result);
-      res.json({ success: true, result, fromEmail });
-    } catch (error: any) {
-      console.error('[TEST EMAIL] Error:', error);
-      res.status(500).json({ error: error.message, stack: error.stack });
-    }
-  });
-
   // Diagnose Twilio credentials (no SMS sent)
   app.get("/api/diagnose-twilio", async (req, res) => {
     try {
@@ -1339,6 +1303,28 @@ export async function registerRoutes(
       }
     } catch (error: any) {
       console.error('[TEST SMS ENDPOINT] Error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Test email endpoint
+  app.post("/api/test-email", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: "Email address required" });
+      }
+      
+      console.log(`[TEST EMAIL ENDPOINT] Testing email to ${email}`);
+      const result = await sendTestEmail(email);
+      
+      if (result.success) {
+        res.json({ message: "Test email sent successfully", ...result });
+      } else {
+        res.status(500).json({ message: "Email delivery failed", ...result });
+      }
+    } catch (error: any) {
+      console.error('[TEST EMAIL ENDPOINT] Error:', error);
       res.status(500).json({ error: error.message });
     }
   });
