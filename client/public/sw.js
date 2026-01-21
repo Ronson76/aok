@@ -65,9 +65,11 @@ self.addEventListener('push', (event) => {
     body: data.body,
     icon: '/icon-512.png',
     badge: '/icon-512.png',
-    vibrate: [200, 100, 200],
+    vibrate: [300, 100, 300, 100, 300, 100, 500],
     tag: data.tag || 'aok-notification',
-    requireInteraction: data.requireInteraction || false,
+    requireInteraction: data.requireInteraction !== false,
+    renotify: true,
+    silent: false,
     actions: data.actions || [
       { action: 'checkin', title: 'Check In Now' },
       { action: 'dismiss', title: 'Dismiss' }

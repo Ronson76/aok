@@ -1,8 +1,59 @@
 import { storage } from "./storage";
-import { sendEmergencyAlert, sendVoiceAlerts } from "./notifications";
+import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification } from "./notifications";
 
 let schedulerInterval: NodeJS.Timeout | null = null;
 let cleanupInterval: NodeJS.Timeout | null = null;
+let pushNotificationInterval: NodeJS.Timeout | null = null;
+
+// Minimum interval between push notifications to same user (30 seconds)
+const PUSH_NOTIFICATION_COOLDOWN_MS = 30 * 1000;
+
+// Send push notifications to overdue users
+async function processOverduePushNotifications(): Promise<void> {
+  try {
+    const overdueUsers = await storage.getOverdueUsersWithPushSubscriptions();
+    
+    if (overdueUsers.length === 0) {
+      return;
+    }
+
+    const now = Date.now();
+
+    for (const user of overdueUsers) {
+      // Check cooldown - only send if enough time has passed since last push
+      if (user.lastPushSentAt) {
+        const timeSinceLastPush = now - user.lastPushSentAt.getTime();
+        if (timeSinceLastPush < PUSH_NOTIFICATION_COOLDOWN_MS) {
+          continue;
+        }
+      }
+
+      try {
+        const overdueMinutes = Math.floor((now - user.nextCheckInDue.getTime()) / 60000);
+        const overdueText = overdueMinutes < 60 
+          ? `${overdueMinutes} minute${overdueMinutes !== 1 ? 's' : ''}`
+          : `${Math.floor(overdueMinutes / 60)} hour${Math.floor(overdueMinutes / 60) !== 1 ? 's' : ''}`;
+
+        const result = await sendPushNotification(user.subscriptions, {
+          title: "Check-in Overdue!",
+          body: `You're ${overdueText} overdue. Tap to check in now.`,
+          tag: "overdue-checkin",
+          url: "/",
+          requireInteraction: true,
+        });
+
+        if (result.sent > 0) {
+          await storage.updateLastPushSentAt(user.userId);
+          console.log(`[PUSH SCHEDULER] Sent overdue notification to ${user.userName}: ${result.sent} device(s)`);
+        }
+      } catch (error) {
+        console.error(`[PUSH SCHEDULER] Failed to send push to ${user.userName}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('[PUSH SCHEDULER] Error processing overdue push notifications:', error);
+  }
+}
 
 // Cleanup old emergency alerts (location data privacy - runs daily)
 async function cleanupOldLocationData(): Promise<void> {
@@ -95,11 +146,17 @@ export function startEmergencyScheduler(): void {
   }
 
   console.log('[EMERGENCY SCHEDULER] Starting emergency alert scheduler (checks every minute)');
+  console.log('[PUSH SCHEDULER] Starting push notification scheduler (checks every 30 seconds)');
   
   schedulerInterval = setInterval(async () => {
     await processOverdueEmergencyAlerts();
     await cleanupExpiredContacts();
   }, 60 * 1000);
+
+  // Push notifications run more frequently (every 30 seconds) for timely alerts
+  pushNotificationInterval = setInterval(async () => {
+    await processOverduePushNotifications();
+  }, 30 * 1000);
 
   // Run cleanup daily (every 24 hours)
   cleanupInterval = setInterval(async () => {
@@ -108,6 +165,7 @@ export function startEmergencyScheduler(): void {
 
   // Run initial checks
   processOverdueEmergencyAlerts();
+  processOverduePushNotifications();
   cleanupOldLocationData();
   cleanupExpiredContacts();
 }
@@ -120,6 +178,10 @@ export function stopEmergencyScheduler(): void {
   if (cleanupInterval) {
     clearInterval(cleanupInterval);
     cleanupInterval = null;
+  }
+  if (pushNotificationInterval) {
+    clearInterval(pushNotificationInterval);
+    pushNotificationInterval = null;
   }
   console.log('[EMERGENCY SCHEDULER] Scheduler stopped');
 }
