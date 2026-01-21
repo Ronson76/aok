@@ -265,7 +265,7 @@ async function getResendCredentials() {
   if (apiKey) {
     return { 
       apiKey, 
-      fromEmail: 'aok <onboarding@resend.dev>' 
+      fromEmail: 'aok <support@aok.care>' 
     };
   }
   
@@ -387,21 +387,7 @@ function escapeHtml(text: string): string {
 async function sendEmail(to: string, subject: string, body: string, html?: string): Promise<void> {
   console.log(`[EMAIL] Attempting to send email to ${to}, subject: ${subject}`);
   
-  // Try Gmail first (primary - best deliverability)
-  const gmailSent = await sendEmailViaGmail(to, subject, body, html);
-  if (gmailSent) {
-    return;
-  }
-  console.log(`[EMAIL] Gmail not available, trying Outlook`);
-  
-  // Try Outlook second
-  const outlookSent = await sendEmailViaOutlook(to, subject, body, html);
-  if (outlookSent) {
-    return;
-  }
-  console.log(`[EMAIL] Outlook not available, trying Resend`);
-  
-  // Try Resend third (reliable delivery)
+  // Use Resend as primary email provider (support@aok.care)
   try {
     const { client, fromEmail } = await getResendClient();
     
@@ -412,7 +398,7 @@ async function sendEmail(to: string, subject: string, body: string, html?: strin
       text: string;
       html?: string;
     } = {
-      from: fromEmail || 'aok <onboarding@resend.dev>',
+      from: fromEmail || 'aok <support@aok.care>',
       to: [to],
       subject: subject,
       text: body,
