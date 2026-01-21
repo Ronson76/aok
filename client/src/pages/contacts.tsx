@@ -297,15 +297,16 @@ export default function Contacts() {
               <Plus className="h-5 w-5" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[85vh] flex flex-col">
+          <DialogContent className="max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden">
             <DialogHeader className="flex-shrink-0">
               <DialogTitle className="flex items-center gap-2">
                 <UserPlus className="h-5 w-5" />
                 Add Emergency Contact
               </DialogTitle>
             </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto flex-1 pr-1 pb-2">
+            <div className="flex-1 overflow-y-auto min-h-0 -mx-6 px-6">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pb-4">
                 <FormField
                   control={form.control}
                   name="name"
@@ -446,7 +447,8 @@ export default function Contacts() {
                   Save Contact
                 </Button>
               </form>
-            </Form>
+              </Form>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
@@ -696,15 +698,16 @@ export default function Contacts() {
           editForm.reset();
         }
       }}>
-        <DialogContent className="max-h-[85vh] flex flex-col">
+        <DialogContent className="max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-5 w-5" />
               Edit Contact
             </DialogTitle>
           </DialogHeader>
-          <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4 overflow-y-auto flex-1 pr-1 pb-2">
+          <div className="flex-1 overflow-y-auto min-h-0 -mx-6 px-6">
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4 pb-4">
               <FormField
                 control={editForm.control}
                 name="name"
@@ -845,7 +848,8 @@ export default function Contacts() {
                 Update Contact
               </Button>
             </form>
-          </Form>
+            </Form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
