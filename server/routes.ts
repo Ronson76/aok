@@ -4,7 +4,7 @@ import { storage, organizationStorage } from "./storage";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
-import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification } from "./notifications";
+import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification, sendContactRemovedNotification } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
 
@@ -881,6 +881,14 @@ export async function registerRoutes(
       const deleted = await storage.deleteContact(req.userId!, id);
       if (!deleted) {
         return res.status(404).json({ error: "Contact not found" });
+      }
+
+      // Notify the removed contact (only if confirmed - unconfirmed contacts don't need notification)
+      if (contactToDelete.isConfirmed) {
+        const userForNotification = await storage.getUserById(req.userId!);
+        if (userForNotification) {
+          await sendContactRemovedNotification(contactToDelete, userForNotification);
+        }
       }
 
       // If we deleted the primary contact, promote the first remaining contact to primary
