@@ -4,7 +4,7 @@ import { storage, organizationStorage } from "./storage";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
-import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail } from "./notifications";
+import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
 
@@ -888,6 +888,12 @@ export async function registerRoutes(
         const remainingContacts = contacts.filter(c => c.id !== id);
         if (remainingContacts.length > 0) {
           await storage.setPrimaryContact(req.userId!, remainingContacts[0].id);
+          
+          // Notify the newly promoted primary contact
+          const user = await storage.getUserById(req.userId!);
+          if (user) {
+            await sendPrimaryContactPromotionNotification(remainingContacts[0], user);
+          }
         }
       }
 
