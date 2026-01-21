@@ -7,20 +7,72 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { 
+  ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail, 
+  Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
+  ChevronRight, Shield, Zap, Globe, Lock, Share2
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Landing() {
+  const { toast } = useToast();
+
+  const handleShare = async () => {
+    const shareUrl = "https://aok.care";
+    const shareText = "Stay safe with aok - a personal safety check-in app that alerts your emergency contacts if something happens to you.";
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "aok - Personal Safety Check-in",
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') return;
+      }
+    }
+    
+    try {
+      await navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
+      toast({
+        title: "Link copied",
+        description: "Share link copied to clipboard.",
+      });
+    } catch (err) {
+      toast({
+        title: "Unable to share",
+        description: "Please copy this link: " + shareUrl,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex flex-col items-center">
+          <div className="flex items-center gap-2">
             <ShieldCheck className="h-8 w-8 text-primary" />
-            <span className="text-sm font-semibold text-primary">aok</span>
+            <span className="text-xl font-bold text-primary">aok</span>
           </div>
+          <nav className="hidden md:flex items-center gap-6">
+            <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Features</a>
+            <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
+            <a href="#video" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Tutorial</a>
+            <a href="#use-cases" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Use Cases</a>
+            <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
+          </nav>
           <div className="flex items-center gap-2">
             <Link href="/login">
-              <Button data-testid="button-open-app">Sign In</Button>
+              <Button data-testid="button-sign-in">Sign In</Button>
             </Link>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -29,6 +81,10 @@ export default function Landing() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleShare}>
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share aok
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <a href="mailto:support@aok.app" className="flex items-center gap-2" data-testid="link-contact-us">
                     <Mail className="h-4 w-4" />
@@ -41,71 +97,200 @@ export default function Landing() {
         </div>
       </header>
 
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-4xl text-center">
-          <div className="flex justify-center mb-8">
-            <div className="rounded-full bg-primary/10 p-6">
-              <ShieldCheck className="h-20 w-20 text-primary" />
+      <section className="relative py-20 md:py-32 px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10" />
+        <div className="container mx-auto max-w-6xl relative">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+                <Shield className="h-4 w-4" />
+                Personal Safety Made Simple
+              </div>
+              <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+                Stay Safe.<br />
+                <span className="text-primary">Stay Connected.</span>
+              </h1>
+              <p className="text-xl text-muted-foreground mb-8 max-w-lg">
+                The personal safety check-in app that alerts your emergency contacts 
+                via email, SMS, and phone calls if something happens to you.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/register">
+                  <Button size="lg" className="w-full sm:w-auto gap-2" data-testid="button-get-started">
+                    Get Started Free
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <a href="#video">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2" data-testid="button-watch-demo">
+                    <Play className="h-4 w-4" />
+                    Watch Tutorial
+                  </Button>
+                </a>
+              </div>
+              <div className="flex items-center gap-6 mt-8 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Free to use
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  No credit card
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Setup in 2 mins
+                </div>
+              </div>
             </div>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            Your Personal Safety Check-In
-          </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Stay connected with your loved ones. Check in daily, and if you ever miss one, 
-            your emergency contacts are automatically notified.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/app">
-              <Button size="lg" className="w-full sm:w-auto" data-testid="button-get-started">
-                Get Started
-              </Button>
-            </Link>
-            <a href="#how-it-works">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto" data-testid="button-learn-more">
-                Learn More
-              </Button>
-            </a>
+            <div className="relative">
+              <div className="relative mx-auto w-64 md:w-80">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 rounded-3xl blur-3xl" />
+                <div className="relative bg-card border rounded-3xl p-6 shadow-2xl">
+                  <div className="text-center mb-6">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10 mb-4">
+                      <CheckCircle className="h-8 w-8 text-green-500" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-green-500">You're Safe</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Last check-in: Just now</p>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                      <Clock className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium">Next check-in</p>
+                        <p className="text-xs text-muted-foreground">Tomorrow at 9:00 AM</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                      <Users className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium">3 contacts protected</p>
+                        <p className="text-xs text-muted-foreground">Ready to be notified</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="features" className="py-16 px-4 bg-muted/50">
-        <div className="container mx-auto max-w-5xl">
-          <h2 className="text-3xl font-bold text-center mb-12">Why aok?</h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <div className="rounded-full bg-primary/10 p-4 w-fit mx-auto mb-4">
-                  <Clock className="h-8 w-8 text-primary" />
+      <section id="features" className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything You Need to Stay Safe</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Comprehensive safety features designed to give you and your loved ones complete peace of mind.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-blue-500/10 p-3 w-fit mb-4">
+                  <Clock className="h-6 w-6 text-blue-500" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Simple Check-Ins</h3>
-                <p className="text-muted-foreground">
-                  One tap to confirm you're safe. Set your schedule from hourly, daily or every two days.
+                <h3 className="text-lg font-semibold mb-2">Flexible Check-In Timer</h3>
+                <p className="text-muted-foreground text-sm">
+                  Set your check-in schedule from 5 minutes to 48 hours. Perfect for any lifestyle or activity.
                 </p>
               </CardContent>
             </Card>
             
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <div className="rounded-full bg-primary/10 p-4 w-fit mx-auto mb-4">
-                  <Bell className="h-8 w-8 text-primary" />
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-green-500/10 p-3 w-fit mb-4">
+                  <Bell className="h-6 w-6 text-green-500" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Automatic Alerts</h3>
-                <p className="text-muted-foreground">
-                  If you miss a check-in, your emergency contacts are notified immediately.
+                <h3 className="text-lg font-semibold mb-2">Multi-Channel Alerts</h3>
+                <p className="text-muted-foreground text-sm">
+                  Your contacts receive alerts via email, SMS text messages, and automated phone calls.
                 </p>
               </CardContent>
             </Card>
             
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <div className="rounded-full bg-primary/10 p-4 w-fit mx-auto mb-4">
-                  <Users className="h-8 w-8 text-primary" />
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-red-500/10 p-3 w-fit mb-4">
+                  <AlertTriangle className="h-6 w-6 text-red-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Emergency Alert Button</h3>
+                <p className="text-muted-foreground text-sm">
+                  Instantly alert all your contacts in an emergency with one tap. Your location is shared automatically.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-purple-500/10 p-3 w-fit mb-4">
+                  <MapPin className="h-6 w-6 text-purple-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">GPS Location Sharing</h3>
+                <p className="text-muted-foreground text-sm">
+                  Share your precise location using what3words addresses. Updated every 5 minutes during emergencies.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-orange-500/10 p-3 w-fit mb-4">
+                  <Phone className="h-6 w-6 text-orange-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Voice Call Alerts</h3>
+                <p className="text-muted-foreground text-sm">
+                  Automated phone calls to landline and mobile numbers ensure your message gets through.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-cyan-500/10 p-3 w-fit mb-4">
+                  <Smartphone className="h-6 w-6 text-cyan-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Push Notifications</h3>
+                <p className="text-muted-foreground text-sm">
+                  Never miss a check-in with persistent push notifications that work even when your phone is idle.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-amber-500/10 p-3 w-fit mb-4">
+                  <Users className="h-6 w-6 text-amber-500" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Multiple Contacts</h3>
-                <p className="text-muted-foreground">
-                  Add family, friends, or neighbors. Everyone you trust can be alerted.
+                <p className="text-muted-foreground text-sm">
+                  Add family, friends, neighbors, or anyone you trust. Set a primary contact for regular updates.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-pink-500/10 p-3 w-fit mb-4">
+                  <Lock className="h-6 w-6 text-pink-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Privacy Protected</h3>
+                <p className="text-muted-foreground text-sm">
+                  Screenshot protection on contacts, automatic session timeout, and secure data handling.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-indigo-500/10 p-3 w-fit mb-4">
+                  <Building2 className="h-6 w-6 text-indigo-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Organisation Support</h3>
+                <p className="text-muted-foreground text-sm">
+                  Care homes and organisations can monitor multiple clients with dedicated dashboards and alerts.
                 </p>
               </CardContent>
             </Card>
@@ -113,117 +298,325 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="how-it-works" className="py-16 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
-          <div className="space-y-8">
-            <div className="flex items-start gap-4">
-              <div className="rounded-full bg-primary text-primary-foreground w-10 h-10 flex items-center justify-center flex-shrink-0 font-bold">
+      <section id="how-it-works" className="py-20 px-4">
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Get started in less than 2 minutes. No complicated setup required.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 1
               </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Add Your Emergency Contacts</h3>
-                <p className="text-muted-foreground">
-                  Enter the people you want notified if something happens. Include their name, email, and phone number.
-                </p>
-              </div>
+              <h3 className="text-lg font-semibold mb-2">Create Account</h3>
+              <p className="text-sm text-muted-foreground">
+                Sign up with your email and create a secure password. Add your personal details.
+              </p>
             </div>
             
-            <div className="flex items-start gap-4">
-              <div className="rounded-full bg-primary text-primary-foreground w-10 h-10 flex items-center justify-center flex-shrink-0 font-bold">
+            <div className="text-center">
+              <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 2
               </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Set Your Check-In Schedule</h3>
-                <p className="text-muted-foreground">
-                  Choose to check in daily or every two days. The app reminds you when it's time.
-                </p>
-              </div>
+              <h3 className="text-lg font-semibold mb-2">Add Contacts</h3>
+              <p className="text-sm text-muted-foreground">
+                Enter your emergency contacts' details. They'll confirm via email to receive alerts.
+              </p>
             </div>
             
-            <div className="flex items-start gap-4">
-              <div className="rounded-full bg-primary text-primary-foreground w-10 h-10 flex items-center justify-center flex-shrink-0 font-bold">
+            <div className="text-center">
+              <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 3
               </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Check In Regularly</h3>
-                <p className="text-muted-foreground">
-                  Open the app and tap the check-in button. It takes just one second to let your loved ones know you're okay.
-                </p>
-              </div>
+              <h3 className="text-lg font-semibold mb-2">Set Timer</h3>
+              <p className="text-sm text-muted-foreground">
+                Choose how often you want to check in - from every 5 minutes to every 48 hours.
+              </p>
             </div>
             
-            <div className="flex items-start gap-4">
-              <div className="rounded-full bg-primary text-primary-foreground w-10 h-10 flex items-center justify-center flex-shrink-0 font-bold">
+            <div className="text-center">
+              <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 4
               </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Peace of Mind</h3>
-                <p className="text-muted-foreground">
-                  If you ever miss a check-in, your contacts receive an alert. They can then reach out to make sure you're safe.
-                </p>
-              </div>
+              <h3 className="text-lg font-semibold mb-2">Check In</h3>
+              <p className="text-sm text-muted-foreground">
+                Tap the button when reminded. If you miss it, your contacts are automatically notified.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="py-16 px-4 bg-muted/50">
+      <section id="video" className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto max-w-4xl">
-          <h2 className="text-3xl font-bold text-center mb-12">Perfect For</h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {[
-              "Seniors living independently",
-              "People living alone",
-              "Solo travelers",
-              "Remote workers in isolated areas",
-              "People with health conditions",
-              "Anyone who wants peace of mind"
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 p-4 rounded-lg bg-background">
-                <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
-                <span>{item}</span>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">See aok in Action</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Watch our tutorial to learn how to set up and use the aok app.
+            </p>
+          </div>
+          
+          <div className="relative aspect-video rounded-2xl overflow-hidden bg-card border shadow-2xl">
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-primary/20">
+              <div className="rounded-full bg-primary/10 p-6 mb-4 cursor-pointer hover:bg-primary/20 transition-colors">
+                <Play className="h-12 w-12 text-primary" />
               </div>
+              <p className="text-lg font-medium mb-2">Video Tutorial Coming Soon</p>
+              <p className="text-sm text-muted-foreground max-w-md text-center px-4">
+                A step-by-step guide showing you how to sign up, add contacts, and use all the features of aok.
+              </p>
+            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-6 mt-12">
+            <div className="text-center p-4">
+              <div className="rounded-full bg-primary/10 p-3 w-fit mx-auto mb-3">
+                <User className="h-6 w-6 text-primary" />
+              </div>
+              <h4 className="font-semibold mb-1">Account Setup</h4>
+              <p className="text-sm text-muted-foreground">Learn how to create your account and personalise your settings.</p>
+            </div>
+            <div className="text-center p-4">
+              <div className="rounded-full bg-primary/10 p-3 w-fit mx-auto mb-3">
+                <Users className="h-6 w-6 text-primary" />
+              </div>
+              <h4 className="font-semibold mb-1">Adding Contacts</h4>
+              <p className="text-sm text-muted-foreground">See how easy it is to add and manage your emergency contacts.</p>
+            </div>
+            <div className="text-center p-4">
+              <div className="rounded-full bg-primary/10 p-3 w-fit mx-auto mb-3">
+                <Zap className="h-6 w-6 text-primary" />
+              </div>
+              <h4 className="font-semibold mb-1">Daily Check-Ins</h4>
+              <p className="text-sm text-muted-foreground">Discover the quick check-in process and alert system.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="use-cases" className="py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Who Uses aok?</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              People from all walks of life trust aok to keep them connected to their loved ones.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                title: "Seniors Living Independently",
+                description: "Give your family peace of mind knowing you're checking in regularly. Perfect for those who value their independence.",
+                icon: Heart
+              },
+              {
+                title: "People Living Alone",
+                description: "Whether you're single, recently moved, or just prefer solitude, stay connected without compromising your privacy.",
+                icon: User
+              },
+              {
+                title: "Solo Travellers",
+                description: "Exploring the world alone? Let someone know you're safe no matter where your adventures take you.",
+                icon: Globe
+              },
+              {
+                title: "Remote Workers",
+                description: "Working from isolated locations or doing fieldwork? Stay connected even when you're off the grid.",
+                icon: MapPin
+              },
+              {
+                title: "People with Health Conditions",
+                description: "Managing a health condition? Regular check-ins ensure help arrives quickly if you need it.",
+                icon: Shield
+              },
+              {
+                title: "Care Homes & Organisations",
+                description: "Monitor multiple vulnerable individuals with our organisation dashboard and bundle system.",
+                icon: Building2
+              }
+            ].map((useCase, i) => (
+              <Card key={i} className="border-0 shadow-lg">
+                <CardContent className="pt-6">
+                  <useCase.icon className="h-8 w-8 text-primary mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">{useCase.title}</h3>
+                  <p className="text-muted-foreground text-sm">{useCase.description}</p>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-2xl text-center">
-          <Heart className="h-12 w-12 text-primary mx-auto mb-6" />
-          <h2 className="text-3xl font-bold mb-4">Start Protecting Yourself Today</h2>
-          <p className="text-muted-foreground mb-8">
-            It takes less than a minute to set up. Give your loved ones peace of mind.
-          </p>
-          <Link href="/app">
-            <Button size="lg" data-testid="button-start-now">
-              Start Now
-            </Button>
-          </Link>
+      <section id="faq" className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-3xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Frequently Asked Questions</h2>
+            <p className="text-lg text-muted-foreground">
+              Everything you need to know about aok.
+            </p>
+          </div>
+          
+          <Accordion type="single" collapsible className="space-y-4">
+            <AccordionItem value="item-1" className="bg-card rounded-lg border px-6">
+              <AccordionTrigger className="text-left font-semibold">
+                Is aok free to use?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                Yes! aok is completely free for individual users. You can add emergency contacts, 
+                set up check-in schedules, and receive all notifications at no cost.
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="item-2" className="bg-card rounded-lg border px-6">
+              <AccordionTrigger className="text-left font-semibold">
+                What happens if I miss a check-in?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                If you miss a check-in, your emergency contacts are automatically notified via email. 
+                They'll receive your registered address and information to help locate you. You'll also 
+                hear an alert sound on your phone to remind you to check in.
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="item-3" className="bg-card rounded-lg border px-6">
+              <AccordionTrigger className="text-left font-semibold">
+                How do emergency alerts work?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                When you activate an emergency alert, all your confirmed contacts are immediately notified 
+                via email, SMS text message, and automated phone calls. Your GPS location is shared and 
+                updated every 5 minutes until you deactivate the alert with your password.
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="item-4" className="bg-card rounded-lg border px-6">
+              <AccordionTrigger className="text-left font-semibold">
+                Do my contacts need to download the app?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                No! Your emergency contacts don't need to download anything. They'll receive alerts via 
+                email, SMS, and phone calls. They just need to confirm they accept being your emergency 
+                contact when you add them.
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="item-5" className="bg-card rounded-lg border px-6">
+              <AccordionTrigger className="text-left font-semibold">
+                How often can I check in?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                You can set your check-in interval anywhere from 5 minutes (great for testing) to 48 hours. 
+                Choose what works best for your lifestyle - daily check-ins are popular for most users.
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="item-6" className="bg-card rounded-lg border px-6">
+              <AccordionTrigger className="text-left font-semibold">
+                Is my data secure?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                Yes! We take security seriously. Your data is encrypted, passwords are hashed, and we 
+                implement automatic session timeouts. Location data from emergency alerts is automatically 
+                deleted after 30 days. The contacts page also has screenshot protection.
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="item-7" className="bg-card rounded-lg border px-6">
+              <AccordionTrigger className="text-left font-semibold">
+                Can organisations use aok?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                Yes! We offer organisation accounts for care homes, housing associations, and other 
+                organisations that need to monitor multiple individuals. Contact us for organisation 
+                bundles and pricing.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       </section>
 
-      <footer className="border-t py-8 px-4">
-        <div className="container mx-auto text-center text-muted-foreground">
-          <div className="flex flex-col items-center justify-center mb-2">
-            <ShieldCheck className="h-5 w-5" />
-            <span className="text-sm font-semibold">aok</span>
-            <span className="text-xs text-muted-foreground">&copy; Ghuman</span>
-          </div>
-          <p className="text-sm mb-4">Your personal safety check-in companion</p>
-          <div className="flex items-center justify-center gap-4">
+      <section className="py-20 px-4 bg-primary text-primary-foreground">
+        <div className="container mx-auto max-w-3xl text-center">
+          <Heart className="h-12 w-12 mx-auto mb-6 opacity-80" />
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Start Protecting Yourself Today
+          </h2>
+          <p className="text-lg opacity-90 mb-8 max-w-xl mx-auto">
+            It takes less than 2 minutes to set up. Give yourself and your loved ones peace of mind.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/register">
+              <Button size="lg" variant="secondary" className="w-full sm:w-auto" data-testid="button-start-now">
+                Create Free Account
+              </Button>
+            </Link>
             <Link href="/org/login">
-              <span className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors cursor-pointer" data-testid="link-org-login">
-                Organisation
-              </span>
+              <Button size="lg" variant="outline" className="w-full sm:w-auto border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" data-testid="button-org-signup">
+                Organisation Sign Up
+              </Button>
             </Link>
-            <span className="text-xs text-muted-foreground/40">|</span>
-            <Link href="/admin/login">
-              <span className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors cursor-pointer" data-testid="link-admin">
-                Admin
-              </span>
-            </Link>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t py-12 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <ShieldCheck className="h-6 w-6 text-primary" />
+                <span className="font-bold text-primary">aok</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Your personal safety check-in companion. Stay safe, stay connected.
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Product</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
+                <li><a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a></li>
+                <li><a href="#video" className="hover:text-foreground transition-colors">Tutorial</a></li>
+                <li><a href="#faq" className="hover:text-foreground transition-colors">FAQ</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">For Users</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link href="/register"><span className="hover:text-foreground transition-colors cursor-pointer">Sign Up</span></Link></li>
+                <li><Link href="/login"><span className="hover:text-foreground transition-colors cursor-pointer">Sign In</span></Link></li>
+                <li><Link href="/forgot-password"><span className="hover:text-foreground transition-colors cursor-pointer">Reset Password</span></Link></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">For Organisations</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link href="/org/login"><span className="hover:text-foreground transition-colors cursor-pointer">Organisation Login</span></Link></li>
+                <li><a href="mailto:support@aok.app" className="hover:text-foreground transition-colors">Contact Sales</a></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-muted-foreground">
+              &copy; {new Date().getFullYear()} aok by Ghuman. All rights reserved.
+            </p>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <Link href="/admin/login">
+                <span className="hover:text-foreground transition-colors cursor-pointer">Admin</span>
+              </Link>
+              <a href="mailto:support@aok.app" className="hover:text-foreground transition-colors">
+                support@aok.app
+              </a>
+            </div>
           </div>
         </div>
       </footer>
