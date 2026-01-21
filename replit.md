@@ -4,6 +4,18 @@
 
 aok is a personal safety check-in application that helps users stay connected with their loved ones through regular check-ins. Users set a check-in frequency (1-48 hours), and if they miss a check-in, their emergency contacts can be automatically alerted via email and voice calls. The app provides a dashboard showing check-in status, streak tracking, contact management, history viewing, and settings configuration. It includes an emergency alert button with GPS location sharing and an alarm system that beeps every 2 minutes when overdue.
 
+### Showcase Website (Landing Page)
+The landing page at `/` serves as a comprehensive showcase of the app's capabilities:
+- **Hero Section**: Modern gradient design with call-to-action buttons and mock app UI
+- **Features Section**: 9 feature cards covering all app capabilities (timer, alerts, emergency, GPS, etc.)
+- **How It Works**: 4-step visual guide (Create Account, Add Contacts, Set Timer, Check In)
+- **Promotional Videos**: 3 auto-playing demo videos showcasing key features
+- **Video Tutorial Placeholder**: Embed-ready container for user's tutorial video
+- **Use Cases**: 6 cards for different user types (seniors, solo travelers, organisations, etc.)
+- **FAQ Section**: 7-item accordion with common questions and answers
+- **Footer**: 4-column layout with navigation links and contact information
+- **SEO**: Open Graph and Twitter meta tags for social sharing
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
