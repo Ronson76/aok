@@ -8,11 +8,12 @@ import { BottomNav } from "@/components/bottom-nav";
 import { SplashScreen } from "@/components/splash-screen";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
-import { Loader2, ShieldCheck, Volume2, MoreVertical, Mail, QrCode } from "lucide-react";
+import { Loader2, ShieldCheck, Volume2, MoreVertical, Mail, QrCode, Share2 } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QRCodeSVG } from "qrcode.react";
@@ -143,9 +144,45 @@ function AppLayout() {
   const [showQRDialog, setShowQRDialog] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const alarmIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { toast } = useToast();
   
   const appUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const shareUrl = "https://aok.care";
   const showMenu = ['/', '/login', '/app'].includes(location);
+
+  const handleShareLink = async () => {
+    const shareText = "Stay safe with aok - a personal safety check-in app that alerts your emergency contacts if something happens to you.";
+    
+    // Try Web Share API first (works on mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "aok - Personal Safety Check-in",
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      } catch (err) {
+        // User cancelled or share failed, fall through to clipboard
+        if ((err as Error).name === 'AbortError') return;
+      }
+    }
+    
+    // Fallback: copy to clipboard
+    try {
+      await navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
+      toast({
+        title: "Link copied",
+        description: "Share link copied to clipboard. Paste it in a text or email.",
+      });
+    } catch (err) {
+      toast({
+        title: "Unable to share",
+        description: "Please copy this link: " + shareUrl,
+        variant: "destructive",
+      });
+    }
+  };
 
   const { data: status } = useQuery<StatusData>({
     queryKey: ["/api/status"],
@@ -247,9 +284,13 @@ function AppLayout() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleShareLink} data-testid="menu-share-link">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share Link
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowQRDialog(true)} data-testid="menu-share-qr">
                   <QrCode className="h-4 w-4 mr-2" />
-                  Share App
+                  Share QR Code
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <a href="mailto:support@aok.app" className="flex items-center gap-2" data-testid="link-contact-us">
