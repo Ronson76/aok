@@ -151,9 +151,12 @@ function escapeHtml(text: string): string {
 }
 
 async function sendEmail(to: string, subject: string, body: string, html?: string): Promise<void> {
+  console.log(`[EMAIL] Attempting to send email to ${to}, subject: ${subject}`);
+  
   // Try SendGrid first
   const sendGridClient = await getSendGridClient();
   if (sendGridClient) {
+    console.log(`[EMAIL] SendGrid client available, from: ${sendGridClient.fromEmail}`);
     try {
       const msg: {
         to: string;
@@ -172,12 +175,14 @@ async function sendEmail(to: string, subject: string, body: string, html?: strin
         msg.html = html;
       }
       
-      await sendGridClient.client.send(msg);
-      console.log(`[EMAIL] Successfully sent email via SendGrid to ${to}`);
+      const result = await sendGridClient.client.send(msg);
+      console.log(`[EMAIL] Successfully sent email via SendGrid to ${to}, status: ${result?.[0]?.statusCode}`);
       return;
-    } catch (error) {
-      console.error(`[EMAIL] SendGrid failed for ${to}, trying Resend fallback:`, error);
+    } catch (error: any) {
+      console.error(`[EMAIL] SendGrid failed for ${to}, trying Resend fallback:`, error?.response?.body || error?.message || error);
     }
+  } else {
+    console.log(`[EMAIL] SendGrid client not available, will try Resend`);
   }
   
   // Fallback to Resend
