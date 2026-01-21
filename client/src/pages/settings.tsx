@@ -93,15 +93,19 @@ export default function Settings() {
   
   const isOrganization = user?.accountType === "organization";
 
-  const { data: settings, isLoading } = useQuery<SettingsType>({
+  const { data: settings, isLoading, isFetching } = useQuery<SettingsType>({
     queryKey: ["/api/settings"],
   });
+  
+  // Track if user is actively changing the interval
+  const [isChangingInterval, setIsChangingInterval] = useState(false);
 
   useEffect(() => {
-    if (settings?.intervalHours) {
+    // Only sync from server if not currently changing and not fetching stale data
+    if (settings?.intervalHours && !isChangingInterval && !isFetching) {
       setLocalInterval(settings.intervalHours);
     }
-  }, [settings?.intervalHours]);
+  }, [settings?.intervalHours, isChangingInterval, isFetching]);
 
   // Check push notification support and current status
   useEffect(() => {
@@ -307,6 +311,7 @@ export default function Settings() {
     // Slider uses index, convert to hours for display
     const hours = indexToHours(value[0]);
     setLocalInterval(hours);
+    setIsChangingInterval(true); // Prevent server sync while dragging
   };
 
   const handleIntervalCommit = (value: number[]) => {
@@ -316,7 +321,9 @@ export default function Settings() {
       setPendingInterval(hours);
       setShowIntervalPasswordDialog(true);
     } else {
-      updateMutation.mutate({ intervalHours: hours });
+      updateMutation.mutate({ intervalHours: hours }, {
+        onSettled: () => setIsChangingInterval(false)
+      });
     }
   };
 
@@ -330,9 +337,13 @@ export default function Settings() {
       return;
     }
     if (pendingInterval !== null) {
-      updateMutation.mutate({ intervalHours: pendingInterval, password: intervalPassword });
+      updateMutation.mutate({ intervalHours: pendingInterval, password: intervalPassword }, {
+        onSettled: () => setIsChangingInterval(false)
+      });
     } else if (pendingScheduleStart !== null) {
-      updateMutation.mutate({ scheduleStartTime: pendingScheduleStart, password: intervalPassword });
+      updateMutation.mutate({ scheduleStartTime: pendingScheduleStart, password: intervalPassword }, {
+        onSettled: () => setIsChangingInterval(false)
+      });
     }
   };
 
@@ -341,6 +352,7 @@ export default function Settings() {
     setIntervalPassword("");
     setPendingInterval(null);
     setPendingScheduleStart(null);
+    setIsChangingInterval(false);
     // Reset slider to current saved value
     if (settings?.intervalHours) {
       setLocalInterval(settings.intervalHours);
