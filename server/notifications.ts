@@ -540,16 +540,16 @@ Thank you,
     console.log(`[NOTIFICATION] Confirmation email failed for ${contact.email}: ${errorMsg}`);
   }
   
-  // Send SMS backup if contact has a phone number
+  // Send SMS with confirmation link if contact has a phone number
   if (contact.phone && contact.phoneType !== "landline") {
     const smsBody = isOrganization
-      ? `aok: ${user.name} wants to add you as an emergency contact for Reference ${user.referenceId}. Please check your email to confirm within 10 minutes.`
-      : `aok: ${user.name} wants to add you as their emergency contact. Please check your email to confirm within 10 minutes.`;
+      ? `aok: ${user.name} wants to add you as an emergency contact for Reference ${user.referenceId}. Accept: ${confirmUrl} or Decline: ${declineUrl} (Expires in 10 mins)`
+      : `aok: ${user.name} wants to add you as their emergency contact. Accept: ${confirmUrl} or Decline: ${declineUrl} (Expires in 10 mins)`;
     
     const smsResult = await sendSMS(contact.phone, smsBody);
     smsSent = smsResult.success;
     if (smsResult.success) {
-      console.log(`[NOTIFICATION] Confirmation SMS sent to ${contact.phone} for contact ${contactName}`);
+      console.log(`[NOTIFICATION] Confirmation SMS with links sent to ${contact.phone} for contact ${contactName}`);
     }
   }
   
