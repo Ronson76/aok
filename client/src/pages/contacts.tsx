@@ -106,6 +106,7 @@ export default function Contacts() {
   const [selectedCountryCode, setSelectedCountryCode] = useState("+44");
   const [editSelectedCountryCode, setEditSelectedCountryCode] = useState("+44");
   const [isPageVisible, setIsPageVisible] = useState(true);
+  const [expandedContactId, setExpandedContactId] = useState<string | null>(null);
   
   const isOrganization = user?.accountType === "organization";
 
@@ -510,8 +511,18 @@ export default function Contacts() {
         </Card>
       ) : (
         <div className="flex flex-col gap-3">
-          {contacts.map((contact) => (
-            <Card key={contact.id} className="hover-elevate">
+          {contacts.map((contact) => {
+              const firstName = contact.name.split(" ")[0];
+              const isConfirmed = !!contact.confirmedAt;
+              const isExpanded = expandedContactId === contact.id;
+              
+              return (
+            <Card 
+              key={contact.id} 
+              className="hover-elevate cursor-pointer"
+              onClick={() => isConfirmed && setExpandedContactId(isExpanded ? null : contact.id)}
+              data-testid={`card-contact-${contact.id}`}
+            >
               <CardContent className="flex items-center gap-4 py-4">
                 <Avatar className="h-12 w-12">
                   <AvatarFallback className={`${getAvatarColor(contact.name)} text-white font-medium`}>
@@ -521,57 +532,68 @@ export default function Contacts() {
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-medium truncate">{contact.name}</h3>
-                    <Badge variant="secondary" className="text-xs">
-                      {contact.relationship}
-                    </Badge>
-                    {!contact.confirmedAt && (
-                      <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Pending
+                    <h3 className="font-medium truncate">{isConfirmed && !isExpanded ? firstName : contact.name}</h3>
+                    {!isConfirmed && (
+                      <>
+                        <Badge variant="secondary" className="text-xs">
+                          {contact.relationship}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Pending
+                        </Badge>
+                      </>
+                    )}
+                    {isConfirmed && isExpanded && (
+                      <Badge variant="secondary" className="text-xs">
+                        {contact.relationship}
                       </Badge>
                     )}
-                    {contact.isPrimary && contact.confirmedAt && (
+                    {contact.isPrimary && isConfirmed && (
                       <Badge variant="default" className="text-xs">
                         <Star className="h-3 w-3 mr-1 fill-current" />
                         Primary
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1 truncate">
-                      <Mail className="h-3 w-3 flex-shrink-0" />
-                      <span className="truncate">{contact.email}</span>
-                    </span>
-                    {contact.phone && (
-                      <span className="flex items-center gap-1">
-                        {contact.phoneType === "landline" ? (
-                          <PhoneCall className="h-3 w-3 flex-shrink-0" />
-                        ) : (
-                          <Smartphone className="h-3 w-3 flex-shrink-0" />
-                        )}
-                        <span>{contact.phone}</span>
-                        {contact.phoneType === "landline" && (
-                          <Badge variant="outline" className="text-xs ml-1 px-1 py-0">
-                            Landline
-                          </Badge>
-                        )}
+                  {(!isConfirmed || isExpanded) && (
+                    <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground flex-wrap">
+                      <span className="flex items-center gap-1 truncate">
+                        <Mail className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{contact.email}</span>
                       </span>
-                    )}
-                  </div>
+                      {contact.phone && (
+                        <span className="flex items-center gap-1">
+                          {contact.phoneType === "landline" ? (
+                            <PhoneCall className="h-3 w-3 flex-shrink-0" />
+                          ) : (
+                            <Smartphone className="h-3 w-3 flex-shrink-0" />
+                          )}
+                          <span>{contact.phone}</span>
+                          {contact.phoneType === "landline" && (
+                            <Badge variant="outline" className="text-xs ml-1 px-1 py-0">
+                              Landline
+                            </Badge>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-1">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => setPrimaryMutation.mutate(contact.id)}
-                    disabled={setPrimaryMutation.isPending || !contact.confirmedAt}
-                    title={!contact.confirmedAt ? "Contact must confirm first" : (contact.isPrimary ? "Remove primary status" : "Set as primary contact")}
-                    data-testid={`button-toggle-primary-${contact.id}`}
-                  >
-                    <Star className={`h-4 w-4 ${contact.isPrimary && contact.confirmedAt ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} />
-                  </Button>
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  {(!isConfirmed || isExpanded) && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setPrimaryMutation.mutate(contact.id)}
+                      disabled={setPrimaryMutation.isPending || !contact.confirmedAt}
+                      title={!contact.confirmedAt ? "Contact must confirm first" : (contact.isPrimary ? "Remove primary status" : "Set as primary contact")}
+                      data-testid={`button-toggle-primary-${contact.id}`}
+                    >
+                      <Star className={`h-4 w-4 ${contact.isPrimary && isConfirmed ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} />
+                    </Button>
+                  )}
                   <Button
                     size="icon"
                     variant="ghost"
@@ -592,7 +614,8 @@ export default function Contacts() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+              );
+          })}
         </div>
       )}
 
