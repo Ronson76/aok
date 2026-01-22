@@ -23,7 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_animation.mp4";
 import alertsVideo from "@assets/generated_videos/english_sms_alert_notification.mp4";
 import locationVideo from "@assets/generated_videos/uk_streets_gps_map_tracking.mp4";
-import healthInsightLogo from "@assets/health-insight-logo.png";
+import healthInsightLogo from "@assets/health-logo-clean.png";
 
 export default function Landing() {
   const { toast } = useToast();

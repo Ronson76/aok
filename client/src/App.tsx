@@ -9,7 +9,7 @@ import { SplashScreen } from "@/components/splash-screen";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
 import { Loader2, ShieldCheck, Volume2, MoreVertical, Mail, QrCode, Share2 } from "lucide-react";
-import healthInsightLogo from "@assets/health-insight-logo.png";
+import healthInsightLogo from "@assets/health-logo-clean.png";
 import { Link } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
