@@ -23,7 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_animation.mp4";
 import alertsVideo from "@assets/generated_videos/english_sms_alert_notification.mp4";
 import locationVideo from "@assets/generated_videos/uk_streets_gps_map_tracking.mp4";
-import healthInsightLogo from "@assets/IMG-20260122-WA0012_1769077996861.jpg";
+import healthInsightLogo from "@assets/health-insight-logo.png";
 
 export default function Landing() {
   const { toast } = useToast();
@@ -80,7 +80,6 @@ export default function Landing() {
                 src={healthInsightLogo} 
                 alt="Health Insight" 
                 className="h-8 w-8 object-contain"
-                style={{ filter: 'sepia(1) saturate(5) hue-rotate(170deg) brightness(0.9)' }}
               />
               <span className="text-xl font-bold text-primary hidden sm:inline">Health</span>
             </a>

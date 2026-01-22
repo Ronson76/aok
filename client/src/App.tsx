@@ -9,7 +9,7 @@ import { SplashScreen } from "@/components/splash-screen";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
 import { Loader2, ShieldCheck, Volume2, MoreVertical, Mail, QrCode, Share2 } from "lucide-react";
-import healthInsightLogo from "@assets/IMG-20260122-WA0012_1769077996861.jpg";
+import healthInsightLogo from "@assets/health-insight-logo.png";
 import { Link } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -276,7 +276,6 @@ function AppLayout() {
               src={healthInsightLogo} 
               alt="Health Insight" 
               className="h-6 w-6 object-contain"
-              style={{ filter: 'sepia(1) saturate(5) hue-rotate(170deg) brightness(0.9)' }}
             />
             <span className="text-xs font-semibold text-primary">Health</span>
           </a>
