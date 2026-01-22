@@ -75,9 +75,14 @@ export default function Landing() {
               className="flex items-center gap-2 pl-4 border-l border-border"
               data-testid="link-health-insight"
             >
-              <div className="relative h-8 w-8">
-                <Plus className="h-8 w-8 text-primary absolute inset-0" />
-                <Heart className="h-4 w-4 text-primary absolute bottom-0 right-0" fill="currentColor" />
+              <div className="relative h-8 w-8 flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="relative">
+                    <div className="w-7 h-2.5 bg-primary rounded-sm shadow-md" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-7 bg-primary rounded-sm shadow-md" />
+                  </div>
+                </div>
+                <Heart className="h-3 w-3 text-primary absolute -bottom-0.5 -right-0.5" fill="currentColor" />
               </div>
               <span className="text-xl font-bold text-primary hidden sm:inline">Health</span>
             </a>

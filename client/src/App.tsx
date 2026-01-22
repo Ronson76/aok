@@ -271,9 +271,14 @@ function AppLayout() {
             className="flex flex-col items-center w-10"
             data-testid="link-health-insight"
           >
-            <div className="relative h-6 w-6">
-              <Plus className="h-6 w-6 text-primary absolute inset-0" />
-              <Heart className="h-3 w-3 text-primary absolute bottom-0 right-0" fill="currentColor" />
+            <div className="relative h-6 w-6 flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative">
+                  <div className="w-5 h-1.5 bg-primary rounded-sm shadow-sm" />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-5 bg-primary rounded-sm shadow-sm" />
+                </div>
+              </div>
+              <Heart className="h-2 w-2 text-primary absolute -bottom-0.5 -right-0.5" fill="currentColor" />
             </div>
             <span className="text-xs font-semibold text-primary">Health</span>
           </a>
