@@ -16,14 +16,13 @@ import {
 import { 
   ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail, 
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
-  ChevronRight, Shield, Zap, Globe, Lock, Share2
+  ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_animation.mp4";
 import alertsVideo from "@assets/generated_videos/english_sms_alert_notification.mp4";
 import locationVideo from "@assets/generated_videos/uk_streets_gps_map_tracking.mp4";
-import healthInsightLogo from "@assets/health-logo-clean.png";
 
 export default function Landing() {
   const { toast } = useToast();
@@ -76,11 +75,10 @@ export default function Landing() {
               className="flex items-center gap-2 pl-4 border-l border-border"
               data-testid="link-health-insight"
             >
-              <img 
-                src={healthInsightLogo} 
-                alt="Health Insight" 
-                className="h-8 w-8 object-contain"
-              />
+              <div className="relative h-8 w-8">
+                <Plus className="h-8 w-8 text-primary absolute inset-0" />
+                <Heart className="h-4 w-4 text-primary absolute bottom-0 right-0" fill="currentColor" />
+              </div>
               <span className="text-xl font-bold text-primary hidden sm:inline">Health</span>
             </a>
           </div>
