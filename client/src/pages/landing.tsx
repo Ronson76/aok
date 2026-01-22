@@ -79,9 +79,10 @@ export default function Landing() {
               <img 
                 src={healthInsightLogo} 
                 alt="Health Insight" 
-                className="h-8 w-auto object-contain mix-blend-multiply dark:mix-blend-screen dark:invert"
+                className="h-8 w-8 object-contain"
+                style={{ filter: 'sepia(1) saturate(5) hue-rotate(170deg) brightness(0.9)' }}
               />
-              <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Health Advice</span>
+              <span className="text-xl font-bold text-primary hidden sm:inline">Health</span>
             </a>
           </div>
           <nav className="hidden md:flex items-center gap-6">
