@@ -281,14 +281,15 @@ function AppLayout() {
               href="https://health-insight-engine.replit.app" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex items-center"
+              className="flex flex-col items-center"
               data-testid="link-health-insight"
             >
-              <div className="relative h-8 w-8 flex items-center justify-center">
-                <div className="w-6 h-2 bg-green-600 absolute rounded-sm" />
-                <div className="w-2 h-6 bg-green-600 absolute rounded-sm" />
-                <Heart className="h-3 w-3 text-green-600 absolute -bottom-0.5 -right-0.5" fill="currentColor" />
+              <div className="relative h-6 w-6 flex items-center justify-center">
+                <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
+                <div className="w-1.5 h-5 bg-green-600 absolute rounded-sm" />
+                <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
               </div>
+              <span className="text-[10px] font-medium text-green-600 mt-0.5">wellbeing</span>
             </a>
           </div>
           {showMenu ? (
