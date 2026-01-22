@@ -289,7 +289,7 @@ function AppLayout() {
                 <div className="w-1.5 h-5 bg-green-600 absolute rounded-sm" />
                 <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
               </div>
-              <span className="text-[10px] font-medium text-green-600 mt-0.5">wellbeing</span>
+              <span className="text-[10px] font-medium text-green-600 mt-0.5">wellbeing-ai</span>
             </a>
           </div>
           {showMenu ? (
