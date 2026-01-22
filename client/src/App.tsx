@@ -9,6 +9,7 @@ import { SplashScreen } from "@/components/splash-screen";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
 import { Loader2, ShieldCheck, Volume2, MoreVertical, Mail, QrCode, Share2 } from "lucide-react";
+import healthInsightLogo from "@assets/IMG-20260122-WA0012_1769077996861.jpg";
 import { Link } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -264,7 +265,21 @@ function AppLayout() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background border-b">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="w-10" />
+          <a 
+            href="https://health-insight-engine.replit.app" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex flex-col items-center w-10"
+            data-testid="link-health-insight"
+          >
+            <img 
+              src={healthInsightLogo} 
+              alt="Health Insight" 
+              className="h-6 w-6 object-contain"
+              style={{ filter: 'sepia(1) saturate(5) hue-rotate(170deg) brightness(0.9)' }}
+            />
+            <span className="text-xs font-semibold text-primary">Health</span>
+          </a>
           <Link href="/app">
             <div className="flex flex-col items-center cursor-pointer w-fit relative" data-testid="link-home-logo">
               <ShieldCheck className="h-6 w-6 text-primary" />
