@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_animation.mp4";
 import alertsVideo from "@assets/generated_videos/english_sms_alert_notification.mp4";
 import locationVideo from "@assets/generated_videos/uk_streets_gps_map_tracking.mp4";
+import healthInsightLogo from "@assets/IMG-20260122-WA0012_1769077996861.jpg";
 
 export default function Landing() {
   const { toast } = useToast();
@@ -63,9 +64,25 @@ export default function Landing() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-primary">aok</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-8 w-8 text-primary" />
+              <span className="text-xl font-bold text-primary">aok</span>
+            </div>
+            <a 
+              href="https://health-insight-engine.replit.app" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 pl-4 border-l border-border"
+              data-testid="link-health-insight"
+            >
+              <img 
+                src={healthInsightLogo} 
+                alt="Health Insight" 
+                className="h-8 w-auto object-contain mix-blend-multiply dark:mix-blend-screen dark:invert"
+              />
+              <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Health Advice</span>
+            </a>
           </div>
           <nav className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-features">Features</a>
