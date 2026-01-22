@@ -8,8 +8,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { SplashScreen } from "@/components/splash-screen";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
-import { Loader2, ShieldCheck, Volume2, MoreVertical, Mail, QrCode, Share2 } from "lucide-react";
-import healthInsightLogo from "@assets/health-logo-clean.png";
+import { Loader2, ShieldCheck, Volume2, MoreVertical, Mail, QrCode, Share2, Plus, Heart } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -272,11 +271,10 @@ function AppLayout() {
             className="flex flex-col items-center w-10"
             data-testid="link-health-insight"
           >
-            <img 
-              src={healthInsightLogo} 
-              alt="Health Insight" 
-              className="h-6 w-6 object-contain"
-            />
+            <div className="relative h-6 w-6">
+              <Plus className="h-6 w-6 text-primary absolute inset-0" />
+              <Heart className="h-3 w-3 text-primary absolute bottom-0 right-0" fill="currentColor" />
+            </div>
             <span className="text-xs font-semibold text-primary">Health</span>
           </a>
           <Link href="/app">
