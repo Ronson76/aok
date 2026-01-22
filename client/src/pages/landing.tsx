@@ -65,14 +65,15 @@ export default function Landing() {
         <div className="container mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold text-primary">aok</span>
+              <ShieldCheck className="h-8 w-8 text-green-600" />
+              <span className="text-xl font-bold text-green-600">aok</span>
             </div>
+            <div className="h-8 w-px bg-muted-foreground/30" />
             <a 
               href="https://health-insight-engine.replit.app" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex items-center gap-2 pl-4 border-l border-border"
+              className="flex items-center"
               data-testid="link-health-insight"
             >
               <div className="relative h-8 w-8 flex items-center justify-center">
@@ -80,7 +81,6 @@ export default function Landing() {
                 <div className="w-2 h-6 bg-green-600 absolute rounded-sm" />
                 <Heart className="h-3 w-3 text-green-600 absolute -bottom-0.5 -right-0.5" fill="currentColor" />
               </div>
-              <span className="text-xl font-bold text-primary hidden sm:inline">Health</span>
             </a>
           </div>
           <nav className="hidden md:flex items-center gap-6">

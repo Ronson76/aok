@@ -264,31 +264,33 @@ function AppLayout() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background border-b">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-          <a 
-            href="https://health-insight-engine.replit.app" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex flex-col items-center w-10"
-            data-testid="link-health-insight"
-          >
-            <div className="relative h-6 w-6 flex items-center justify-center">
-              <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
-              <div className="w-1.5 h-5 bg-green-600 absolute rounded-sm" />
-              <Heart className="h-2 w-2 text-green-600 absolute -bottom-0.5 -right-0.5" fill="currentColor" />
-            </div>
-            <span className="text-xs font-semibold text-primary">Health</span>
-          </a>
-          <Link href="/app">
-            <div className="flex flex-col items-center cursor-pointer w-fit relative" data-testid="link-home-logo">
-              <ShieldCheck className="h-6 w-6 text-primary" />
-              <span className="text-xs font-semibold text-primary">aok</span>
-              {isOverdue && (
-                <span className="absolute -top-1 -right-3 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                  1
-                </span>
-              )}
-            </div>
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/app">
+              <div className="flex items-center gap-2 cursor-pointer relative" data-testid="link-home-logo">
+                <ShieldCheck className="h-8 w-8 text-green-600" />
+                <span className="text-xl font-bold text-green-600">aok</span>
+                {isOverdue && (
+                  <span className="absolute -top-1 -right-3 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    1
+                  </span>
+                )}
+              </div>
+            </Link>
+            <div className="h-8 w-px bg-muted-foreground/30" />
+            <a 
+              href="https://health-insight-engine.replit.app" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center"
+              data-testid="link-health-insight"
+            >
+              <div className="relative h-8 w-8 flex items-center justify-center">
+                <div className="w-6 h-2 bg-green-600 absolute rounded-sm" />
+                <div className="w-2 h-6 bg-green-600 absolute rounded-sm" />
+                <Heart className="h-3 w-3 text-green-600 absolute -bottom-0.5 -right-0.5" fill="currentColor" />
+              </div>
+            </a>
+          </div>
           {showMenu ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
