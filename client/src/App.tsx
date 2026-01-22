@@ -272,13 +272,9 @@ function AppLayout() {
             data-testid="link-health-insight"
           >
             <div className="relative h-6 w-6 flex items-center justify-center">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="relative">
-                  <div className="w-5 h-1.5 bg-primary rounded-sm shadow-sm" />
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-5 bg-primary rounded-sm shadow-sm" />
-                </div>
-              </div>
-              <Heart className="h-2 w-2 text-primary absolute -bottom-0.5 -right-0.5" fill="currentColor" />
+              <div className="w-6 h-2 bg-green-600 absolute" />
+              <div className="w-2 h-6 bg-green-600 absolute" />
+              <Heart className="h-2 w-2 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
             </div>
             <span className="text-xs font-semibold text-primary">Health</span>
           </a>
