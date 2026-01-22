@@ -76,9 +76,9 @@ export default function Landing() {
               data-testid="link-health-insight"
             >
               <div className="relative h-8 w-8 flex items-center justify-center">
-                <div className="w-8 h-3 bg-green-600 absolute" />
-                <div className="w-3 h-8 bg-green-600 absolute" />
-                <Heart className="h-3 w-3 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
+                <div className="w-6 h-2 bg-green-600 absolute rounded-sm" />
+                <div className="w-2 h-6 bg-green-600 absolute rounded-sm" />
+                <Heart className="h-3 w-3 text-green-600 absolute -bottom-0.5 -right-0.5" fill="currentColor" />
               </div>
               <span className="text-xl font-bold text-primary hidden sm:inline">Health</span>
             </a>
