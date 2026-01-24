@@ -172,7 +172,7 @@ export default function Landing() {
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10 mb-4">
                       <CheckCircle className="h-8 w-8 text-green-500" />
                     </div>
-                    <h3 className="text-2xl font-bold text-green-500">You're Safe</h3>
+                    <h3 className="text-2xl font-bold text-green-500">You're aok</h3>
                     <p className="text-sm text-muted-foreground mt-1">Last check-in: Just now</p>
                   </div>
                   <div className="space-y-3">
@@ -397,7 +397,7 @@ export default function Landing() {
                 />
               </div>
               <h4 className="font-semibold mb-1" data-testid="text-feature-checkin">Easy Check-Ins</h4>
-              <p className="text-sm text-muted-foreground">One tap to confirm you're safe</p>
+              <p className="text-sm text-muted-foreground">One tap to confirm you're aok</p>
             </div>
             
             <div className="text-center">
@@ -514,7 +514,7 @@ export default function Landing() {
               },
               {
                 title: "Solo Travellers",
-                description: "Exploring the world alone? Let someone know you're safe no matter where your adventures take you.",
+                description: "Exploring the world alone? Let someone know you're aok no matter where your adventures take you.",
                 icon: Globe
               },
               {

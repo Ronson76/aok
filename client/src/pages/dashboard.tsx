@@ -235,7 +235,7 @@ function getStatusIcon(status: StatusData["status"]) {
 function getStatusLabel(status: StatusData["status"]) {
   switch (status) {
     case "safe":
-      return { text: "You're Safe", variant: "default" as const };
+      return { text: "You're aok", variant: "default" as const };
     case "pending":
       return { text: "Check-In Due Soon", variant: "secondary" as const };
     case "overdue":
@@ -403,7 +403,7 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/checkins"] });
       toast({
         title: "Check-in successful!",
-        description: "Your loved ones know you're safe.",
+        description: "Your loved ones know you're aok.",
       });
     },
     onError: () => {
