@@ -307,11 +307,11 @@ export default function Register() {
             <span className="text-lg font-semibold text-green-600">aok</span>
           </Link>
           <CardTitle className="text-2xl">
-            {fromOnboarding ? "Almost There!" : "Create Your Account"}
+            {fromOnboarding ? "Registration Complete" : "Create Your Account"}
           </CardTitle>
           <CardDescription>
             {fromOnboarding 
-              ? "Just confirm your details to complete your registration."
+              ? "Please check and confirm your details below."
               : "Sign up for aok to stay connected with your loved ones. You must be 16 years or older to use this service."
             }
           </CardDescription>
@@ -500,17 +500,17 @@ export default function Register() {
                   {/* Simplified form for users coming from onboarding */}
                   <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
                     <div className="text-sm font-medium text-muted-foreground">Your details</div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
+                    <div className="space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                         <span className="text-sm text-muted-foreground">Name</span>
                         <span className="text-sm font-medium" data-testid="text-onboarding-name">{onboardingData?.name || "—"}</span>
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                         <span className="text-sm text-muted-foreground">Email</span>
-                        <span className="text-sm font-medium" data-testid="text-onboarding-email">{onboardingData?.email || "—"}</span>
+                        <span className="text-sm font-medium break-all" data-testid="text-onboarding-email">{onboardingData?.email || "—"}</span>
                       </div>
                       {onboardingData?.contactName && (
-                        <div className="flex justify-between">
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                           <span className="text-sm text-muted-foreground">Emergency Contact</span>
                           <span className="text-sm font-medium">{onboardingData.contactName}</span>
                         </div>
