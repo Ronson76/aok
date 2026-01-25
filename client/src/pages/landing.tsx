@@ -20,10 +20,12 @@ import {
 import { 
   ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail, 
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
-  ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, HeadphonesIcon
+  ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, HeadphonesIcon, LogOut
 } from "lucide-react";
 import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { apiRequest } from "@/lib/queryClient";
 
 import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_animation.mp4";
 import alertsVideo from "@assets/generated_videos/english_sms_alert_notification.mp4";
@@ -31,7 +33,25 @@ import locationVideo from "@assets/generated_videos/uk_streets_gps_map_tracking.
 
 export default function Landing() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isYearly, setIsYearly] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await apiRequest("POST", "/api/auth/logout");
+      window.location.href = "/";
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   const pricingPlans = [
     {
@@ -167,9 +187,21 @@ export default function Landing() {
                 <span className="sr-only">Google Play</span>
               </a>
             </div>
-            <Link href="/login">
-              <Button data-testid="button-sign-in">Sign In</Button>
-            </Link>
+            {user ? (
+              <Button 
+                onClick={handleLogout} 
+                disabled={isLoggingOut}
+                variant="outline"
+                data-testid="button-logout"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                {isLoggingOut ? "Logging out..." : "Log Out"}
+              </Button>
+            ) : (
+              <Link href="/login">
+                <Button data-testid="button-sign-in">Sign In</Button>
+              </Link>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="icon" variant="ghost" data-testid="button-menu">
@@ -177,6 +209,20 @@ export default function Landing() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {user && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard" className="flex items-center gap-2" data-testid="link-go-to-dashboard">
+                        <User className="h-4 w-4" />
+                        Go to Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut} data-testid="menu-logout">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      {isLoggingOut ? "Logging out..." : "Log Out"}
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuItem onClick={handleShare} data-testid="button-share">
                   <Share2 className="h-4 w-4 mr-2" />
                   Share aok
