@@ -27,6 +27,9 @@ import Dashboard from "@/pages/dashboard";
 import Contacts from "@/pages/contacts";
 import History from "@/pages/history";
 import Settings from "@/pages/settings";
+import Mood from "@/pages/mood";
+import Pets from "@/pages/pets";
+import Documents from "@/pages/documents";
 import NotFound from "@/pages/not-found";
 import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/dashboard";
@@ -132,6 +135,9 @@ function AppRoutes() {
       <Route path="/app/contacts" component={() => <ProtectedRoute component={Contacts} />} />
       <Route path="/app/history" component={() => <ProtectedRoute component={History} />} />
       <Route path="/app/settings" component={() => <ProtectedRoute component={Settings} />} />
+      <Route path="/app/mood" component={() => <ProtectedRoute component={Mood} />} />
+      <Route path="/app/pets" component={() => <ProtectedRoute component={Pets} />} />
+      <Route path="/app/documents" component={() => <ProtectedRoute component={Documents} />} />
       <Route component={NotFound} />
     </Switch>
   );
