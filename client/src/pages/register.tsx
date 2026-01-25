@@ -165,7 +165,7 @@ export default function Register() {
             "weekly": 168,
           };
           
-          // Convert time preference to actual schedule time
+          // Use scheduleStartTime from onboarding if available, otherwise fall back to checkInTime mapping
           const timeToSchedule: Record<string, string> = {
             "morning": "10:00",
             "midday": "12:00",
@@ -173,7 +173,7 @@ export default function Register() {
           };
           
           const intervalHours = frequencyToHours[onboardingData.checkInFrequency] || 24;
-          const scheduleTime = timeToSchedule[onboardingData.checkInTime] || "10:00";
+          const scheduleTime = onboardingData.scheduleStartTime || timeToSchedule[onboardingData.checkInTime] || "10:00";
           
           // Calculate next check-in due based on schedule time
           const now = new Date();
@@ -186,11 +186,12 @@ export default function Register() {
             scheduleDate.setDate(scheduleDate.getDate() + 1);
           }
           
-          // Apply settings
-          await apiRequest("PATCH", "/api/settings", {
-            intervalHours,
-            scheduleStartTime: scheduleDate.toISOString(),
-          });
+          // Apply settings (only set scheduleStartTime if scheduling is enabled)
+          const settingsUpdate: any = { intervalHours };
+          if (onboardingData.scheduleEnabled !== false) {
+            settingsUpdate.scheduleStartTime = scheduleDate.toISOString();
+          }
+          await apiRequest("PATCH", "/api/settings", settingsUpdate);
           
           // Create primary contact from onboarding data
           if (onboardingData.contactName && onboardingData.contactEmail) {
