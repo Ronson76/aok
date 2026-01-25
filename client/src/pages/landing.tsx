@@ -22,6 +22,7 @@ import {
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
   ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, HeadphonesIcon
 } from "lucide-react";
+import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 
 import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_animation.mp4";
@@ -156,6 +157,16 @@ export default function Landing() {
             <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-faq">FAQ</a>
           </nav>
           <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2 mr-2">
+              <a href="#" className="flex items-center gap-1 px-2 py-1 rounded border border-border text-xs hover-elevate" data-testid="link-app-store-header">
+                <SiApple className="h-4 w-4" />
+                <span className="sr-only">App Store</span>
+              </a>
+              <a href="#" className="flex items-center gap-1 px-2 py-1 rounded border border-border text-xs hover-elevate" data-testid="link-play-store-header">
+                <SiGoogleplay className="h-4 w-4" />
+                <span className="sr-only">Google Play</span>
+              </a>
+            </div>
             <Link href="/login">
               <Button data-testid="button-sign-in">Sign In</Button>
             </Link>
@@ -216,15 +227,15 @@ export default function Landing() {
               <div className="flex items-center gap-6 mt-8 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  Free to use
+                  7 day free trial
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  No credit card
+                  No commitment
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  Setup in 2 mins
+                  Set up in 2 mins
                 </div>
               </div>
             </div>
@@ -650,7 +661,7 @@ export default function Landing() {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-pricing-title">Simple, Transparent Pricing</h2>
             <p className="text-lg text-muted-foreground mb-2">Get Peace of Mind Today</p>
-            <p className="text-muted-foreground">Start with a 3-day free trial. Cancel anytime.</p>
+            <p className="text-muted-foreground">Start with a 7-day free trial. Cancel anytime.</p>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
@@ -918,6 +929,26 @@ export default function Landing() {
                 <li><Link href="/org/login"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-org-login">Organisation Login</span></Link></li>
                 <li><a href="mailto:support@aok.app" className="hover:text-foreground transition-colors" data-testid="link-footer-sales">Contact Sales</a></li>
               </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Download the App</h4>
+              <div className="flex flex-col gap-3">
+                <a href="#" className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border hover-elevate transition-colors" data-testid="link-app-store-footer">
+                  <SiApple className="h-6 w-6" />
+                  <div className="text-left">
+                    <div className="text-xs text-muted-foreground">Download on the</div>
+                    <div className="text-sm font-semibold">App Store</div>
+                  </div>
+                </a>
+                <a href="#" className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border hover-elevate transition-colors" data-testid="link-play-store-footer">
+                  <SiGoogleplay className="h-6 w-6" />
+                  <div className="text-left">
+                    <div className="text-xs text-muted-foreground">Get it on</div>
+                    <div className="text-sm font-semibold">Google Play</div>
+                  </div>
+                </a>
+              </div>
             </div>
           </div>
           

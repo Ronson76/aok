@@ -10,8 +10,11 @@ import {
   Users, Heart, Baby, Plane, TreePine, MapPin, Car, Globe, Smile, 
   Shield, AlertTriangle, Activity, Scissors, Accessibility, Calendar,
   Clock, RefreshCw, Sun, Sunset, Settings, Search, Bot, Smartphone,
-  Mail, Star, Phone, X
+  Mail, Star, Phone, X, Loader2, Wallet
 } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { SiApple, SiGooglepay } from "react-icons/si";
 
 interface OnboardingData {
   name: string;
@@ -27,6 +30,7 @@ interface OnboardingData {
   referralSource: string;
   planType: string;
   billingCycle: string;
+  email: string;
 }
 
 const TOTAL_STEPS = 15;
@@ -48,6 +52,7 @@ export default function Onboarding() {
     referralSource: "",
     planType: "base",
     billingCycle: "monthly",
+    email: "",
   });
 
   const progress = Math.round((currentStep / TOTAL_STEPS) * 100);
@@ -788,6 +793,62 @@ function Step14Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
 }
 
 function Step15Payment({ data, onComplete }: { data: OnboardingData; onComplete: () => void }) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState(data.email || "");
+  const { toast } = useToast();
+
+  const handleStartTrial = async () => {
+    if (!email || !email.includes("@")) {
+      toast({
+        title: "Email required",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await apiRequest("POST", "/api/stripe/create-subscription-checkout", {
+        email,
+        priceId: data.billingCycle === "yearly" ? "price_1StV4qPFr1sLOzVcfhR3xxWe" : "price_1StV4pPFr1sLOzVc1gw1I4Kt",
+        successUrl: `${window.location.origin}/register?onboarded=true&email=${encodeURIComponent(email)}`,
+        cancelUrl: `${window.location.origin}/onboarding`,
+        trialDays: 7,
+      });
+
+      const result = await response.json();
+      
+      if (result.url) {
+        localStorage.setItem("onboardingData", JSON.stringify({ ...data, email }));
+        window.location.href = result.url;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
+    } catch (error: any) {
+      console.error("Checkout error:", error);
+      toast({
+        title: "Payment setup failed",
+        description: "Please try again or contact support",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
+  };
+
+  const handleSkipPayment = () => {
+    if (!email || !email.includes("@")) {
+      toast({
+        title: "Email required",
+        description: "Please enter a valid email address to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+    localStorage.setItem("onboardingData", JSON.stringify({ ...data, email }));
+    onComplete();
+  };
+
   return (
     <div className="space-y-4">
       <div className="bg-emerald-500 text-white rounded-xl p-6 text-center">
@@ -801,55 +862,78 @@ function Step15Payment({ data, onComplete }: { data: OnboardingData; onComplete:
 
       <Card className="border-0 shadow-lg">
         <CardContent className="p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <CreditCard className="h-5 w-5 text-muted-foreground" />
-            <span className="font-semibold">Card details</span>
-          </div>
-          
           <div className="space-y-4">
-            <div className="relative">
-              <Input 
-                placeholder="Card number" 
-                className="pr-24"
-                data-testid="input-card-number"
+            <div>
+              <label className="text-sm font-medium mb-2 block">Email address</label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                data-testid="input-email"
               />
-              <Button 
-                size="sm" 
-                className="absolute right-1 top-1 h-8"
-                data-testid="button-autofill"
-              >
-                Autofill link
-              </Button>
+              <p className="text-xs text-muted-foreground mt-1">
+                We'll send your check-in reminders here
+              </p>
             </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <Input placeholder="MM/YY" data-testid="input-card-expiry" />
-              <Input placeholder="CVC" data-testid="input-card-cvc" />
-            </div>
-          </div>
 
-          <div className="flex items-center justify-center gap-4 mt-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Lock className="h-3 w-3" />
-              Secure
-            </div>
-            <div className="flex items-center gap-1">
-              <Check className="h-3 w-3" />
-              Cancel anytime
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="font-bold text-indigo-600">S</span>
-              Stripe protected
-            </div>
-          </div>
+            <div className="border-t pt-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Wallet className="h-5 w-5 text-muted-foreground" />
+                <span className="font-semibold">Payment method</span>
+              </div>
+              
+              <div className="flex items-center justify-center gap-4 p-4 bg-muted/30 rounded-lg mb-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <CreditCard className="h-5 w-5" />
+                  <span>Card</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <SiApple className="h-5 w-5" />
+                  <span>Apple Pay</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <SiGooglepay className="h-6 w-6" />
+                </div>
+              </div>
 
-          <Button 
-            onClick={onComplete}
-            className="w-full mt-6 text-lg py-6"
-            data-testid="button-complete-trial"
-          >
-            Start Free Trial
-          </Button>
+              <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground mb-4">
+                <div className="flex items-center gap-1">
+                  <Lock className="h-3 w-3" />
+                  Secure checkout
+                </div>
+                <div className="flex items-center gap-1">
+                  <Check className="h-3 w-3" />
+                  Cancel anytime
+                </div>
+              </div>
+            </div>
+
+            <Button 
+              onClick={handleStartTrial}
+              disabled={isLoading || !email}
+              className="w-full text-lg py-6"
+              data-testid="button-complete-trial"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Redirecting to checkout...
+                </>
+              ) : (
+                "Start Free Trial"
+              )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              onClick={handleSkipPayment}
+              className="w-full"
+              data-testid="button-skip-payment"
+            >
+              Continue without payment
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
