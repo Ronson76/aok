@@ -840,7 +840,7 @@ function Step8Summary({ data }: { data: OnboardingData }) {
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-500" />
-                  {formatContactNames(data.contacts, "Your contacts")} get an instant alert
+                  {formatContactNames(data.contacts, "Your contacts")} {data.contacts.filter(c => c.name).length === 1 ? "gets" : "get"} an instant alert
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-500" />
