@@ -228,7 +228,7 @@ export default function Landing() {
                   Share aok
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <a href="mailto:support@aok.app" className="flex items-center gap-2" data-testid="link-contact-us">
+                  <a href="mailto:support@aok.care?subject=Support%20Enquiry" className="flex items-center gap-2" data-testid="link-contact-us">
                     <Mail className="h-4 w-4" />
                     Contact Us
                   </a>
