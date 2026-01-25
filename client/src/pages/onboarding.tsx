@@ -619,6 +619,8 @@ function Step4LivingSituation({ data, setData }: { data: OnboardingData; setData
     { value: "single-parent", label: "Single parent with children", icon: <Baby className="h-6 w-6" /> },
     { value: "partner-travels", label: "My partner travels often", icon: <Plane className="h-6 w-6" /> },
     { value: "rural", label: "I live in a rural area", icon: <TreePine className="h-6 w-6" /> },
+    { value: "solo-traveller", label: "Solo traveller", icon: <Globe className="h-6 w-6" /> },
+    { value: "lone-worker", label: "Lone worker", icon: <Building2 className="h-6 w-6" /> },
   ];
 
   return (
