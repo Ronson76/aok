@@ -16,7 +16,7 @@ import {
 import { 
   ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail, 
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
-  ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus
+  ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -312,6 +312,42 @@ export default function Landing() {
                 <h3 className="text-lg font-semibold mb-2">Organisation Support</h3>
                 <p className="text-muted-foreground text-sm">
                   Care homes and organisations can monitor multiple clients with dedicated dashboards and alerts.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-emerald-500/10 p-3 w-fit mb-4">
+                  <TrendingUp className="h-6 w-6 text-emerald-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Wellness Tracking</h3>
+                <p className="text-muted-foreground text-sm">
+                  Log your mood after check-ins to track your wellbeing over time. Great for spotting patterns.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-rose-500/10 p-3 w-fit mb-4">
+                  <PawPrint className="h-6 w-6 text-rose-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Pet Protection</h3>
+                <p className="text-muted-foreground text-sm">
+                  Store pet profiles with vet info and care instructions. Your contacts can care for your pets if needed.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-slate-500/10 p-3 w-fit mb-4">
+                  <Scroll className="h-6 w-6 text-slate-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Digital Will Storage</h3>
+                <p className="text-muted-foreground text-sm">
+                  Securely store important documents like wills, power of attorney, and healthcare directives.
                 </p>
               </CardContent>
             </Card>
