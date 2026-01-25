@@ -172,7 +172,8 @@ export default function Register() {
             "evening": "18:00",
           };
           
-          const intervalHours = frequencyToHours[onboardingData.checkInFrequency] || 24;
+          // Use intervalHours directly from onboarding slider, or fall back to frequency mapping
+          const intervalHours = onboardingData.intervalHours || frequencyToHours[onboardingData.checkInFrequency] || 24;
           const scheduleTime = onboardingData.scheduleStartTime || timeToSchedule[onboardingData.checkInTime] || "10:00";
           
           // Calculate next check-in due based on schedule time
