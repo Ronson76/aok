@@ -8,7 +8,9 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle, Smartphone, Eye, EyeOff, TrendingUp, PawPrint, FileText, ChevronRight, Lock, ExternalLink } from "lucide-react";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle, Smartphone, Eye, EyeOff, TrendingUp, PawPrint, FileText, ChevronRight, Lock, ExternalLink, CreditCard, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
@@ -60,6 +62,287 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
     outputArray[i] = rawData.charCodeAt(i);
   }
   return outputArray;
+}
+
+interface SubscriptionData {
+  id: string;
+  status: string;
+  cancelAtPeriodEnd: boolean;
+  currentPeriodEnd: string | null;
+  trialEnd: string | null;
+  productName: string;
+  unitAmount: number;
+  currency: string;
+  interval: string;
+}
+
+function SubscriptionCard() {
+  const { toast } = useToast();
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelPassword, setCancelPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const { data: subscriptionData, isLoading } = useQuery<{ subscription: SubscriptionData | null }>({
+    queryKey: ["/api/stripe/subscription"],
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: async (password: string) => {
+      const res = await apiRequest("POST", "/api/stripe/cancel-subscription", { password });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to cancel subscription");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/stripe/subscription"] });
+      setShowCancelDialog(false);
+      setCancelPassword("");
+      toast({
+        title: "Subscription cancelled",
+        description: "Your subscription will end at the end of your billing period",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to cancel",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const reactivateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/stripe/reactivate-subscription", {});
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to reactivate subscription");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/stripe/subscription"] });
+      toast({
+        title: "Subscription reactivated",
+        description: "Your subscription will continue",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to reactivate",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const subscription = subscriptionData?.subscription;
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            Subscription
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!subscription) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            Subscription
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-3">
+            No active subscription
+          </p>
+          <Link href="/pricing">
+            <Button variant="default" className="w-full" data-testid="button-upgrade">
+              View Plans
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const formatPrice = (amount: number, currency: string) => {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: currency.toUpperCase(),
+    }).format(amount / 100);
+  };
+
+  const getStatusBadge = () => {
+    if (subscription.cancelAtPeriodEnd) {
+      return <Badge variant="secondary" data-testid="badge-subscription-cancelling">Cancelling</Badge>;
+    }
+    switch (subscription.status) {
+      case 'trialing':
+        return <Badge variant="default" className="bg-blue-500" data-testid="badge-subscription-trial">Free Trial</Badge>;
+      case 'active':
+        return <Badge variant="default" className="bg-emerald-500" data-testid="badge-subscription-active">Active</Badge>;
+      case 'past_due':
+        return <Badge variant="destructive" data-testid="badge-subscription-past-due">Past Due</Badge>;
+      default:
+        return <Badge variant="secondary" data-testid="badge-subscription-status">{subscription.status}</Badge>;
+    }
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Subscription
+            </CardTitle>
+            {getStatusBadge()}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Plan</span>
+              <span className="font-medium" data-testid="text-subscription-plan">{subscription.productName}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Price</span>
+              <span data-testid="text-subscription-price">
+                {formatPrice(subscription.unitAmount, subscription.currency)}/{subscription.interval}
+              </span>
+            </div>
+            {subscription.status === 'trialing' && subscription.trialEnd && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Trial ends</span>
+                <span data-testid="text-trial-end">{format(new Date(subscription.trialEnd), 'dd/MM/yyyy')}</span>
+              </div>
+            )}
+            {subscription.currentPeriodEnd && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">
+                  {subscription.cancelAtPeriodEnd ? 'Access until' : 'Renews'}
+                </span>
+                <span data-testid="text-period-end">{format(new Date(subscription.currentPeriodEnd), 'dd/MM/yyyy')}</span>
+              </div>
+            )}
+          </div>
+
+          {subscription.cancelAtPeriodEnd ? (
+            <Button
+              variant="outline"
+              onClick={() => reactivateMutation.mutate()}
+              disabled={reactivateMutation.isPending}
+              className="w-full"
+              data-testid="button-reactivate"
+            >
+              {reactivateMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Reactivate Subscription
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => setShowCancelDialog(true)}
+              className="w-full"
+              data-testid="button-cancel-subscription"
+            >
+              Cancel Subscription
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={showCancelDialog} onOpenChange={(open) => {
+        setShowCancelDialog(open);
+        if (!open) setCancelPassword("");
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              Cancel Subscription
+            </DialogTitle>
+            <DialogDescription>
+              Your subscription will remain active until the end of your billing period. 
+              You can reactivate anytime before then.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="cancel-password">Confirm with your password</Label>
+              <div className="relative">
+                <Input
+                  id="cancel-password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={cancelPassword}
+                  onChange={(e) => setCancelPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && cancelPassword) {
+                      cancelMutation.mutate(cancelPassword);
+                    }
+                  }}
+                  autoComplete="off"
+                  data-testid="input-cancel-password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  onClick={() => setShowPassword(!showPassword)}
+                  data-testid="button-toggle-cancel-password"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCancelDialog(false);
+                setCancelPassword("");
+              }}
+              data-testid="button-cancel-dialog-close"
+            >
+              Keep Subscription
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => cancelMutation.mutate(cancelPassword)}
+              disabled={cancelMutation.isPending || !cancelPassword}
+              data-testid="button-confirm-cancel"
+            >
+              {cancelMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Confirm Cancellation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
 
 export default function Settings() {
@@ -756,6 +1039,8 @@ export default function Settings() {
           )}
         </CardContent>
       </Card>
+
+      <SubscriptionCard />
 
       <Card>
         <CardHeader>

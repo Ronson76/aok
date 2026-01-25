@@ -117,6 +117,48 @@ export class StripeService {
     );
     return result.rows[0] || null;
   }
+
+  async getCustomerByEmail(email: string) {
+    const result = await db.execute(
+      sql`SELECT * FROM stripe.customers WHERE email = ${email} ORDER BY created DESC LIMIT 1`
+    );
+    return result.rows[0] || null;
+  }
+
+  async getSubscriptionByCustomerEmail(email: string) {
+    const result = await db.execute(
+      sql`
+        SELECT s.*, c.email as customer_email, p.name as product_name, pr.unit_amount, pr.currency, pr.recurring
+        FROM stripe.subscriptions s
+        JOIN stripe.customers c ON s.customer = c.id
+        LEFT JOIN stripe.prices pr ON pr.id = (s.items::jsonb->'data'->0->'price'->>'id')
+        LEFT JOIN stripe.products p ON p.id = pr.product
+        WHERE c.email = ${email} 
+        AND s.status IN ('active', 'trialing', 'past_due')
+        ORDER BY s.created DESC
+        LIMIT 1
+      `
+    );
+    return result.rows[0] || null;
+  }
+
+  async cancelSubscription(subscriptionId: string, cancelAtPeriodEnd: boolean = true) {
+    const stripe = await getUncachableStripeClient();
+    if (cancelAtPeriodEnd) {
+      return await stripe.subscriptions.update(subscriptionId, {
+        cancel_at_period_end: true,
+      });
+    } else {
+      return await stripe.subscriptions.cancel(subscriptionId);
+    }
+  }
+
+  async reactivateSubscription(subscriptionId: string) {
+    const stripe = await getUncachableStripeClient();
+    return await stripe.subscriptions.update(subscriptionId, {
+      cancel_at_period_end: false,
+    });
+  }
 }
 
 export const stripeService = new StripeService();

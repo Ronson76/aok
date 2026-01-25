@@ -82,6 +82,12 @@ Preferred communication style: Simple, everyday language.
 - **Resend**: For all email notifications (contact confirmation, successful check-in, missed check-in alerts, password reset).
 - **Twilio**: For SMS alerts (mobile contacts) and automated voice calls (landline contacts) for emergencies and missed check-ins.
 - **what3words**: Integrates precise location sharing (three-word addresses) into emergency alerts.
+- **Stripe**: Payment processing with subscription management, 7-day free trial, Apple Pay/Google Pay support.
+
+### Recent Changes (Jan 2026)
+- **Subscription Management**: Settings page displays subscription status (Active/Trial/Cancelling) with plan details, cancel/reactivate buttons with password confirmation
+- **Forgot Password**: Complete password reset flow via email (`/forgot-password`, `/reset-password?token=xxx`)
+- **Auth Improvements**: Subscription endpoints protected with authMiddleware
 
 ### Build Tools
 - Vite

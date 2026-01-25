@@ -227,6 +227,109 @@ export async function registerRoutes(
       res.status(500).json({ error: "Failed to get products" });
     }
   });
+
+  app.get("/api/stripe/subscription", async (req, res) => {
+    try {
+      const user = await storage.getUserById(req.userId!);
+      if (!user?.email) {
+        return res.json({ subscription: null });
+      }
+
+      const subscription = await stripeService.getSubscriptionByCustomerEmail(user.email) as any;
+      
+      if (!subscription) {
+        return res.json({ subscription: null });
+      }
+
+      const currentPeriodEnd = subscription.current_period_end 
+        ? new Date(Number(subscription.current_period_end) * 1000).toISOString()
+        : null;
+      
+      const trialEnd = subscription.trial_end 
+        ? new Date(Number(subscription.trial_end) * 1000).toISOString()
+        : null;
+
+      const recurring = subscription.recurring as { interval?: string } | null;
+
+      res.json({
+        subscription: {
+          id: subscription.id,
+          status: subscription.status,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          currentPeriodEnd,
+          trialEnd,
+          productName: subscription.product_name || 'aok Subscription',
+          unitAmount: subscription.unit_amount,
+          currency: subscription.currency || 'gbp',
+          interval: recurring?.interval || 'month',
+        }
+      });
+    } catch (error: any) {
+      console.error("Failed to get subscription:", error);
+      res.status(500).json({ error: "Failed to get subscription status" });
+    }
+  });
+
+  app.post("/api/stripe/cancel-subscription", async (req, res) => {
+    try {
+      const { password } = req.body;
+      
+      if (!password) {
+        return res.status(400).json({ error: "Password is required" });
+      }
+
+      const user = await storage.getUserById(req.userId!);
+      if (!user?.email) {
+        return res.status(400).json({ error: "User not found" });
+      }
+
+      const isValid = await bcrypt.compare(password, user.passwordHash);
+      if (!isValid) {
+        return res.status(401).json({ error: "Incorrect password" });
+      }
+
+      const subscription = await stripeService.getSubscriptionByCustomerEmail(user.email) as any;
+      
+      if (!subscription) {
+        return res.status(404).json({ error: "No active subscription found" });
+      }
+
+      await stripeService.cancelSubscription(String(subscription.id), true);
+      
+      res.json({ 
+        success: true, 
+        message: "Subscription will be cancelled at the end of your billing period" 
+      });
+    } catch (error: any) {
+      console.error("Failed to cancel subscription:", error);
+      res.status(500).json({ error: "Failed to cancel subscription" });
+    }
+  });
+
+  app.post("/api/stripe/reactivate-subscription", async (req, res) => {
+    try {
+      const user = await storage.getUserById(req.userId!);
+      if (!user?.email) {
+        return res.status(400).json({ error: "User not found" });
+      }
+
+      const subscription = await stripeService.getSubscriptionByCustomerEmail(user.email) as any;
+      
+      if (!subscription) {
+        return res.status(404).json({ error: "No subscription found" });
+      }
+
+      await stripeService.reactivateSubscription(String(subscription.id));
+      
+      res.json({ 
+        success: true, 
+        message: "Subscription reactivated successfully" 
+      });
+    } catch (error: any) {
+      console.error("Failed to reactivate subscription:", error);
+      res.status(500).json({ error: "Failed to reactivate subscription" });
+    }
+  });
   
   app.get("/promo-org.mp4", (_req, res) => {
     const videoPath = path.resolve(process.cwd(), "attached_assets/generated_videos/organization_dashboard_monitoring.mp4");
@@ -739,6 +842,9 @@ export async function registerRoutes(
   app.use("/api/pets", authMiddleware);
   app.use("/api/documents", authMiddleware);
   app.use("/api/features", authMiddleware);
+  app.use("/api/stripe/subscription", authMiddleware);
+  app.use("/api/stripe/cancel-subscription", authMiddleware);
+  app.use("/api/stripe/reactivate-subscription", authMiddleware);
 
   // Get status data for dashboard
   app.get("/api/status", async (req, res) => {
