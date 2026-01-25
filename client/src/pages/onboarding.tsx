@@ -920,20 +920,6 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
             </ul>
           </div>
 
-          <button 
-            className="w-full p-3 border rounded-lg flex items-center justify-between hover-elevate transition-colors"
-            data-testid="button-upgrade-plus"
-          >
-            <div className="flex items-center gap-3">
-              <Phone className="h-5 w-5 text-primary" />
-              <div className="text-left">
-                <div className="font-medium text-sm">Want AI phone check-ins?</div>
-                <div className="text-xs text-muted-foreground">Upgrade to Plus for £8.99/mo</div>
-              </div>
-            </div>
-            <ChevronLeft className="h-4 w-4 rotate-180 text-muted-foreground" />
-          </button>
-
           <div className="grid grid-cols-2 gap-3 mt-6">
             <button
               onClick={() => setData({ ...data, billingCycle: "monthly" })}
