@@ -44,8 +44,49 @@ import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
 import { TermsModal } from "@/components/terms-modal";
 
-function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+function PaymentBlockedScreen() {
+  const { logout } = useAuth();
+  
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-background p-4">
+      <Card className="max-w-md w-full">
+        <CardContent className="pt-6 text-center space-y-4">
+          <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto">
+            <svg className="w-8 h-8 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold">Payment Required</h2>
+          <p className="text-muted-foreground">
+            Your payment could not be processed. Please update your payment details to continue using aok.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            We've sent an email with instructions on how to update your payment.
+          </p>
+          <div className="flex flex-col gap-2 pt-4">
+            <Link href="/app/settings">
+              <Button className="w-full" data-testid="button-update-payment">
+                Update Payment Details
+              </Button>
+            </Link>
+            <Button variant="outline" onClick={logout} className="w-full" data-testid="button-logout-payment">
+              Sign Out
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ProtectedRoute({ component: Component, allowPaymentBlocked = false }: { component: React.ComponentType, allowPaymentBlocked?: boolean }) {
   const { isAuthenticated, isLoading, user } = useAuth();
+  
+  const { data: paymentStatus } = useQuery<{ blocked: boolean; reason: string | null }>({
+    queryKey: ["/api/stripe/payment-status"],
+    enabled: isAuthenticated && !isLoading,
+    refetchInterval: 60000,
+  });
   
   if (isLoading) {
     return (
@@ -68,6 +109,11 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
         <TermsModal open={true} />
       </div>
     );
+  }
+
+  // Check payment status - block access if payment failed (except for settings page)
+  if (!allowPaymentBlocked && paymentStatus?.blocked) {
+    return <PaymentBlockedScreen />;
   }
 
   return <Component />;
@@ -138,7 +184,7 @@ function AppRoutes() {
       <Route path="/org/dashboard" component={() => <ProtectedRoute component={OrganizationDashboard} />} />
       <Route path="/app/contacts" component={() => <ProtectedRoute component={Contacts} />} />
       <Route path="/app/history" component={() => <ProtectedRoute component={History} />} />
-      <Route path="/app/settings" component={() => <ProtectedRoute component={Settings} />} />
+      <Route path="/app/settings" component={() => <ProtectedRoute component={Settings} allowPaymentBlocked={true} />} />
       <Route path="/app/mood" component={() => <ProtectedRoute component={Mood} />} />
       <Route path="/app/pets" component={() => <ProtectedRoute component={Pets} />} />
       <Route path="/app/documents" component={() => <ProtectedRoute component={Documents} />} />

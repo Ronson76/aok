@@ -1557,3 +1557,90 @@ export async function sendTestEmail(to: string): Promise<{ success: boolean; err
     return { success: false, error: error?.message || "Unknown error" };
   }
 }
+
+export async function sendPaymentFailedEmails(userEmail: string, userName: string): Promise<void> {
+  const appName = "aok";
+  const settingsUrl = `${process.env.REPLIT_DEV_DOMAIN || 'https://aok.replit.app'}/app/settings`;
+  
+  const userSubject = `${appName} - Action Required: Update Your Payment Details`;
+  const userBody = `Hi ${userName || 'there'},
+
+We were unable to process your payment for your ${appName} Complete Protection subscription.
+
+To continue using ${appName} and keep your loved ones updated on your safety, please update your payment details as soon as possible.
+
+Your account will remain blocked until payment details are updated.
+
+Update payment details: ${settingsUrl}
+
+If you have any questions, please don't hesitate to contact us.
+
+Stay safe,
+The ${appName} Team`;
+
+  const userHtml = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #dc2626;">Action Required: Update Your Payment Details</h2>
+      <p>Hi ${userName || 'there'},</p>
+      <p>We were unable to process your payment for your <strong>${appName} Complete Protection</strong> subscription.</p>
+      <p>To continue using ${appName} and keep your loved ones updated on your safety, please update your payment details as soon as possible.</p>
+      <p style="background-color: #fef2f2; padding: 15px; border-radius: 8px; border-left: 4px solid #dc2626;">
+        <strong>Your account will remain blocked until payment details are updated.</strong>
+      </p>
+      <p style="text-align: center; margin: 30px 0;">
+        <a href="${settingsUrl}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Update Payment Details</a>
+      </p>
+      <p>If you have any questions, please don't hesitate to contact us.</p>
+      <p>Stay safe,<br>The ${appName} Team</p>
+    </div>`;
+
+  try {
+    await sendEmail(userEmail, userSubject, userBody, userHtml);
+    console.log(`[PAYMENT FAILED] Sent payment failure email to user: ${userEmail}`);
+  } catch (error) {
+    console.error(`[PAYMENT FAILED] Failed to send email to user ${userEmail}:`, error);
+  }
+
+  try {
+    const { storage } = await import('./storage');
+    const user = await storage.getUserByEmail(userEmail);
+    if (user) {
+      const contacts = await storage.getContacts(user.id);
+      const primaryContact = contacts.find((c: any) => c.isPrimary && c.isConfirmed);
+      
+      if (primaryContact && primaryContact.email) {
+        const contactSubject = `${appName} - ${userName || 'Your contact'}'s payment requires attention`;
+        const contactBody = `Hi ${primaryContact.name},
+
+You are the primary emergency contact for ${userName || 'a user'} on ${appName}.
+
+We wanted to let you know that their payment for ${appName} Complete Protection was unsuccessful. Their account will be temporarily blocked until payment details are updated.
+
+This means they may not be able to check in or send emergency alerts during this time.
+
+If you're in contact with them, please remind them to update their payment details.
+
+Best regards,
+The ${appName} Team`;
+
+        const contactHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #f59e0b;">Payment Attention Required</h2>
+            <p>Hi ${primaryContact.name},</p>
+            <p>You are the primary emergency contact for <strong>${userName || 'a user'}</strong> on ${appName}.</p>
+            <p>We wanted to let you know that their payment for ${appName} Complete Protection was unsuccessful. Their account will be temporarily blocked until payment details are updated.</p>
+            <p style="background-color: #fffbeb; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+              <strong>This means they may not be able to check in or send emergency alerts during this time.</strong>
+            </p>
+            <p>If you're in contact with them, please remind them to update their payment details.</p>
+            <p>Best regards,<br>The ${appName} Team</p>
+          </div>`;
+
+        await sendEmail(primaryContact.email, contactSubject, contactBody, contactHtml);
+        console.log(`[PAYMENT FAILED] Sent payment failure email to primary contact: ${primaryContact.email}`);
+      }
+    }
+  } catch (error) {
+    console.error(`[PAYMENT FAILED] Failed to send email to primary contact:`, error);
+  }
+}

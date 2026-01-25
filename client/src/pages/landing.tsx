@@ -541,9 +541,8 @@ export default function Landing() {
                   loop 
                   muted 
                   playsInline
-                  controls
                   aria-label="Demo video showing how easy check-ins work in the aok app"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover pointer-events-none"
                   data-testid="video-checkin"
                 />
               </div>
@@ -559,9 +558,8 @@ export default function Landing() {
                   loop 
                   muted 
                   playsInline
-                  controls
                   aria-label="Demo video showing multi-channel alert notifications"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover pointer-events-none"
                   data-testid="video-alerts"
                 />
               </div>
@@ -577,9 +575,8 @@ export default function Landing() {
                   loop 
                   muted 
                   playsInline
-                  controls
                   aria-label="Demo video showing GPS location tracking and sharing"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover pointer-events-none"
                   data-testid="video-location"
                 />
               </div>
