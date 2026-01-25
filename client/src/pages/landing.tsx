@@ -497,9 +497,9 @@ export default function Landing() {
               <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 2
               </div>
-              <h3 className="text-lg font-semibold mb-2">Add Contacts</h3>
+              <h3 className="text-lg font-semibold mb-2">Insert Your Details</h3>
               <p className="text-sm text-muted-foreground">
-                Enter your emergency contacts' details. They'll confirm via email to receive alerts.
+                Add your personal information and emergency contacts who'll be notified if needed.
               </p>
             </div>
             
@@ -507,7 +507,7 @@ export default function Landing() {
               <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 3
               </div>
-              <h3 className="text-lg font-semibold mb-2">Set Timer</h3>
+              <h3 className="text-lg font-semibold mb-2">Set Your Check-In Time</h3>
               <p className="text-sm text-muted-foreground">
                 Choose how often you want to check in - from every 5 minutes to every 48 hours.
               </p>
@@ -517,9 +517,9 @@ export default function Landing() {
               <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 4
               </div>
-              <h3 className="text-lg font-semibold mb-2">Check In</h3>
+              <h3 className="text-lg font-semibold mb-2">You're All Set</h3>
               <p className="text-sm text-muted-foreground">
-                Tap the button when reminded. If you miss it, your contacts are automatically notified.
+                Start checking in and stay connected with your loved ones. We've got your back.
               </p>
             </div>
           </div>
