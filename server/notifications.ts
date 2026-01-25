@@ -784,7 +784,23 @@ export async function sendMissedCheckInAlert(
   let whatsappSent = 0;
   let whatsappFailed = 0;
   
-  for (const contact of contacts) {
+  // Only send to primary contacts for missed check-in alerts
+  const primaryContacts = contacts.filter(c => c.isPrimary);
+  
+  // Get what3words location if user has GPS coordinates
+  let what3wordsAddress: string | null = null;
+  if (user.latitude && user.longitude) {
+    try {
+      what3wordsAddress = await getWhat3WordsAddress(
+        parseFloat(user.latitude), 
+        parseFloat(user.longitude)
+      );
+    } catch (error) {
+      console.error('[ALERT] Failed to get what3words address:', error);
+    }
+  }
+  
+  for (const contact of primaryContacts) {
     // Only alert confirmed contacts
     if (!contact.confirmedAt) {
       console.log(`[ALERT] Skipping unconfirmed contact ${contact.name}`);
@@ -794,14 +810,27 @@ export async function sendMissedCheckInAlert(
     const emailSubject = `ALERT: ${subjectIdentifier} missed their aok check-in`;
     
     let locationInfo = "";
+    
+    // Include what3words location if available
+    if (what3wordsAddress) {
+      const w3wUrl = `https://what3words.com/${what3wordsAddress}`;
+      locationInfo += `
+Last known location:
+what3words: ///${what3wordsAddress}
+View on map: ${w3wUrl}
+`;
+    }
+    
     if (user.addressLine1) {
-      locationInfo = `
+      locationInfo += `
 Registered address:
 ${user.addressLine1}
 ${user.addressLine2 ? user.addressLine2 + '\n' : ''}${user.city || ""}, ${user.postalCode || ""}
 ${user.country || ""}`;
-    } else if (user.mobileNumber) {
-      locationInfo = `
+    }
+    
+    if (user.mobileNumber) {
+      locationInfo += `
 Mobile number: ${user.mobileNumber}`;
     }
     
@@ -816,11 +845,11 @@ Please try to reach out to ensure their safety.
 
 - The aok Team`;
 
-    // Send email only for missed check-in alerts (to save cost)
+    // Send email only for missed check-in alerts (to primary contacts only)
     try {
       await sendEmail(contact.email, emailSubject, emailBody);
       emailsSent++;
-      console.log(`[ALERT] Email sent to ${contact.name} (${contact.email})`);
+      console.log(`[ALERT] Email sent to primary contact ${contact.name} (${contact.email})`);
     } catch (error) {
       emailsFailed++;
       console.error(`[ALERT] Failed to send email to ${contact.email}:`, error);
@@ -840,10 +869,30 @@ export async function sendSuccessfulCheckInNotification(
     : user.name;
   
   const now = new Date();
-  const checkInTime = now.toLocaleString('en-US', { 
+  const checkInTime = now.toLocaleString('en-GB', { 
     dateStyle: 'medium', 
     timeStyle: 'short' 
   });
+  
+  // Get what3words location if user has GPS coordinates
+  let locationInfo = "";
+  if (user.latitude && user.longitude) {
+    try {
+      const what3wordsAddress = await getWhat3WordsAddress(
+        parseFloat(user.latitude), 
+        parseFloat(user.longitude)
+      );
+      if (what3wordsAddress) {
+        const w3wUrl = `https://what3words.com/${what3wordsAddress}`;
+        locationInfo = `
+Location: ///${what3wordsAddress}
+View on map: ${w3wUrl}
+`;
+      }
+    } catch (error) {
+      console.error('[CHECK-IN NOTIFICATION] Failed to get what3words address:', error);
+    }
+  }
   
   const subject = `aok: ${identifier} checked in successfully`;
   const body = `Hi ${primaryContact.name},
@@ -851,7 +900,7 @@ export async function sendSuccessfulCheckInNotification(
 Good news! ${identifier} has completed their scheduled check-in on aok.
 
 Check-in time: ${checkInTime}
-
+${locationInfo}
 This is an automated notification confirming their safety. No action is required from you.
 
 - The aok Team`;
