@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,10 +61,32 @@ const petIcons: Record<string, LucideIcon> = {
 
 export default function Pets() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPet, setEditingPet] = useState<Pet | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Check feature access
+  const { data: features, isLoading: featuresLoading } = useQuery<{
+    featurePetProtection: boolean;
+    isOrgAccount: boolean;
+    isOrgClient: boolean;
+  }>({
+    queryKey: ["/api/features"],
+  });
+
+  // Redirect if feature is disabled
+  useEffect(() => {
+    if (!featuresLoading && features?.featurePetProtection === false) {
+      toast({
+        title: "Feature not available",
+        description: "This feature has not been enabled by your organisation.",
+        variant: "destructive",
+      });
+      setLocation("/app/settings");
+    }
+  }, [features, featuresLoading, setLocation, toast]);
 
   const form = useForm<InsertPet>({
     resolver: zodResolver(insertPetSchema),
@@ -84,6 +107,7 @@ export default function Pets() {
 
   const { data: pets = [], isLoading } = useQuery<Pet[]>({
     queryKey: ["/api/pets"],
+    enabled: features?.featurePetProtection !== false,
   });
 
   const createMutation = useMutation({
