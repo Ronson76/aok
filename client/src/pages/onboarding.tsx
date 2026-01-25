@@ -952,7 +952,9 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
                 type="tel"
                 value={data.contactPhone}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/[^\d\s]/g, '');
+                  let value = e.target.value.replace(/[^\d\s]/g, '');
+                  // Remove leading zero
+                  value = value.replace(/^0+/, '');
                   setData({ ...data, contactPhone: value });
                 }}
                 placeholder={data.contactPhoneCountry === "+44" ? "7700 900000" : "Phone number"}
@@ -989,10 +991,12 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
                 type="tel"
                 value={data.contactLandline}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/[^\d\s]/g, '');
+                  let value = e.target.value.replace(/[^\d\s]/g, '');
+                  // Remove leading zero
+                  value = value.replace(/^0+/, '');
                   setData({ ...data, contactLandline: value });
                 }}
-                placeholder={data.contactLandlineCountry === "+44" ? "020 7946 0958" : "Landline number"}
+                placeholder={data.contactLandlineCountry === "+44" ? "20 7946 0958" : "Landline number"}
                 className="flex-1"
                 data-testid="input-contact-landline"
               />
