@@ -28,11 +28,18 @@ export default function Register() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const onboarded = urlParams.get('onboarded') === 'true';
+    const emailFromUrl = urlParams.get('email');
     const storedData = localStorage.getItem("onboardingData");
     
     if (onboarded && storedData) {
       try {
         const data = JSON.parse(storedData);
+        // Use email from URL if available (from Stripe redirect), otherwise use stored email
+        if (emailFromUrl) {
+          data.email = emailFromUrl;
+          // Update localStorage with the email from URL
+          localStorage.setItem("onboardingData", JSON.stringify(data));
+        }
         setOnboardingData(data);
         setFromOnboarding(true);
       } catch (e) {
