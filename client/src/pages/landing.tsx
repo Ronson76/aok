@@ -581,58 +581,6 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="video" className="py-20 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">See aok in Action</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Watch our tutorial to learn how to set up and use the aok app.
-            </p>
-          </div>
-          
-          <div className="relative aspect-video rounded-2xl overflow-hidden bg-card border shadow-2xl" data-testid="video-tutorial-placeholder">
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-primary/20">
-              <button 
-                type="button"
-                className="rounded-full bg-primary/10 p-6 mb-4 hover-elevate transition-colors"
-                aria-label="Play tutorial video (coming soon)"
-                data-testid="button-play-tutorial"
-              >
-                <Play className="h-12 w-12 text-primary" />
-              </button>
-              <p className="text-lg font-medium mb-2" data-testid="text-tutorial-status">Video Tutorial Coming Soon</p>
-              <p className="text-sm text-muted-foreground max-w-md text-center px-4">
-                A step-by-step guide showing you how to sign up, add contacts, and use all the features of aok.
-              </p>
-            </div>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6 mt-12">
-            <div className="text-center p-4">
-              <div className="rounded-full bg-primary/10 p-3 w-fit mx-auto mb-3">
-                <User className="h-6 w-6 text-primary" />
-              </div>
-              <h4 className="font-semibold mb-1">Account Setup</h4>
-              <p className="text-sm text-muted-foreground">Learn how to create your account and personalise your settings.</p>
-            </div>
-            <div className="text-center p-4">
-              <div className="rounded-full bg-primary/10 p-3 w-fit mx-auto mb-3">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
-              <h4 className="font-semibold mb-1">Adding Contacts</h4>
-              <p className="text-sm text-muted-foreground">See how easy it is to add and manage your emergency contacts.</p>
-            </div>
-            <div className="text-center p-4">
-              <div className="rounded-full bg-primary/10 p-3 w-fit mx-auto mb-3">
-                <Zap className="h-6 w-6 text-primary" />
-              </div>
-              <h4 className="font-semibold mb-1">Daily Check-Ins</h4>
-              <p className="text-sm text-muted-foreground">Discover the quick check-in process and alert system.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section id="use-cases" className="py-20 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
