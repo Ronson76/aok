@@ -140,7 +140,7 @@ export default function OrganizationLogin() {
               </Button>
               <p className="text-sm text-muted-foreground text-center">
                 Need an organisation account?{" "}
-                <a href="mailto:support@aok.app" className="text-primary hover:underline">
+                <a href="mailto:organisations@aok.care?subject=Organisation%20Account%20Enquiry" className="text-primary hover:underline">
                   Contact us
                 </a>
               </p>
