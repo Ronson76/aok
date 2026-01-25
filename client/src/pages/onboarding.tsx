@@ -1006,7 +1006,7 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
         <div className="flex items-start gap-2 p-3 rounded-md bg-muted/50 mt-6">
           <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <p className="text-sm text-muted-foreground">
-            This will be your primary contact. You can add additional contacts in the Settings page after setup.
+            This will be your primary contact. You can add additional contacts in the Contacts page after setup.
           </p>
         </div>
       </CardContent>
