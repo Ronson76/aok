@@ -7,6 +7,8 @@ import bcrypt from "bcrypt";
 import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification, sendContactRemovedNotification } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
+import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
+import { stripeService } from "./stripeService";
 
 // Helper function to render a simple HTML confirmation page
 function renderConfirmationPage(success: boolean, message: string): string {
@@ -163,6 +165,61 @@ export async function registerRoutes(
       res.sendFile(videoPath);
     } else {
       res.status(404).json({ error: "Video not found" });
+    }
+  });
+
+  // Stripe payment routes
+  app.get("/api/stripe/publishable-key", async (_req, res) => {
+    try {
+      const publishableKey = await getStripePublishableKey();
+      res.json({ publishableKey });
+    } catch (error: any) {
+      console.error("Failed to get Stripe publishable key:", error);
+      res.status(500).json({ error: "Failed to get Stripe configuration" });
+    }
+  });
+
+  app.post("/api/stripe/create-subscription-checkout", async (req, res) => {
+    try {
+      const { priceId, email, successUrl, cancelUrl, trialDays = 7 } = req.body;
+      
+      if (!priceId || !email) {
+        return res.status(400).json({ error: "priceId and email are required" });
+      }
+
+      const session = await stripeService.createSubscriptionCheckoutSession(
+        null,
+        priceId,
+        successUrl || `${req.protocol}://${req.get('host')}/checkout/success`,
+        cancelUrl || `${req.protocol}://${req.get('host')}/checkout/cancel`,
+        email,
+        trialDays
+      );
+
+      res.json({ url: session.url, sessionId: session.id });
+    } catch (error: any) {
+      console.error("Failed to create checkout session:", error);
+      res.status(500).json({ error: error.message || "Failed to create checkout session" });
+    }
+  });
+
+  app.post("/api/stripe/create-setup-intent", async (req, res) => {
+    try {
+      const setupIntent = await stripeService.createSetupIntent();
+      res.json({ clientSecret: setupIntent.client_secret });
+    } catch (error: any) {
+      console.error("Failed to create setup intent:", error);
+      res.status(500).json({ error: error.message || "Failed to create setup intent" });
+    }
+  });
+
+  app.get("/api/stripe/products", async (_req, res) => {
+    try {
+      const products = await stripeService.getProductsWithPrices();
+      res.json({ products });
+    } catch (error: any) {
+      console.error("Failed to get products:", error);
+      res.status(500).json({ error: "Failed to get products" });
     }
   });
   
