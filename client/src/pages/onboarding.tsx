@@ -59,6 +59,10 @@ function formatContactNames(contacts: ContactData[], fallback: string = "your co
 
 interface OnboardingData {
   name: string;
+  email: string;
+  userPhone: string;
+  userPhoneCountry: string;
+  locationPermission: 'pending' | 'granted' | 'denied' | 'unavailable';
   ageGroup: string;
   livingSituation: string;
   whoWorries: string;
@@ -79,7 +83,6 @@ interface OnboardingData {
   intervalHours: number;
   planType: string;
   billingCycle: string;
-  email: string;
 }
 
 const TOTAL_STEPS = 16;
@@ -89,6 +92,10 @@ export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState(1);
   const [data, setData] = useState<OnboardingData>({
     name: "",
+    email: "",
+    userPhone: "",
+    userPhoneCountry: "+44",
+    locationPermission: "pending",
     ageGroup: "",
     livingSituation: "",
     whoWorries: "",
@@ -112,7 +119,6 @@ export default function Onboarding() {
     intervalHours: 24,
     planType: "base",
     billingCycle: "monthly",
-    email: "",
   });
 
   const progress = Math.round((currentStep / TOTAL_STEPS) * 100);
@@ -138,7 +144,14 @@ export default function Onboarding() {
 
   const canProceed = useCallback(() => {
     switch (currentStep) {
-      case 1: return data.name.trim().length > 0;
+      case 1: {
+        // Require name, valid email, valid phone, and location permission granted
+        const hasName = data.name.trim().length > 0;
+        const hasEmail = data.email.includes("@") && data.email.includes(".");
+        const hasPhone = isValidMobileNumber(data.userPhone, data.userPhoneCountry);
+        const hasLocation = data.locationPermission === "granted";
+        return hasName && hasEmail && hasPhone && hasLocation;
+      }
       case 2: return data.ageGroup !== "";
       case 3: return data.livingSituation !== "";
       case 4: return data.whoWorries !== "";
@@ -206,7 +219,7 @@ export default function Onboarding() {
       case 12: return <Step13Time data={data} setData={setData} />;
       case 13: return <Step14ContactDetails data={data} setData={setData} />;
       case 14: return <Step15Plan data={data} setData={setData} />;
-      case 15: return <Step16Payment data={data} setData={setData} />;
+      case 15: return <Step16Payment data={data} />;
       case 16: return <Step1Terms accepted={termsAccepted} setAccepted={setTermsAccepted} onComplete={handleComplete} />;
       default: return null;
     }
@@ -374,6 +387,28 @@ function Step1Terms({ accepted, setAccepted, onComplete }: { accepted: boolean; 
 }
 
 function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
+  
+  const handleRequestLocation = () => {
+    if (!('geolocation' in navigator)) {
+      setData({ ...data, locationPermission: 'unavailable' });
+      return;
+    }
+    
+    setIsRequestingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      () => {
+        setData({ ...data, locationPermission: 'granted' });
+        setIsRequestingLocation(false);
+      },
+      () => {
+        setData({ ...data, locationPermission: 'denied' });
+        setIsRequestingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-6">
@@ -382,18 +417,124 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
           Let's build your personal protection plan. It only takes 2 minutes.
         </p>
         
-        <div className="space-y-2">
-          <label className="text-sm font-medium">What should we call you?</label>
-          <Input
-            value={data.name}
-            onChange={(e) => setData({ ...data, name: e.target.value })}
-            placeholder="Sarah"
-            className="text-lg"
-            data-testid="input-name"
-          />
-          <p className="text-xs text-muted-foreground">
-            This name will appear on alerts to your contacts.
-          </p>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">What should we call you?</label>
+            <Input
+              value={data.name}
+              onChange={(e) => setData({ ...data, name: e.target.value })}
+              placeholder="Sarah"
+              className="text-lg"
+              data-testid="input-name"
+            />
+            <p className="text-xs text-muted-foreground">
+              This name will appear on alerts to your contacts.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Email address</label>
+            <Input
+              type="email"
+              value={data.email}
+              onChange={(e) => setData({ ...data, email: e.target.value })}
+              placeholder="you@example.com"
+              data-testid="input-email"
+            />
+            <p className="text-xs text-muted-foreground">
+              We'll send your check-in reminders here.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Mobile number</label>
+            <div className="flex gap-2">
+              <select
+                value={data.userPhoneCountry}
+                onChange={(e) => setData({ ...data, userPhoneCountry: e.target.value })}
+                className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                data-testid="select-user-phone-country"
+              >
+                {countryCodes.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.flag} {c.code}
+                  </option>
+                ))}
+              </select>
+              <Input
+                type="tel"
+                value={data.userPhone}
+                onChange={(e) => setData({ ...data, userPhone: e.target.value.replace(/\D/g, '') })}
+                placeholder="7700900123"
+                className="flex-1"
+                data-testid="input-user-phone"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              For check-in reminders and emergency alerts.
+            </p>
+          </div>
+
+          <div className="space-y-2 pt-2">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-primary" />
+              Location permission
+            </label>
+            {data.locationPermission === 'granted' ? (
+              <div className="flex items-center gap-2 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <Check className="h-5 w-5 text-emerald-600" />
+                <span className="text-sm text-emerald-700 dark:text-emerald-300">Location access granted</span>
+              </div>
+            ) : data.locationPermission === 'denied' ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                  <span className="text-sm text-red-700 dark:text-red-300">Location access denied</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Please enable location in your browser settings, then try again.
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={handleRequestLocation}
+                  className="w-full"
+                  data-testid="button-retry-location"
+                >
+                  Try Again
+                </Button>
+              </div>
+            ) : data.locationPermission === 'unavailable' ? (
+              <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <Info className="h-5 w-5 text-amber-600" />
+                <span className="text-sm text-amber-700 dark:text-amber-300">Location not available on this device</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Required for emergency alerts to share your location with contacts.
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={handleRequestLocation}
+                  disabled={isRequestingLocation}
+                  className="w-full"
+                  data-testid="button-enable-location"
+                >
+                  {isRequestingLocation ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Requesting...
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Enable Location
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -1239,22 +1380,12 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
   );
 }
 
-function Step16Payment({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
-  const [, setLocation] = useLocation();
+function Step16Payment({ data }: { data: OnboardingData }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState(data.email || "");
   const { toast } = useToast();
+  const email = data.email; // Email already collected on page 1
 
   const handleStartTrial = async () => {
-    if (!email || !email.includes("@")) {
-      toast({
-        title: "Email required",
-        description: "Please enter a valid email address",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
       const response = await apiRequest("POST", "/api/stripe/create-subscription-checkout", {
@@ -1268,7 +1399,7 @@ function Step16Payment({ data, setData }: { data: OnboardingData; setData: (d: O
       const result = await response.json();
       
       if (result.url) {
-        localStorage.setItem("onboardingData", JSON.stringify({ ...data, email }));
+        localStorage.setItem("onboardingData", JSON.stringify(data));
         window.location.href = result.url;
       } else {
         throw new Error("No checkout URL returned");
@@ -1282,21 +1413,6 @@ function Step16Payment({ data, setData }: { data: OnboardingData; setData: (d: O
       });
       setIsLoading(false);
     }
-  };
-
-  const handleSkipPayment = () => {
-    if (!email || !email.includes("@")) {
-      toast({
-        title: "Email required",
-        description: "Please enter a valid email address to continue",
-        variant: "destructive",
-      });
-      return;
-    }
-    // Save data with email and navigate directly with email in URL
-    const updatedData = { ...data, email };
-    localStorage.setItem("onboardingData", JSON.stringify(updatedData));
-    setLocation(`/register?onboarded=true&email=${encodeURIComponent(email)}`);
   };
 
   return (
@@ -1314,20 +1430,6 @@ function Step16Payment({ data, setData }: { data: OnboardingData; setData: (d: O
         <CardContent className="p-6">
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">Email address</label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                data-testid="input-email"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                We'll send your check-in reminders here
-              </p>
-            </div>
-
-            <div className="border-t pt-4">
               <div className="flex items-center gap-2 mb-4">
                 <Wallet className="h-5 w-5 text-muted-foreground" />
                 <span className="font-semibold">Payment method</span>
@@ -1361,7 +1463,7 @@ function Step16Payment({ data, setData }: { data: OnboardingData; setData: (d: O
 
             <Button 
               onClick={handleStartTrial}
-              disabled={isLoading || !email}
+              disabled={isLoading}
               className="w-full text-lg py-6"
               data-testid="button-complete-trial"
             >
@@ -1373,15 +1475,6 @@ function Step16Payment({ data, setData }: { data: OnboardingData; setData: (d: O
               ) : (
                 "Start Free Trial"
               )}
-            </Button>
-
-            <Button
-              variant="ghost"
-              onClick={handleSkipPayment}
-              className="w-full"
-              data-testid="button-skip-payment"
-            >
-              Continue without payment
             </Button>
           </div>
         </CardContent>
