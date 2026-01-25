@@ -966,7 +966,7 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
               </p>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              For SMS alerts
+              For SMS alerts and voice calls
             </p>
           </div>
 
