@@ -66,12 +66,13 @@ export function TermsModal({ open }: TermsModalProps) {
               <h3 className="font-semibold text-base mb-2">2. Eligibility and Use</h3>
               <p className="text-muted-foreground mb-2">By downloading, accessing, or using aok, you confirm that:</p>
               <ul className="list-disc list-inside text-muted-foreground ml-2 space-y-1">
+                <li>you are 16 years of age or older</li>
                 <li>you understand these Terms & Conditions</li>
                 <li>you agree to be bound by them</li>
                 <li>you are responsible for your use of the app</li>
               </ul>
               <p className="text-muted-foreground mt-2">
-                If you do not agree, you must not use the app.
+                If you are under 16 years of age, you must not use the app. If you do not agree to these terms, you must not use the app.
               </p>
             </section>
 
