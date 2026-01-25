@@ -40,6 +40,8 @@ import OrganizationLogin from "@/pages/org/login";
 import Activate from "@/pages/activate";
 import Pricing from "@/pages/pricing";
 import Onboarding from "@/pages/onboarding";
+import Terms from "@/pages/terms";
+import Privacy from "@/pages/privacy";
 import { TermsModal } from "@/components/terms-modal";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -446,6 +448,14 @@ function Router() {
 
   if (location === "/onboarding") {
     return <Onboarding />;
+  }
+
+  if (location === "/terms") {
+    return <Terms />;
+  }
+
+  if (location === "/privacy") {
+    return <Privacy />;
   }
 
   if (location === "/admin/login") {
