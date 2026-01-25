@@ -98,11 +98,6 @@ export default function Register() {
       referenceId: "",
       dateOfBirth: "",
       mobileNumber: "",
-      addressLine1: "",
-      addressLine2: "",
-      city: "",
-      postalCode: "",
-      country: "",
       password: "",
       confirmPassword: "",
     },
@@ -128,6 +123,54 @@ export default function Register() {
     },
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      
+      // Apply onboarding settings if available
+      const onboardingDataStr = localStorage.getItem("onboardingData");
+      if (onboardingDataStr) {
+        try {
+          const onboardingData = JSON.parse(onboardingDataStr);
+          
+          // Convert frequency to interval hours
+          const frequencyToHours: Record<string, number> = {
+            "daily": 24,
+            "twice-daily": 12,
+            "few-times-week": 48,
+            "weekly": 168,
+          };
+          
+          // Convert time preference to actual schedule time
+          const timeToSchedule: Record<string, string> = {
+            "morning": "10:00",
+            "midday": "12:00",
+            "evening": "18:00",
+          };
+          
+          const intervalHours = frequencyToHours[onboardingData.checkInFrequency] || 24;
+          const scheduleTime = timeToSchedule[onboardingData.checkInTime] || "10:00";
+          
+          // Calculate next check-in due based on schedule time
+          const now = new Date();
+          const [hours, minutes] = scheduleTime.split(":").map(Number);
+          const scheduleDate = new Date();
+          scheduleDate.setHours(hours, minutes, 0, 0);
+          
+          // If time has passed today, set for tomorrow
+          if (scheduleDate <= now) {
+            scheduleDate.setDate(scheduleDate.getDate() + 1);
+          }
+          
+          // Apply settings
+          await apiRequest("PATCH", "/api/settings", {
+            intervalHours,
+            scheduleStartTime: scheduleDate.toISOString(),
+          });
+          
+          // Clear onboarding data
+          localStorage.removeItem("onboardingData");
+        } catch (e) {
+          console.log("Failed to apply onboarding settings:", e);
+        }
+      }
       
       // Request notification permission on signup
       if ('Notification' in window && Notification.permission === 'default') {
@@ -466,89 +509,6 @@ export default function Register() {
                       </FormItem>
                     )}
                   />
-
-                  <div className="space-y-4 border-t pt-4">
-                    <h3 className="font-medium text-sm text-muted-foreground">Address</h3>
-                    <p className="text-xs text-muted-foreground">Your address is shared with emergency contacts when alerts are sent.</p>
-                    
-                    <FormField
-                      control={form.control}
-                      name="addressLine1"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Address Line 1</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="123 High Street" 
-                              {...field} 
-                              value={field.value || ""}
-                              data-testid="input-address1" 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="addressLine2"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Address Line 2 (Optional)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Flat 4" 
-                              {...field} 
-                              value={field.value || ""}
-                              data-testid="input-address2" 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>City</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="London" 
-                                {...field} 
-                                value={field.value || ""}
-                                data-testid="input-city" 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="postalCode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Postcode</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="SW1A 1AA" 
-                                {...field} 
-                                value={field.value || ""}
-                                data-testid="input-postcode" 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
                 </>
               )}
 

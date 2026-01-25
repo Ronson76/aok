@@ -191,7 +191,6 @@ export default function Landing() {
                 onClick={handleLogout} 
                 disabled={isLoggingOut}
                 variant="outline"
-                autoComplete="off"
                 data-testid="button-logout"
               >
                 <LogOut className="h-4 w-4 mr-2" />

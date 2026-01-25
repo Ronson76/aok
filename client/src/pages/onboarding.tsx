@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { 
   ChevronLeft, Check, Lock, CreditCard, GraduationCap, Home, Building2, 
   Users, Heart, Baby, Plane, TreePine, MapPin, Car, Globe, Smile, 
-  Shield, AlertTriangle, Activity, Scissors, Accessibility, Calendar,
+  AlertTriangle, Activity, Scissors, Accessibility, Calendar,
   Clock, RefreshCw, Sun, Sunset, Settings, Search, Bot, Smartphone,
   Mail, Star, Phone, X, Loader2, Wallet
 } from "lucide-react";
@@ -594,7 +594,7 @@ function Step10ScheduleSummary({ data }: { data: OnboardingData }) {
           </div>
           
           <div className="flex items-center gap-3">
-            <Shield className="h-6 w-6 text-primary" />
+            <Clock className="h-6 w-6 text-primary" />
             <div>
               <div className="font-semibold">60-minute grace period</div>
               <div className="text-sm text-muted-foreground">Gives you time without false alarms</div>
