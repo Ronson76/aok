@@ -24,8 +24,7 @@ import {
 } from "lucide-react";
 import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
-import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/contexts/auth-context";
 
 import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_animation.mp4";
 import alertsVideo from "@assets/generated_videos/english_sms_alert_notification.mp4";
@@ -33,14 +32,14 @@ import locationVideo from "@assets/generated_videos/uk_streets_gps_map_tracking.
 
 export default function Landing() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [isYearly, setIsYearly] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      await apiRequest("POST", "/api/auth/logout");
+      await logout();
       window.location.href = "/";
     } catch (error) {
       toast({
