@@ -1,6 +1,10 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +20,7 @@ import {
 import { 
   ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail, 
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
-  ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll
+  ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, HeadphonesIcon
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,6 +30,62 @@ import locationVideo from "@assets/generated_videos/uk_streets_gps_map_tracking.
 
 export default function Landing() {
   const { toast } = useToast();
+  const [isYearly, setIsYearly] = useState(false);
+
+  const pricingPlans = [
+    {
+      name: "Free",
+      description: "We would love to offer this service for free to everyone, but we are a small company.",
+      note: "If you cannot afford it, please contact us and we will do our best to help you.",
+      monthlyPrice: 0,
+      yearlyPrice: 0,
+      features: [],
+      cta: "Contact Us",
+      ctaLink: "mailto:support@aok.app",
+      highlight: false,
+      asterisk: true,
+    },
+    {
+      name: "Base",
+      description: "Everything you need to stay safe and connected.",
+      monthlyPrice: 4.99,
+      yearlyPrice: 49.99,
+      features: [
+        { text: "Flexible check-in timer (5 mins to 48 hours)", icon: Clock },
+        { text: "Up to 5 emergency contacts", icon: Users },
+        { text: "Email, SMS & voice call alerts", icon: Bell },
+        { text: "Emergency alert button", icon: AlertTriangle },
+        { text: "GPS location with what3words", icon: MapPin },
+        { text: "Push notifications", icon: Smartphone },
+        { text: "Primary contact updates", icon: Heart },
+        { text: "Privacy protection & auto timeout", icon: Lock },
+      ],
+      cta: "Get Started",
+      ctaLink: "/register",
+      highlight: true,
+      badge: "Most Popular",
+      launchNote: "Launch pricing - Lock in today's rate forever",
+      priceProtected: true,
+    },
+    {
+      name: "Plus",
+      description: "Enhanced features for complete peace of mind.",
+      monthlyPrice: 8.99,
+      yearlyPrice: 89.99,
+      features: [
+        { text: "Everything in Base", icon: Check },
+        { text: "Priority support", icon: HeadphonesIcon },
+        { text: "Mood & wellness tracking", icon: TrendingUp },
+        { text: "Pet protection profiles", icon: PawPrint },
+        { text: "Digital will storage", icon: Scroll },
+        { text: "Wellbeing AI (Health Insight)", icon: Heart },
+      ],
+      cta: "Get Started",
+      ctaLink: "/register",
+      highlight: false,
+      launchNote: "Launch price - limited time only",
+    },
+  ];
 
   const handleShare = async () => {
     const shareUrl = "https://aok.care";
@@ -89,7 +149,7 @@ export default function Landing() {
             <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">How It Works</a>
             <a href="#video" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-tutorial">Tutorial</a>
             <a href="#use-cases" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-use-cases">Use Cases</a>
-            <Link href="/pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-pricing">Pricing</Link>
+            <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-pricing">Pricing</a>
             <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-faq">FAQ</a>
           </nav>
           <div className="flex items-center gap-2">
@@ -582,6 +642,132 @@ export default function Landing() {
         </div>
       </section>
 
+      <section id="pricing" className="py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-pricing-title">Simple, Transparent Pricing</h2>
+            <p className="text-lg text-muted-foreground mb-2">Get Peace of Mind Today</p>
+            <p className="text-muted-foreground">Start with a 3-day free trial. Cancel anytime.</p>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
+            <div className="flex items-center justify-center gap-2 p-2 bg-muted rounded-lg">
+              <Lock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">SSL Secured</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 p-2 bg-muted rounded-lg">
+              <Check className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">100% Money Back</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 p-2 bg-muted rounded-lg">
+              <HeadphonesIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">24/7 Support</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center gap-4 mb-12">
+            <Label htmlFor="landing-billing-toggle" className={!isYearly ? "font-semibold" : "text-muted-foreground"}>
+              Monthly
+            </Label>
+            <Switch
+              id="landing-billing-toggle"
+              checked={isYearly}
+              onCheckedChange={setIsYearly}
+              data-testid="switch-landing-billing-toggle"
+            />
+            <div className="flex items-center gap-2">
+              <Label htmlFor="landing-billing-toggle" className={isYearly ? "font-semibold" : "text-muted-foreground"}>
+                Yearly
+              </Label>
+              <Badge variant="secondary" className="text-xs">2 months OFF!</Badge>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {pricingPlans.map((plan, index) => (
+              <Card 
+                key={index} 
+                className={`relative flex flex-col ${plan.highlight ? "border-primary shadow-lg md:scale-105" : ""}`}
+                data-testid={`card-landing-plan-${plan.name.toLowerCase()}`}
+              >
+                {plan.badge && (
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2" data-testid="badge-landing-most-popular">
+                    {plan.badge}
+                  </Badge>
+                )}
+                <CardHeader>
+                  <CardTitle className="text-2xl flex items-center gap-2">
+                    {plan.name}
+                    {plan.asterisk && <span className="text-muted-foreground">*</span>}
+                  </CardTitle>
+                  <div className="mt-4">
+                    {plan.monthlyPrice === 0 ? (
+                      <div className="text-4xl font-bold">£0<span className="text-lg font-normal text-muted-foreground">/month</span></div>
+                    ) : (
+                      <div className="text-4xl font-bold">
+                        £{isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                        <span className="text-lg font-normal text-muted-foreground">/{isYearly ? "year" : "month"}</span>
+                      </div>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  {plan.launchNote && (
+                    <p className="text-sm text-primary mb-4">{plan.launchNote}</p>
+                  )}
+                  {plan.priceProtected && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                      <Lock className="h-4 w-4" />
+                      Price-protected for life
+                    </div>
+                  )}
+                  <CardDescription className="mb-4">{plan.description}</CardDescription>
+                  {plan.note && (
+                    <p className="text-sm text-muted-foreground mb-4">{plan.note}</p>
+                  )}
+                  {plan.features.length > 0 && (
+                    <ul className="space-y-2">
+                      {plan.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="flex items-start gap-2">
+                          <feature.icon className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                          <span className="text-sm">{feature.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {plan.asterisk && (
+                    <p className="text-xs text-muted-foreground mt-4">*if you drop us a line</p>
+                  )}
+                </CardContent>
+                <CardFooter>
+                  {plan.ctaLink.startsWith("mailto:") ? (
+                    <a href={plan.ctaLink} className="w-full">
+                      <Button 
+                        variant={plan.highlight ? "default" : "outline"} 
+                        className="w-full"
+                        data-testid={`button-landing-plan-${plan.name.toLowerCase()}`}
+                      >
+                        {plan.cta}
+                      </Button>
+                    </a>
+                  ) : (
+                    <Link href={plan.ctaLink} className="w-full">
+                      <Button 
+                        variant={plan.highlight ? "default" : "outline"} 
+                        className="w-full"
+                        data-testid={`button-landing-plan-${plan.name.toLowerCase()}`}
+                      >
+                        {plan.cta}
+                      </Button>
+                    </Link>
+                  )}
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="faq" className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto max-w-3xl">
           <div className="text-center mb-12">
@@ -713,7 +899,7 @@ export default function Landing() {
                 <li><a href="#features" className="hover:text-foreground transition-colors" data-testid="link-footer-features">Features</a></li>
                 <li><a href="#how-it-works" className="hover:text-foreground transition-colors" data-testid="link-footer-how-it-works">How It Works</a></li>
                 <li><a href="#video" className="hover:text-foreground transition-colors" data-testid="link-footer-tutorial">Tutorial</a></li>
-                <li><Link href="/pricing"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-pricing">Pricing</span></Link></li>
+                <li><a href="#pricing" className="hover:text-foreground transition-colors" data-testid="link-footer-pricing">Pricing</a></li>
                 <li><a href="#faq" className="hover:text-foreground transition-colors" data-testid="link-footer-faq">FAQ</a></li>
               </ul>
             </div>
