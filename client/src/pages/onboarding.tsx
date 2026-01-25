@@ -1557,26 +1557,6 @@ function Step16Payment({ data }: { data: OnboardingData }) {
           </ul>
         </CardContent>
       </Card>
-
-      <Card className="border-0 shadow-lg">
-        <CardContent className="p-4 text-center">
-          <div className="flex justify-center gap-1 text-amber-400 mb-2">
-            <Star className="h-5 w-5 fill-current" />
-            <Star className="h-5 w-5 fill-current" />
-            <Star className="h-5 w-5 fill-current" />
-            <Star className="h-5 w-5 fill-current" />
-            <Star className="h-5 w-5 fill-current" />
-          </div>
-          <p className="italic text-muted-foreground mb-2" data-testid="text-final-testimonial">
-            "Finally, my daughter stopped worrying."
-          </p>
-          <p className="text-sm">- M.K., 68</p>
-        </CardContent>
-      </Card>
-
-      <p className="text-center text-xs text-muted-foreground" data-testid="text-terms-link">
-        By continuing, you agree to our <a href="/terms" className="underline">Terms</a> & <a href="/privacy" className="underline">Privacy Policy</a>
-      </p>
     </div>
   );
 }
