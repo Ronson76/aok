@@ -249,7 +249,7 @@ function Step2AgeGroup({ data, setData }: { data: OnboardingData; setData: (d: O
     <Card className="border-0 shadow-lg">
       <CardContent className="p-6">
         <h1 className="text-2xl font-bold mb-2" data-testid="text-age-title">What's your age group?</h1>
-        <p className="text-muted-foreground mb-6">This helps us personalize your safety experience</p>
+        <p className="text-muted-foreground mb-6">This helps us personalise your safety experience</p>
         
         <div className="space-y-3">
           {options.map((option) => (
@@ -348,7 +348,7 @@ function Step5ContactName({ data, setData }: { data: OnboardingData; setData: (d
     <Card className="border-0 shadow-lg">
       <CardContent className="p-6">
         <h1 className="text-2xl font-bold mb-2" data-testid="text-contact-title">What's your {relationshipLabel}'s name?</h1>
-        <p className="text-muted-foreground mb-6">We'll use this to personalize your plan.</p>
+        <p className="text-muted-foreground mb-6">We'll use this to personalise your plan.</p>
         
         <Input
           value={data.contactName}

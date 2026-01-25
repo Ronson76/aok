@@ -198,7 +198,7 @@ export default function AdminBundles() {
             </Link>
             <div>
               <h1 className="text-xl font-semibold">Bundle Management</h1>
-              <p className="text-sm text-muted-foreground">Manage organization subscriptions</p>
+              <p className="text-sm text-muted-foreground">Manage organisation subscriptions</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -254,23 +254,23 @@ export default function AdminBundles() {
                   <DialogHeader>
                     <DialogTitle>Create Subscription Bundle</DialogTitle>
                     <DialogDescription>
-                      Allocate seats to an organization for their monitored users.
+                      Allocate seats to an organisation for their monitored users.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label htmlFor="organization">Organization</Label>
+                      <Label htmlFor="organization">Organisation</Label>
                       <Select 
                         value={newBundle.userId} 
                         onValueChange={(value) => setNewBundle({ ...newBundle, userId: value })}
                       >
                         <SelectTrigger data-testid="select-organization">
-                          <SelectValue placeholder="Select an organization" />
+                          <SelectValue placeholder="Select an organisation" />
                         </SelectTrigger>
                         <SelectContent>
                           {organizationUsers.length === 0 ? (
                             <div className="p-2 text-sm text-muted-foreground text-center">
-                              No organization accounts found
+                              No organisation accounts found
                             </div>
                           ) : (
                             organizationUsers.map((org) => (
@@ -379,7 +379,7 @@ export default function AdminBundles() {
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Organization: {bundle.userName}
+                        Organisation: {bundle.userName}
                       </p>
                       <div className="flex items-center gap-4 mt-2 text-sm">
                         <span>
