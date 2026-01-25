@@ -89,6 +89,7 @@ export default function Landing() {
             <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">How It Works</a>
             <a href="#video" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-tutorial">Tutorial</a>
             <a href="#use-cases" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-use-cases">Use Cases</a>
+            <Link href="/pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-pricing">Pricing</Link>
             <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-faq">FAQ</a>
           </nav>
           <div className="flex items-center gap-2">
@@ -712,6 +713,7 @@ export default function Landing() {
                 <li><a href="#features" className="hover:text-foreground transition-colors" data-testid="link-footer-features">Features</a></li>
                 <li><a href="#how-it-works" className="hover:text-foreground transition-colors" data-testid="link-footer-how-it-works">How It Works</a></li>
                 <li><a href="#video" className="hover:text-foreground transition-colors" data-testid="link-footer-tutorial">Tutorial</a></li>
+                <li><Link href="/pricing"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-pricing">Pricing</span></Link></li>
                 <li><a href="#faq" className="hover:text-foreground transition-colors" data-testid="link-footer-faq">FAQ</a></li>
               </ul>
             </div>
