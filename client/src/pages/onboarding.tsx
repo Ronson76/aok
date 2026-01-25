@@ -11,7 +11,8 @@ import {
   Users, Heart, Baby, Plane, TreePine, MapPin, Car, Globe, Smile, 
   AlertTriangle, Activity, Scissors, Accessibility, Calendar,
   Clock, RefreshCw, Sun, Sunset, Settings, Search, Bot, Smartphone,
-  Mail, Star, Phone, X, Loader2, Wallet, ShieldCheck, Info, Plus
+  Mail, Star, Phone, X, Loader2, Wallet, ShieldCheck, Info, Plus,
+  Eye, EyeOff
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -60,6 +61,7 @@ function formatContactNames(contacts: ContactData[], fallback: string = "your co
 interface OnboardingData {
   name: string;
   email: string;
+  password: string;
   userPhone: string;
   userPhoneCountry: string;
   locationPermission: 'pending' | 'granted' | 'denied' | 'unavailable';
@@ -93,6 +95,7 @@ export default function Onboarding() {
   const [data, setData] = useState<OnboardingData>({
     name: "",
     email: "",
+    password: "",
     userPhone: "",
     userPhoneCountry: "+44",
     locationPermission: "pending",
@@ -145,12 +148,13 @@ export default function Onboarding() {
   const canProceed = useCallback(() => {
     switch (currentStep) {
       case 1: {
-        // Require name, valid email, valid phone, and location permission granted
+        // Require name, valid email, password (min 8 chars), valid phone, and location permission granted
         const hasName = data.name.trim().length > 0;
         const hasEmail = data.email.includes("@") && data.email.includes(".");
+        const hasPassword = data.password.length >= 8;
         const hasPhone = isValidMobileNumber(data.userPhone, data.userPhoneCountry);
         const hasLocation = data.locationPermission === "granted";
-        return hasName && hasEmail && hasPhone && hasLocation;
+        return hasName && hasEmail && hasPassword && hasPhone && hasLocation;
       }
       case 2: return data.ageGroup !== "";
       case 3: return data.livingSituation !== "";
@@ -388,6 +392,7 @@ function Step1Terms({ accepted, setAccepted, onComplete }: { accepted: boolean; 
 
 function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const handleRequestLocation = () => {
     if (!('geolocation' in navigator)) {
@@ -443,6 +448,32 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
             />
             <p className="text-xs text-muted-foreground">
               We'll send your check-in reminders here.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Create password</label>
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={data.password}
+                onChange={(e) => setData({ ...data, password: e.target.value })}
+                placeholder="At least 8 characters"
+                data-testid="input-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                data-testid="button-toggle-password"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {data.password.length > 0 && data.password.length < 8 
+                ? `${8 - data.password.length} more characters needed`
+                : "Used to secure your account."}
             </p>
           </div>
 

@@ -137,6 +137,11 @@ export default function Register() {
     if (onboardingData) {
       form.setValue("name", onboardingData.name || "");
       form.setValue("email", onboardingData.email || "");
+      // Pre-fill password if collected during onboarding
+      if (onboardingData.password) {
+        form.setValue("password", onboardingData.password);
+        form.setValue("confirmPassword", onboardingData.password);
+      }
     }
   }, [onboardingData, form]);
   
@@ -306,7 +311,7 @@ export default function Register() {
           </CardTitle>
           <CardDescription>
             {fromOnboarding 
-              ? "Just set a password and grant location access to complete your registration."
+              ? "Just confirm your details to complete your registration."
               : "Sign up for aok to stay connected with your loved ones. You must be 16 years or older to use this service."
             }
           </CardDescription>
@@ -608,7 +613,7 @@ export default function Register() {
                 </>
               )}
 
-              {accountType !== "organization" && (
+              {accountType !== "organization" && !fromOnboarding && (
                 <div className="space-y-4 border-t pt-4">
                   <h3 className="font-medium text-sm text-muted-foreground">Password</h3>
 
