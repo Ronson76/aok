@@ -414,7 +414,7 @@ export default function Landing() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Privacy Protected</h3>
                 <p className="text-muted-foreground text-sm">
-                  Screenshot protection on contacts, automatic session timeout, and secure data handling.
+                  Screenshot protection on contacts and secure data handling.
                 </p>
               </CardContent>
             </Card>
@@ -828,9 +828,9 @@ export default function Landing() {
                 Is my data secure?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-6">
-                Yes! We take security seriously. Your data is encrypted, passwords are hashed, and we 
-                implement automatic session timeouts. Location data from emergency alerts is automatically 
-                deleted after 30 days. The contacts page also has screenshot protection.
+                Yes! We take security seriously. Your data is encrypted and passwords are hashed. 
+                Location data from emergency alerts is automatically deleted after 30 days. 
+                The contacts page also has screenshot protection.
               </AccordionContent>
             </AccordionItem>
             
