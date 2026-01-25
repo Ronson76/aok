@@ -671,10 +671,6 @@ function Step5WhoWorries({ data, setData }: { data: OnboardingData; setData: (d:
             />
           ))}
         </div>
-
-        <div className="mt-6 p-3 bg-zinc-900 text-white rounded-full text-sm text-center" data-testid="text-peace-of-mind">
-          Living alone means peace of mind matters even more.
-        </div>
       </CardContent>
     </Card>
   );
