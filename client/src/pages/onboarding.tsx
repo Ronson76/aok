@@ -11,7 +11,7 @@ import {
   Users, Heart, Baby, Plane, TreePine, MapPin, Car, Globe, Smile, 
   AlertTriangle, Activity, Scissors, Accessibility, Calendar,
   Clock, RefreshCw, Sun, Sunset, Settings, Search, Bot, Smartphone,
-  Mail, Star, Phone, X, Loader2, Wallet, ShieldCheck, Info
+  Mail, Star, Phone, X, Loader2, Wallet, ShieldCheck, Info, Plus
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +39,15 @@ function isValidMobileNumber(phone: string, countryCode: string): boolean {
   return digitsOnly.length === country.mobileLength;
 }
 
+interface ContactData {
+  name: string;
+  email: string;
+  phone: string;
+  phoneCountry: string;
+  landline: string;
+  landlineCountry: string;
+}
+
 interface OnboardingData {
   name: string;
   ageGroup: string;
@@ -51,6 +60,7 @@ interface OnboardingData {
   contactPhoneCountry: string;
   contactLandline: string;
   contactLandlineCountry: string;
+  contacts: ContactData[];
   whatMatters: string[];
   healthConditions: string[];
   checkInFrequency: string;
@@ -80,6 +90,10 @@ export default function Onboarding() {
     contactPhoneCountry: "+44",
     contactLandline: "",
     contactLandlineCountry: "+44",
+    contacts: [
+      { name: "", email: "", phone: "", phoneCountry: "+44", landline: "", landlineCountry: "+44" },
+      { name: "", email: "", phone: "", phoneCountry: "+44", landline: "", landlineCountry: "+44" },
+    ],
     whatMatters: [],
     healthConditions: [],
     checkInFrequency: "daily",
@@ -119,7 +133,11 @@ export default function Onboarding() {
       case 2: return data.ageGroup !== "";
       case 3: return data.livingSituation !== "";
       case 4: return data.whoWorries !== "";
-      case 5: return data.contactName.trim().length > 0;
+      case 5: {
+        // Require at least 1 contact with a name (2nd is optional)
+        const contactsWithNames = data.contacts.filter(c => c.name.trim().length > 0);
+        return contactsWithNames.length >= 1;
+      }
       case 6: return data.contactDistance !== "";
       case 7: return true;
       case 8: return data.whatMatters.length > 0;
@@ -127,7 +145,15 @@ export default function Onboarding() {
       case 10: return true;
       case 11: return data.checkInFrequency !== "";
       case 12: return !data.scheduleEnabled || data.scheduleStartTime !== "";
-      case 13: return data.contactEmail.includes("@") && data.contactPhone.trim().length > 0 && isValidMobileNumber(data.contactPhone, data.contactPhoneCountry);
+      case 13: {
+        // Validate all contacts with names have valid email and phone
+        const contactsWithNames = data.contacts.filter(c => c.name.trim().length > 0);
+        return contactsWithNames.every(c => 
+          c.email.includes("@") && 
+          c.phone.trim().length > 0 && 
+          isValidMobileNumber(c.phone, c.phoneCountry)
+        );
+      }
       case 14: return true;
       case 15: return true;
       case 16: return termsAccepted;
@@ -465,27 +491,85 @@ function Step5WhoWorries({ data, setData }: { data: OnboardingData; setData: (d:
 }
 
 function Step6ContactName({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
-  const relationshipLabel = {
-    "adult-children": "child",
-    "parents": "parent",
-    "siblings": "sibling",
-    "spouse": "partner",
-    "friends": "friend",
-  }[data.whoWorries] || "contact";
+  const relationshipLabels: Record<string, { singular: string; plural: string }> = {
+    "adult-children": { singular: "child", plural: "children" },
+    "parents": { singular: "parent", plural: "parents" },
+    "siblings": { singular: "sibling", plural: "siblings" },
+    "spouse": { singular: "partner", plural: "partners" },
+    "friends": { singular: "friend", plural: "friends" },
+  };
+  
+  const labels = relationshipLabels[data.whoWorries] || { singular: "contact", plural: "contacts" };
+
+  const updateContactName = (index: number, name: string) => {
+    const newContacts = [...data.contacts];
+    newContacts[index] = { ...newContacts[index], name };
+    setData({ ...data, contacts: newContacts, contactName: newContacts[0]?.name || "" });
+  };
+
+  const addContact = () => {
+    if (data.contacts.length < 5) {
+      setData({
+        ...data,
+        contacts: [...data.contacts, { name: "", email: "", phone: "", phoneCountry: "+44", landline: "", landlineCountry: "+44" }]
+      });
+    }
+  };
+
+  const removeContact = (index: number) => {
+    if (data.contacts.length > 2) {
+      const newContacts = data.contacts.filter((_, i) => i !== index);
+      setData({ ...data, contacts: newContacts, contactName: newContacts[0]?.name || "" });
+    }
+  };
 
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-2" data-testid="text-contact-title">What's your {relationshipLabel}'s name?</h1>
-        <p className="text-muted-foreground mb-6">We'll use this to personalise your plan.</p>
+        <h1 className="text-2xl font-bold mb-2" data-testid="text-contact-title">Who are your {labels.plural}?</h1>
+        <p className="text-muted-foreground mb-6">Enter their names. You can add a second contact if you wish.</p>
         
-        <Input
-          value={data.contactName}
-          onChange={(e) => setData({ ...data, contactName: e.target.value })}
-          placeholder="Jessica"
-          className="text-lg"
-          data-testid="input-contact-name"
-        />
+        <div className="space-y-3">
+          {data.contacts.map((contact, index) => (
+            <div key={index} className="flex gap-2 items-center">
+              <div className="flex-1">
+                <label className="text-sm text-muted-foreground mb-1 block">
+                  {index === 0 ? "Primary contact" : `Contact ${index + 1}`}
+                </label>
+                <Input
+                  value={contact.name}
+                  onChange={(e) => updateContactName(index, e.target.value)}
+                  placeholder={index === 0 ? "Jessica" : "Name"}
+                  className="text-lg"
+                  data-testid={`input-contact-name-${index}`}
+                />
+              </div>
+              {index >= 2 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeContact(index)}
+                  className="mt-5"
+                  data-testid={`button-remove-contact-${index}`}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+        
+        {data.contacts.length < 5 && (
+          <Button
+            variant="outline"
+            onClick={addContact}
+            className="w-full mt-4"
+            data-testid="button-add-contact"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add another contact
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
@@ -911,14 +995,72 @@ function Step13Time({ data, setData }: { data: OnboardingData; setData: (d: Onbo
 }
 
 function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
-  const mobileValid = data.contactPhone.trim() === '' || isValidMobileNumber(data.contactPhone, data.contactPhoneCountry);
+  const [currentContactIndex, setCurrentContactIndex] = useState(0);
+  
+  // Filter to only show contacts with names entered
+  const contactsWithNames = data.contacts.filter(c => c.name.trim() !== "");
+  const currentContact = contactsWithNames[currentContactIndex];
+  
+  if (!currentContact) {
+    return (
+      <Card className="border-0 shadow-lg">
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">No contacts to configure.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  const mobileValid = currentContact.phone.trim() === '' || isValidMobileNumber(currentContact.phone, currentContact.phoneCountry);
+  
+  const updateCurrentContact = (field: keyof ContactData, value: string) => {
+    const originalIndex = data.contacts.findIndex(c => c.name === currentContact.name);
+    if (originalIndex === -1) return;
+    
+    const newContacts = [...data.contacts];
+    newContacts[originalIndex] = { ...newContacts[originalIndex], [field]: value };
+    
+    // Also update legacy fields for the primary contact (first with name)
+    if (currentContactIndex === 0) {
+      setData({ 
+        ...data, 
+        contacts: newContacts,
+        contactEmail: field === 'email' ? value : data.contactEmail,
+        contactPhone: field === 'phone' ? value : data.contactPhone,
+        contactPhoneCountry: field === 'phoneCountry' ? value : data.contactPhoneCountry,
+        contactLandline: field === 'landline' ? value : data.contactLandline,
+        contactLandlineCountry: field === 'landlineCountry' ? value : data.contactLandlineCountry,
+      });
+    } else {
+      setData({ ...data, contacts: newContacts });
+    }
+  };
   
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-2" data-testid="text-contact-details-title">How can we reach {data.contactName || "your contact"}?</h1>
+        {contactsWithNames.length > 1 && (
+          <div className="flex gap-2 mb-4">
+            {contactsWithNames.map((contact, idx) => (
+              <Button
+                key={idx}
+                variant={currentContactIndex === idx ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentContactIndex(idx)}
+                data-testid={`button-tab-contact-${idx}`}
+              >
+                {contact.name || `Contact ${idx + 1}`}
+              </Button>
+            ))}
+          </div>
+        )}
+        
+        <h1 className="text-2xl font-bold mb-2" data-testid="text-contact-details-title">
+          How can we reach {currentContact.name}?
+        </h1>
         <p className="text-muted-foreground mb-6">
           We'll use these details to alert them in an emergency.
+          {currentContactIndex === 0 && " This is your primary contact."}
         </p>
         
         <div className="space-y-4">
@@ -926,8 +1068,8 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
             <label className="text-sm font-medium mb-2 block">Their email address</label>
             <Input
               type="email"
-              value={data.contactEmail}
-              onChange={(e) => setData({ ...data, contactEmail: e.target.value })}
+              value={currentContact.email}
+              onChange={(e) => updateCurrentContact('email', e.target.value)}
               placeholder="contact@example.com"
               data-testid="input-contact-email"
             />
@@ -937,8 +1079,8 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
             <label className="text-sm font-medium mb-2 block">Their mobile number</label>
             <div className="flex gap-2">
               <select
-                value={data.contactPhoneCountry}
-                onChange={(e) => setData({ ...data, contactPhoneCountry: e.target.value })}
+                value={currentContact.phoneCountry}
+                onChange={(e) => updateCurrentContact('phoneCountry', e.target.value)}
                 className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 data-testid="select-phone-country"
               >
@@ -950,14 +1092,13 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
               </select>
               <Input
                 type="tel"
-                value={data.contactPhone}
+                value={currentContact.phone}
                 onChange={(e) => {
                   let value = e.target.value.replace(/[^\d\s]/g, '');
-                  // Remove leading zero
                   value = value.replace(/^0+/, '');
-                  setData({ ...data, contactPhone: value });
+                  updateCurrentContact('phone', value);
                 }}
-                placeholder={data.contactPhoneCountry === "+44" ? "7700 900000" : "Phone number"}
+                placeholder={currentContact.phoneCountry === "+44" ? "7700 900000" : "Phone number"}
                 className={`flex-1 ${!mobileValid ? 'border-destructive' : ''}`}
                 data-testid="input-contact-phone"
               />
@@ -976,8 +1117,8 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
             <label className="text-sm font-medium mb-2 block">Their landline number (optional)</label>
             <div className="flex gap-2">
               <select
-                value={data.contactLandlineCountry}
-                onChange={(e) => setData({ ...data, contactLandlineCountry: e.target.value })}
+                value={currentContact.landlineCountry}
+                onChange={(e) => updateCurrentContact('landlineCountry', e.target.value)}
                 className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 data-testid="select-landline-country"
               >
@@ -989,14 +1130,13 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
               </select>
               <Input
                 type="tel"
-                value={data.contactLandline}
+                value={currentContact.landline}
                 onChange={(e) => {
                   let value = e.target.value.replace(/[^\d\s]/g, '');
-                  // Remove leading zero
                   value = value.replace(/^0+/, '');
-                  setData({ ...data, contactLandline: value });
+                  updateCurrentContact('landline', value);
                 }}
-                placeholder={data.contactLandlineCountry === "+44" ? "20 7946 0958" : "Landline number"}
+                placeholder={currentContact.landlineCountry === "+44" ? "20 7946 0958" : "Landline number"}
                 className="flex-1"
                 data-testid="input-contact-landline"
               />
@@ -1010,7 +1150,10 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
         <div className="flex items-start gap-2 p-3 rounded-md bg-muted/50 mt-6">
           <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <p className="text-sm text-muted-foreground">
-            This will be your primary contact. You can add additional contacts in the Contacts page after setup.
+            {currentContactIndex === 0 
+              ? "This is your primary contact who will receive all check-in notifications."
+              : "Additional contacts will be alerted in emergencies."
+            }
           </p>
         </div>
       </CardContent>
