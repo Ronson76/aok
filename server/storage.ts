@@ -1,13 +1,14 @@
 import { 
   contacts, checkIns, settings, alertLogs, users, sessions, passwordResetTokens, pushSubscriptions,
   adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs, organizationClients, organizationClientProfiles,
-  pendingClientContacts, activeEmergencyAlerts,
+  pendingClientContacts, activeEmergencyAlerts, moodEntries, pets, digitalDocuments,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
   AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo,
   OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData, OrgClientStatus,
   OrgClientRegistrationStatus,
   OrganizationClientProfile, UpdateOrganizationClientProfile, AdminOrganizationClientView, AdminOrganizationView,
-  PushSubscription, InsertPushSubscription, ActiveEmergencyAlert
+  PushSubscription, InsertPushSubscription, ActiveEmergencyAlert,
+  MoodEntry, InsertMoodEntry, Pet, InsertPet, UpdatePet, DigitalDocument, InsertDigitalDocument, UpdateDigitalDocument
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, desc, and, isNull, lt, gte, count, sql } from "drizzle-orm";
@@ -117,6 +118,25 @@ export interface IStorage {
 
   // Cleanup old emergency alerts (location data privacy)
   cleanupOldEmergencyAlerts(): Promise<number>;
+
+  // Mood entries
+  getMoodEntries(userId: string): Promise<MoodEntry[]>;
+  createMoodEntry(userId: string, data: InsertMoodEntry): Promise<MoodEntry>;
+  getMoodStats(userId: string): Promise<{ mood: string; count: number }[]>;
+
+  // Pets
+  getPets(userId: string): Promise<Pet[]>;
+  getPet(userId: string, id: string): Promise<Pet | undefined>;
+  createPet(userId: string, data: InsertPet): Promise<Pet>;
+  updatePet(userId: string, id: string, updates: UpdatePet): Promise<Pet | undefined>;
+  deletePet(userId: string, id: string): Promise<boolean>;
+
+  // Digital documents
+  getDigitalDocuments(userId: string): Promise<DigitalDocument[]>;
+  getDigitalDocument(userId: string, id: string): Promise<DigitalDocument | undefined>;
+  createDigitalDocument(userId: string, data: InsertDigitalDocument): Promise<DigitalDocument>;
+  updateDigitalDocument(userId: string, id: string, updates: UpdateDigitalDocument): Promise<DigitalDocument | undefined>;
+  deleteDigitalDocument(userId: string, id: string): Promise<boolean>;
 }
 
 class DatabaseStorage implements IStorage {
@@ -947,6 +967,156 @@ class DatabaseStorage implements IStorage {
       .returning();
     
     return result.length;
+  }
+
+  // ==================== MOOD ENTRIES ====================
+
+  async getMoodEntries(userId: string): Promise<MoodEntry[]> {
+    return await getDb()
+      .select()
+      .from(moodEntries)
+      .where(eq(moodEntries.userId, userId))
+      .orderBy(desc(moodEntries.createdAt));
+  }
+
+  async createMoodEntry(userId: string, data: InsertMoodEntry): Promise<MoodEntry> {
+    const result = await getDb()
+      .insert(moodEntries)
+      .values({
+        userId,
+        mood: data.mood,
+        note: data.note || null,
+        checkInId: data.checkInId || null,
+      })
+      .returning();
+    return result[0];
+  }
+
+  async getMoodStats(userId: string): Promise<{ mood: string; count: number }[]> {
+    const result = await getDb()
+      .select({
+        mood: moodEntries.mood,
+        count: count(),
+      })
+      .from(moodEntries)
+      .where(eq(moodEntries.userId, userId))
+      .groupBy(moodEntries.mood);
+    return result.map(r => ({ mood: r.mood, count: Number(r.count) }));
+  }
+
+  // ==================== PETS ====================
+
+  async getPets(userId: string): Promise<Pet[]> {
+    return await getDb()
+      .select()
+      .from(pets)
+      .where(eq(pets.userId, userId))
+      .orderBy(pets.name);
+  }
+
+  async getPet(userId: string, id: string): Promise<Pet | undefined> {
+    const result = await getDb()
+      .select()
+      .from(pets)
+      .where(and(eq(pets.id, id), eq(pets.userId, userId)));
+    return result[0];
+  }
+
+  async createPet(userId: string, data: InsertPet): Promise<Pet> {
+    const result = await getDb()
+      .insert(pets)
+      .values({
+        userId,
+        name: data.name,
+        type: data.type,
+        breed: data.breed || null,
+        age: data.age || null,
+        medicalConditions: data.medicalConditions || null,
+        medications: data.medications || null,
+        feedingInstructions: data.feedingInstructions || null,
+        vetName: data.vetName || null,
+        vetPhone: data.vetPhone || null,
+        vetAddress: data.vetAddress || null,
+        specialInstructions: data.specialInstructions || null,
+      })
+      .returning();
+    return result[0];
+  }
+
+  async updatePet(userId: string, id: string, updates: UpdatePet): Promise<Pet | undefined> {
+    const result = await getDb()
+      .update(pets)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(pets.id, id), eq(pets.userId, userId)))
+      .returning();
+    return result[0];
+  }
+
+  async deletePet(userId: string, id: string): Promise<boolean> {
+    const result = await getDb()
+      .delete(pets)
+      .where(and(eq(pets.id, id), eq(pets.userId, userId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  // ==================== DIGITAL DOCUMENTS ====================
+
+  async getDigitalDocuments(userId: string): Promise<DigitalDocument[]> {
+    return await getDb()
+      .select()
+      .from(digitalDocuments)
+      .where(eq(digitalDocuments.userId, userId))
+      .orderBy(desc(digitalDocuments.updatedAt));
+  }
+
+  async getDigitalDocument(userId: string, id: string): Promise<DigitalDocument | undefined> {
+    const result = await getDb()
+      .select()
+      .from(digitalDocuments)
+      .where(and(eq(digitalDocuments.id, id), eq(digitalDocuments.userId, userId)));
+    return result[0];
+  }
+
+  async createDigitalDocument(userId: string, data: InsertDigitalDocument): Promise<DigitalDocument> {
+    const result = await getDb()
+      .insert(digitalDocuments)
+      .values({
+        userId,
+        title: data.title,
+        type: data.type,
+        description: data.description || null,
+        content: data.content || null,
+        fileName: data.fileName || null,
+        fileSize: data.fileSize || null,
+        mimeType: data.mimeType || null,
+        executorContactIds: data.executorContactIds || null,
+      })
+      .returning();
+    return result[0];
+  }
+
+  async updateDigitalDocument(userId: string, id: string, updates: UpdateDigitalDocument): Promise<DigitalDocument | undefined> {
+    const result = await getDb()
+      .update(digitalDocuments)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(digitalDocuments.id, id), eq(digitalDocuments.userId, userId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteDigitalDocument(userId: string, id: string): Promise<boolean> {
+    const result = await getDb()
+      .delete(digitalDocuments)
+      .where(and(eq(digitalDocuments.id, id), eq(digitalDocuments.userId, userId)))
+      .returning();
+    return result.length > 0;
   }
 }
 

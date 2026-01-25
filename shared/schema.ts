@@ -626,3 +626,134 @@ export interface OrganizationDashboardStats {
   totalEmergencyAlerts: number;
   bundles: OrganizationBundle[];
 }
+
+// ==================== WELLNESS/MOOD TRACKING ====================
+
+// Mood options
+export const moodOptions = ["great", "good", "okay", "low", "bad"] as const;
+export type MoodOption = typeof moodOptions[number];
+
+// Mood entries table
+export const moodEntries = pgTable("mood_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  checkInId: varchar("check_in_id").references(() => checkIns.id, { onDelete: "set null" }),
+  mood: text("mood").notNull().$type<MoodOption>(),
+  note: text("note"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertMoodEntrySchema = createInsertSchema(moodEntries).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+}).extend({
+  mood: z.enum(moodOptions),
+  note: z.string().max(500).optional(),
+  checkInId: z.string().optional(),
+});
+
+export type InsertMoodEntry = z.infer<typeof insertMoodEntrySchema>;
+export type MoodEntry = typeof moodEntries.$inferSelect;
+
+// ==================== PET PROTECTION ====================
+
+// Pet types
+export const petTypes = ["dog", "cat", "bird", "fish", "rabbit", "hamster", "reptile", "other"] as const;
+export type PetType = typeof petTypes[number];
+
+// Pets table
+export const pets = pgTable("pets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  type: text("type").notNull().$type<PetType>(),
+  breed: text("breed"),
+  age: text("age"),
+  medicalConditions: text("medical_conditions"),
+  medications: text("medications"),
+  feedingInstructions: text("feeding_instructions"),
+  vetName: text("vet_name"),
+  vetPhone: text("vet_phone"),
+  vetAddress: text("vet_address"),
+  specialInstructions: text("special_instructions"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertPetSchema = createInsertSchema(pets).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  type: z.enum(petTypes),
+  name: z.string().min(1, "Pet name is required"),
+});
+
+export type InsertPet = z.infer<typeof insertPetSchema>;
+export type Pet = typeof pets.$inferSelect;
+
+export const updatePetSchema = z.object({
+  name: z.string().min(1).optional(),
+  type: z.enum(petTypes).optional(),
+  breed: z.string().optional(),
+  age: z.string().optional(),
+  medicalConditions: z.string().optional(),
+  medications: z.string().optional(),
+  feedingInstructions: z.string().optional(),
+  vetName: z.string().optional(),
+  vetPhone: z.string().optional(),
+  vetAddress: z.string().optional(),
+  specialInstructions: z.string().optional(),
+});
+
+export type UpdatePet = z.infer<typeof updatePetSchema>;
+
+// ==================== DIGITAL WILL STORAGE ====================
+
+// Document types
+export const documentTypes = ["will", "power_of_attorney", "healthcare_directive", "insurance", "account_info", "letter", "other"] as const;
+export type DocumentType = typeof documentTypes[number];
+
+// Digital documents table
+export const digitalDocuments = pgTable("digital_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  type: text("type").notNull().$type<DocumentType>(),
+  description: text("description"),
+  // Content stored as encrypted text or file reference
+  content: text("content"),
+  fileName: text("file_name"),
+  fileSize: integer("file_size"),
+  mimeType: text("mime_type"),
+  // Executors who should receive this document
+  executorContactIds: text("executor_contact_ids").array(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertDigitalDocumentSchema = createInsertSchema(digitalDocuments).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  type: z.enum(documentTypes),
+  title: z.string().min(1, "Document title is required"),
+  executorContactIds: z.array(z.string()).optional(),
+});
+
+export type InsertDigitalDocument = z.infer<typeof insertDigitalDocumentSchema>;
+export type DigitalDocument = typeof digitalDocuments.$inferSelect;
+
+export const updateDigitalDocumentSchema = z.object({
+  title: z.string().min(1).optional(),
+  type: z.enum(documentTypes).optional(),
+  description: z.string().optional(),
+  content: z.string().optional(),
+  executorContactIds: z.array(z.string()).optional(),
+});
+
+export type UpdateDigitalDocument = z.infer<typeof updateDigitalDocumentSchema>;

@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle, Smartphone, Eye, EyeOff } from "lucide-react";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle, Smartphone, Eye, EyeOff, TrendingUp, PawPrint, FileText, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
@@ -648,6 +648,59 @@ export default function Settings() {
             </div>
             <ThemeToggle />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">More Features</CardTitle>
+          <CardDescription>
+            Additional tools for your wellbeing and security.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Link href="/app/mood">
+            <div className="flex items-center justify-between p-3 rounded-lg hover-elevate cursor-pointer" data-testid="link-mood">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">Wellness Tracking</p>
+                  <p className="text-xs text-muted-foreground">Track your mood over time</p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </Link>
+          <Link href="/app/pets">
+            <div className="flex items-center justify-between p-3 rounded-lg hover-elevate cursor-pointer" data-testid="link-pets">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <PawPrint className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">Pet Protection</p>
+                  <p className="text-xs text-muted-foreground">Store pet care info for emergencies</p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </Link>
+          <Link href="/app/documents">
+            <div className="flex items-center justify-between p-3 rounded-lg hover-elevate cursor-pointer" data-testid="link-documents">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <FileText className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">Digital Will</p>
+                  <p className="text-xs text-muted-foreground">Secure important documents</p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </Link>
         </CardContent>
       </Card>
 

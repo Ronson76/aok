@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, organizationStorage } from "./storage";
-import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
+import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, insertMoodEntrySchema, insertPetSchema, updatePetSchema, insertDigitalDocumentSchema, updateDigitalDocumentSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification, sendContactRemovedNotification } from "./notifications";
@@ -673,6 +673,9 @@ export async function registerRoutes(
   app.use("/api/checkins", authMiddleware);
   app.use("/api/settings", authMiddleware);
   app.use("/api/emergency", authMiddleware);
+  app.use("/api/mood", authMiddleware);
+  app.use("/api/pets", authMiddleware);
+  app.use("/api/documents", authMiddleware);
 
   // Get status data for dashboard
   app.get("/api/status", async (req, res) => {
@@ -1340,6 +1343,194 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error('[TEST EMAIL ENDPOINT] Error:', error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==================== MOOD TRACKING ROUTES ====================
+
+  // Get mood entries
+  app.get("/api/mood", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+
+    try {
+      const entries = await storage.getMoodEntries(req.userId);
+      res.json(entries);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get mood entries" });
+    }
+  });
+
+  // Get mood stats
+  app.get("/api/mood/stats", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+
+    try {
+      const stats = await storage.getMoodStats(req.userId);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get mood stats" });
+    }
+  });
+
+  // Create mood entry
+  app.post("/api/mood", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+
+    try {
+      const parsed = insertMoodEntrySchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      const entry = await storage.createMoodEntry(req.userId, parsed.data);
+      res.json(entry);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create mood entry" });
+    }
+  });
+
+  // ==================== PET PROTECTION ROUTES ====================
+
+  // Get pets
+  app.get("/api/pets", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+
+    try {
+      const pets = await storage.getPets(req.userId);
+      res.json(pets);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get pets" });
+    }
+  });
+
+  // Get single pet
+  app.get("/api/pets/:id", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+
+    try {
+      const pet = await storage.getPet(req.userId, req.params.id);
+      if (!pet) return res.status(404).json({ error: "Pet not found" });
+      res.json(pet);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get pet" });
+    }
+  });
+
+  // Create pet
+  app.post("/api/pets", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+
+    try {
+      const parsed = insertPetSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      const pet = await storage.createPet(req.userId, parsed.data);
+      res.json(pet);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create pet" });
+    }
+  });
+
+  // Update pet
+  app.patch("/api/pets/:id", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+
+    try {
+      const parsed = updatePetSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      const pet = await storage.updatePet(req.userId, req.params.id, parsed.data);
+      if (!pet) return res.status(404).json({ error: "Pet not found" });
+      res.json(pet);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update pet" });
+    }
+  });
+
+  // Delete pet
+  app.delete("/api/pets/:id", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+
+    try {
+      const deleted = await storage.deletePet(req.userId, req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Pet not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete pet" });
+    }
+  });
+
+  // ==================== DIGITAL WILL ROUTES ====================
+
+  // Get documents
+  app.get("/api/documents", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+
+    try {
+      const documents = await storage.getDigitalDocuments(req.userId);
+      res.json(documents);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get documents" });
+    }
+  });
+
+  // Get single document
+  app.get("/api/documents/:id", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+
+    try {
+      const document = await storage.getDigitalDocument(req.userId, req.params.id);
+      if (!document) return res.status(404).json({ error: "Document not found" });
+      res.json(document);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get document" });
+    }
+  });
+
+  // Create document
+  app.post("/api/documents", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+
+    try {
+      const parsed = insertDigitalDocumentSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      const document = await storage.createDigitalDocument(req.userId, parsed.data);
+      res.json(document);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create document" });
+    }
+  });
+
+  // Update document
+  app.patch("/api/documents/:id", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+
+    try {
+      const parsed = updateDigitalDocumentSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      const document = await storage.updateDigitalDocument(req.userId, req.params.id, parsed.data);
+      if (!document) return res.status(404).json({ error: "Document not found" });
+      res.json(document);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update document" });
+    }
+  });
+
+  // Delete document
+  app.delete("/api/documents/:id", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+
+    try {
+      const deleted = await storage.deleteDigitalDocument(req.userId, req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Document not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete document" });
     }
   });
 
