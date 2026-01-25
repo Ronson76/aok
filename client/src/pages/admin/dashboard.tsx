@@ -102,7 +102,7 @@ export default function AdminDashboard() {
       }
       toast({
         title: "Client removed",
-        description: "The client has been removed from the organization.",
+        description: "The client has been removed from the organisation.",
       });
     },
     onError: (error: any) => {
