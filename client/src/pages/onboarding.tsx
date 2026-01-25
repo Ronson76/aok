@@ -33,7 +33,7 @@ interface OnboardingData {
   email: string;
 }
 
-const TOTAL_STEPS = 15;
+const TOTAL_STEPS = 16;
 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
@@ -74,44 +74,48 @@ export default function Onboarding() {
     setLocation("/register?onboarded=true");
   };
 
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
   const canProceed = () => {
     switch (currentStep) {
-      case 1: return data.name.trim().length > 0;
-      case 2: return data.ageGroup !== "";
-      case 3: return data.livingSituation !== "";
-      case 4: return data.whoWorries !== "";
-      case 5: return data.contactName.trim().length > 0;
-      case 6: return data.contactDistance !== "";
-      case 7: return true;
-      case 8: return data.whatMatters.length > 0;
-      case 9: return true;
+      case 1: return termsAccepted;
+      case 2: return data.name.trim().length > 0;
+      case 3: return data.ageGroup !== "";
+      case 4: return data.livingSituation !== "";
+      case 5: return data.whoWorries !== "";
+      case 6: return data.contactName.trim().length > 0;
+      case 7: return data.contactDistance !== "";
+      case 8: return true;
+      case 9: return data.whatMatters.length > 0;
       case 10: return true;
-      case 11: return data.checkInFrequency !== "";
-      case 12: return data.checkInTime !== "";
-      case 13: return data.referralSource !== "";
-      case 14: return true;
+      case 11: return true;
+      case 12: return data.checkInFrequency !== "";
+      case 13: return data.checkInTime !== "";
+      case 14: return data.referralSource !== "";
       case 15: return true;
+      case 16: return true;
       default: return true;
     }
   };
 
   const renderStep = () => {
     switch (currentStep) {
-      case 1: return <Step1Welcome data={data} setData={setData} />;
-      case 2: return <Step2AgeGroup data={data} setData={setData} />;
-      case 3: return <Step3LivingSituation data={data} setData={setData} />;
-      case 4: return <Step4WhoWorries data={data} setData={setData} />;
-      case 5: return <Step5ContactName data={data} setData={setData} />;
-      case 6: return <Step6ContactDistance data={data} setData={setData} />;
-      case 7: return <Step7Summary data={data} />;
-      case 8: return <Step8WhatMatters data={data} setData={setData} />;
-      case 9: return <Step9HealthConditions data={data} setData={setData} onSkip={handleNext} />;
-      case 10: return <Step10ScheduleSummary data={data} />;
-      case 11: return <Step11Frequency data={data} setData={setData} />;
-      case 12: return <Step12Time data={data} setData={setData} />;
-      case 13: return <Step13Referral data={data} setData={setData} />;
-      case 14: return <Step14Plan data={data} setData={setData} />;
-      case 15: return <Step15Payment data={data} onComplete={handleComplete} />;
+      case 1: return <Step1Terms accepted={termsAccepted} setAccepted={setTermsAccepted} />;
+      case 2: return <Step2Welcome data={data} setData={setData} />;
+      case 3: return <Step3AgeGroup data={data} setData={setData} />;
+      case 4: return <Step4LivingSituation data={data} setData={setData} />;
+      case 5: return <Step5WhoWorries data={data} setData={setData} />;
+      case 6: return <Step6ContactName data={data} setData={setData} />;
+      case 7: return <Step7ContactDistance data={data} setData={setData} />;
+      case 8: return <Step8Summary data={data} />;
+      case 9: return <Step9WhatMatters data={data} setData={setData} />;
+      case 10: return <Step10HealthConditions data={data} setData={setData} onSkip={handleNext} />;
+      case 11: return <Step11ScheduleSummary data={data} />;
+      case 12: return <Step12Frequency data={data} setData={setData} />;
+      case 13: return <Step13Time data={data} setData={setData} />;
+      case 14: return <Step14Referral data={data} setData={setData} />;
+      case 15: return <Step15Plan data={data} setData={setData} />;
+      case 16: return <Step16Payment data={data} onComplete={handleComplete} />;
       default: return null;
     }
   };
@@ -209,11 +213,71 @@ function OptionButton({ selected, onClick, icon, label, description, testId }: O
   );
 }
 
-function Step1Welcome({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+function Step1Terms({ accepted, setAccepted }: { accepted: boolean; setAccepted: (v: boolean) => void }) {
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-2" data-testid="text-welcome-title">Welcome to aok</h1>
+        <h1 className="text-2xl font-bold mb-2" data-testid="text-terms-title">Terms and Conditions</h1>
+        <p className="text-muted-foreground mb-6" data-testid="text-terms-subtitle">
+          Please review and accept our terms before continuing.
+        </p>
+        
+        <div className="bg-muted/50 rounded-lg p-4 mb-6 max-h-64 overflow-y-auto text-sm text-muted-foreground space-y-4">
+          <section>
+            <h3 className="font-semibold text-foreground mb-2">1. Service Overview</h3>
+            <p>aok is a personal safety check-in application. We send reminders at intervals you choose, and alert your emergency contacts if you miss a check-in.</p>
+          </section>
+          
+          <section>
+            <h3 className="font-semibold text-foreground mb-2">2. Age Requirement</h3>
+            <p>You must be at least 16 years of age to use aok. By continuing, you confirm that you meet this requirement.</p>
+          </section>
+          
+          <section>
+            <h3 className="font-semibold text-foreground mb-2">3. Emergency Contacts</h3>
+            <p>Your emergency contacts will receive notifications when you miss a check-in or trigger an emergency alert. They must confirm their consent via email within 10 minutes.</p>
+          </section>
+          
+          <section>
+            <h3 className="font-semibold text-foreground mb-2">4. Not a Substitute for Emergency Services</h3>
+            <p>aok is not a replacement for emergency services. In life-threatening situations, always call 999 (UK) or your local emergency number directly.</p>
+          </section>
+          
+          <section>
+            <h3 className="font-semibold text-foreground mb-2">5. Subscription</h3>
+            <p>After your 7-day free trial, your subscription will automatically renew unless cancelled. You can cancel anytime in your settings.</p>
+          </section>
+          
+          <section>
+            <h3 className="font-semibold text-foreground mb-2">6. Privacy</h3>
+            <p>We take your privacy seriously. Your data is encrypted and never sold to third parties. Location data is only shared during emergencies with your consent.</p>
+          </section>
+        </div>
+        
+        <div className="flex items-start gap-3 p-4 border rounded-lg bg-background">
+          <Checkbox
+            id="terms-accept"
+            checked={accepted}
+            onCheckedChange={(checked) => setAccepted(checked === true)}
+            data-testid="checkbox-terms"
+          />
+          <label htmlFor="terms-accept" className="text-sm cursor-pointer leading-relaxed">
+            I am at least 16 years old and I agree to the{" "}
+            <a href="/terms" target="_blank" className="text-primary underline">Terms and Conditions</a>
+            {" "}and{" "}
+            <a href="/privacy" target="_blank" className="text-primary underline">Privacy Policy</a>
+          </label>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+  return (
+    <Card className="border-0 shadow-lg">
+      <CardContent className="p-6">
+        <h1 className="text-2xl font-bold mb-2" data-testid="text-welcome-title">Let's get to know you</h1>
         <p className="text-muted-foreground mb-6" data-testid="text-welcome-subtitle">
           Let's build your personal protection plan. It only takes 2 minutes.
         </p>
@@ -236,7 +300,7 @@ function Step1Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
   );
 }
 
-function Step2AgeGroup({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+function Step3AgeGroup({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   const options = [
     { value: "16-24", label: "16-24", description: "23% of young adults living alone have no local emergency contact", icon: <GraduationCap className="h-6 w-6" /> },
     { value: "25-34", label: "25-34", description: "First-time solo dwellers are 2.4x more likely to delay seeking help", icon: <Home className="h-6 w-6" /> },
@@ -269,7 +333,7 @@ function Step2AgeGroup({ data, setData }: { data: OnboardingData; setData: (d: O
   );
 }
 
-function Step3LivingSituation({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+function Step4LivingSituation({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   const options = [
     { value: "alone", label: "I live alone", icon: <Home className="h-6 w-6" /> },
     { value: "alone-pets", label: "I live alone with pets", icon: <Heart className="h-6 w-6" /> },
@@ -300,7 +364,7 @@ function Step3LivingSituation({ data, setData }: { data: OnboardingData; setData
   );
 }
 
-function Step4WhoWorries({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+function Step5WhoWorries({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   const options = [
     { value: "adult-children", label: "My adult children", icon: <Users className="h-6 w-6" /> },
     { value: "parents", label: "My parents", icon: <Users className="h-6 w-6" /> },
@@ -335,7 +399,7 @@ function Step4WhoWorries({ data, setData }: { data: OnboardingData; setData: (d:
   );
 }
 
-function Step5ContactName({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+function Step6ContactName({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   const relationshipLabel = {
     "adult-children": "child",
     "parents": "parent",
@@ -362,7 +426,7 @@ function Step5ContactName({ data, setData }: { data: OnboardingData; setData: (d
   );
 }
 
-function Step6ContactDistance({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+function Step7ContactDistance({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   const options = [
     { value: "lives-with", label: "Lives with me", icon: <Home className="h-6 w-6" /> },
     { value: "same-city", label: "Same city (under 30 min)", icon: <MapPin className="h-6 w-6" /> },
@@ -393,7 +457,7 @@ function Step6ContactDistance({ data, setData }: { data: OnboardingData; setData
   );
 }
 
-function Step7Summary({ data }: { data: OnboardingData }) {
+function Step8Summary({ data }: { data: OnboardingData }) {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold" data-testid="text-summary-title">Here's what we've built for you, {data.name}</h1>
@@ -469,7 +533,7 @@ function Step7Summary({ data }: { data: OnboardingData }) {
   );
 }
 
-function Step8WhatMatters({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+function Step9WhatMatters({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   const options = [
     { value: "peace-myself", label: "Peace of mind for myself", description: "Know someone will notice if I need help", icon: <Smile className="h-6 w-6" /> },
     { value: "peace-contact", label: `Peace of mind for ${data.contactName || "my contact"}`, description: "They won't have to worry from afar", icon: <Heart className="h-6 w-6" /> },
@@ -509,7 +573,7 @@ function Step8WhatMatters({ data, setData }: { data: OnboardingData; setData: (d
   );
 }
 
-function Step9HealthConditions({ data, setData, onSkip }: { data: OnboardingData; setData: (d: OnboardingData) => void; onSkip: () => void }) {
+function Step10HealthConditions({ data, setData, onSkip }: { data: OnboardingData; setData: (d: OnboardingData) => void; onSkip: () => void }) {
   const options = [
     { value: "fall-concerns", label: "Fall concerns", icon: <AlertTriangle className="h-6 w-6" /> },
     { value: "chronic-condition", label: "Chronic health condition", icon: <Activity className="h-6 w-6" /> },
@@ -569,7 +633,7 @@ function Step9HealthConditions({ data, setData, onSkip }: { data: OnboardingData
   );
 }
 
-function Step10ScheduleSummary({ data }: { data: OnboardingData }) {
+function Step11ScheduleSummary({ data }: { data: OnboardingData }) {
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-6">
@@ -606,7 +670,7 @@ function Step10ScheduleSummary({ data }: { data: OnboardingData }) {
   );
 }
 
-function Step11Frequency({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+function Step12Frequency({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   const options = [
     { value: "daily", label: "Daily", recommended: true, icon: <Calendar className="h-6 w-6" /> },
     { value: "twice-daily", label: "Twice a day", icon: <RefreshCw className="h-6 w-6" /> },
@@ -645,7 +709,7 @@ function Step11Frequency({ data, setData }: { data: OnboardingData; setData: (d:
   );
 }
 
-function Step12Time({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+function Step13Time({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   const options = [
     { value: "morning", label: "Morning (10:00 AM)", icon: <Sun className="h-6 w-6" /> },
     { value: "midday", label: "Midday (12:00 PM)", icon: <Sun className="h-6 w-6" /> },
@@ -676,7 +740,7 @@ function Step12Time({ data, setData }: { data: OnboardingData; setData: (d: Onbo
   );
 }
 
-function Step13Referral({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+function Step14Referral({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   const options = [
     { value: "google", label: "Google search", icon: <Search className="h-6 w-6" /> },
     { value: "ai", label: "ChatGPT / AI assistant", icon: <Bot className="h-6 w-6" /> },
@@ -708,7 +772,7 @@ function Step13Referral({ data, setData }: { data: OnboardingData; setData: (d: 
   );
 }
 
-function Step14Plan({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   return (
     <div className="space-y-4">
       <Card className="border-0 shadow-lg">
@@ -791,7 +855,7 @@ function Step14Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
   );
 }
 
-function Step15Payment({ data, onComplete }: { data: OnboardingData; onComplete: () => void }) {
+function Step16Payment({ data, onComplete }: { data: OnboardingData; onComplete: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState(data.email || "");
   const { toast } = useToast();
