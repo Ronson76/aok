@@ -584,8 +584,8 @@ export default function OrganizationDashboard() {
     }
     if (!orgPassword) {
       toast({
-        title: "Organization password required",
-        description: "Please enter your organization password to confirm.",
+        title: "Organisation password required",
+        description: "Please enter your organisation password to confirm.",
         variant: "destructive",
       });
       return;
@@ -614,7 +614,7 @@ export default function OrganizationDashboard() {
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold" data-testid="text-org-dashboard-title">Organization Dashboard</h1>
+          <h1 className="text-2xl font-bold" data-testid="text-org-dashboard-title">Organisation Dashboard</h1>
           <p className="text-muted-foreground">Monitor your clients' safety and check-in status</p>
         </div>
         <div className="flex gap-2">
@@ -1712,7 +1712,7 @@ export default function OrganizationDashboard() {
               />
             </div>
             <div className="space-y-2 pt-4 border-t">
-              <Label htmlFor="org-password">Your Organization Password</Label>
+              <Label htmlFor="org-password">Your Organisation Password</Label>
               <Input
                 id="org-password"
                 type="password"
@@ -1726,7 +1726,7 @@ export default function OrganizationDashboard() {
                 data-testid="input-org-password"
               />
               <p className="text-xs text-muted-foreground">
-                Your password is required to authorize this change.
+                Your password is required to authorise this change.
               </p>
             </div>
           </div>

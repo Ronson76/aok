@@ -128,13 +128,13 @@ export default function AdminDashboard() {
       setNewOrgEmail("");
       setNewOrgPassword("");
       toast({
-        title: "Organization created",
-        description: "The organization account has been created successfully.",
+        title: "Organisation created",
+        description: "The organisation account has been created successfully.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to create organization",
+        title: "Failed to create organisation",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
@@ -239,7 +239,7 @@ export default function AdminDashboard() {
                 data-testid="button-create-organization"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create Organization
+                Create Organisation
               </Button>
             )}
             <Button variant="outline" size="sm" onClick={handleLogout} data-testid="button-admin-logout">
@@ -283,7 +283,7 @@ export default function AdminDashboard() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-                  <CardTitle className="text-sm font-medium">Organizations</CardTitle>
+                  <CardTitle className="text-sm font-medium">Organisations</CardTitle>
                   <Building2 className="w-4 h-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -482,8 +482,8 @@ export default function AdminDashboard() {
           <p className="text-muted-foreground">Failed to load statistics</p>
         )}
         
-        {/* Organizations Section */}
-        <h2 className="text-2xl font-semibold mb-6 mt-10">Organizations & Clients</h2>
+        {/* Organisations Section */}
+        <h2 className="text-2xl font-semibold mb-6 mt-10">Organisations & Clients</h2>
         
         {orgsLoading ? (
           <div className="space-y-4">
@@ -693,21 +693,21 @@ export default function AdminDashboard() {
           </DialogContent>
         </Dialog>
         
-        {/* Create Organization Dialog */}
+        {/* Create Organisation Dialog */}
         <Dialog open={showCreateOrgDialog} onOpenChange={setShowCreateOrgDialog}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
-                Create Organization
+                Create Organisation
               </DialogTitle>
               <DialogDescription>
-                Create a new organization account. Once created, you can assign bundles to it.
+                Create a new organisation account. Once created, you can assign bundles to it.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="org-name">Organization Name</Label>
+                <Label htmlFor="org-name">Organisation Name</Label>
                 <Input
                   id="org-name"
                   placeholder="e.g., Care Home ABC"
@@ -774,7 +774,7 @@ export default function AdminDashboard() {
                 ) : (
                   <>
                     <Plus className="w-4 h-4 mr-2" />
-                    Create Organization
+                    Create Organisation
                   </>
                 )}
               </Button>

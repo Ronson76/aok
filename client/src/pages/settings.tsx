@@ -452,7 +452,7 @@ export default function Settings() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Customize how aok works for you.
+        Customise how aok works for you.
       </p>
 
       <Card>
@@ -647,7 +647,7 @@ export default function Settings() {
         <CardHeader>
           <CardTitle className="text-base">Appearance</CardTitle>
           <CardDescription>
-            Customize the look of the app.
+            Customise the look of the app.
           </CardDescription>
         </CardHeader>
         <CardContent>
