@@ -747,7 +747,9 @@ function Step12Frequency({ data, setData }: { data: OnboardingData; setData: (d:
 }
 
 function Step13Time({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
-  const options = [
+  const [scheduleEnabled, setScheduleEnabled] = useState(true);
+  
+  const timeOptions = [
     { value: "morning", label: "Morning (10:00 AM)", icon: <Sun className="h-6 w-6" /> },
     { value: "midday", label: "Midday (12:00 PM)", icon: <Sun className="h-6 w-6" /> },
     { value: "evening", label: "Evening (6:00 PM)", icon: <Sunset className="h-6 w-6" /> },
@@ -757,21 +759,37 @@ function Step13Time({ data, setData }: { data: OnboardingData; setData: (d: Onbo
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-4" data-testid="text-time-title">What time works best?</h1>
+        <h1 className="text-2xl font-bold mb-2" data-testid="text-time-title">Select Your Check-In Times</h1>
         <p className="text-sm text-muted-foreground mb-6">Timezone: Europe/London</p>
         
-        <div className="space-y-3">
-          {options.map((option) => (
-            <OptionButton
-              key={option.value}
-              selected={data.checkInTime === option.value}
-              onClick={() => setData({ ...data, checkInTime: option.value })}
-              icon={option.icon}
-              label={option.label}
-              testId={`option-time-${option.value}`}
-            />
-          ))}
+        <div className="flex items-center justify-between mb-6 p-4 rounded-lg border border-border">
+          <div>
+            <h3 className="font-medium">Schedule your start time</h3>
+            <p className="text-sm text-muted-foreground">Set when your daily check-in cycle begins</p>
+          </div>
+          <button
+            onClick={() => setScheduleEnabled(!scheduleEnabled)}
+            className={`relative w-12 h-6 rounded-full transition-colors ${scheduleEnabled ? 'bg-primary' : 'bg-muted'}`}
+            data-testid="toggle-schedule"
+          >
+            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${scheduleEnabled ? 'left-7' : 'left-1'}`} />
+          </button>
         </div>
+        
+        {scheduleEnabled && (
+          <div className="space-y-3">
+            {timeOptions.map((option) => (
+              <OptionButton
+                key={option.value}
+                selected={data.checkInTime === option.value}
+                onClick={() => setData({ ...data, checkInTime: option.value })}
+                icon={option.icon}
+                label={option.label}
+                testId={`option-time-${option.value}`}
+              />
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
