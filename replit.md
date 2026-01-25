@@ -1,204 +1,90 @@
 # aok
 
 ## Overview
-
-aok is a personal safety check-in application that helps users stay connected with their loved ones through regular check-ins. Users set a check-in frequency (1-48 hours), and if they miss a check-in, their emergency contacts can be automatically alerted via email and voice calls. The app provides a dashboard showing check-in status, streak tracking, contact management, history viewing, and settings configuration. It includes an emergency alert button with GPS location sharing and an alarm system that beeps every 2 minutes when overdue.
-
-### Showcase Website (Landing Page)
-The landing page at `/` serves as a comprehensive showcase of the app's capabilities:
-- **Hero Section**: Modern gradient design with call-to-action buttons and mock app UI
-- **Features Section**: 9 feature cards covering all app capabilities (timer, alerts, emergency, GPS, etc.)
-- **How It Works**: 4-step visual guide (Create Account, Add Contacts, Set Timer, Check In)
-- **Promotional Videos**: 3 auto-playing demo videos showcasing key features
-- **Video Tutorial Placeholder**: Embed-ready container for user's tutorial video
-- **Use Cases**: 6 cards for different user types (seniors, solo travelers, organisations, etc.)
-- **FAQ Section**: 7-item accordion with common questions and answers
-- **Footer**: 4-column layout with navigation links and contact information
-- **SEO**: Open Graph and Twitter meta tags for social sharing
+aok is a personal safety check-in application designed to keep users connected with loved ones. It enables users to set a check-in frequency (1-48 hours), and if a check-in is missed, automated alerts are sent to emergency contacts via email and voice calls. The application features a comprehensive dashboard for managing check-in status, tracking streaks, managing contacts, viewing history, and configuring settings. It also includes an emergency alert button with GPS sharing, an alarm system, and optional wellness features such as mood tracking, pet protection profiles, and secure digital document storage (e.g., wills). The project aims to provide a robust, reliable, and user-friendly solution for personal safety and peace of mind.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
+### Frontend
 - **Framework**: React 18 with TypeScript
-- **Routing**: Wouter (lightweight React router)
-- **State Management**: TanStack React Query for server state caching and synchronization
-- **Styling**: Tailwind CSS with CSS custom properties for theming (light/dark mode support)
-- **UI Components**: shadcn/ui component library built on Radix UI primitives
-- **Build Tool**: Vite with React plugin
+- **Routing**: Wouter
+- **State Management**: TanStack React Query
+- **Styling**: Tailwind CSS with CSS custom properties for theming (light/dark mode)
+- **UI Components**: shadcn/ui built on Radix UI
+- **Build Tool**: Vite
+- **Design Principles**: Mobile-first, card-based layout, consistent spacing, bottom navigation.
 
-The frontend follows a mobile-first design approach with a bottom navigation pattern. Pages include Dashboard, Contacts, History, and Settings. The app uses a card-based layout with consistent spacing primitives.
-
-### Backend Architecture
+### Backend
 - **Runtime**: Node.js with Express
-- **Language**: TypeScript compiled with tsx
-- **API Design**: RESTful JSON API with endpoints prefixed `/api/`
-- **Build Process**: esbuild bundles server code for production with selective dependency bundling to optimize cold start times
-
-The server handles API routes through a central `registerRoutes` function. In development, Vite middleware serves the frontend with hot module replacement. In production, static files are served from the built `dist/public` directory.
+- **Language**: TypeScript
+- **API Design**: RESTful JSON API (`/api/` prefix)
+- **Build Process**: esbuild for production, tsx for development
+- **Deployment**: Static files served from `dist/public` in production; Vite middleware for development.
 
 ### Data Layer
-- **ORM**: Drizzle ORM configured for PostgreSQL
-- **Schema Definition**: Shared TypeScript schemas in `/shared/schema.ts` using Zod for validation
-- **Current Storage**: In-memory storage implementation (`MemStorage` class) for development
-- **Database Ready**: Drizzle configuration exists for PostgreSQL migration when DATABASE_URL is provided
-
-The storage interface defines operations for contacts, check-ins, and settings. This abstraction allows swapping between in-memory storage and database-backed storage.
+- **ORM**: Drizzle ORM for PostgreSQL
+- **Schema Definition**: Shared TypeScript schemas with Zod validation (`/shared/schema.ts`)
+- **Storage Abstraction**: Uses an in-memory storage implementation for development, designed to be swappable with a PostgreSQL database.
 
 ### Data Models
-- **Contact**: Emergency contacts with name, email, optional phone, phoneType (mobile/landline), relationship, and isPrimary flag
-- **CheckIn**: Timestamped records with success/missed status
-- **Settings**: Check-in frequency (daily/every_two_days), last check-in time, next due time, alerts toggle
-- **AlertLog**: Records of alerts sent to contacts when check-ins are missed
-- **MoodEntry**: Wellness tracking with mood level (great/good/low/bad), optional notes, and timestamp
-- **Pet**: Pet protection profiles with name, species, breed, age, weight, vet info, medical notes, care instructions
-- **DigitalDocument**: Secure document storage with type (will, power_of_attorney, healthcare_directive, etc.), description, and content
+- **Core**: Contact, CheckIn, Settings, AlertLog
+- **Wellness**: MoodEntry, Pet, DigitalDocument
 
-### Wellness Features
-The app includes three optional wellness features accessible from Settings → More Features:
-
-**Mood/Wellness Tracking** (`/app/mood`)
-- Log mood after check-ins with 4 levels: Great, Good, Low, Bad
-- Add optional notes to mood entries
-- View mood history with timestamps
-- Uses Lucide icons (Heart, ThumbsUp, Meh, Frown) for mood display
-
-**Pet Protection** (`/app/pets`)
-- Create pet profiles with species, breed, age, weight
-- Store vet contact information and medical notes
-- Add care instructions for each pet
-- Supports common pet types: dog, cat, bird, fish, rabbit, hamster, reptile, other
-
-**Digital Will Storage** (`/app/documents`)
-- Securely store important documents (will, power of attorney, healthcare directives, etc.)
-- Document types: will, power_of_attorney, healthcare_directive, insurance, accounts, letter, other
-- Add descriptions and content for each document
-- All documents protected by user authentication
-
-### Alert System
-The app implements missed check-in detection and email notifications:
-- When status is checked via `/api/status`, the system evaluates if the check-in is overdue
-- If overdue and not yet processed, a "missed" check-in record is created
-- Email alerts are sent to all emergency contacts via Resend integration
-- An alert log is generated listing which contacts were notified
-- Each overdue period is only processed once to prevent duplicate alerts
-
-### Primary Contact Feature
-Users can designate one contact as their "primary" contact:
-- Primary contact receives notifications for EVERY successful check-in
-- All contacts receive notifications only when check-ins are missed
-- Only one contact can be primary at a time (enforced at storage layer)
-- Setting a new primary contact automatically demotes the previous one
-- Managed through dedicated `/api/contacts/:id/primary` endpoint
-
-### Email Notifications (Resend Integration)
-The app uses Resend for all email notifications:
-- **Contact Confirmation**: When a user adds an emergency contact, the contact receives a confirmation email with accept/decline links. Contacts must confirm within 10 minutes or they are automatically removed. Tokens are hashed with SHA-256 before storage and nulled after use.
-- **Successful Check-in Notification**: Primary contact receives notification for each successful check-in
-- **Missed Check-in Alerts**: When a check-in is missed, all confirmed emergency contacts receive alert emails with the user's registered address
-- **Password Reset**: Password reset links are sent via email
-- The Resend connector is configured via Replit's integration system (credentials managed automatically)
-
-### Contact Confirmation Flow
-Emergency contacts must confirm their role before receiving alerts:
-- **Confirmation Email**: Contains accept/decline buttons with secure tokens
-- **10-Minute Expiry**: Unconfirmed contacts are automatically deleted after 10 minutes
-- **Security**: Tokens are hashed with SHA-256 before storage; nulled after confirmation/decline
-- **UI Indicator**: Pending contacts show amber "Pending" badge; primary toggle disabled until confirmed
-- **Cleanup Scheduler**: Runs every minute to remove expired unconfirmed contacts
-- **API Endpoints**: `/api/contacts/confirm?token=X&action=accept|decline`
-
-### Twilio Integration (SMS and Voice Calls)
-The app supports SMS and automated voice calls via Twilio:
-- **Phone Type**: Contacts can be marked as "mobile" or "landline" when adding a phone number
-- **SMS Alerts**: Mobile contacts (and contacts without a specified phone type) receive SMS alerts for emergency alerts
-- **Voice Calls**: Landline contacts receive automated phone calls for emergencies and missed check-ins
-- **Text-to-Speech**: Voice calls use Twilio's TTS to announce the alert message including the user's name or reference ID
-- **Emergency Priority**: Emergency alerts trigger immediate SMS to mobile contacts and voice calls to landlines
-- **Configuration**: Uses Twilio Auth Token authentication (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER)
-
-### what3words Integration
-Emergency alerts include precise location information using what3words:
-- **GPS Conversion**: Converts latitude/longitude to three-word addresses (e.g., ///filled.count.soap)
-- **Location Sharing**: Emergency alert emails and SMS include both the what3words address and a link to its map
-- **Fallback**: If what3words conversion fails, alerts still include Google Maps coordinates link
-- **API Key**: Requires WHAT3WORDS_API_KEY secret
+### Core Features
+- **Check-in System**: Users set frequency; missed check-ins trigger alerts.
+- **Alert System**: Detects overdue check-ins, creates "missed" records, and sends email/voice alerts.
+- **Primary Contact**: Designate one contact to receive notifications for every successful check-in.
+- **Contact Confirmation**: Emergency contacts must confirm via email within 10 minutes to be active.
+- **Wellness Features**: Optional Mood/Wellness Tracking, Pet Protection, and Digital Will Storage.
 
 ### Admin Dashboard
-The app includes a separate admin system for platform management:
-- **Separate Authentication**: Admin users have their own login system at `/admin/login` with 12-hour session TTL
-- **Role-Based Access**: Two roles - `super_admin` (full access) and `analyst` (read-only)
-- **Dashboard Statistics**: Overview of total users, organizations, individuals, check-ins, missed check-ins, and active bundles
-- **User Management**: View all registered users, delete users (super_admin only)
-- **Organization Bundles**: Create subscription bundles to allocate seats to organizations for monitoring users
-- **Organization Client Overview**: View all organizations with client summaries, total/active/paused client counts, and aggregated alert counts
-- **Privacy-Limited Client View**: Super admins can view organization clients with limited information (ordinal number, email, mobile) to protect privacy while allowing oversight
-- **Client Status Controls**: Super admins can pause/resume or remove clients from organizations
-- **Audit Logging**: All admin actions are logged for security and accountability
+- **Access**: Separate login (`/admin/login`) with role-based access (`super_admin`, `analyst`).
+- **Management**: User management, organization bundle creation, client oversight (viewing, pausing, resuming, removing clients).
+- **Security**: Audit logging for admin actions.
 
-Admin API endpoints are prefixed with `/api/admin/` and use separate cookies for session management.
-
-### Organization Bundles
-Organizations can receive subscription bundles that allocate a specific number of seats:
-- **Bundle Creation**: Super admins can create bundles for any organization user
-- **Seat Tracking**: Each bundle has a seat limit and tracks seats used
-- **Status Management**: Bundles can be active, expired, or cancelled
-- **Expiry Support**: Optional expiry date can be set for time-limited subscriptions
-
-### Organization Dashboard
-Organizations with bundles can monitor their clients' check-in status:
-- **Client Management**: Add individual users as clients by email, assign to bundles
-- **Status Monitoring**: View real-time status (Safe/Pending/Overdue) for each client
-- **Dashboard Stats**: Overview of total clients, seat usage, and status distribution
-- **Emergency Alerts**: Track emergency alerts from monitored clients
-- **Emergency Contact Management**: Organizations can view, add, edit, and delete emergency contacts for their clients via the Contacts tab in client details
-- **Client Password Reset**: Organizations can reset client passwords through the dashboard (requires org password verification)
-- **Security**: Bundle ownership verification prevents cross-organization access; password-protected actions for timer changes, contact deletion, and client password resets
-- **Separate Navigation**: Organization users have distinct navigation from individual users
-
-Organization API endpoints are prefixed with `/api/org/` and require organization account type.
-
-API endpoints for client contact management:
-- `GET /api/org/clients/:orgClientId/contacts` - List client's emergency contacts
-- `POST /api/org/clients/:orgClientId/contacts` - Add emergency contact
-- `PATCH /api/org/clients/:orgClientId/contacts/:contactId` - Update contact
-- `DELETE /api/org/clients/:orgClientId/contacts/:contactId` - Delete contact
+### Organization Features
+- **Bundles**: Organizations can purchase bundles of seats for their clients.
+- **Client Management**: Organizations add/manage clients (individual users) by email, assign to bundles.
+- **Monitoring**: Dashboard to view client check-in status (Safe/Pending/Overdue), seat usage, and emergency alerts.
+- **Client Control**: Organizations can manage client emergency contacts and reset client passwords.
+- **Dynamic Feature Control**: Organizations can enable/disable specific wellness features for individual clients.
 
 ### Key Design Decisions
-
-**Monorepo Structure**: Client, server, and shared code coexist in one repository with path aliases (`@/` for client, `@shared/` for shared code).
-
-**Shared Schema**: Zod schemas in `/shared/schema.ts` provide runtime validation on both client and server, ensuring type safety across the stack.
-
-**Component Library**: shadcn/ui provides accessible, customizable components. Components are copied into the project rather than imported from a package, allowing full customization.
-
-**Theme System**: CSS custom properties enable light/dark mode switching without JavaScript overhead. The theme is persisted in localStorage.
+- **Monorepo**: Client, server, and shared code in one repository.
+- **Shared Schema**: Zod for type-safe validation across client and server.
+- **Component Library**: shadcn/ui for accessible, customizable UI components.
+- **Theme System**: CSS custom properties for light/dark mode.
 
 ## External Dependencies
 
 ### Database
-- **PostgreSQL**: Primary database when DATABASE_URL environment variable is set
-- **Drizzle Kit**: Database migration tool (`db:push` script)
+- PostgreSQL (via DATABASE_URL)
+- Drizzle Kit
 
 ### Frontend Libraries
-- **@tanstack/react-query**: Server state management
-- **Radix UI**: Accessible component primitives (dialog, dropdown, toast, etc.)
-- **date-fns**: Date formatting and manipulation
-- **react-hook-form**: Form handling with Zod resolver
-- **wouter**: Client-side routing
-- **lucide-react**: Icon library
+- @tanstack/react-query
+- Radix UI
+- date-fns
+- react-hook-form
+- wouter
+- lucide-react
 
 ### Backend Libraries
-- **express**: HTTP server framework
-- **drizzle-orm**: Database ORM
-- **zod**: Schema validation
-- **connect-pg-simple**: PostgreSQL session store (available for future auth)
+- express
+- drizzle-orm
+- zod
+- connect-pg-simple
+
+### APIs & Services
+- **Resend**: For all email notifications (contact confirmation, successful check-in, missed check-in alerts, password reset).
+- **Twilio**: For SMS alerts (mobile contacts) and automated voice calls (landline contacts) for emergencies and missed check-ins.
+- **what3words**: Integrates precise location sharing (three-word addresses) into emergency alerts.
 
 ### Build Tools
-- **Vite**: Frontend bundler with HMR
-- **esbuild**: Server bundler for production
-- **tsx**: TypeScript execution for development
-- **Tailwind CSS**: Utility-first CSS framework
+- Vite
+- esbuild
+- tsx
+- Tailwind CSS
