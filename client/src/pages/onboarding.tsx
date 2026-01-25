@@ -716,10 +716,18 @@ function Step11ScheduleSummary({ data }: { data: OnboardingData }) {
 
 function Step12Frequency({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   const options = [
-    { value: "daily", label: "Daily", recommended: true, icon: <Calendar className="h-6 w-6" /> },
-    { value: "twice-daily", label: "Twice a day", icon: <RefreshCw className="h-6 w-6" /> },
-    { value: "few-times-week", label: "A few times per week", icon: <Calendar className="h-6 w-6" /> },
+    { value: "daily", label: "Daily", recommended: true, icon: <Calendar className="h-6 w-6" />, intervalHours: 24 },
+    { value: "twice-daily", label: "Twice a day", icon: <RefreshCw className="h-6 w-6" />, intervalHours: 12 },
+    { value: "few-times-week", label: "A few times per week", icon: <Calendar className="h-6 w-6" />, intervalHours: 48 },
   ];
+
+  const handleSelect = (option: typeof options[0]) => {
+    setData({ 
+      ...data, 
+      checkInFrequency: option.value,
+      intervalHours: option.intervalHours 
+    });
+  };
 
   return (
     <Card className="border-0 shadow-lg">
@@ -730,7 +738,7 @@ function Step12Frequency({ data, setData }: { data: OnboardingData; setData: (d:
           {options.map((option) => (
             <button
               key={option.value}
-              onClick={() => setData({ ...data, checkInFrequency: option.value })}
+              onClick={() => handleSelect(option)}
               className={`w-full p-4 rounded-lg border text-left transition-all ${
                 data.checkInFrequency === option.value ? "border-primary bg-primary/5" : "border-border hover-elevate"
               }`}
