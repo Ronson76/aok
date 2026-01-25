@@ -209,7 +209,8 @@ export default function Register() {
           </div>
           <CardTitle className="text-2xl">Create Your Account</CardTitle>
           <CardDescription>
-            Sign up for aok to stay connected with your loved ones
+            Sign up for aok to stay connected with your loved ones.
+            You must be 16 years or older to use this service.
           </CardDescription>
         </CardHeader>
         <CardContent>

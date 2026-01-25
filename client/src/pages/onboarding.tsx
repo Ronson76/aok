@@ -238,7 +238,7 @@ function Step1Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
 
 function Step2AgeGroup({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   const options = [
-    { value: "under25", label: "Under 25", description: "23% of young adults living alone have no local emergency contact", icon: <GraduationCap className="h-6 w-6" /> },
+    { value: "16-24", label: "16-24", description: "23% of young adults living alone have no local emergency contact", icon: <GraduationCap className="h-6 w-6" /> },
     { value: "25-34", label: "25-34", description: "First-time solo dwellers are 2.4x more likely to delay seeking help", icon: <Home className="h-6 w-6" /> },
     { value: "35-49", label: "35-49", description: "38% of adults in this age group report safety concerns when alone", icon: <Building2 className="h-6 w-6" /> },
     { value: "50-64", label: "50-64", description: "47% of adults 55+ live alone. Early detection saves lives", icon: <Star className="h-6 w-6" /> },

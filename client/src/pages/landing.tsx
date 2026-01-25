@@ -46,7 +46,7 @@ export default function Landing() {
         { text: "Cancel anytime during trial", icon: Clock },
       ],
       cta: "Start Free Trial",
-      ctaLink: "/register",
+      ctaLink: "/onboarding",
       highlight: false,
       isTrial: true,
     },
@@ -66,7 +66,7 @@ export default function Landing() {
         { text: "Privacy protection & auto timeout", icon: Lock },
       ],
       cta: "Get Started",
-      ctaLink: "/register",
+      ctaLink: "/onboarding",
       highlight: true,
       badge: "Most Popular",
       launchNote: "Launch pricing - Lock in today's rate forever",
@@ -85,7 +85,7 @@ export default function Landing() {
         { text: "Wellbeing AI (Health Insight)", icon: Heart },
       ],
       cta: "Get Started",
-      ctaLink: "/register",
+      ctaLink: "/onboarding",
       highlight: false,
       launchNote: "Launch price - available for a limited time only",
     },
@@ -211,7 +211,7 @@ export default function Landing() {
                 via email, SMS, and phone calls if something happens to you.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/register">
+                <Link href="/onboarding">
                   <Button size="lg" className="w-full sm:w-auto gap-2" data-testid="button-get-started">
                     Get Started Free
                     <ChevronRight className="h-4 w-4" />
@@ -876,7 +876,7 @@ export default function Landing() {
             It takes less than 2 minutes to set up. Give yourself and your loved ones peace of mind.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/register">
+            <Link href="/onboarding">
               <Button size="lg" variant="secondary" className="w-full sm:w-auto" data-testid="button-start-now">
                 Create Free Account
               </Button>
@@ -917,7 +917,7 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold mb-4">For Users</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/register"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-signup">Sign Up</span></Link></li>
+                <li><Link href="/onboarding"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-signup">Sign Up</span></Link></li>
                 <li><Link href="/login"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-signin">Sign In</span></Link></li>
                 <li><Link href="/forgot-password"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-reset">Reset Password</span></Link></li>
               </ul>
