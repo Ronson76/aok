@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import type { OrganizationDashboardStats, OrganizationClientWithDetails, OrganizationBundle, OrganizationClientProfile, AlertLog, OrgClientStatus, Contact } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
@@ -169,6 +170,16 @@ export default function OrganizationDashboard() {
     relationship: "",
     isPrimary: false,
   });
+
+  // Client feature settings state
+  const [clientFeatures, setClientFeatures] = useState({
+    featureWellbeingAi: false,
+    featureMoodTracking: false,
+    featurePetProtection: false,
+    featureDigitalWill: false,
+  });
+  const [loadingFeatures, setLoadingFeatures] = useState(false);
+  const [savingFeatures, setSavingFeatures] = useState(false);
 
   const { data: stats, isLoading: statsLoading } = useQuery<OrganizationDashboardStats>({
     queryKey: ["/api/org/dashboard"],
@@ -391,6 +402,48 @@ export default function OrganizationDashboard() {
       setClientContacts([]);
     } finally {
       setLoadingContacts(false);
+    }
+  };
+
+  const fetchClientFeatures = async (orgClientId: string) => {
+    setLoadingFeatures(true);
+    try {
+      const response = await apiRequest("GET", `/api/org/clients/${orgClientId}/features`);
+      const data = await response.json();
+      setClientFeatures(data);
+    } catch (error) {
+      console.error("Failed to fetch features:", error);
+      setClientFeatures({
+        featureWellbeingAi: false,
+        featureMoodTracking: false,
+        featurePetProtection: false,
+        featureDigitalWill: false,
+      });
+    } finally {
+      setLoadingFeatures(false);
+    }
+  };
+
+  const updateClientFeature = async (orgClientId: string, featureKey: string, enabled: boolean) => {
+    setSavingFeatures(true);
+    try {
+      await apiRequest("PATCH", `/api/org/clients/${orgClientId}/features`, {
+        [featureKey]: enabled,
+      });
+      setClientFeatures(prev => ({ ...prev, [featureKey]: enabled }));
+      toast({
+        title: "Feature updated",
+        description: `Feature ${enabled ? "enabled" : "disabled"} successfully.`,
+      });
+    } catch (error) {
+      console.error("Failed to update feature:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update feature setting.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingFeatures(false);
     }
   };
 
@@ -1077,7 +1130,7 @@ export default function OrganizationDashboard() {
           </DialogHeader>
           {selectedClient && (
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
                 <TabsTrigger value="profile" data-testid="tab-profile">Profile</TabsTrigger>
                 <TabsTrigger value="contacts" data-testid="tab-contacts">
@@ -1085,6 +1138,9 @@ export default function OrganizationDashboard() {
                 </TabsTrigger>
                 <TabsTrigger value="alerts" data-testid="tab-alerts">
                   Alerts {clientAlerts?.counts?.total ? `(${clientAlerts.counts.total})` : ""}
+                </TabsTrigger>
+                <TabsTrigger value="features" data-testid="tab-features" onClick={() => fetchClientFeatures(selectedClient.id)}>
+                  Features
                 </TabsTrigger>
               </TabsList>
               
@@ -1495,6 +1551,98 @@ export default function OrganizationDashboard() {
                   </>
                 ) : (
                   <p className="text-muted-foreground text-center py-4">Click to load alert history.</p>
+                )}
+              </TabsContent>
+
+              <TabsContent value="features" className="space-y-4 mt-4">
+                <div className="space-y-1 mb-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    App Features
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Enable or disable features for this client. Disabled features will appear greyed out in their app.
+                  </p>
+                </div>
+
+                {loadingFeatures ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-full bg-emerald-500/10 p-2">
+                          <ExternalLink className="h-5 w-5 text-emerald-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Wellbeing AI</p>
+                          <p className="text-sm text-muted-foreground">Access to Health Insight AI for healthcare advice</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={clientFeatures.featureWellbeingAi}
+                        onCheckedChange={(checked) => updateClientFeature(selectedClient.id, "featureWellbeingAi", checked)}
+                        disabled={savingFeatures}
+                        data-testid="switch-feature-wellbeing-ai"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-full bg-blue-500/10 p-2">
+                          <TrendingUp className="h-5 w-5 text-blue-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Mood Tracking</p>
+                          <p className="text-sm text-muted-foreground">Track wellness and mood patterns over time</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={clientFeatures.featureMoodTracking}
+                        onCheckedChange={(checked) => updateClientFeature(selectedClient.id, "featureMoodTracking", checked)}
+                        disabled={savingFeatures}
+                        data-testid="switch-feature-mood-tracking"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-full bg-rose-500/10 p-2">
+                          <PawPrint className="h-5 w-5 text-rose-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Pet Protection</p>
+                          <p className="text-sm text-muted-foreground">Store pet profiles with care instructions</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={clientFeatures.featurePetProtection}
+                        onCheckedChange={(checked) => updateClientFeature(selectedClient.id, "featurePetProtection", checked)}
+                        disabled={savingFeatures}
+                        data-testid="switch-feature-pet-protection"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-full bg-slate-500/10 p-2">
+                          <Scroll className="h-5 w-5 text-slate-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Digital Will</p>
+                          <p className="text-sm text-muted-foreground">Store important documents securely</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={clientFeatures.featureDigitalWill}
+                        onCheckedChange={(checked) => updateClientFeature(selectedClient.id, "featureDigitalWill", checked)}
+                        disabled={savingFeatures}
+                        data-testid="switch-feature-digital-will"
+                      />
+                    </div>
+                  </div>
                 )}
               </TabsContent>
             </Tabs>
