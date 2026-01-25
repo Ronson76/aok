@@ -424,7 +424,7 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
         
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">What should we call you?</label>
+            <label className="text-sm font-medium">What's your full name?</label>
             <Input
               value={data.name}
               onChange={(e) => setData({ ...data, name: e.target.value })}
@@ -495,7 +495,14 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
               <Input
                 type="tel"
                 value={data.userPhone}
-                onChange={(e) => setData({ ...data, userPhone: e.target.value.replace(/\D/g, '') })}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/\D/g, '');
+                  // Auto-remove leading zero when country code is present
+                  if (value.startsWith('0') && data.userPhoneCountry) {
+                    value = value.substring(1);
+                  }
+                  setData({ ...data, userPhone: value });
+                }}
                 placeholder="7700900123"
                 className="flex-1"
                 data-testid="input-user-phone"
