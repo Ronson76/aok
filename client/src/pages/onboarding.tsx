@@ -877,6 +877,13 @@ function Step13Time({ data, setData }: { data: OnboardingData; setData: (d: Onbo
               If you don't check in within {formatInterval(data.intervalHours)}, your emergency contacts will be notified.
             </p>
           </div>
+          
+          <div className="flex items-start gap-2 p-3 rounded-md bg-muted/50">
+            <Settings className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              These settings can be adjusted anytime in the Settings page.
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>
