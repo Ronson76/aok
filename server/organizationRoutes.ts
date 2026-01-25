@@ -2,7 +2,7 @@ import { Express, Request, Response } from "express";
 import { organizationStorage, storage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema } from "@shared/schema";
+import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema } from "@shared/schema";
 import { sendAppInviteSMS } from "./notifications";
 
 // Generate a unique 6-character reference code
@@ -431,6 +431,51 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("[ORG] Failed to update client status:", error);
       res.status(500).json({ error: "Failed to update client status" });
+    }
+  });
+
+  // Update client feature settings
+  app.patch("/api/org/clients/:orgClientId/features", requireOrganization, async (req, res) => {
+    try {
+      const { orgClientId } = req.params;
+      
+      const orgClient = await organizationStorage.getClientById(orgClientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      const parsed = updateClientFeaturesSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors });
+      }
+
+      const updated = await organizationStorage.updateClientFeatures(orgClientId, parsed.data);
+      res.json(updated);
+    } catch (error) {
+      console.error("[ORG] Failed to update client features:", error);
+      res.status(500).json({ error: "Failed to update client features" });
+    }
+  });
+
+  // Get client feature settings
+  app.get("/api/org/clients/:orgClientId/features", requireOrganization, async (req, res) => {
+    try {
+      const { orgClientId } = req.params;
+      
+      const orgClient = await organizationStorage.getClientById(orgClientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      res.json({
+        featureWellbeingAi: orgClient.featureWellbeingAi,
+        featureMoodTracking: orgClient.featureMoodTracking,
+        featurePetProtection: orgClient.featurePetProtection,
+        featureDigitalWill: orgClient.featureDigitalWill,
+      });
+    } catch (error) {
+      console.error("[ORG] Failed to get client features:", error);
+      res.status(500).json({ error: "Failed to get client features" });
     }
   });
 

@@ -5,7 +5,7 @@ import {
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
   AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo,
   OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData, OrgClientStatus,
-  OrgClientRegistrationStatus,
+  OrgClientRegistrationStatus, UpdateClientFeatures, ClientFeatureSettings,
   OrganizationClientProfile, UpdateOrganizationClientProfile, AdminOrganizationClientView, AdminOrganizationView,
   PushSubscription, InsertPushSubscription, ActiveEmergencyAlert,
   MoodEntry, InsertMoodEntry, Pet, InsertPet, UpdatePet, DigitalDocument, InsertDigitalDocument, UpdateDigitalDocument
@@ -1423,6 +1423,8 @@ export interface IOrganizationStorage {
   removeClient(organizationId: string, clientId: string): Promise<boolean>;
   isClientOfOrganization(organizationId: string, clientId: string): Promise<boolean>;
   updateClientStatus(organizationClientId: string, status: OrgClientStatus): Promise<OrganizationClient | undefined>;
+  updateClientFeatures(organizationClientId: string, features: UpdateClientFeatures): Promise<OrganizationClient | undefined>;
+  getClientFeaturesByUserId(userId: string): Promise<ClientFeatureSettings | null>;
   
   // Pending client registration (org-managed flow)
   createPendingClient(data: {
@@ -1707,6 +1709,30 @@ class OrganizationStorage implements IOrganizationStorage {
       .set({ status })
       .where(eq(organizationClients.id, organizationClientId))
       .returning();
+    return result[0];
+  }
+
+  async updateClientFeatures(organizationClientId: string, features: UpdateClientFeatures): Promise<OrganizationClient | undefined> {
+    const result = await getDb()
+      .update(organizationClients)
+      .set(features)
+      .where(eq(organizationClients.id, organizationClientId))
+      .returning();
+    return result[0];
+  }
+
+  async getClientFeaturesByUserId(userId: string): Promise<ClientFeatureSettings | null> {
+    const result = await getDb()
+      .select({
+        featureWellbeingAi: organizationClients.featureWellbeingAi,
+        featureMoodTracking: organizationClients.featureMoodTracking,
+        featurePetProtection: organizationClients.featurePetProtection,
+        featureDigitalWill: organizationClients.featureDigitalWill,
+      })
+      .from(organizationClients)
+      .where(eq(organizationClients.clientId, userId));
+    
+    if (result.length === 0) return null;
     return result[0];
   }
 
