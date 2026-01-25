@@ -55,6 +55,34 @@ export default function Pricing() {
       launchNote: "Launch pricing - Lock in today's special rate forever",
       priceProtected: true,
     },
+    {
+      name: "Organisations",
+      description: "Protect your staff, clients, or residents with our comprehensive safety solution.",
+      monthlyPrice: null,
+      yearlyPrice: null,
+      features: [
+        { text: "Flexible check-in timer (5 minutes to 48 hours)", icon: Clock },
+        { text: "Up to 5 emergency contacts per user", icon: Users },
+        { text: "Email alerts for missed check-ins", icon: Mail },
+        { text: "SMS text message alerts", icon: Smartphone },
+        { text: "Automated voice call alerts", icon: Phone },
+        { text: "Emergency alert button with one-tap activation", icon: AlertTriangle },
+        { text: "GPS location sharing with what3words", icon: MapPin },
+        { text: "Push notifications", icon: Bell },
+        { text: "Primary contact updates on every check-in", icon: Heart },
+        { text: "Privacy protection with auto session timeout", icon: Lock },
+        { text: "Mood & wellness tracking", icon: TrendingUp },
+        { text: "Pet protection profiles with vet info", icon: PawPrint },
+        { text: "Digital will & document storage", icon: Scroll },
+        { text: "Wellbeing AI integration (Health Insight)", icon: Heart },
+        { text: "Dedicated organisation dashboard", icon: Building2 },
+        { text: "Bulk user management", icon: Users },
+      ],
+      cta: "Contact Us",
+      ctaLink: "/contact",
+      highlight: false,
+      isOrganisation: true,
+    },
   ];
 
   const testimonials = [
@@ -124,10 +152,6 @@ export default function Pricing() {
             <Lock className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">SSL Secured</span>
           </div>
-          <div className="flex items-center justify-center gap-2 p-1 bg-muted rounded-lg">
-            <Check className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">100% Money Back</span>
-          </div>
         </div>
 
         <div className="flex items-center justify-center gap-4 mb-12">
@@ -167,6 +191,8 @@ export default function Pricing() {
                 <div className="mt-4">
                   {plan.isTrial ? (
                     <div className="text-4xl font-bold">Free<span className="text-lg font-normal text-muted-foreground"> for 7 days</span></div>
+                  ) : plan.isOrganisation ? (
+                    <div className="text-2xl font-bold">Contact us<span className="text-lg font-normal text-muted-foreground block">for bundles & packages</span></div>
                   ) : (
                     <div className="text-4xl font-bold">
                       £{isYearly ? plan.yearlyPrice : plan.monthlyPrice}

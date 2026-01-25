@@ -94,6 +94,22 @@ export default function Landing() {
       launchNote: "Launch pricing - Lock in today's rate forever",
       priceProtected: true,
     },
+    {
+      name: "Organisations",
+      description: "Protect your staff, clients, or residents.",
+      monthlyPrice: null,
+      yearlyPrice: null,
+      features: [
+        { text: "All Complete Protection features", icon: Check },
+        { text: "Dedicated organisation dashboard", icon: Building2 },
+        { text: "Bulk user management", icon: Users },
+        { text: "Custom bundles & packages", icon: Heart },
+      ],
+      cta: "Contact Us",
+      ctaLink: "/contact",
+      highlight: false,
+      isOrganisation: true,
+    },
   ];
 
   const handleShare = async () => {
@@ -648,10 +664,6 @@ export default function Landing() {
               <Lock className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">SSL Secured</span>
             </div>
-            <div className="flex items-center justify-center gap-2 p-2 bg-muted rounded-lg">
-              <Check className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">100% Money Back</span>
-            </div>
           </div>
 
           <div className="flex items-center justify-center gap-4 mb-12">
@@ -691,6 +703,8 @@ export default function Landing() {
                   <div className="mt-4">
                     {plan.isTrial ? (
                       <div className="text-4xl font-bold">Free<span className="text-lg font-normal text-muted-foreground"> for 7 days</span></div>
+                    ) : plan.isOrganisation ? (
+                      <div className="text-2xl font-bold">Contact us<span className="text-lg font-normal text-muted-foreground block">for bundles & packages</span></div>
                     ) : (
                       <div className="text-4xl font-bold">
                         £{isYearly ? plan.yearlyPrice : plan.monthlyPrice}
