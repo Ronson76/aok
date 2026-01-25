@@ -12,35 +12,39 @@ export default function Pricing() {
 
   const plans = [
     {
-      name: "Free",
-      description: "We would love to offer this service for free to everyone, but we are a small company and we need to pay the bills.",
-      note: "If you cannot afford it, please contact us and we will do our best to help you.",
+      name: "7 Day Trial",
+      description: "Try all Base features free for 7 days. No commitment required.",
+      note: "After your trial ends, you'll automatically continue on the Base plan unless you cancel.",
       monthlyPrice: 0,
       yearlyPrice: 0,
-      features: [],
-      cta: "Contact Us",
-      ctaLink: "mailto:support@aok.app",
+      features: [
+        { text: "Full access to all Base features", icon: Check },
+        { text: "No payment details required upfront", icon: Lock },
+        { text: "Cancel anytime during trial", icon: Clock },
+      ],
+      cta: "Start Free Trial",
+      ctaLink: "/register",
       highlight: false,
-      asterisk: true,
+      isTrial: true,
     },
     {
       name: "Base",
-      description: "Everything you need to stay safe and connected with your loved ones.",
+      description: "Complete personal safety with all the essential features to keep you connected.",
       monthlyPrice: 4.99,
       yearlyPrice: 49.99,
       features: [
         { text: "Flexible check-in timer (5 minutes to 48 hours)", icon: Clock },
-        { text: "Add up to five emergency contacts", icon: Users },
+        { text: "Up to 5 emergency contacts", icon: Users },
         { text: "Email alerts for missed check-ins", icon: Mail },
         { text: "SMS text message alerts", icon: Smartphone },
         { text: "Automated voice call alerts", icon: Phone },
         { text: "Emergency alert button with one-tap activation", icon: AlertTriangle },
         { text: "GPS location sharing with what3words", icon: MapPin },
-        { text: "Push notifications to never miss a check-in", icon: Bell },
-        { text: "Primary contact gets every check-in update", icon: Heart },
-        { text: "Privacy protected with auto session timeout", icon: Lock },
+        { text: "Push notifications", icon: Bell },
+        { text: "Primary contact updates on every check-in", icon: Heart },
+        { text: "Privacy protection with auto session timeout", icon: Lock },
       ],
-      cta: "Choose Plan",
+      cta: "Get Started",
       ctaLink: "/register",
       highlight: true,
       badge: "Most Popular",
@@ -49,21 +53,20 @@ export default function Pricing() {
     },
     {
       name: "Plus",
-      description: "Enhanced features for complete peace of mind, including wellness and legacy planning.",
+      description: "Base subscription plus wellness features and legacy planning for complete peace of mind.",
       monthlyPrice: 8.99,
       yearlyPrice: 89.99,
       features: [
-        { text: "Everything in Base", icon: Check },
         { text: "Priority support", icon: HeadphonesIcon },
         { text: "Mood & wellness tracking", icon: TrendingUp },
         { text: "Pet protection profiles with vet info", icon: PawPrint },
         { text: "Digital will & document storage", icon: Scroll },
         { text: "Wellbeing AI integration (Health Insight)", icon: Heart },
       ],
-      cta: "Choose Plan",
+      cta: "Get Started",
       ctaLink: "/register",
       highlight: false,
-      launchNote: "Launch price. We will keep the price low for a limited time.",
+      launchNote: "Launch price - available for a limited time only.",
     },
   ];
 
@@ -175,13 +178,12 @@ export default function Pricing() {
                 </Badge>
               )}
               <CardHeader>
-                <CardTitle className="text-2xl flex items-center gap-2">
+                <CardTitle className="text-2xl">
                   {plan.name}
-                  {plan.asterisk && <span className="text-muted-foreground">*</span>}
                 </CardTitle>
                 <div className="mt-4">
-                  {plan.monthlyPrice === 0 ? (
-                    <div className="text-4xl font-bold">£0<span className="text-lg font-normal text-muted-foreground">/month</span></div>
+                  {plan.isTrial ? (
+                    <div className="text-4xl font-bold">Free<span className="text-lg font-normal text-muted-foreground"> for 7 days</span></div>
                   ) : (
                     <div className="text-4xl font-bold">
                       £{isYearly ? plan.yearlyPrice : plan.monthlyPrice}
@@ -214,10 +216,7 @@ export default function Pricing() {
                     ))}
                   </ul>
                 )}
-                {plan.asterisk && (
-                  <p className="text-xs text-muted-foreground mt-4">*if you drop us a line</p>
-                )}
-              </CardContent>
+                              </CardContent>
               <CardFooter>
                 {plan.ctaLink.startsWith("mailto:") ? (
                   <a href={plan.ctaLink} className="w-full">

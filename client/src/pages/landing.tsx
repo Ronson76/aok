@@ -34,20 +34,24 @@ export default function Landing() {
 
   const pricingPlans = [
     {
-      name: "Free",
-      description: "We would love to offer this service for free to everyone, but we are a small company.",
-      note: "If you cannot afford it, please contact us and we will do our best to help you.",
+      name: "7 Day Trial",
+      description: "Try all Base features free for 7 days. No commitment required.",
+      note: "After your trial ends, you'll automatically continue on the Base plan unless you cancel.",
       monthlyPrice: 0,
       yearlyPrice: 0,
-      features: [],
-      cta: "Contact Us",
-      ctaLink: "mailto:support@aok.app",
+      features: [
+        { text: "Full access to all Base features", icon: Check },
+        { text: "No payment details required upfront", icon: Lock },
+        { text: "Cancel anytime during trial", icon: Clock },
+      ],
+      cta: "Start Free Trial",
+      ctaLink: "/register",
       highlight: false,
-      asterisk: true,
+      isTrial: true,
     },
     {
       name: "Base",
-      description: "Everything you need to stay safe and connected.",
+      description: "Complete personal safety with all the essential features.",
       monthlyPrice: 4.99,
       yearlyPrice: 49.99,
       features: [
@@ -69,11 +73,10 @@ export default function Landing() {
     },
     {
       name: "Plus",
-      description: "Enhanced features for complete peace of mind.",
+      description: "Base subscription plus wellness features and legacy planning.",
       monthlyPrice: 8.99,
       yearlyPrice: 89.99,
       features: [
-        { text: "Everything in Base", icon: Check },
         { text: "Priority support", icon: HeadphonesIcon },
         { text: "Mood & wellness tracking", icon: TrendingUp },
         { text: "Pet protection profiles", icon: PawPrint },
@@ -83,7 +86,7 @@ export default function Landing() {
       cta: "Get Started",
       ctaLink: "/register",
       highlight: false,
-      launchNote: "Launch price - limited time only",
+      launchNote: "Launch price - available for a limited time only",
     },
   ];
 
@@ -698,11 +701,10 @@ export default function Landing() {
                 <CardHeader>
                   <CardTitle className="text-2xl flex items-center gap-2">
                     {plan.name}
-                    {plan.asterisk && <span className="text-muted-foreground">*</span>}
                   </CardTitle>
                   <div className="mt-4">
-                    {plan.monthlyPrice === 0 ? (
-                      <div className="text-4xl font-bold">£0<span className="text-lg font-normal text-muted-foreground">/month</span></div>
+                    {plan.isTrial ? (
+                      <div className="text-4xl font-bold">Free<span className="text-lg font-normal text-muted-foreground"> for 7 days</span></div>
                     ) : (
                       <div className="text-4xl font-bold">
                         £{isYearly ? plan.yearlyPrice : plan.monthlyPrice}
@@ -735,10 +737,7 @@ export default function Landing() {
                       ))}
                     </ul>
                   )}
-                  {plan.asterisk && (
-                    <p className="text-xs text-muted-foreground mt-4">*if you drop us a line</p>
-                  )}
-                </CardContent>
+                                  </CardContent>
                 <CardFooter>
                   {plan.ctaLink.startsWith("mailto:") ? (
                     <a href={plan.ctaLink} className="w-full">
