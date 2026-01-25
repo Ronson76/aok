@@ -785,9 +785,10 @@ export default function Landing() {
                 What happens if I miss a check-in?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-2">
-                If you miss a check-in, your emergency contacts are automatically notified via email. 
-                They'll receive your registered address and information to help locate you. You'll also 
-                hear an alert sound on your phone to remind you to check in.
+                If you miss a check-in, your emergency contacts are automatically notified via email, SMS, 
+                and voice call. They'll receive your location through what3words - a simple three-word address 
+                that pinpoints your exact location to within 3 metres. You'll also hear an alert sound on your 
+                phone to remind you to check in.
               </AccordionContent>
             </AccordionItem>
             
