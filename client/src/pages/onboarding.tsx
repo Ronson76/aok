@@ -33,7 +33,7 @@ interface OnboardingData {
   email: string;
 }
 
-const TOTAL_STEPS = 16;
+const TOTAL_STEPS = 15;
 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
@@ -90,10 +90,9 @@ export default function Onboarding() {
       case 10: return true;
       case 11: return data.checkInFrequency !== "";
       case 12: return data.checkInTime !== "";
-      case 13: return data.referralSource !== "";
+      case 13: return true;
       case 14: return true;
-      case 15: return true;
-      case 16: return termsAccepted;
+      case 15: return termsAccepted;
       default: return true;
     }
   };
@@ -112,10 +111,9 @@ export default function Onboarding() {
       case 10: return <Step11ScheduleSummary data={data} />;
       case 11: return <Step12Frequency data={data} setData={setData} />;
       case 12: return <Step13Time data={data} setData={setData} />;
-      case 13: return <Step14Referral data={data} setData={setData} />;
-      case 14: return <Step15Plan data={data} setData={setData} />;
-      case 15: return <Step16Payment data={data} onComplete={handleComplete} />;
-      case 16: return <Step1Terms accepted={termsAccepted} setAccepted={setTermsAccepted} onComplete={handleComplete} />;
+      case 13: return <Step15Plan data={data} setData={setData} />;
+      case 14: return <Step16Payment data={data} onComplete={handleComplete} />;
+      case 15: return <Step1Terms accepted={termsAccepted} setAccepted={setTermsAccepted} onComplete={handleComplete} />;
       default: return null;
     }
   };
@@ -802,11 +800,11 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-500" />
-                <span data-testid="text-plan-feature-2">Automatic alerts to {data.contactName || "your contact"} if you miss</span>
+                <span data-testid="text-plan-feature-2">Multi-channel alerts to {data.contactName || "your contact"} if you miss a check-in</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-500" />
-                <span data-testid="text-plan-feature-3">24/7 monitoring</span>
+                <span data-testid="text-plan-feature-3">GPS alert in an emergency</span>
               </li>
             </ul>
           </div>

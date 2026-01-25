@@ -207,7 +207,7 @@ export default function OrganizationDashboard() {
       setSelectedBundleId("");
       toast({
         title: "Client added",
-        description: "The client has been added to your organization.",
+        description: "The client has been added to your organisation.",
       });
     },
     onError: (error: any) => {
@@ -228,7 +228,7 @@ export default function OrganizationDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
       toast({
         title: "Client removed",
-        description: "The client has been removed from your organization.",
+        description: "The client has been removed from your organisation.",
       });
     },
     onError: (error: any) => {
