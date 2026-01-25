@@ -745,10 +745,12 @@ export default function Register() {
                   {registerMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
+                      {fromOnboarding ? "Confirming..." : "Creating account..."}
                     </>
                   ) : !canSubmit ? (
                     "Grant Location Access to Continue"
+                  ) : fromOnboarding ? (
+                    "Confirm"
                   ) : (
                     "Create Account"
                   )}
@@ -757,12 +759,14 @@ export default function Register() {
             </form>
           </Form>
 
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link href="/login" className="text-primary hover:underline" data-testid="link-login">
-              Sign in
-            </Link>
-          </div>
+          {!fromOnboarding && (
+            <div className="mt-6 text-center text-sm text-muted-foreground">
+              Already have an account?{" "}
+              <Link href="/login" className="text-primary hover:underline" data-testid="link-login">
+                Sign in
+              </Link>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
