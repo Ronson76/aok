@@ -5,12 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
 import { 
   ChevronLeft, Check, Lock, CreditCard, GraduationCap, Home, Building2, 
   Users, Heart, Baby, Plane, TreePine, MapPin, Car, Globe, Smile, 
   AlertTriangle, Activity, Scissors, Accessibility, Calendar,
   Clock, RefreshCw, Sun, Sunset, Settings, Search, Bot, Smartphone,
-  Mail, Star, Phone, X, Loader2, Wallet, ShieldCheck
+  Mail, Star, Phone, X, Loader2, Wallet, ShieldCheck, Info
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -56,6 +57,7 @@ interface OnboardingData {
   checkInTime: string;
   scheduleStartTime: string;
   scheduleEnabled: boolean;
+  intervalHours: number;
   planType: string;
   billingCycle: string;
   email: string;
@@ -84,6 +86,7 @@ export default function Onboarding() {
     checkInTime: "morning",
     scheduleStartTime: "10:00",
     scheduleEnabled: true,
+    intervalHours: 24,
     planType: "base",
     billingCycle: "monthly",
     email: "",
@@ -750,52 +753,123 @@ function Step12Frequency({ data, setData }: { data: OnboardingData; setData: (d:
   );
 }
 
+// Interval values matching settings page
+const INTERVAL_VALUES = [
+  0.0833, // 5 minutes (for testing)
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+  13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+  25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
+  37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48
+];
+
+function hoursToIndex(hours: number): number {
+  const idx = INTERVAL_VALUES.findIndex(v => Math.abs(v - hours) < 0.01);
+  return idx >= 0 ? idx : 24; // Default to 24 hours if not found
+}
+
+function indexToHours(index: number): number {
+  return INTERVAL_VALUES[Math.min(index, INTERVAL_VALUES.length - 1)];
+}
+
+function formatInterval(hours: number): string {
+  if (hours < 0.1) return "5 mins";
+  if (hours === 1) return "1 hour";
+  if (hours < 24) return `${Math.round(hours)} hours`;
+  if (hours === 24) return "1 day";
+  if (hours === 48) return "2 days";
+  const days = Math.floor(hours / 24);
+  const remainingHours = Math.round(hours % 24);
+  if (remainingHours === 0) return `${days} days`;
+  return `${days} day${days > 1 ? 's' : ''} ${remainingHours} hour${remainingHours > 1 ? 's' : ''}`;
+}
+
+// Generate time options for dropdown
+const timeOptions = Array.from({ length: 96 }, (_, i) => {
+  const hours = Math.floor(i / 4);
+  const minutes = (i % 4) * 15;
+  const time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  return time;
+});
+
 function Step13Time({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+  const [tempTime, setTempTime] = useState(data.scheduleStartTime);
+
+  const handleIntervalChange = (value: number[]) => {
+    const hours = indexToHours(value[0]);
+    setData({ ...data, intervalHours: hours });
+  };
+
+  const handleSetTime = () => {
+    setData({ ...data, scheduleStartTime: tempTime, checkInTime: tempTime });
+  };
+
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-2" data-testid="text-time-title">Select Your Check-In Times</h1>
-        <p className="text-sm text-muted-foreground mb-6">Timezone: Europe/London</p>
-        
-        <div className="p-4 rounded-lg border border-border mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="font-medium">Schedule your start time</h3>
-              <p className="text-sm text-muted-foreground">Set when your daily check-in cycle begins</p>
-            </div>
-            <button
-              onClick={() => setData({ ...data, scheduleEnabled: !data.scheduleEnabled })}
-              className={`relative w-12 h-6 rounded-full transition-colors ${data.scheduleEnabled ? 'bg-primary' : 'bg-muted'}`}
-              data-testid="toggle-schedule"
-            >
-              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${data.scheduleEnabled ? 'left-7' : 'left-1'}`} />
-            </button>
-          </div>
-          
-          {data.scheduleEnabled && (
-            <div className="pt-4 border-t">
-              <label className="text-sm font-medium mb-2 block">Start time</label>
-              <Input
-                type="time"
-                value={data.scheduleStartTime}
-                onChange={(e) => setData({ ...data, scheduleStartTime: e.target.value, checkInTime: e.target.value })}
-                className="w-full"
-                data-testid="input-schedule-start-time"
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                Your check-in reminders will start from this time each day
-              </p>
-            </div>
-          )}
+        <div className="flex items-center gap-2 mb-2">
+          <Clock className="h-5 w-5 text-muted-foreground" />
+          <h1 className="text-xl font-bold" data-testid="text-time-title">Check-In Interval</h1>
         </div>
+        <p className="text-sm text-muted-foreground mb-6">
+          How long between check-ins before an alert is sent?
+        </p>
         
-        {!data.scheduleEnabled && (
-          <div className="p-4 rounded-lg bg-muted/50 text-center">
-            <p className="text-sm text-muted-foreground">
-              Schedule is disabled. Check-ins will not have a fixed start time.
+        <div className="space-y-6">
+          <div>
+            <h3 className="font-semibold mb-1">Schedule Start Time</h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              Set the time of day your check-in schedule starts from.
+            </p>
+            <div className="flex gap-2 items-center">
+              <select
+                value={tempTime}
+                onChange={(e) => setTempTime(e.target.value)}
+                className="flex-1 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                data-testid="select-schedule-start-time"
+              >
+                {timeOptions.map((time) => (
+                  <option key={time} value={time}>{time}</option>
+                ))}
+              </select>
+              <Button 
+                onClick={handleSetTime}
+                className="bg-primary text-primary-foreground px-6"
+                data-testid="button-set-time"
+              >
+                Set
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Current schedule: {data.scheduleStartTime}
             </p>
           </div>
-        )}
+
+          <div className="border-t pt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">5 mins</span>
+              <span className="text-lg font-semibold text-primary">
+                {formatInterval(data.intervalHours)}
+              </span>
+              <span className="text-sm text-muted-foreground">48 hours</span>
+            </div>
+            <Slider
+              value={[hoursToIndex(data.intervalHours)]}
+              onValueChange={handleIntervalChange}
+              min={0}
+              max={INTERVAL_VALUES.length - 1}
+              step={1}
+              className="w-full"
+              data-testid="slider-interval"
+            />
+          </div>
+          
+          <div className="flex items-start gap-2 p-3 rounded-md bg-muted/50">
+            <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              If you don't check in within {formatInterval(data.intervalHours)}, your emergency contacts will be notified.
+            </p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
