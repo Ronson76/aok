@@ -288,10 +288,10 @@ export default function Register() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4 py-12">
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center space-y-2">
-          <div className="flex flex-col items-center justify-center mb-2">
+          <Link href="/" className="flex flex-col items-center justify-center mb-2 cursor-pointer" data-testid="link-logo-home">
             <ShieldCheck className="h-12 w-12 text-green-600" />
             <span className="text-lg font-semibold text-green-600">aok</span>
-          </div>
+          </Link>
           <CardTitle className="text-2xl">
             {fromOnboarding ? "Almost There!" : "Create Your Account"}
           </CardTitle>
