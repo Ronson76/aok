@@ -33,7 +33,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, PawPrint, Trash2, Pencil, Loader2, Stethoscope, Phone, Dog, Cat, Bird, Fish, Rabbit, type LucideIcon } from "lucide-react";
+import { Plus, PawPrint, Trash2, Pencil, Loader2, Stethoscope, Phone, Dog, Cat, Bird, Fish, Rabbit, ArrowLeft, type LucideIcon } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -220,6 +221,11 @@ export default function Pets() {
     <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto h-full overflow-y-auto">
       <div className="flex items-center justify-between pt-2">
         <div className="flex items-center gap-3">
+          <Link href="/app">
+            <Button variant="ghost" size="icon" data-testid="button-back-pets">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
           <PawPrint className="h-7 w-7 text-primary" />
           <h1 className="text-2xl font-semibold">Pet Protection</h1>
         </div>
