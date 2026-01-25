@@ -30,6 +30,9 @@ import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_
 import alertsVideo from "@assets/generated_videos/english_sms_alert_notification.mp4";
 import locationVideo from "@assets/generated_videos/uk_streets_gps_map_tracking.mp4";
 
+const MONTHLY_PRICE = 6.99;
+const YEARLY_PRICE = 69.99;
+
 export default function Landing() {
   const { toast } = useToast();
   const { user, logout } = useAuth();
@@ -72,8 +75,8 @@ export default function Landing() {
     {
       name: "Complete Protection",
       description: "Everything you need to stay safe and connected.",
-      monthlyPrice: 6.99,
-      yearlyPrice: 69.99,
+      monthlyPrice: MONTHLY_PRICE,
+      yearlyPrice: YEARLY_PRICE,
       features: [
         { text: "Flexible check-in timer (5 mins to 48 hours)", icon: Clock },
         { text: "Up to 5 emergency contacts", icon: Users },
@@ -772,8 +775,8 @@ export default function Landing() {
                 Is aok free to use?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-1">
-                Yes! aok is completely free for individual users. You can add emergency contacts, 
-                set up check-in schedules, and receive all notifications at no cost.
+                The app gives you 7 days free and then we charge a nominal fee of £{MONTHLY_PRICE.toFixed(2)} per month 
+                for our Complete Protection package, which includes all features.
               </AccordionContent>
             </AccordionItem>
             
