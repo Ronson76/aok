@@ -179,11 +179,11 @@ export default function Landing() {
           <div className="flex items-center gap-2">
             <div className="hidden md:flex items-center gap-2 mr-2">
               <a href="#" className="flex items-center gap-1 px-2 py-1 rounded border border-border text-xs hover-elevate" data-testid="link-app-store-header">
-                <SiApple className="h-4 w-4" />
+                <SiApple className="h-4 w-4 text-black dark:text-white" />
                 <span className="sr-only">App Store</span>
               </a>
               <a href="#" className="flex items-center gap-1 px-2 py-1 rounded border border-border text-xs hover-elevate" data-testid="link-play-store-header">
-                <SiGoogleplay className="h-4 w-4" />
+                <SiGoogleplay className="h-4 w-4 text-[#414141] dark:text-[#34A853]" />
                 <span className="sr-only">Google Play</span>
               </a>
             </div>
@@ -914,14 +914,14 @@ export default function Landing() {
               <h4 className="font-semibold mb-4">Download the App</h4>
               <div className="flex flex-col gap-3">
                 <a href="#" className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border hover-elevate transition-colors" data-testid="link-app-store-footer">
-                  <SiApple className="h-6 w-6" />
+                  <SiApple className="h-6 w-6 text-black dark:text-white" />
                   <div className="text-left">
                     <div className="text-xs text-muted-foreground">Download on the</div>
                     <div className="text-sm font-semibold">App Store</div>
                   </div>
                 </a>
                 <a href="#" className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border hover-elevate transition-colors" data-testid="link-play-store-footer">
-                  <SiGoogleplay className="h-6 w-6" />
+                  <SiGoogleplay className="h-6 w-6 text-[#414141] dark:text-[#34A853]" />
                   <div className="text-left">
                     <div className="text-xs text-muted-foreground">Get it on</div>
                     <div className="text-sm font-semibold">Google Play</div>
