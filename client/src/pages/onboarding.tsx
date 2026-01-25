@@ -23,17 +23,18 @@ interface OnboardingData {
   whoWorries: string;
   contactName: string;
   contactDistance: string;
+  contactEmail: string;
+  contactPhone: string;
   whatMatters: string[];
   healthConditions: string[];
   checkInFrequency: string;
   checkInTime: string;
-  referralSource: string;
   planType: string;
   billingCycle: string;
   email: string;
 }
 
-const TOTAL_STEPS = 15;
+const TOTAL_STEPS = 16;
 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
@@ -45,11 +46,12 @@ export default function Onboarding() {
     whoWorries: "",
     contactName: "",
     contactDistance: "",
+    contactEmail: "",
+    contactPhone: "",
     whatMatters: [],
     healthConditions: [],
     checkInFrequency: "daily",
     checkInTime: "morning",
-    referralSource: "",
     planType: "base",
     billingCycle: "monthly",
     email: "",
@@ -90,9 +92,10 @@ export default function Onboarding() {
       case 10: return true;
       case 11: return data.checkInFrequency !== "";
       case 12: return data.checkInTime !== "";
-      case 13: return true;
+      case 13: return data.contactEmail.includes("@") && data.contactPhone.trim().length > 0;
       case 14: return true;
-      case 15: return termsAccepted;
+      case 15: return true;
+      case 16: return termsAccepted;
       default: return true;
     }
   };
@@ -111,9 +114,10 @@ export default function Onboarding() {
       case 10: return <Step11ScheduleSummary data={data} />;
       case 11: return <Step12Frequency data={data} setData={setData} />;
       case 12: return <Step13Time data={data} setData={setData} />;
-      case 13: return <Step15Plan data={data} setData={setData} />;
-      case 14: return <Step16Payment data={data} onComplete={handleComplete} />;
-      case 15: return <Step1Terms accepted={termsAccepted} setAccepted={setTermsAccepted} onComplete={handleComplete} />;
+      case 13: return <Step14ContactDetails data={data} setData={setData} />;
+      case 14: return <Step15Plan data={data} setData={setData} />;
+      case 15: return <Step16Payment data={data} onComplete={handleComplete} />;
+      case 16: return <Step1Terms accepted={termsAccepted} setAccepted={setTermsAccepted} onComplete={handleComplete} />;
       default: return null;
     }
   };
@@ -749,32 +753,40 @@ function Step13Time({ data, setData }: { data: OnboardingData; setData: (d: Onbo
   );
 }
 
-function Step14Referral({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
-  const options = [
-    { value: "google", label: "Google search", icon: <Search className="h-6 w-6" /> },
-    { value: "ai", label: "ChatGPT / AI assistant", icon: <Bot className="h-6 w-6" /> },
-    { value: "social", label: "Social media", icon: <Smartphone className="h-6 w-6" /> },
-    { value: "friend", label: "Friend or family recommendation", icon: <Users className="h-6 w-6" /> },
-    { value: "email", label: "Email or newsletter", icon: <Mail className="h-6 w-6" /> },
-    { value: "other", label: "Other", icon: <Star className="h-6 w-6" /> },
-  ];
-
+function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-6" data-testid="text-referral-title">One quick question - how did you find us?</h1>
+        <h1 className="text-2xl font-bold mb-2" data-testid="text-contact-details-title">How can we reach {data.contactName || "your contact"}?</h1>
+        <p className="text-muted-foreground mb-6">
+          We'll use these details to alert them if you miss a check-in.
+        </p>
         
-        <div className="space-y-3">
-          {options.map((option) => (
-            <OptionButton
-              key={option.value}
-              selected={data.referralSource === option.value}
-              onClick={() => setData({ ...data, referralSource: option.value })}
-              icon={option.icon}
-              label={option.label}
-              testId={`option-referral-${option.value}`}
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-2 block">Their email address</label>
+            <Input
+              type="email"
+              value={data.contactEmail}
+              onChange={(e) => setData({ ...data, contactEmail: e.target.value })}
+              placeholder="contact@example.com"
+              data-testid="input-contact-email"
             />
-          ))}
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium mb-2 block">Their mobile number</label>
+            <Input
+              type="tel"
+              value={data.contactPhone}
+              onChange={(e) => setData({ ...data, contactPhone: e.target.value })}
+              placeholder="+44 7700 900000"
+              data-testid="input-contact-phone"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Include country code for SMS alerts
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>
