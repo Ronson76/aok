@@ -418,6 +418,11 @@ export const organizationClients = pgTable("organization_clients", {
   scheduleStartTime: timestamp("schedule_start_time"),
   checkInIntervalHours: integer("check_in_interval_hours").default(24),
   addedAt: timestamp("added_at").notNull().defaultNow(),
+  // Feature controls - organizations can enable/disable features for each client
+  featureWellbeingAi: boolean("feature_wellbeing_ai").notNull().default(false),
+  featureMoodTracking: boolean("feature_mood_tracking").notNull().default(false),
+  featurePetProtection: boolean("feature_pet_protection").notNull().default(false),
+  featureDigitalWill: boolean("feature_digital_will").notNull().default(false),
 });
 
 export const insertOrganizationClientSchema = createInsertSchema(organizationClients).omit({
@@ -450,6 +455,23 @@ export const registerOrgClientSchema = z.object({
 
 export type InsertOrganizationClient = z.infer<typeof insertOrganizationClientSchema>;
 export type OrganizationClient = typeof organizationClients.$inferSelect;
+
+// Schema for updating client feature settings
+export const updateClientFeaturesSchema = z.object({
+  featureWellbeingAi: z.boolean().optional(),
+  featureMoodTracking: z.boolean().optional(),
+  featurePetProtection: z.boolean().optional(),
+  featureDigitalWill: z.boolean().optional(),
+});
+export type UpdateClientFeatures = z.infer<typeof updateClientFeaturesSchema>;
+
+// Type for client feature settings
+export type ClientFeatureSettings = {
+  featureWellbeingAi: boolean;
+  featureMoodTracking: boolean;
+  featurePetProtection: boolean;
+  featureDigitalWill: boolean;
+};
 
 // Organization client profiles table (detailed info about clients, managed by org)
 export const organizationClientProfiles = pgTable("organization_client_profiles", {

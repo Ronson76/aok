@@ -676,6 +676,7 @@ export async function registerRoutes(
   app.use("/api/mood", authMiddleware);
   app.use("/api/pets", authMiddleware);
   app.use("/api/documents", authMiddleware);
+  app.use("/api/features", authMiddleware);
 
   // Get status data for dashboard
   app.get("/api/status", async (req, res) => {
@@ -1167,6 +1168,52 @@ export async function registerRoutes(
       res.json(settings);
     } catch (error) {
       res.status(500).json({ error: "Failed to get settings" });
+    }
+  });
+
+  // Get feature settings for current user (to check what features are enabled)
+  app.get("/api/features", async (req, res) => {
+    try {
+      const user = await storage.getUser(req.userId!);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // If user is an organization, they cannot access wellness features
+      if (user.accountType === "organization") {
+        return res.json({
+          isOrgAccount: true,
+          featureWellbeingAi: false,
+          featureMoodTracking: false,
+          featurePetProtection: false,
+          featureDigitalWill: false,
+        });
+      }
+
+      // Check if user is managed by an organization
+      const features = await organizationStorage.getClientFeaturesByUserId(req.userId!);
+      
+      if (features) {
+        // User is an org client - return their enabled features
+        return res.json({
+          isOrgAccount: false,
+          isOrgClient: true,
+          ...features,
+        });
+      }
+
+      // Regular individual user - all features enabled
+      res.json({
+        isOrgAccount: false,
+        isOrgClient: false,
+        featureWellbeingAi: true,
+        featureMoodTracking: true,
+        featurePetProtection: true,
+        featureDigitalWill: true,
+      });
+    } catch (error) {
+      console.error("[API] Failed to get features:", error);
+      res.status(500).json({ error: "Failed to get feature settings" });
     }
   });
 
