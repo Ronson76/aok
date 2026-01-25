@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle, Smartphone, Eye, EyeOff, TrendingUp, PawPrint, FileText, ChevronRight } from "lucide-react";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle, Smartphone, Eye, EyeOff, TrendingUp, PawPrint, FileText, ChevronRight, Lock, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
@@ -95,6 +95,18 @@ export default function Settings() {
 
   const { data: settings, isLoading, isFetching } = useQuery<SettingsType>({
     queryKey: ["/api/settings"],
+  });
+
+  // Fetch feature availability (for org clients)
+  const { data: features } = useQuery<{
+    featureWellbeingAi: boolean;
+    featureMoodTracking: boolean;
+    featurePetProtection: boolean;
+    featureDigitalWill: boolean;
+    isOrgAccount: boolean;
+    isOrgClient: boolean;
+  }>({
+    queryKey: ["/api/features"],
   });
   
   // Track if user is actively changing the interval
@@ -656,51 +668,101 @@ export default function Settings() {
           <CardTitle className="text-base">More Features</CardTitle>
           <CardDescription>
             Additional tools for your wellbeing and security.
+            {features?.isOrgClient && (
+              <span className="block mt-1 text-xs">Some features may be controlled by your organisation.</span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          <Link href="/app/mood">
-            <div className="flex items-center justify-between p-3 rounded-lg hover-elevate cursor-pointer" data-testid="link-mood">
+          {features?.featureMoodTracking !== false ? (
+            <Link href="/app/mood">
+              <div className="flex items-center justify-between p-3 rounded-lg hover-elevate cursor-pointer" data-testid="link-mood">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Wellness Tracking</p>
+                    <p className="text-xs text-muted-foreground">Track your mood over time</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </Link>
+          ) : (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 opacity-60" data-testid="link-mood-disabled">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-primary" />
+                <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="font-medium">Wellness Tracking</p>
-                  <p className="text-xs text-muted-foreground">Track your mood over time</p>
+                  <p className="font-medium text-muted-foreground">Wellness Tracking</p>
+                  <p className="text-xs text-muted-foreground">Not enabled by your organisation</p>
                 </div>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              <Lock className="h-5 w-5 text-muted-foreground" />
             </div>
-          </Link>
-          <Link href="/app/pets">
-            <div className="flex items-center justify-between p-3 rounded-lg hover-elevate cursor-pointer" data-testid="link-pets">
+          )}
+          
+          {features?.featurePetProtection !== false ? (
+            <Link href="/app/pets">
+              <div className="flex items-center justify-between p-3 rounded-lg hover-elevate cursor-pointer" data-testid="link-pets">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <PawPrint className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Pet Protection</p>
+                    <p className="text-xs text-muted-foreground">Store pet care info for emergencies</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </Link>
+          ) : (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 opacity-60" data-testid="link-pets-disabled">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <PawPrint className="h-5 w-5 text-primary" />
+                <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
+                  <PawPrint className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="font-medium">Pet Protection</p>
-                  <p className="text-xs text-muted-foreground">Store pet care info for emergencies</p>
+                  <p className="font-medium text-muted-foreground">Pet Protection</p>
+                  <p className="text-xs text-muted-foreground">Not enabled by your organisation</p>
                 </div>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              <Lock className="h-5 w-5 text-muted-foreground" />
             </div>
-          </Link>
-          <Link href="/app/documents">
-            <div className="flex items-center justify-between p-3 rounded-lg hover-elevate cursor-pointer" data-testid="link-documents">
+          )}
+          
+          {features?.featureDigitalWill !== false ? (
+            <Link href="/app/documents">
+              <div className="flex items-center justify-between p-3 rounded-lg hover-elevate cursor-pointer" data-testid="link-documents">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Digital Will</p>
+                    <p className="text-xs text-muted-foreground">Secure important documents</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </Link>
+          ) : (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 opacity-60" data-testid="link-documents-disabled">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-primary" />
+                <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="font-medium">Digital Will</p>
-                  <p className="text-xs text-muted-foreground">Secure important documents</p>
+                  <p className="font-medium text-muted-foreground">Digital Will</p>
+                  <p className="text-xs text-muted-foreground">Not enabled by your organisation</p>
                 </div>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              <Lock className="h-5 w-5 text-muted-foreground" />
             </div>
-          </Link>
+          )}
         </CardContent>
       </Card>
 

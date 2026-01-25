@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,10 +70,32 @@ const documentLabels: Record<string, string> = {
 
 export default function Documents() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState<DigitalDocument | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewingDoc, setViewingDoc] = useState<DigitalDocument | null>(null);
+
+  // Check feature access
+  const { data: features, isLoading: featuresLoading } = useQuery<{
+    featureDigitalWill: boolean;
+    isOrgAccount: boolean;
+    isOrgClient: boolean;
+  }>({
+    queryKey: ["/api/features"],
+  });
+
+  // Redirect if feature is disabled
+  useEffect(() => {
+    if (!featuresLoading && features?.featureDigitalWill === false) {
+      toast({
+        title: "Feature not available",
+        description: "This feature has not been enabled by your organisation.",
+        variant: "destructive",
+      });
+      setLocation("/app/settings");
+    }
+  }, [features, featuresLoading, setLocation, toast]);
 
   const form = useForm<InsertDigitalDocument>({
     resolver: zodResolver(insertDigitalDocumentSchema),
@@ -86,6 +109,7 @@ export default function Documents() {
 
   const { data: documents = [], isLoading } = useQuery<DigitalDocument[]>({
     queryKey: ["/api/documents"],
+    enabled: features?.featureDigitalWill !== false,
   });
 
   const createMutation = useMutation({

@@ -1,15 +1,17 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Meh, Frown, ThumbsUp, Heart, TrendingUp } from "lucide-react";
+import { Loader2, Meh, Frown, ThumbsUp, Heart, TrendingUp, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useEffect } from "react";
 import {
   Form,
   FormControl,
@@ -36,6 +38,28 @@ type FormData = z.infer<typeof formSchema>;
 
 export default function Mood() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
+
+  // Check feature access
+  const { data: features, isLoading: featuresLoading } = useQuery<{
+    featureMoodTracking: boolean;
+    isOrgAccount: boolean;
+    isOrgClient: boolean;
+  }>({
+    queryKey: ["/api/features"],
+  });
+
+  // Redirect if feature is disabled
+  useEffect(() => {
+    if (!featuresLoading && features?.featureMoodTracking === false) {
+      toast({
+        title: "Feature not available",
+        description: "This feature has not been enabled by your organisation.",
+        variant: "destructive",
+      });
+      setLocation("/app/settings");
+    }
+  }, [features, featuresLoading, setLocation, toast]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -49,6 +73,7 @@ export default function Mood() {
 
   const { data: entries = [], isLoading } = useQuery<MoodEntry[]>({
     queryKey: ["/api/mood"],
+    enabled: features?.featureMoodTracking !== false,
   });
 
   const { data: stats = [] } = useQuery<{ mood: string; count: number }[]>({
