@@ -183,10 +183,14 @@ export async function registerRoutes(
     try {
       const { priceId, email, successUrl, cancelUrl, trialDays = 7 } = req.body;
       
+      console.log("[STRIPE CHECKOUT] Request received:", { priceId, email, successUrl, cancelUrl, trialDays });
+      
       if (!priceId || !email) {
+        console.log("[STRIPE CHECKOUT] Missing required fields");
         return res.status(400).json({ error: "priceId and email are required" });
       }
 
+      console.log("[STRIPE CHECKOUT] Creating checkout session...");
       const session = await stripeService.createSubscriptionCheckoutSession(
         null,
         priceId,
@@ -196,9 +200,10 @@ export async function registerRoutes(
         trialDays
       );
 
+      console.log("[STRIPE CHECKOUT] Session created successfully:", { url: session.url, sessionId: session.id });
       res.json({ url: session.url, sessionId: session.id });
     } catch (error: any) {
-      console.error("Failed to create checkout session:", error);
+      console.error("[STRIPE CHECKOUT] Failed to create checkout session:", error.message, error.stack);
       res.status(500).json({ error: error.message || "Failed to create checkout session" });
     }
   });
@@ -945,7 +950,7 @@ export async function registerRoutes(
       }
 
       // Notify the removed contact (only if confirmed - unconfirmed contacts don't need notification)
-      if (contactToDelete.isConfirmed) {
+      if (contactToDelete.confirmedAt) {
         const userForNotification = await storage.getUserById(req.userId!);
         if (userForNotification) {
           await sendContactRemovedNotification(contactToDelete, userForNotification);
@@ -1231,7 +1236,7 @@ export async function registerRoutes(
   // Get feature settings for current user (to check what features are enabled)
   app.get("/api/features", async (req, res) => {
     try {
-      const user = await storage.getUser(req.userId!);
+      const user = await storage.getUserById(req.userId!);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
