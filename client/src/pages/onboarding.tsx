@@ -304,18 +304,18 @@ function OptionButton({ selected, onClick, icon, label, description, testId }: O
   return (
     <button
       onClick={onClick}
-      className={`w-full p-4 rounded-lg border text-left transition-all ${
+      className={`w-full p-3 sm:p-4 rounded-lg border text-left transition-all ${
         selected ? "border-primary bg-primary/5" : "border-border hover-elevate"
       }`}
       data-testid={testId}
     >
-      <div className="flex items-start gap-3">
-        <div className="text-primary mt-0.5">{icon}</div>
-        <div className="flex-1">
-          <div className="font-medium" data-testid={`${testId}-label`}>{label}</div>
-          {description && <div className="text-sm text-muted-foreground">{description}</div>}
+      <div className="flex items-start gap-2 sm:gap-3">
+        <div className="text-primary mt-0.5 flex-shrink-0 [&>svg]:h-5 [&>svg]:w-5 sm:[&>svg]:h-6 sm:[&>svg]:w-6">{icon}</div>
+        <div className="flex-1 min-w-0">
+          <div className="font-medium text-sm sm:text-base" data-testid={`${testId}-label`}>{label}</div>
+          {description && <div className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{description}</div>}
         </div>
-        {selected && <Check className="h-5 w-5 text-primary" />}
+        {selected && <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />}
       </div>
     </button>
   );
@@ -324,9 +324,9 @@ function OptionButton({ selected, onClick, icon, label, description, testId }: O
 function Step1Terms({ accepted, setAccepted, onComplete }: { accepted: boolean; setAccepted: (v: boolean) => void; onComplete: () => void }) {
   return (
     <Card className="border-0 shadow-lg">
-      <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-2" data-testid="text-terms-title">Terms and Conditions</h1>
-        <p className="text-muted-foreground mb-6" data-testid="text-terms-subtitle">
+      <CardContent className="p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-2" data-testid="text-terms-title">Terms and Conditions</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6" data-testid="text-terms-subtitle">
           Please review and accept our terms to complete your registration.
         </p>
         
@@ -416,9 +416,9 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
 
   return (
     <Card className="border-0 shadow-lg">
-      <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-2" data-testid="text-welcome-title">Let's get to know you</h1>
-        <p className="text-muted-foreground mb-6" data-testid="text-welcome-subtitle">
+      <CardContent className="p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-2" data-testid="text-welcome-title">Let's get to know you</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6" data-testid="text-welcome-subtitle">
           Let's build your personal protection plan. It only takes 2 minutes.
         </p>
         
@@ -590,11 +590,11 @@ function Step3AgeGroup({ data, setData }: { data: OnboardingData; setData: (d: O
 
   return (
     <Card className="border-0 shadow-lg">
-      <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-2" data-testid="text-age-title">What's your age group?</h1>
-        <p className="text-muted-foreground mb-6">This helps us personalise your safety experience</p>
+      <CardContent className="p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-2" data-testid="text-age-title">What's your age group?</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">This helps us personalise your safety experience</p>
         
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {options.map((option) => (
             <OptionButton
               key={option.value}
@@ -625,10 +625,10 @@ function Step4LivingSituation({ data, setData }: { data: OnboardingData; setData
 
   return (
     <Card className="border-0 shadow-lg">
-      <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-6" data-testid="text-living-title">Which best describes you?</h1>
+      <CardContent className="p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6" data-testid="text-living-title">Which best describes you?</h1>
         
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {options.map((option) => (
             <OptionButton
               key={option.value}
@@ -656,10 +656,10 @@ function Step5WhoWorries({ data, setData }: { data: OnboardingData; setData: (d:
 
   return (
     <Card className="border-0 shadow-lg">
-      <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-6" data-testid="text-worries-title">Who worries about you most?</h1>
+      <CardContent className="p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6" data-testid="text-worries-title">Who worries about you most?</h1>
         
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {options.map((option) => (
             <OptionButton
               key={option.value}
@@ -715,8 +715,8 @@ function Step6ContactName({ data, setData }: { data: OnboardingData; setData: (d
 
   return (
     <Card className="border-0 shadow-lg">
-      <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-2" data-testid="text-contact-title">Who are your {labels.plural}?</h1>
+      <CardContent className="p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-2" data-testid="text-contact-title">Who are your {labels.plural}?</h1>
         <p className="text-muted-foreground mb-6">Enter their names. You can add a second contact if you wish.</p>
         
         <div className="space-y-3">
@@ -775,8 +775,8 @@ function Step7ContactDistance({ data, setData }: { data: OnboardingData; setData
 
   return (
     <Card className="border-0 shadow-lg">
-      <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-6" data-testid="text-distance-title">How far away does {formatContactNames(data.contacts, "your contact")} live?</h1>
+      <CardContent className="p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6" data-testid="text-distance-title">How far away does {formatContactNames(data.contacts, "your contact")} live?</h1>
         
         <div className="space-y-3">
           {options.map((option) => (
@@ -798,7 +798,7 @@ function Step7ContactDistance({ data, setData }: { data: OnboardingData; setData
 function Step8Summary({ data }: { data: OnboardingData }) {
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold" data-testid="text-summary-title">Here's what we've built for you, {data.name}</h1>
+      <h1 className="text-xl sm:text-2xl font-bold" data-testid="text-summary-title">Here's what we've built for you, {data.name}</h1>
       <p className="text-muted-foreground">23% of young adults living alone have no local emergency contact</p>
 
       <Card className="border-0 overflow-hidden">
@@ -889,8 +889,8 @@ function Step9WhatMatters({ data, setData }: { data: OnboardingData; setData: (d
 
   return (
     <Card className="border-0 shadow-lg">
-      <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-2" data-testid="text-matters-title">What matters most to you?</h1>
+      <CardContent className="p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-2" data-testid="text-matters-title">What matters most to you?</h1>
         <p className="text-muted-foreground mb-6">Pick up to 3.</p>
         
         <div className="space-y-3">
@@ -930,8 +930,8 @@ function Step10HealthConditions({ data, setData, onSkip }: { data: OnboardingDat
 
   return (
     <Card className="border-0 shadow-lg">
-      <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-2" data-testid="text-health-title">Do any of these apply to you?</h1>
+      <CardContent className="p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-2" data-testid="text-health-title">Do any of these apply to you?</h1>
         <p className="text-muted-foreground mb-6">Helps us suggest the right settings.</p>
         
         <div className="space-y-3">
@@ -974,8 +974,8 @@ function Step10HealthConditions({ data, setData, onSkip }: { data: OnboardingDat
 function Step11ScheduleSummary({ data }: { data: OnboardingData }) {
   return (
     <Card className="border-0 shadow-lg">
-      <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-2" data-testid="text-schedule-title">Now let's set up your check-in schedule</h1>
+      <CardContent className="p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-2" data-testid="text-schedule-title">Now let's set up your check-in schedule</h1>
         <p className="text-muted-foreground mb-6">Based on your situation, we suggest:</p>
         
         <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
@@ -1025,8 +1025,8 @@ function Step12Frequency({ data, setData }: { data: OnboardingData; setData: (d:
 
   return (
     <Card className="border-0 shadow-lg">
-      <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-6" data-testid="text-frequency-title">How often should we check in?</h1>
+      <CardContent className="p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6" data-testid="text-frequency-title">How often should we check in?</h1>
         
         <div className="space-y-3">
           {options.map((option) => (
@@ -1107,7 +1107,7 @@ function Step13Time({ data, setData }: { data: OnboardingData; setData: (d: Onbo
 
   return (
     <Card className="border-0 shadow-lg">
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-2">
           <Clock className="h-5 w-5 text-muted-foreground" />
           <h1 className="text-xl font-bold" data-testid="text-time-title">Check-In Interval</h1>
@@ -1194,7 +1194,7 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
   if (!currentContact) {
     return (
       <Card className="border-0 shadow-lg">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <p className="text-muted-foreground">No contacts to configure.</p>
         </CardContent>
       </Card>
@@ -1228,7 +1228,7 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
   
   return (
     <Card className="border-0 shadow-lg">
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-6">
         {contactsWithNames.length > 1 && (
           <div className="flex gap-2 mb-4">
             {contactsWithNames.map((contact, idx) => (
@@ -1245,7 +1245,7 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
           </div>
         )}
         
-        <h1 className="text-2xl font-bold mb-2" data-testid="text-contact-details-title">
+        <h1 className="text-xl sm:text-2xl font-bold mb-2" data-testid="text-contact-details-title">
           How can we reach {currentContact.name}?
         </h1>
         <p className="text-muted-foreground mb-6">
@@ -1355,8 +1355,8 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
   return (
     <div className="space-y-4">
       <Card className="border-0 shadow-lg">
-        <CardContent className="p-6">
-          <h1 className="text-2xl font-bold mb-2" data-testid="text-plan-title">Give {formatContactNames(data.contacts, "your loved ones")} peace of mind</h1>
+        <CardContent className="p-4 sm:p-6">
+          <h1 className="text-xl sm:text-2xl font-bold mb-2" data-testid="text-plan-title">Give {formatContactNames(data.contacts, "your loved ones")} peace of mind</h1>
           <p className="text-muted-foreground mb-6">
             {formatContactNames(data.contacts, "They")} will be alerted if you ever need help.
           </p>
@@ -1409,7 +1409,7 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
       </Card>
 
       <div className="bg-emerald-500 text-white rounded-xl p-6 text-center">
-        <h2 className="text-2xl font-bold mb-1" data-testid="text-trial-title">Try free for 7 days</h2>
+        <h2 className="text-xl sm:text-2xl font-bold mb-1" data-testid="text-trial-title">Try free for 7 days</h2>
         <p className="text-emerald-100 mb-3">Cancel anytime</p>
         <p className="text-sm">
           You won't be charged until <strong>{getTrialEndDate()}</strong>
@@ -1458,7 +1458,7 @@ function Step16Payment({ data }: { data: OnboardingData }) {
   return (
     <div className="space-y-4">
       <div className="bg-emerald-500 text-white rounded-xl p-6 text-center">
-        <h2 className="text-2xl font-bold mb-1" data-testid="text-payment-trial-title">Try free for 7 days</h2>
+        <h2 className="text-xl sm:text-2xl font-bold mb-1" data-testid="text-payment-trial-title">Try free for 7 days</h2>
         <p className="text-emerald-100 mb-3">Cancel anytime</p>
         <p className="text-sm">
           You won't be charged until <strong>{getTrialEndDate()}</strong>
@@ -1467,7 +1467,7 @@ function Step16Payment({ data }: { data: OnboardingData }) {
       </div>
 
       <Card className="border-0 shadow-lg">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
@@ -1521,7 +1521,7 @@ function Step16Payment({ data }: { data: OnboardingData }) {
       </Card>
 
       <Card className="border-0 shadow-lg">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <h3 className="font-semibold mb-3" data-testid="text-after-trial-title">What happens after the trial?</h3>
           <ul className="space-y-2 text-sm">
             <li className="flex items-start gap-2" data-testid="text-after-trial-1">
