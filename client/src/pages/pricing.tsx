@@ -105,7 +105,7 @@ export default function Pricing() {
             <Link href="/login">
               <Button variant="ghost" data-testid="link-login">Sign In</Button>
             </Link>
-            <Link href="/register">
+            <Link href="/onboarding">
               <Button data-testid="link-register">Get Started</Button>
             </Link>
           </div>

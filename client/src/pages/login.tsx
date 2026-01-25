@@ -153,7 +153,7 @@ export default function Login() {
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
             Don't have an account?{" "}
-            <Link href="/register" className="text-primary hover:underline" data-testid="link-register">
+            <Link href="/onboarding" className="text-primary hover:underline" data-testid="link-register">
               Sign up
             </Link>
           </div>
