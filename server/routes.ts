@@ -270,6 +270,37 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/stripe/payment-status", async (req, res) => {
+    try {
+      const user = await storage.getUserById(req.userId!);
+      if (!user?.email) {
+        return res.json({ blocked: false, reason: null });
+      }
+
+      const subscription = await stripeService.getSubscriptionByCustomerEmail(user.email) as any;
+      
+      if (!subscription) {
+        return res.json({ blocked: false, reason: null });
+      }
+
+      const isPastDue = subscription.status === 'past_due';
+      const isUnpaid = subscription.status === 'unpaid';
+      
+      if (isPastDue || isUnpaid) {
+        return res.json({ 
+          blocked: true, 
+          reason: 'payment_failed',
+          message: 'Your payment failed. Please update your payment details to continue using aok.'
+        });
+      }
+
+      res.json({ blocked: false, reason: null });
+    } catch (error: any) {
+      console.error("Failed to check payment status:", error);
+      res.json({ blocked: false, reason: null });
+    }
+  });
+
   app.post("/api/stripe/cancel-subscription", async (req, res) => {
     try {
       const { password } = req.body;
@@ -843,6 +874,7 @@ export async function registerRoutes(
   app.use("/api/documents", authMiddleware);
   app.use("/api/features", authMiddleware);
   app.use("/api/stripe/subscription", authMiddleware);
+  app.use("/api/stripe/payment-status", authMiddleware);
   app.use("/api/stripe/cancel-subscription", authMiddleware);
   app.use("/api/stripe/reactivate-subscription", authMiddleware);
 
