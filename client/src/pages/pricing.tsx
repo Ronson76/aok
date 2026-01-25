@@ -116,7 +116,7 @@ export default function Pricing() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4" data-testid="text-pricing-title">Simple, Transparent Pricing</h1>
           <p className="text-xl text-muted-foreground mb-8">Get Peace of Mind Today</p>
-          <p className="text-muted-foreground">Start with a 3-day free trial. Cancel anytime.</p>
+          <p className="text-muted-foreground">Start with a 7-day free trial. Cancel anytime.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
