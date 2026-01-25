@@ -844,7 +844,7 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
               data-testid="option-billing-monthly"
             >
               <div className="text-sm text-muted-foreground">Monthly</div>
-              <div className="text-xl font-bold">£4.99<span className="text-sm font-normal">/mo</span></div>
+              <div className="text-xl font-bold">£6.99<span className="text-sm font-normal">/mo</span></div>
             </button>
             <button
               onClick={() => setData({ ...data, billingCycle: "yearly" })}
@@ -857,8 +857,8 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
                 2 months free
               </span>
               <div className="text-sm text-muted-foreground">Yearly</div>
-              <div className="text-xl font-bold">£4.17<span className="text-sm font-normal">/mo</span></div>
-              <div className="text-xs text-muted-foreground">billed £49.99/year</div>
+              <div className="text-xl font-bold">£5.83<span className="text-sm font-normal">/mo</span></div>
+              <div className="text-xs text-muted-foreground">billed £69.99/year</div>
             </button>
           </div>
         </CardContent>
@@ -870,7 +870,7 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
         <p className="text-sm">
           You won't be charged until <strong>{getTrialEndDate()}</strong>
         </p>
-        <p className="text-sm text-emerald-100">Then £4.99/month</p>
+        <p className="text-sm text-emerald-100">Then £6.99/month</p>
       </div>
     </div>
   );
@@ -941,7 +941,7 @@ function Step16Payment({ data, onComplete }: { data: OnboardingData; onComplete:
         <p className="text-sm">
           You won't be charged until <strong>{getTrialEndDate()}</strong>
         </p>
-        <p className="text-sm text-emerald-100">Then £4.99/month</p>
+        <p className="text-sm text-emerald-100">Then £6.99/month</p>
       </div>
 
       <Card className="border-0 shadow-lg">

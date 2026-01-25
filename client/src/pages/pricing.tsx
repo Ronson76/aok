@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Check, Lock, HeadphonesIcon, Phone, FileText, Heart, Users, Clock, Mail, Bell, AlertTriangle, MapPin, Smartphone, Building2, TrendingUp, PawPrint, Scroll, ArrowLeft } from "lucide-react";
+import { ShieldCheck, Check, Lock, Phone, FileText, Heart, Users, Clock, Mail, Bell, AlertTriangle, MapPin, Smartphone, Building2, TrendingUp, PawPrint, Scroll, ArrowLeft } from "lucide-react";
 
 export default function Pricing() {
   const [isYearly, setIsYearly] = useState(false);
@@ -13,25 +13,25 @@ export default function Pricing() {
   const plans = [
     {
       name: "7 Day Trial",
-      description: "Try all Base features free for 7 days. No commitment required.",
-      note: "After your trial ends, you'll automatically continue on the Base plan unless you cancel.",
+      description: "Try all features free for 7 days. No commitment required.",
+      note: "After your trial ends, you'll automatically continue unless you cancel.",
       monthlyPrice: 0,
       yearlyPrice: 0,
       features: [
-        { text: "Full access to all Base features", icon: Check },
+        { text: "Full access to all features", icon: Check },
         { text: "No payment details required upfront", icon: Lock },
         { text: "Cancel anytime during trial", icon: Clock },
       ],
       cta: "Start Free Trial",
-      ctaLink: "/register",
+      ctaLink: "/onboarding",
       highlight: false,
       isTrial: true,
     },
     {
-      name: "Base",
-      description: "Complete personal safety with all the essential features to keep you connected.",
-      monthlyPrice: 4.99,
-      yearlyPrice: 49.99,
+      name: "Complete Protection",
+      description: "Everything you need to stay safe and connected with your loved ones.",
+      monthlyPrice: 6.99,
+      yearlyPrice: 69.99,
       features: [
         { text: "Flexible check-in timer (5 minutes to 48 hours)", icon: Clock },
         { text: "Up to 5 emergency contacts", icon: Users },
@@ -43,30 +43,17 @@ export default function Pricing() {
         { text: "Push notifications", icon: Bell },
         { text: "Primary contact updates on every check-in", icon: Heart },
         { text: "Privacy protection with auto session timeout", icon: Lock },
-      ],
-      cta: "Get Started",
-      ctaLink: "/register",
-      highlight: true,
-      badge: "Most Popular",
-      launchNote: "Launch pricing - Lock in today's special rate forever",
-      priceProtected: true,
-    },
-    {
-      name: "Plus",
-      description: "Base subscription plus wellness features and legacy planning for complete peace of mind.",
-      monthlyPrice: 8.99,
-      yearlyPrice: 89.99,
-      features: [
-        { text: "Priority support", icon: HeadphonesIcon },
         { text: "Mood & wellness tracking", icon: TrendingUp },
         { text: "Pet protection profiles with vet info", icon: PawPrint },
         { text: "Digital will & document storage", icon: Scroll },
         { text: "Wellbeing AI integration (Health Insight)", icon: Heart },
       ],
       cta: "Get Started",
-      ctaLink: "/register",
-      highlight: false,
-      launchNote: "Launch price - available for a limited time only.",
+      ctaLink: "/onboarding",
+      highlight: true,
+      badge: "All Features Included",
+      launchNote: "Launch pricing - Lock in today's special rate forever",
+      priceProtected: true,
     },
   ];
 
@@ -140,10 +127,6 @@ export default function Pricing() {
           <div className="flex items-center justify-center gap-2 p-1 bg-muted rounded-lg">
             <Check className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">100% Money Back</span>
-          </div>
-          <div className="flex items-center justify-center gap-2 p-1 bg-muted rounded-lg">
-            <HeadphonesIcon className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">24/7 Support</span>
           </div>
         </div>
 
