@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -113,7 +113,7 @@ export default function Onboarding() {
 
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  const canProceed = () => {
+  const canProceed = useCallback(() => {
     switch (currentStep) {
       case 1: return data.name.trim().length > 0;
       case 2: return data.ageGroup !== "";
@@ -133,7 +133,27 @@ export default function Onboarding() {
       case 16: return termsAccepted;
       default: return true;
     }
-  };
+  }, [currentStep, data, termsAccepted]);
+
+  // Handle Enter key to proceed to next step
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        // Don't trigger if user is in a textarea
+        const target = event.target as HTMLElement;
+        if (target.tagName === 'TEXTAREA') return;
+        
+        // Check if we can proceed and not on payment or terms step
+        if (currentStep < 15 && canProceed()) {
+          event.preventDefault();
+          handleNext();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [currentStep, canProceed]);
 
   const renderStep = () => {
     switch (currentStep) {
