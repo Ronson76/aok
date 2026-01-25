@@ -867,7 +867,7 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/onboarding">
               <Button size="lg" variant="secondary" className="w-full sm:w-auto" data-testid="button-start-now">
-                Create Free Account
+                Create Account
               </Button>
             </Link>
             <Link href="/org/login">
