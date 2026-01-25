@@ -168,14 +168,10 @@ function SubscriptionCard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-3">
-            No active subscription
-          </p>
-          <Link href="/pricing">
-            <Button variant="default" className="w-full" data-testid="button-upgrade">
-              View Plans
-            </Button>
-          </Link>
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">Plan</span>
+            <Badge variant="secondary" data-testid="badge-free-plan">Free Plan</Badge>
+          </div>
         </CardContent>
       </Card>
     );
@@ -220,12 +216,8 @@ function SubscriptionCard() {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Plan</span>
-              <span className="font-medium" data-testid="text-subscription-plan">{subscription.productName}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Price</span>
-              <span data-testid="text-subscription-price">
-                {formatPrice(subscription.unitAmount, subscription.currency)}/{subscription.interval}
+              <span className="font-medium" data-testid="text-subscription-plan">
+                {subscription.status === 'trialing' ? 'Complete Protection (Trial)' : 'Complete Protection'}
               </span>
             </div>
             {subscription.status === 'trialing' && subscription.trialEnd && (
@@ -234,11 +226,15 @@ function SubscriptionCard() {
                 <span data-testid="text-trial-end">{format(new Date(subscription.trialEnd), 'dd/MM/yyyy')}</span>
               </div>
             )}
-            {subscription.currentPeriodEnd && (
+            {subscription.currentPeriodEnd && !subscription.cancelAtPeriodEnd && subscription.status !== 'trialing' && (
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  {subscription.cancelAtPeriodEnd ? 'Access until' : 'Renews'}
-                </span>
+                <span className="text-muted-foreground">Renews</span>
+                <span data-testid="text-period-end">{format(new Date(subscription.currentPeriodEnd), 'dd/MM/yyyy')}</span>
+              </div>
+            )}
+            {subscription.cancelAtPeriodEnd && subscription.currentPeriodEnd && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Access until</span>
                 <span data-testid="text-period-end">{format(new Date(subscription.currentPeriodEnd), 'dd/MM/yyyy')}</span>
               </div>
             )}
