@@ -76,15 +76,26 @@ export default function Pets() {
     queryKey: ["/api/features"],
   });
 
-  // Redirect if feature is disabled
+  // Redirect if feature is disabled or user is an org account
   useEffect(() => {
-    if (!featuresLoading && features?.featurePetProtection === false) {
-      toast({
-        title: "Feature not available",
-        description: "This feature has not been enabled by your organisation.",
-        variant: "destructive",
-      });
-      setLocation("/app/settings");
+    if (!featuresLoading && features) {
+      if (features.isOrgAccount) {
+        toast({
+          title: "Feature not available",
+          description: "This feature is only available to individual users.",
+          variant: "destructive",
+        });
+        setLocation("/org/dashboard");
+        return;
+      }
+      if (features.featurePetProtection === false) {
+        toast({
+          title: "Feature not available",
+          description: "This feature has not been enabled by your organisation.",
+          variant: "destructive",
+        });
+        setLocation("/app/settings");
+      }
     }
   }, [features, featuresLoading, setLocation, toast]);
 
