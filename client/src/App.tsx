@@ -38,6 +38,7 @@ import AdminBundles from "@/pages/admin/bundles";
 import OrganizationDashboard from "@/pages/org/dashboard";
 import OrganizationLogin from "@/pages/org/login";
 import Activate from "@/pages/activate";
+import Pricing from "@/pages/pricing";
 import { TermsModal } from "@/components/terms-modal";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -436,6 +437,10 @@ function Router() {
 
   if (location === "/org/login") {
     return <AuthRoute component={OrganizationLogin} />;
+  }
+
+  if (location === "/pricing") {
+    return <Pricing />;
   }
 
   if (location === "/admin/login") {
