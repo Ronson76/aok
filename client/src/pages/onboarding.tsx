@@ -611,7 +611,6 @@ function Step11Frequency({ data, setData }: { data: OnboardingData; setData: (d:
     { value: "daily", label: "Daily", recommended: true, icon: <Calendar className="h-6 w-6" /> },
     { value: "twice-daily", label: "Twice a day", icon: <RefreshCw className="h-6 w-6" /> },
     { value: "few-times-week", label: "A few times per week", icon: <Calendar className="h-6 w-6" /> },
-    { value: "weekly", label: "Weekly", icon: <Calendar className="h-6 w-6" /> },
   ];
 
   return (
