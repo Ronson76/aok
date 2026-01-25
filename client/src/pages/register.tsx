@@ -21,6 +21,25 @@ export default function Register() {
   const [locationPermission, setLocationPermission] = useState<'pending' | 'granted' | 'denied' | 'unavailable'>('pending');
   const [requestingLocation, setRequestingLocation] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
+  const [fromOnboarding, setFromOnboarding] = useState(false);
+  const [onboardingData, setOnboardingData] = useState<any>(null);
+
+  // Check if coming from onboarding and load data
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const onboarded = urlParams.get('onboarded') === 'true';
+    const storedData = localStorage.getItem("onboardingData");
+    
+    if (onboarded && storedData) {
+      try {
+        const data = JSON.parse(storedData);
+        setOnboardingData(data);
+        setFromOnboarding(true);
+      } catch (e) {
+        console.log("Failed to parse onboarding data");
+      }
+    }
+  }, []);
 
   // Detect if running as installed PWA (mobile app)
   useEffect(() => {
@@ -106,6 +125,14 @@ export default function Register() {
   const accountType = form.watch("accountType");
   const referenceId = form.watch("referenceId");
   
+  // Pre-fill form from onboarding data
+  useEffect(() => {
+    if (onboardingData) {
+      form.setValue("name", onboardingData.name || "");
+      form.setValue("email", onboardingData.email || "");
+    }
+  }, [onboardingData, form]);
+  
   // For PWA (mobile app): require location permission (granted or unavailable)
   // For web browser: allow signup without location (always true)
   const canSubmit = isPWA 
@@ -164,6 +191,21 @@ export default function Register() {
             intervalHours,
             scheduleStartTime: scheduleDate.toISOString(),
           });
+          
+          // Create primary contact from onboarding data
+          if (onboardingData.contactName && onboardingData.contactEmail) {
+            try {
+              await apiRequest("POST", "/api/contacts", {
+                name: onboardingData.contactName,
+                email: onboardingData.contactEmail,
+                phone: onboardingData.contactPhone || "",
+                isPrimary: true,
+              });
+              console.log("Primary contact created from onboarding data");
+            } catch (contactError) {
+              console.log("Failed to create primary contact:", contactError);
+            }
+          }
           
           // Clear onboarding data
           localStorage.removeItem("onboardingData");
@@ -247,18 +289,23 @@ export default function Register() {
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center space-y-2">
           <div className="flex flex-col items-center justify-center mb-2">
-            <ShieldCheck className="h-12 w-12 text-primary" />
-            <span className="text-lg font-semibold text-primary">aok</span>
+            <ShieldCheck className="h-12 w-12 text-green-600" />
+            <span className="text-lg font-semibold text-green-600">aok</span>
           </div>
-          <CardTitle className="text-2xl">Create Your Account</CardTitle>
+          <CardTitle className="text-2xl">
+            {fromOnboarding ? "Almost There!" : "Create Your Account"}
+          </CardTitle>
           <CardDescription>
-            Sign up for aok to stay connected with your loved ones.
-            You must be 16 years or older to use this service.
+            {fromOnboarding 
+              ? "Just set a password and grant location access to complete your registration."
+              : "Sign up for aok to stay connected with your loved ones. You must be 16 years or older to use this service."
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {!fromOnboarding && (
               <FormField
                 control={form.control}
                 name="accountType"
@@ -306,8 +353,9 @@ export default function Register() {
                   </FormItem>
                 )}
               />
+              )}
 
-              {accountType === "organization" ? (
+              {!fromOnboarding && accountType === "organization" ? (
                 <>
                   <FormField
                     control={form.control}
@@ -432,6 +480,45 @@ export default function Register() {
                       "Continue"
                     )}
                   </Button>
+                </>
+              ) : fromOnboarding ? (
+                <>
+                  {/* Simplified form for users coming from onboarding */}
+                  <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+                    <div className="text-sm font-medium text-muted-foreground">Your details</div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Name</span>
+                        <span className="text-sm font-medium" data-testid="text-onboarding-name">{onboardingData?.name || "—"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Email</span>
+                        <span className="text-sm font-medium" data-testid="text-onboarding-email">{onboardingData?.email || "—"}</span>
+                      </div>
+                      {onboardingData?.contactName && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Emergency Contact</span>
+                          <span className="text-sm font-medium">{onboardingData.contactName}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Hidden fields to ensure form validation passes */}
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <input type="hidden" {...field} />
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <input type="hidden" {...field} />
+                    )}
+                  />
                 </>
               ) : (
                 <>
