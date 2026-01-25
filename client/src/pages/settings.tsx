@@ -329,14 +329,9 @@ export default function Settings() {
   const handleIntervalCommit = (value: number[]) => {
     // Slider uses index, convert to hours for API
     const hours = indexToHours(value[0]);
-    if (isOrganization) {
-      setPendingInterval(hours);
-      setShowIntervalPasswordDialog(true);
-    } else {
-      updateMutation.mutate({ intervalHours: hours }, {
-        onSettled: () => setIsChangingInterval(false)
-      });
-    }
+    // Always require password to change check-in interval
+    setPendingInterval(hours);
+    setShowIntervalPasswordDialog(true);
   };
 
   const handleConfirmIntervalChange = () => {
@@ -380,14 +375,10 @@ export default function Settings() {
     scheduleDate.setHours(hours, minutes, 0, 0);
     const fullDateTime = scheduleDate.toISOString();
     
-    // Require password if schedule is already set (for all users) or if organization
-    if (isOrganization || settings?.scheduleStartTime) {
-      setPendingInterval(null);
-      setPendingScheduleStart(fullDateTime);
-      setShowIntervalPasswordDialog(true);
-    } else {
-      updateMutation.mutate({ scheduleStartTime: fullDateTime });
-    }
+    // Always require password to change schedule start time
+    setPendingInterval(null);
+    setPendingScheduleStart(fullDateTime);
+    setShowIntervalPasswordDialog(true);
   };
 
   const handleLogoutClick = () => {
