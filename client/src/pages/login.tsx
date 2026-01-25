@@ -77,10 +77,10 @@ export default function Login() {
       </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
-          <div className="flex flex-col items-center justify-center mb-2">
+          <Link href="/" className="flex flex-col items-center justify-center mb-2 cursor-pointer" data-testid="link-logo-home">
             <ShieldCheck className="h-12 w-12 text-primary" />
             <span className="text-lg font-semibold text-primary">aok</span>
-          </div>
+          </Link>
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
           <CardDescription>
             Sign in to your aok account

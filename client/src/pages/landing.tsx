@@ -898,6 +898,7 @@ export default function Landing() {
                 <li><Link href="/onboarding"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-signup">Sign Up</span></Link></li>
                 <li><Link href="/login"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-signin">Sign In</span></Link></li>
                 <li><Link href="/forgot-password"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-reset">Reset Password</span></Link></li>
+                <li><a href="mailto:support@aok.care?subject=Support%20Enquiry" className="hover:text-foreground transition-colors" data-testid="link-footer-contact">Contact Us</a></li>
               </ul>
             </div>
             
@@ -905,7 +906,7 @@ export default function Landing() {
               <h4 className="font-semibold mb-4">For Organisations</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link href="/org/login"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-org-login">Organisation Login</span></Link></li>
-                <li><a href="mailto:support@aok.app" className="hover:text-foreground transition-colors" data-testid="link-footer-sales">Contact Sales</a></li>
+                <li><a href="mailto:organisations@aok.care?subject=Organisation%20Enquiry" className="hover:text-foreground transition-colors" data-testid="link-footer-sales">Contact Sales</a></li>
               </ul>
             </div>
             
@@ -938,8 +939,8 @@ export default function Landing() {
               <Link href="/admin/login">
                 <span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-admin">Admin</span>
               </Link>
-              <a href="mailto:support@aok.app" className="hover:text-foreground transition-colors" data-testid="link-footer-support">
-                support@aok.app
+              <a href="mailto:support@aok.care" className="hover:text-foreground transition-colors" data-testid="link-footer-support">
+                support@aok.care
               </a>
             </div>
           </div>
