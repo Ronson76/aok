@@ -48,6 +48,15 @@ interface ContactData {
   landlineCountry: string;
 }
 
+// Helper function to format multiple contact names
+function formatContactNames(contacts: ContactData[], fallback: string = "your contacts"): string {
+  const names = contacts.filter(c => c.name.trim()).map(c => c.name.trim());
+  if (names.length === 0) return fallback;
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
 interface OnboardingData {
   name: string;
   ageGroup: string;
@@ -586,7 +595,7 @@ function Step7ContactDistance({ data, setData }: { data: OnboardingData; setData
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-6">
-        <h1 className="text-2xl font-bold mb-6" data-testid="text-distance-title">How far away does {data.contactName || "your contact"} live?</h1>
+        <h1 className="text-2xl font-bold mb-6" data-testid="text-distance-title">How far away does {formatContactNames(data.contacts, "your contact")} live?</h1>
         
         <div className="space-y-3">
           {options.map((option) => (
@@ -629,7 +638,7 @@ function Step8Summary({ data }: { data: OnboardingData }) {
               <ul className="space-y-1 text-sm">
                 <li className="flex items-center gap-2">
                   <X className="h-4 w-4 text-destructive" />
-                  6-12 hours before {data.contactName || "anyone"} realises you need help
+                  6-12 hours before {formatContactNames(data.contacts, "anyone")} realises you need help
                 </li>
                 <li className="flex items-center gap-2">
                   <X className="h-4 w-4 text-destructive" />
@@ -650,7 +659,7 @@ function Step8Summary({ data }: { data: OnboardingData }) {
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-500" />
-                  {data.contactName || "Your contact"} gets an instant alert
+                  {formatContactNames(data.contacts, "Your contacts")} get an instant alert
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-500" />
@@ -684,7 +693,7 @@ function Step8Summary({ data }: { data: OnboardingData }) {
 function Step9WhatMatters({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   const options = [
     { value: "peace-myself", label: "Peace of mind for myself", description: "Know someone will notice if I need help", icon: <Smile className="h-6 w-6" /> },
-    { value: "peace-contact", label: `Peace of mind for ${data.contactName || "my contact"}`, description: "They won't have to worry from afar", icon: <Heart className="h-6 w-6" /> },
+    { value: "peace-contact", label: `Peace of mind for ${formatContactNames(data.contacts, "my contacts")}`, description: "They won't have to worry from afar", icon: <Heart className="h-6 w-6" /> },
     { value: "independence", label: "Stay independent", description: "Live on my terms, stay safe", icon: <Home className="h-6 w-6" /> },
   ];
 
@@ -1166,9 +1175,9 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
     <div className="space-y-4">
       <Card className="border-0 shadow-lg">
         <CardContent className="p-6">
-          <h1 className="text-2xl font-bold mb-2" data-testid="text-plan-title">Give {data.contactName || "your loved one"} peace of mind</h1>
+          <h1 className="text-2xl font-bold mb-2" data-testid="text-plan-title">Give {formatContactNames(data.contacts, "your loved ones")} peace of mind</h1>
           <p className="text-muted-foreground mb-6">
-            {data.contactName || "They"} will be alerted if you ever need help.
+            {formatContactNames(data.contacts, "They")} will be alerted if you ever need help.
           </p>
           
           <div className="p-4 border rounded-lg bg-muted/30 mb-6">
@@ -1180,7 +1189,7 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-500" />
-                <span data-testid="text-plan-feature-2">Multi-channel alerts to {data.contactName || "your contact"} and your primary contacts</span>
+                <span data-testid="text-plan-feature-2">Multi-channel alerts to {formatContactNames(data.contacts, "your contacts")}</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-500" />
