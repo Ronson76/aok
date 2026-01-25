@@ -469,7 +469,6 @@ function Step7ContactDistance({ data, setData }: { data: OnboardingData; setData
     { value: "lives-with", label: "Lives with me", icon: <Home className="h-6 w-6" /> },
     { value: "same-city", label: "Same city (under 30 min)", icon: <MapPin className="h-6 w-6" /> },
     { value: "few-hours", label: "A few hours away", icon: <Car className="h-6 w-6" /> },
-    { value: "different-state", label: "Different state", icon: <Plane className="h-6 w-6" /> },
     { value: "different-country", label: "Different country", icon: <Globe className="h-6 w-6" /> },
   ];
 
