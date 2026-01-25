@@ -54,6 +54,8 @@ interface OnboardingData {
   healthConditions: string[];
   checkInFrequency: string;
   checkInTime: string;
+  scheduleStartTime: string;
+  scheduleEnabled: boolean;
   planType: string;
   billingCycle: string;
   email: string;
@@ -80,6 +82,8 @@ export default function Onboarding() {
     healthConditions: [],
     checkInFrequency: "daily",
     checkInTime: "morning",
+    scheduleStartTime: "10:00",
+    scheduleEnabled: true,
     planType: "base",
     billingCycle: "monthly",
     email: "",
@@ -119,7 +123,7 @@ export default function Onboarding() {
       case 9: return true;
       case 10: return true;
       case 11: return data.checkInFrequency !== "";
-      case 12: return data.checkInTime !== "";
+      case 12: return !data.scheduleEnabled || data.scheduleStartTime !== "";
       case 13: return data.contactEmail.includes("@") && data.contactPhone.trim().length > 0 && isValidMobileNumber(data.contactPhone, data.contactPhoneCountry);
       case 14: return true;
       case 15: return true;
@@ -747,47 +751,49 @@ function Step12Frequency({ data, setData }: { data: OnboardingData; setData: (d:
 }
 
 function Step13Time({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
-  const [scheduleEnabled, setScheduleEnabled] = useState(true);
-  
-  const timeOptions = [
-    { value: "morning", label: "Morning (10:00 AM)", icon: <Sun className="h-6 w-6" /> },
-    { value: "midday", label: "Midday (12:00 PM)", icon: <Sun className="h-6 w-6" /> },
-    { value: "evening", label: "Evening (6:00 PM)", icon: <Sunset className="h-6 w-6" /> },
-    { value: "custom", label: "Custom time...", icon: <Settings className="h-6 w-6" /> },
-  ];
-
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-6">
         <h1 className="text-2xl font-bold mb-2" data-testid="text-time-title">Select Your Check-In Times</h1>
         <p className="text-sm text-muted-foreground mb-6">Timezone: Europe/London</p>
         
-        <div className="flex items-center justify-between mb-6 p-4 rounded-lg border border-border">
-          <div>
-            <h3 className="font-medium">Schedule your start time</h3>
-            <p className="text-sm text-muted-foreground">Set when your daily check-in cycle begins</p>
+        <div className="p-4 rounded-lg border border-border mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-medium">Schedule your start time</h3>
+              <p className="text-sm text-muted-foreground">Set when your daily check-in cycle begins</p>
+            </div>
+            <button
+              onClick={() => setData({ ...data, scheduleEnabled: !data.scheduleEnabled })}
+              className={`relative w-12 h-6 rounded-full transition-colors ${data.scheduleEnabled ? 'bg-primary' : 'bg-muted'}`}
+              data-testid="toggle-schedule"
+            >
+              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${data.scheduleEnabled ? 'left-7' : 'left-1'}`} />
+            </button>
           </div>
-          <button
-            onClick={() => setScheduleEnabled(!scheduleEnabled)}
-            className={`relative w-12 h-6 rounded-full transition-colors ${scheduleEnabled ? 'bg-primary' : 'bg-muted'}`}
-            data-testid="toggle-schedule"
-          >
-            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${scheduleEnabled ? 'left-7' : 'left-1'}`} />
-          </button>
+          
+          {data.scheduleEnabled && (
+            <div className="pt-4 border-t">
+              <label className="text-sm font-medium mb-2 block">Start time</label>
+              <Input
+                type="time"
+                value={data.scheduleStartTime}
+                onChange={(e) => setData({ ...data, scheduleStartTime: e.target.value, checkInTime: e.target.value })}
+                className="w-full"
+                data-testid="input-schedule-start-time"
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                Your check-in reminders will start from this time each day
+              </p>
+            </div>
+          )}
         </div>
         
-        {scheduleEnabled && (
-          <div className="space-y-3">
-            {timeOptions.map((option) => (
-              <OptionButton
-                key={option.value}
-                selected={data.checkInTime === option.value}
-                onClick={() => setData({ ...data, checkInTime: option.value })}
-                icon={option.icon}
-                label={option.label}
-                testId={`option-time-${option.value}`}
-              />
-            ))}
+        {!data.scheduleEnabled && (
+          <div className="p-4 rounded-lg bg-muted/50 text-center">
+            <p className="text-sm text-muted-foreground">
+              Schedule is disabled. Check-ins will not have a fixed start time.
+            </p>
           </div>
         )}
       </CardContent>
