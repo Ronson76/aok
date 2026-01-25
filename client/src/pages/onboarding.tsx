@@ -125,7 +125,7 @@ export default function Onboarding() {
       <div className="bg-zinc-900 text-white py-4 px-4">
         <div className="flex items-center justify-center gap-2">
           <img src="/aok-logo.png" alt="aok" className="h-8 w-8" />
-          <span className="text-xl font-semibold">aok</span>
+          <span className="text-xl font-semibold text-emerald-500">aok</span>
         </div>
       </div>
 
