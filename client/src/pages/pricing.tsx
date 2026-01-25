@@ -85,29 +85,6 @@ export default function Pricing() {
     },
   ];
 
-  const testimonials = [
-    {
-      quote: "Living alone at 72, this app gives me and my children peace of mind. The check-ins are so simple and reassuring.",
-      name: "Margaret",
-      age: 72,
-    },
-    {
-      quote: "As a single mum working late shifts, knowing someone will check on me gives me a sense of security I never had before.",
-      name: "Rachel",
-      role: "Single Parent",
-    },
-    {
-      quote: "After my husband passed away, my kids were worried about me living alone. This app has been a blessing for all of us.",
-      name: "Patricia",
-      age: 68,
-    },
-    {
-      quote: "The daily check-ins are perfect for my lifestyle. Simple to use and my family only gets notified if something is wrong.",
-      name: "James",
-      age: 70,
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -132,19 +109,6 @@ export default function Pricing() {
           <h1 className="text-4xl font-bold mb-4" data-testid="text-pricing-title">Simple, Transparent Pricing</h1>
           <p className="text-xl text-muted-foreground mb-8">Get Peace of Mind Today</p>
           <p className="text-muted-foreground">Start with a 7-day free trial. Cancel anytime.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          {testimonials.map((testimonial, index) => (
-            <Card key={index} className="bg-muted/30">
-              <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground italic mb-4">"{testimonial.quote}"</p>
-                <p className="text-sm font-medium">
-                  {testimonial.name}, {testimonial.age || testimonial.role}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
         </div>
 
         <div className="flex items-center justify-center gap-4 mb-8">
