@@ -16,6 +16,28 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { SiApple, SiGooglepay } from "react-icons/si";
 
+const countryCodes = [
+  { code: "+44", country: "UK", flag: "🇬🇧", mobileLength: 10 },
+  { code: "+1", country: "US/CA", flag: "🇺🇸", mobileLength: 10 },
+  { code: "+353", country: "IE", flag: "🇮🇪", mobileLength: 9 },
+  { code: "+61", country: "AU", flag: "🇦🇺", mobileLength: 9 },
+  { code: "+33", country: "FR", flag: "🇫🇷", mobileLength: 9 },
+  { code: "+49", country: "DE", flag: "🇩🇪", mobileLength: 10 },
+  { code: "+34", country: "ES", flag: "🇪🇸", mobileLength: 9 },
+  { code: "+39", country: "IT", flag: "🇮🇹", mobileLength: 10 },
+];
+
+function isValidMobileNumber(phone: string, countryCode: string): boolean {
+  const digitsOnly = phone.replace(/\D/g, '');
+  const country = countryCodes.find(c => c.code === countryCode);
+  if (!country) return digitsOnly.length >= 7 && digitsOnly.length <= 15;
+  
+  if (countryCode === "+44") {
+    return digitsOnly.length === 10 && digitsOnly.startsWith('7');
+  }
+  return digitsOnly.length === country.mobileLength;
+}
+
 interface OnboardingData {
   name: string;
   ageGroup: string;
@@ -25,6 +47,9 @@ interface OnboardingData {
   contactDistance: string;
   contactEmail: string;
   contactPhone: string;
+  contactPhoneCountry: string;
+  contactLandline: string;
+  contactLandlineCountry: string;
   whatMatters: string[];
   healthConditions: string[];
   checkInFrequency: string;
@@ -48,6 +73,9 @@ export default function Onboarding() {
     contactDistance: "",
     contactEmail: "",
     contactPhone: "",
+    contactPhoneCountry: "+44",
+    contactLandline: "",
+    contactLandlineCountry: "+44",
     whatMatters: [],
     healthConditions: [],
     checkInFrequency: "daily",
@@ -92,7 +120,7 @@ export default function Onboarding() {
       case 10: return true;
       case 11: return data.checkInFrequency !== "";
       case 12: return data.checkInTime !== "";
-      case 13: return data.contactEmail.includes("@") && data.contactPhone.trim().length > 0;
+      case 13: return data.contactEmail.includes("@") && data.contactPhone.trim().length > 0 && isValidMobileNumber(data.contactPhone, data.contactPhoneCountry);
       case 14: return true;
       case 15: return true;
       case 16: return termsAccepted;
@@ -180,9 +208,6 @@ export default function Onboarding() {
         </div>
       </div>
 
-      <div className="px-4 pb-4 text-center text-xs text-muted-foreground" data-testid="text-footer-note">
-        You can update these settings anytime from your dashboard.
-      </div>
     </div>
   );
 }
@@ -494,7 +519,7 @@ function Step8Summary({ data }: { data: OnboardingData }) {
               <ul className="space-y-1 text-sm">
                 <li className="flex items-center gap-2">
                   <X className="h-4 w-4 text-destructive" />
-                  6-12 hours before {data.contactName || "anyone"} realizes you need help
+                  6-12 hours before {data.contactName || "anyone"} realises you need help
                 </li>
                 <li className="flex items-center gap-2">
                   <X className="h-4 w-4 text-destructive" />
@@ -671,10 +696,10 @@ function Step11ScheduleSummary({ data }: { data: OnboardingData }) {
           </div>
           
           <div className="flex items-center gap-3">
-            <Clock className="h-6 w-6 text-primary" />
+            <Sunset className="h-6 w-6 text-primary" />
             <div>
-              <div className="font-semibold">60-minute grace period</div>
-              <div className="text-sm text-muted-foreground">Gives you time without false alarms</div>
+              <div className="font-semibold">Evening check-ins available</div>
+              <div className="text-sm text-muted-foreground">Flexible timing to suit your routine</div>
             </div>
           </div>
         </div>
@@ -754,12 +779,14 @@ function Step13Time({ data, setData }: { data: OnboardingData; setData: (d: Onbo
 }
 
 function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+  const mobileValid = data.contactPhone.trim() === '' || isValidMobileNumber(data.contactPhone, data.contactPhoneCountry);
+  
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-6">
         <h1 className="text-2xl font-bold mb-2" data-testid="text-contact-details-title">How can we reach {data.contactName || "your contact"}?</h1>
         <p className="text-muted-foreground mb-6">
-          We'll use these details to alert them if you miss a check-in.
+          We'll use these details to alert them in an emergency.
         </p>
         
         <div className="space-y-4">
@@ -776,15 +803,70 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
           
           <div>
             <label className="text-sm font-medium mb-2 block">Their mobile number</label>
-            <Input
-              type="tel"
-              value={data.contactPhone}
-              onChange={(e) => setData({ ...data, contactPhone: e.target.value })}
-              placeholder="+44 7700 900000"
-              data-testid="input-contact-phone"
-            />
+            <div className="flex gap-2">
+              <select
+                value={data.contactPhoneCountry}
+                onChange={(e) => setData({ ...data, contactPhoneCountry: e.target.value })}
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                data-testid="select-phone-country"
+              >
+                {countryCodes.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.flag} {c.code}
+                  </option>
+                ))}
+              </select>
+              <Input
+                type="tel"
+                value={data.contactPhone}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^\d\s]/g, '');
+                  setData({ ...data, contactPhone: value });
+                }}
+                placeholder={data.contactPhoneCountry === "+44" ? "7700 900000" : "Phone number"}
+                className={`flex-1 ${!mobileValid ? 'border-destructive' : ''}`}
+                data-testid="input-contact-phone"
+              />
+            </div>
+            {!mobileValid && (
+              <p className="text-xs text-destructive mt-1">
+                Please enter a valid mobile number (UK mobiles start with 7 and have 10 digits)
+              </p>
+            )}
             <p className="text-xs text-muted-foreground mt-1">
-              Include country code for SMS alerts
+              For SMS alerts
+            </p>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium mb-2 block">Their landline number (optional)</label>
+            <div className="flex gap-2">
+              <select
+                value={data.contactLandlineCountry}
+                onChange={(e) => setData({ ...data, contactLandlineCountry: e.target.value })}
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                data-testid="select-landline-country"
+              >
+                {countryCodes.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.flag} {c.code}
+                  </option>
+                ))}
+              </select>
+              <Input
+                type="tel"
+                value={data.contactLandline}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^\d\s]/g, '');
+                  setData({ ...data, contactLandline: value });
+                }}
+                placeholder={data.contactLandlineCountry === "+44" ? "020 7946 0958" : "Landline number"}
+                className="flex-1"
+                data-testid="input-contact-landline"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              For voice call alerts
             </p>
           </div>
         </div>
@@ -812,7 +894,7 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-500" />
-                <span data-testid="text-plan-feature-2">Multi-channel alerts to {data.contactName || "your contact"} if you miss a check-in</span>
+                <span data-testid="text-plan-feature-2">Multi-channel alerts to {data.contactName || "your contact"}</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-500" />
