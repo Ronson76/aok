@@ -171,7 +171,7 @@ export default function Onboarding() {
       case 12: return <Step13Time data={data} setData={setData} />;
       case 13: return <Step14ContactDetails data={data} setData={setData} />;
       case 14: return <Step15Plan data={data} setData={setData} />;
-      case 15: return <Step16Payment data={data} setData={setData} onComplete={handleComplete} />;
+      case 15: return <Step16Payment data={data} setData={setData} />;
       case 16: return <Step1Terms accepted={termsAccepted} setAccepted={setTermsAccepted} onComplete={handleComplete} />;
       default: return null;
     }
@@ -1087,7 +1087,8 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
   );
 }
 
-function Step16Payment({ data, setData, onComplete }: { data: OnboardingData; setData: (d: OnboardingData) => void; onComplete: () => void }) {
+function Step16Payment({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+  const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState(data.email || "");
   const { toast } = useToast();
@@ -1140,11 +1141,10 @@ function Step16Payment({ data, setData, onComplete }: { data: OnboardingData; se
       });
       return;
     }
-    // Update data state with email before completing
+    // Save data with email and navigate directly
     const updatedData = { ...data, email };
-    setData(updatedData);
     localStorage.setItem("onboardingData", JSON.stringify(updatedData));
-    onComplete();
+    setLocation("/register?onboarded=true");
   };
 
   return (
