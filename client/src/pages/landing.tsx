@@ -487,9 +487,9 @@ export default function Landing() {
               <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 1
               </div>
-              <h3 className="text-lg font-semibold mb-2">Create Account</h3>
+              <h3 className="text-lg font-semibold mb-2">Start Your Onboarding Journey</h3>
               <p className="text-sm text-muted-foreground">
-                Sign up with your email and create a secure password. Add your personal details.
+                Begin our simple guided setup to create your account and personalise your safety settings.
               </p>
             </div>
             
