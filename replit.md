@@ -53,6 +53,30 @@ The storage interface defines operations for contacts, check-ins, and settings. 
 - **CheckIn**: Timestamped records with success/missed status
 - **Settings**: Check-in frequency (daily/every_two_days), last check-in time, next due time, alerts toggle
 - **AlertLog**: Records of alerts sent to contacts when check-ins are missed
+- **MoodEntry**: Wellness tracking with mood level (great/good/low/bad), optional notes, and timestamp
+- **Pet**: Pet protection profiles with name, species, breed, age, weight, vet info, medical notes, care instructions
+- **DigitalDocument**: Secure document storage with type (will, power_of_attorney, healthcare_directive, etc.), description, and content
+
+### Wellness Features
+The app includes three optional wellness features accessible from Settings → More Features:
+
+**Mood/Wellness Tracking** (`/app/mood`)
+- Log mood after check-ins with 4 levels: Great, Good, Low, Bad
+- Add optional notes to mood entries
+- View mood history with timestamps
+- Uses Lucide icons (Heart, ThumbsUp, Meh, Frown) for mood display
+
+**Pet Protection** (`/app/pets`)
+- Create pet profiles with species, breed, age, weight
+- Store vet contact information and medical notes
+- Add care instructions for each pet
+- Supports common pet types: dog, cat, bird, fish, rabbit, hamster, reptile, other
+
+**Digital Will Storage** (`/app/documents`)
+- Securely store important documents (will, power of attorney, healthcare directives, etc.)
+- Document types: will, power_of_attorney, healthcare_directive, insurance, accounts, letter, other
+- Add descriptions and content for each document
+- All documents protected by user authentication
 
 ### Alert System
 The app implements missed check-in detection and email notifications:
