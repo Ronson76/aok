@@ -907,11 +907,11 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
             <ul className="space-y-2 text-sm">
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-500" />
-                <span data-testid="text-plan-feature-1">Daily 10:00 check-in reminders</span>
+                <span data-testid="text-plan-feature-1">Daily check-in reminders</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-500" />
-                <span data-testid="text-plan-feature-2">Multi-channel alerts to {data.contactName || "your contact"}</span>
+                <span data-testid="text-plan-feature-2">Multi-channel alerts to {data.contactName || "your contact"} and your primary contacts</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-500" />
