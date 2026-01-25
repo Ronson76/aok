@@ -269,7 +269,7 @@ export default function Onboarding() {
               <ChevronLeft className="h-4 w-4" />
             </Button>
           )}
-          {currentStep < TOTAL_STEPS ? (
+          {currentStep < TOTAL_STEPS && (
             <Button 
               onClick={handleNext}
               disabled={!canProceed()}
@@ -277,14 +277,6 @@ export default function Onboarding() {
               data-testid="button-continue"
             >
               Continue
-            </Button>
-          ) : (
-            <Button 
-              onClick={handleComplete}
-              className="flex-1"
-              data-testid="button-start-trial"
-            >
-              Start Free Trial
             </Button>
           )}
         </div>
@@ -386,7 +378,7 @@ function Step1Terms({ accepted, setAccepted, onComplete }: { accepted: boolean; 
           className="w-full"
           data-testid="button-complete-signup"
         >
-          Complete Sign Up
+          Confirm
         </Button>
       </CardContent>
     </Card>
