@@ -357,6 +357,8 @@ export default function Settings() {
   
   const [showIntervalPasswordDialog, setShowIntervalPasswordDialog] = useState(false);
   const [intervalPassword, setIntervalPassword] = useState("");
+  const [showIntervalPasswordVisible, setShowIntervalPasswordVisible] = useState(false);
+  const [showDisablePasswordVisible, setShowDisablePasswordVisible] = useState(false);
   const [pendingInterval, setPendingInterval] = useState<number | null>(null);
   
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -536,6 +538,7 @@ export default function Settings() {
       setDisablePassword("");
       setShowIntervalPasswordDialog(false);
       setIntervalPassword("");
+      setShowIntervalPasswordVisible(false);
       setPendingInterval(null);
       setPendingScheduleStart(null);
       setScheduleStartInput("");
@@ -636,6 +639,7 @@ export default function Settings() {
   const handleCancelIntervalChange = () => {
     setShowIntervalPasswordDialog(false);
     setIntervalPassword("");
+    setShowIntervalPasswordVisible(false);
     setPendingInterval(null);
     setPendingScheduleStart(null);
     setIsChangingInterval(false);
@@ -1075,18 +1079,28 @@ export default function Settings() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="interval-password">Password</Label>
-              <Input
-                id="interval-password"
-                type="password"
-                placeholder="Enter your password"
-                value={intervalPassword}
-                onChange={(e) => setIntervalPassword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleConfirmIntervalChange();
-                }}
-                autoComplete="off"
-                data-testid="input-interval-password"
-              />
+              <div className="relative">
+                <Input
+                  id="interval-password"
+                  type={showIntervalPasswordVisible ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={intervalPassword}
+                  onChange={(e) => setIntervalPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleConfirmIntervalChange();
+                  }}
+                  autoComplete="off"
+                  data-testid="input-interval-password"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowIntervalPasswordVisible(!showIntervalPasswordVisible)}
+                  data-testid="button-toggle-interval-password"
+                >
+                  {showIntervalPasswordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
           </div>
           <DialogFooter className="gap-2">
@@ -1113,7 +1127,10 @@ export default function Settings() {
 
       <Dialog open={showDisableDialog} onOpenChange={(open) => {
         setShowDisableDialog(open);
-        if (!open) setDisablePassword("");
+        if (!open) {
+          setDisablePassword("");
+          setShowDisablePasswordVisible(false);
+        }
       }}>
         <DialogContent>
           <DialogHeader>
@@ -1129,18 +1146,28 @@ export default function Settings() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="confirm-password">Password</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                placeholder="Enter your password"
-                value={disablePassword}
-                onChange={(e) => setDisablePassword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleConfirmDisable();
-                }}
-                autoComplete="off"
-                data-testid="input-disable-password"
-              />
+              <div className="relative">
+                <Input
+                  id="confirm-password"
+                  type={showDisablePasswordVisible ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={disablePassword}
+                  onChange={(e) => setDisablePassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleConfirmDisable();
+                  }}
+                  autoComplete="off"
+                  data-testid="input-disable-password"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowDisablePasswordVisible(!showDisablePasswordVisible)}
+                  data-testid="button-toggle-disable-password"
+                >
+                  {showDisablePasswordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
           </div>
           <DialogFooter className="gap-2">
