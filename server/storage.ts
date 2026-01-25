@@ -1535,6 +1535,12 @@ class OrganizationStorage implements IOrganizationStorage {
           },
           lastAlert: null,
           alertCounts: { total: 0, emails: 0, calls: 0, emergencies: 0 },
+          features: {
+            featureWellbeingAi: row.orgClient.featureWellbeingAi,
+            featureMoodTracking: row.orgClient.featureMoodTracking,
+            featurePetProtection: row.orgClient.featurePetProtection,
+            featureDigitalWill: row.orgClient.featureDigitalWill,
+          },
         });
         continue;
       }
@@ -1568,6 +1574,12 @@ class OrganizationStorage implements IOrganizationStorage {
         status,
         lastAlert,
         alertCounts,
+        features: {
+          featureWellbeingAi: row.orgClient.featureWellbeingAi,
+          featureMoodTracking: row.orgClient.featureMoodTracking,
+          featurePetProtection: row.orgClient.featurePetProtection,
+          featureDigitalWill: row.orgClient.featureDigitalWill,
+        },
       });
     }
     

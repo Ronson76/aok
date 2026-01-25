@@ -558,6 +558,12 @@ export interface OrganizationClientWithDetails {
     calls: number;
     emergencies: number;
   };
+  features: {
+    featureWellbeingAi: boolean;
+    featureMoodTracking: boolean;
+    featurePetProtection: boolean;
+    featureDigitalWill: boolean;
+  };
 }
 
 // Admin view of organization client (privacy-limited - no personal details)

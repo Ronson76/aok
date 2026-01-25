@@ -1024,6 +1024,22 @@ export default function OrganizationDashboard() {
                             {client.alertCounts.total} alert{client.alertCounts.total !== 1 ? "s" : ""}
                           </span>
                         )}
+                        {client.features && (
+                          <div className="flex items-center gap-1" title="Enabled features">
+                            {client.features.featureWellbeingAi && (
+                              <span title="Wellbeing AI"><ExternalLink className="h-3 w-3 text-emerald-500" /></span>
+                            )}
+                            {client.features.featureMoodTracking && (
+                              <span title="Mood Tracking"><TrendingUp className="h-3 w-3 text-blue-500" /></span>
+                            )}
+                            {client.features.featurePetProtection && (
+                              <span title="Pet Protection"><PawPrint className="h-3 w-3 text-rose-500" /></span>
+                            )}
+                            {client.features.featureDigitalWill && (
+                              <span title="Digital Will"><Scroll className="h-3 w-3 text-slate-500" /></span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
