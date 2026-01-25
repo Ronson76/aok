@@ -31,7 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, FileText, Trash2, Pencil, Loader2, Shield, Lock, Eye, EyeOff, Scroll, Scale, Heart, ShieldCheck, KeyRound, Mail, File, type LucideIcon } from "lucide-react";
+import { Plus, FileText, Trash2, Pencil, Loader2, Shield, Lock, Eye, EyeOff, Scroll, Scale, Heart, ShieldCheck, KeyRound, Mail, File, ArrowLeft, type LucideIcon } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -216,6 +217,11 @@ export default function Documents() {
     <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto h-full overflow-y-auto">
       <div className="flex items-center justify-between pt-2">
         <div className="flex items-center gap-3">
+          <Link href="/app">
+            <Button variant="ghost" size="icon" data-testid="button-back-documents">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
           <FileText className="h-7 w-7 text-primary" />
           <h1 className="text-2xl font-semibold">Digital Will</h1>
         </div>

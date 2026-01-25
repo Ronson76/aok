@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Meh, Frown, ThumbsUp, Heart, TrendingUp, Lock } from "lucide-react";
+import { Loader2, Meh, Frown, ThumbsUp, Heart, TrendingUp, Lock, ArrowLeft } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
@@ -133,6 +134,11 @@ export default function Mood() {
   return (
     <div className="flex flex-col gap-6 p-4 pb-24 max-w-md mx-auto h-full overflow-y-auto">
       <div className="flex items-center gap-3 pt-2">
+        <Link href="/app">
+          <Button variant="ghost" size="icon" data-testid="button-back-mood">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        </Link>
         <TrendingUp className="h-7 w-7 text-primary" />
         <h1 className="text-2xl font-semibold">Wellness</h1>
       </div>
