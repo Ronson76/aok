@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Check, Lock, HeadphonesIcon, Phone, FileText, Heart, Users, Clock, Mail, MessageSquare, ArrowLeft } from "lucide-react";
+import { ShieldCheck, Check, Lock, HeadphonesIcon, Phone, FileText, Heart, Users, Clock, Mail, Bell, AlertTriangle, MapPin, Smartphone, Building2, TrendingUp, PawPrint, Scroll, ArrowLeft } from "lucide-react";
 
 export default function Pricing() {
   const [isYearly, setIsYearly] = useState(false);
@@ -29,10 +29,16 @@ export default function Pricing() {
       monthlyPrice: 4.99,
       yearlyPrice: 49.99,
       features: [
+        { text: "Flexible check-in timer (5 minutes to 48 hours)", icon: Clock },
         { text: "Add up to five emergency contacts", icon: Users },
-        { text: "Set your schedule for weekly, daily, or hourly check-ins", icon: Clock },
-        { text: "Missed check-ins trigger emails and text messages to your emergency contacts", icon: Mail },
-        { text: "Wellness check-ins to track emotional wellbeing", icon: Heart },
+        { text: "Email alerts for missed check-ins", icon: Mail },
+        { text: "SMS text message alerts", icon: Smartphone },
+        { text: "Automated voice call alerts", icon: Phone },
+        { text: "Emergency alert button with one-tap activation", icon: AlertTriangle },
+        { text: "GPS location sharing with what3words", icon: MapPin },
+        { text: "Push notifications to never miss a check-in", icon: Bell },
+        { text: "Primary contact gets every check-in update", icon: Heart },
+        { text: "Privacy protected with auto session timeout", icon: Lock },
       ],
       cta: "Choose Plan",
       ctaLink: "/register",
@@ -43,14 +49,16 @@ export default function Pricing() {
     },
     {
       name: "Plus",
-      description: "Enhanced features for complete peace of mind.",
+      description: "Enhanced features for complete peace of mind, including wellness and legacy planning.",
       monthlyPrice: 8.99,
       yearlyPrice: 89.99,
       features: [
         { text: "Everything in Base", icon: Check },
         { text: "Priority support", icon: HeadphonesIcon },
-        { text: "AI Phone check-in option", icon: Phone },
-        { text: "Digital Will storage", icon: FileText },
+        { text: "Mood & wellness tracking", icon: TrendingUp },
+        { text: "Pet protection profiles with vet info", icon: PawPrint },
+        { text: "Digital will & document storage", icon: Scroll },
+        { text: "Wellbeing AI integration (Health Insight)", icon: Heart },
       ],
       cta: "Choose Plan",
       ctaLink: "/register",
@@ -158,7 +166,7 @@ export default function Pricing() {
           {plans.map((plan, index) => (
             <Card 
               key={index} 
-              className={`relative flex flex-col ${plan.highlight ? "border-primary shadow-lg scale-105" : ""}`}
+              className={`relative flex flex-col ${plan.highlight ? "border-primary shadow-lg md:scale-105" : ""}`}
               data-testid={`card-plan-${plan.name.toLowerCase()}`}
             >
               {plan.badge && (
