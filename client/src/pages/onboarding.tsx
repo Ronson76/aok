@@ -78,44 +78,44 @@ export default function Onboarding() {
 
   const canProceed = () => {
     switch (currentStep) {
-      case 1: return termsAccepted;
-      case 2: return data.name.trim().length > 0;
-      case 3: return data.ageGroup !== "";
-      case 4: return data.livingSituation !== "";
-      case 5: return data.whoWorries !== "";
-      case 6: return data.contactName.trim().length > 0;
-      case 7: return data.contactDistance !== "";
-      case 8: return true;
-      case 9: return data.whatMatters.length > 0;
+      case 1: return data.name.trim().length > 0;
+      case 2: return data.ageGroup !== "";
+      case 3: return data.livingSituation !== "";
+      case 4: return data.whoWorries !== "";
+      case 5: return data.contactName.trim().length > 0;
+      case 6: return data.contactDistance !== "";
+      case 7: return true;
+      case 8: return data.whatMatters.length > 0;
+      case 9: return true;
       case 10: return true;
-      case 11: return true;
-      case 12: return data.checkInFrequency !== "";
-      case 13: return data.checkInTime !== "";
-      case 14: return data.referralSource !== "";
+      case 11: return data.checkInFrequency !== "";
+      case 12: return data.checkInTime !== "";
+      case 13: return data.referralSource !== "";
+      case 14: return true;
       case 15: return true;
-      case 16: return true;
+      case 16: return termsAccepted;
       default: return true;
     }
   };
 
   const renderStep = () => {
     switch (currentStep) {
-      case 1: return <Step1Terms accepted={termsAccepted} setAccepted={setTermsAccepted} />;
-      case 2: return <Step2Welcome data={data} setData={setData} />;
-      case 3: return <Step3AgeGroup data={data} setData={setData} />;
-      case 4: return <Step4LivingSituation data={data} setData={setData} />;
-      case 5: return <Step5WhoWorries data={data} setData={setData} />;
-      case 6: return <Step6ContactName data={data} setData={setData} />;
-      case 7: return <Step7ContactDistance data={data} setData={setData} />;
-      case 8: return <Step8Summary data={data} />;
-      case 9: return <Step9WhatMatters data={data} setData={setData} />;
-      case 10: return <Step10HealthConditions data={data} setData={setData} onSkip={handleNext} />;
-      case 11: return <Step11ScheduleSummary data={data} />;
-      case 12: return <Step12Frequency data={data} setData={setData} />;
-      case 13: return <Step13Time data={data} setData={setData} />;
-      case 14: return <Step14Referral data={data} setData={setData} />;
-      case 15: return <Step15Plan data={data} setData={setData} />;
-      case 16: return <Step16Payment data={data} onComplete={handleComplete} />;
+      case 1: return <Step2Welcome data={data} setData={setData} />;
+      case 2: return <Step3AgeGroup data={data} setData={setData} />;
+      case 3: return <Step4LivingSituation data={data} setData={setData} />;
+      case 4: return <Step5WhoWorries data={data} setData={setData} />;
+      case 5: return <Step6ContactName data={data} setData={setData} />;
+      case 6: return <Step7ContactDistance data={data} setData={setData} />;
+      case 7: return <Step8Summary data={data} />;
+      case 8: return <Step9WhatMatters data={data} setData={setData} />;
+      case 9: return <Step10HealthConditions data={data} setData={setData} onSkip={handleNext} />;
+      case 10: return <Step11ScheduleSummary data={data} />;
+      case 11: return <Step12Frequency data={data} setData={setData} />;
+      case 12: return <Step13Time data={data} setData={setData} />;
+      case 13: return <Step14Referral data={data} setData={setData} />;
+      case 14: return <Step15Plan data={data} setData={setData} />;
+      case 15: return <Step16Payment data={data} onComplete={handleComplete} />;
+      case 16: return <Step1Terms accepted={termsAccepted} setAccepted={setTermsAccepted} onComplete={handleComplete} />;
       default: return null;
     }
   };
@@ -215,13 +215,13 @@ function OptionButton({ selected, onClick, icon, label, description, testId }: O
   );
 }
 
-function Step1Terms({ accepted, setAccepted }: { accepted: boolean; setAccepted: (v: boolean) => void }) {
+function Step1Terms({ accepted, setAccepted, onComplete }: { accepted: boolean; setAccepted: (v: boolean) => void; onComplete: () => void }) {
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-6">
         <h1 className="text-2xl font-bold mb-2" data-testid="text-terms-title">Terms and Conditions</h1>
         <p className="text-muted-foreground mb-6" data-testid="text-terms-subtitle">
-          Please review and accept our terms before continuing.
+          Please review and accept our terms to complete your registration.
         </p>
         
         <div className="bg-muted/50 rounded-lg p-4 mb-6 max-h-64 overflow-y-auto text-sm text-muted-foreground space-y-4">
@@ -256,7 +256,7 @@ function Step1Terms({ accepted, setAccepted }: { accepted: boolean; setAccepted:
           </section>
         </div>
         
-        <div className="flex items-start gap-3 p-4 border rounded-lg bg-background">
+        <div className="flex items-start gap-3 p-4 border rounded-lg bg-background mb-6">
           <Checkbox
             id="terms-accept"
             checked={accepted}
@@ -270,6 +270,15 @@ function Step1Terms({ accepted, setAccepted }: { accepted: boolean; setAccepted:
             <a href="/privacy" target="_blank" className="text-primary underline">Privacy Policy</a>
           </label>
         </div>
+        
+        <Button 
+          onClick={onComplete}
+          disabled={!accepted}
+          className="w-full"
+          data-testid="button-complete-signup"
+        >
+          Complete Sign Up
+        </Button>
       </CardContent>
     </Card>
   );
