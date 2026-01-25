@@ -1293,10 +1293,10 @@ function Step16Payment({ data, setData }: { data: OnboardingData; setData: (d: O
       });
       return;
     }
-    // Save data with email and navigate directly
+    // Save data with email and navigate directly with email in URL
     const updatedData = { ...data, email };
     localStorage.setItem("onboardingData", JSON.stringify(updatedData));
-    setLocation("/register?onboarded=true");
+    setLocation(`/register?onboarded=true&email=${encodeURIComponent(email)}`);
   };
 
   return (
