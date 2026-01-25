@@ -20,7 +20,7 @@ import {
 import { 
   ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail, 
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
-  ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, HeadphonesIcon, LogOut
+  ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut
 } from "lucide-react";
 import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
@@ -55,12 +55,12 @@ export default function Landing() {
   const pricingPlans = [
     {
       name: "7 Day Trial",
-      description: "Try all Base features free for 7 days. No commitment required.",
-      note: "After your trial ends, you'll automatically continue on the Base plan unless you cancel.",
+      description: "Try all features free for 7 days. No commitment required.",
+      note: "After your trial ends, you'll automatically continue unless you cancel.",
       monthlyPrice: 0,
       yearlyPrice: 0,
       features: [
-        { text: "Full access to all Base features", icon: Check },
+        { text: "Full access to all features", icon: Check },
         { text: "No payment details required upfront", icon: Lock },
         { text: "Cancel anytime during trial", icon: Clock },
       ],
@@ -70,10 +70,10 @@ export default function Landing() {
       isTrial: true,
     },
     {
-      name: "Base",
-      description: "Complete personal safety with all the essential features.",
-      monthlyPrice: 4.99,
-      yearlyPrice: 49.99,
+      name: "Complete Protection",
+      description: "Everything you need to stay safe and connected.",
+      monthlyPrice: 6.99,
+      yearlyPrice: 69.99,
       features: [
         { text: "Flexible check-in timer (5 mins to 48 hours)", icon: Clock },
         { text: "Up to 5 emergency contacts", icon: Users },
@@ -82,22 +82,6 @@ export default function Landing() {
         { text: "GPS location with what3words", icon: MapPin },
         { text: "Push notifications", icon: Smartphone },
         { text: "Primary contact updates", icon: Heart },
-        { text: "Privacy protection & auto timeout", icon: Lock },
-      ],
-      cta: "Get Started",
-      ctaLink: "/onboarding",
-      highlight: true,
-      badge: "Most Popular",
-      launchNote: "Launch pricing - Lock in today's rate forever",
-      priceProtected: true,
-    },
-    {
-      name: "Plus",
-      description: "Base subscription plus wellness features and legacy planning.",
-      monthlyPrice: 8.99,
-      yearlyPrice: 89.99,
-      features: [
-        { text: "Priority support", icon: HeadphonesIcon },
         { text: "Mood & wellness tracking", icon: TrendingUp },
         { text: "Pet protection profiles", icon: PawPrint },
         { text: "Digital will storage", icon: Scroll },
@@ -105,8 +89,10 @@ export default function Landing() {
       ],
       cta: "Get Started",
       ctaLink: "/onboarding",
-      highlight: false,
-      launchNote: "Launch price - available for a limited time only",
+      highlight: true,
+      badge: "All Features Included",
+      launchNote: "Launch pricing - Lock in today's rate forever",
+      priceProtected: true,
     },
   ];
 
@@ -717,10 +703,6 @@ export default function Landing() {
             <div className="flex items-center justify-center gap-2 p-2 bg-muted rounded-lg">
               <Check className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">100% Money Back</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 p-2 bg-muted rounded-lg">
-              <HeadphonesIcon className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">24/7 Support</span>
             </div>
           </div>
 
