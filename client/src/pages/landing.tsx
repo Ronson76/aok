@@ -172,7 +172,6 @@ export default function Landing() {
           <nav className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-features">Features</a>
             <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">How It Works</a>
-            <a href="#video" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-tutorial">Tutorial</a>
             <a href="#use-cases" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-use-cases">Use Cases</a>
             <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-pricing">Pricing</a>
             <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-faq">FAQ</a>
@@ -264,12 +263,6 @@ export default function Landing() {
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </Link>
-                <a href="#video">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2" data-testid="button-watch-demo">
-                    <Play className="h-4 w-4" />
-                    Watch Tutorial
-                  </Button>
-                </a>
               </div>
               <div className="flex items-center gap-6 mt-8 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
@@ -897,7 +890,6 @@ export default function Landing() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="#features" className="hover:text-foreground transition-colors" data-testid="link-footer-features">Features</a></li>
                 <li><a href="#how-it-works" className="hover:text-foreground transition-colors" data-testid="link-footer-how-it-works">How It Works</a></li>
-                <li><a href="#video" className="hover:text-foreground transition-colors" data-testid="link-footer-tutorial">Tutorial</a></li>
                 <li><a href="#pricing" className="hover:text-foreground transition-colors" data-testid="link-footer-pricing">Pricing</a></li>
                 <li><a href="#faq" className="hover:text-foreground transition-colors" data-testid="link-footer-faq">FAQ</a></li>
               </ul>
