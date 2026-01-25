@@ -290,6 +290,29 @@ export default function Register() {
                     )}
                   />
                   
+                  {/* Email field for organization clients - they need an email for their account */}
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Address</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="email" 
+                            placeholder="your.email@example.com" 
+                            {...field} 
+                            data-testid="input-email-org" 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          We'll send check-in confirmations to this email
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
                   {/* Location Permission for Org Clients */}
                   <div className="space-y-3 pt-4 border-t">
                     <div className="flex items-center gap-2 text-sm font-medium">
@@ -376,6 +399,25 @@ export default function Register() {
                         <FormLabel>Full Name</FormLabel>
                         <FormControl>
                           <Input placeholder="John Smith" {...field} data-testid="input-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Address</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="email" 
+                            placeholder="your.email@example.com" 
+                            {...field} 
+                            data-testid="input-email" 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
