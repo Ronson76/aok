@@ -10,7 +10,7 @@ import {
   Users, Heart, Baby, Plane, TreePine, MapPin, Car, Globe, Smile, 
   AlertTriangle, Activity, Scissors, Accessibility, Calendar,
   Clock, RefreshCw, Sun, Sunset, Settings, Search, Bot, Smartphone,
-  Mail, Star, Phone, X, Loader2, Wallet
+  Mail, Star, Phone, X, Loader2, Wallet, ShieldCheck
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -122,12 +122,14 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="bg-zinc-900 text-white py-4 px-4">
-        <div className="flex items-center justify-center gap-2">
-          <img src="/aok-logo.png" alt="aok" className="h-8 w-8" />
-          <span className="text-xl font-semibold text-emerald-500">aok</span>
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-center">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-8 w-8 text-green-600" />
+            <span className="text-xl font-bold text-green-600">aok</span>
+          </div>
         </div>
-      </div>
+      </header>
 
       <div className="px-4 py-3 bg-background">
         <div className="flex justify-between items-center text-sm text-muted-foreground mb-2">
