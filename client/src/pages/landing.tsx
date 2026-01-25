@@ -106,7 +106,7 @@ export default function Landing() {
         { text: "Custom bundles & packages", icon: Heart },
       ],
       cta: "Contact Us",
-      ctaLink: "/contact",
+      ctaLink: "mailto:organisations@aok.care?subject=Organisation%20Enquiry%20-%20aok%20Bundles%20%26%20Packages",
       highlight: false,
       isOrganisation: true,
     },
