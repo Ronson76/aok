@@ -90,8 +90,8 @@ export default function Pricing() {
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <ShieldCheck className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-primary">aok</span>
+            <ShieldCheck className="h-8 w-8 text-green-600" />
+            <span className="text-xl font-bold text-green-600">aok</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/login">

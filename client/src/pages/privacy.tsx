@@ -9,8 +9,8 @@ export default function Privacy() {
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <ShieldCheck className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-primary">aok</span>
+            <ShieldCheck className="h-8 w-8 text-green-600" />
+            <span className="text-xl font-bold text-green-600">aok</span>
           </Link>
           <Link href="/">
             <Button variant="ghost" size="sm" data-testid="button-back-home">
