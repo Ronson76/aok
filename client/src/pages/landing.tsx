@@ -257,7 +257,7 @@ export default function Landing() {
               </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-lg">
                 The personal safety check-in app that alerts your emergency contacts 
-                via email, SMS, and phone calls if something happens to you — plus instant access to AI-powered health advice.
+                via email, SMS, and phone calls if something happens to you — with unlimited access to our AI-powered health assistant.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/onboarding">
