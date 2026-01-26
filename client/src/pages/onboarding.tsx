@@ -369,18 +369,18 @@ function OptionButton({ selected, onClick, icon, label, description, testId }: O
   return (
     <button
       onClick={onClick}
-      className={`w-full p-3 sm:p-4 rounded-lg border text-left transition-all ${
+      className={`w-full p-2.5 sm:p-3 rounded-lg border text-left transition-all ${
         selected ? "border-primary bg-primary/5" : "border-border hover-elevate"
       }`}
       data-testid={testId}
     >
-      <div className="flex items-start gap-2 sm:gap-3">
-        <div className="text-primary mt-0.5 flex-shrink-0 [&>svg]:h-5 [&>svg]:w-5 sm:[&>svg]:h-6 sm:[&>svg]:w-6">{icon}</div>
+      <div className="flex items-center gap-2">
+        <div className="text-primary flex-shrink-0 [&>svg]:h-4 [&>svg]:w-4 sm:[&>svg]:h-5 sm:[&>svg]:w-5">{icon}</div>
         <div className="flex-1 min-w-0">
-          <div className="font-medium text-sm sm:text-base" data-testid={`${testId}-label`}>{label}</div>
-          {description && <div className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{description}</div>}
+          <div className="font-medium text-sm" data-testid={`${testId}-label`}>{label}</div>
+          {description && <div className="text-xs text-muted-foreground line-clamp-1">{description}</div>}
         </div>
-        {selected && <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />}
+        {selected && <Check className="h-4 w-4 text-primary flex-shrink-0" />}
       </div>
     </button>
   );
@@ -656,9 +656,9 @@ function Step4LivingSituation({ data, setData }: { data: OnboardingData; setData
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-4 sm:p-6">
-        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6" data-testid="text-living-title">Which best describes you?</h1>
+        <h1 className="text-xl sm:text-2xl font-bold mb-3" data-testid="text-living-title">Which best describes you?</h1>
         
-        <div className="space-y-2 sm:space-y-3">
+        <div className="space-y-1.5">
           {options.map((option) => (
             <OptionButton
               key={option.value}
