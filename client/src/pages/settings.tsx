@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle, Smartphone, Eye, EyeOff, TrendingUp, PawPrint, FileText, ChevronRight, Lock, ExternalLink, CreditCard, AlertCircle } from "lucide-react";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle, Smartphone, Eye, EyeOff, TrendingUp, PawPrint, FileText, ChevronRight, Lock, ExternalLink, CreditCard, AlertCircle, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -879,24 +879,24 @@ export default function Settings() {
         </Card>
       )}
 
-      <Card className={settings?.redAlertEnabled ? "border-red-500 dark:border-red-600" : ""}>
+      <Card className={settings?.redAlertEnabled ? "border-emerald-500 dark:border-emerald-600" : ""}>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <ShieldAlert className={`h-4 w-4 ${settings?.redAlertEnabled ? "text-red-500" : "text-muted-foreground"}`} />
-            Continuous Location Tracking
+            <MapPin className={`h-4 w-4 ${settings?.redAlertEnabled ? "text-emerald-500" : "text-muted-foreground"}`} />
+            Location Sharing
           </CardTitle>
           <CardDescription>
-            Enhanced emergency alert with ongoing location updates.
+            Share your location with emergency contacts during alerts.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-0.5">
               <Label htmlFor="red-alert-enabled" className="font-medium">
-                Enable 5-Minute Location Updates
+                Enable Location Sharing
               </Label>
               <p className="text-sm text-muted-foreground">
-                Share your location every 5 minutes during emergencies
+                Include your location in emergency and missed check-in alerts
               </p>
             </div>
             <Switch
@@ -908,11 +908,16 @@ export default function Settings() {
             />
           </div>
 
-          <div className="flex items-start gap-2 p-3 rounded-md bg-red-50 dark:bg-red-950/30">
-            <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-muted-foreground">
-              When enabled and you press the emergency button, your location will be sent to all your emergency contacts every 5 minutes until you enter your password to deactivate it.
-            </p>
+          <div className="flex items-start gap-2 p-3 rounded-md bg-emerald-50 dark:bg-emerald-950/30">
+            <MapPin className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-muted-foreground space-y-2">
+              <p><strong>When enabled:</strong></p>
+              <ul className="list-disc list-inside space-y-1 ml-1">
+                <li>Your what3words location will be included in all emergency alerts</li>
+                <li>Missed check-in alerts will include your last known location</li>
+                <li>Emergency button sends your location every 5 minutes until deactivated</li>
+              </ul>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -1347,20 +1352,20 @@ export default function Settings() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-red-500" />
-              Enable Continuous Location Tracking
+              <MapPin className="h-5 w-5 text-emerald-500" />
+              Enable Location Sharing
             </DialogTitle>
             <DialogDescription className="space-y-3">
               <span className="block font-medium">
-                Are you sure you want to enable continuous location tracking?
+                Are you sure you want to enable location sharing?
               </span>
               <span className="block">
-                When you press the emergency button with this enabled:
+                When enabled:
               </span>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>Your location will be sent to all emergency contacts immediately</li>
-                <li>Your location will continue to be shared every 5 minutes</li>
-                <li>Location sharing only stops when you enter your password to deactivate</li>
+                <li>Your what3words location will be included in all emergency alerts</li>
+                <li>Missed check-in alerts will include your last known location</li>
+                <li>Emergency button sends your location every 5 minutes until deactivated</li>
               </ul>
             </DialogDescription>
           </DialogHeader>
@@ -1373,7 +1378,6 @@ export default function Settings() {
               Cancel
             </Button>
             <Button
-              variant="destructive"
               onClick={() => {
                 updateMutation.mutate({ redAlertEnabled: true });
                 setShowRedAlertConfirmDialog(false);
@@ -1384,7 +1388,7 @@ export default function Settings() {
               {updateMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
-              Enable Tracking
+              Enable Location Sharing
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1394,11 +1398,11 @@ export default function Settings() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-muted-foreground" />
-              Disable Continuous Location Tracking
+              <MapPin className="h-5 w-5 text-muted-foreground" />
+              Disable Location Sharing
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to disable continuous location tracking? When disabled, pressing the emergency button will send a single alert without ongoing location updates.
+              Are you sure you want to disable location sharing? Your location will no longer be included in emergency alerts or missed check-in notifications.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
