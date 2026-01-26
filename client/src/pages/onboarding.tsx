@@ -132,6 +132,7 @@ interface OnboardingData {
   intervalHours: number;
   planType: string;
   billingCycle: string;
+  testMode?: boolean;
 }
 
 const TOTAL_STEPS = 16;
@@ -280,7 +281,7 @@ export default function Onboarding() {
       case 12: return <Step13Time data={data} setData={setData} />;
       case 13: return <Step14ContactDetails data={data} setData={setData} />;
       case 14: return <Step15Plan data={data} setData={setData} />;
-      case 15: return <Step16Payment data={data} />;
+      case 15: return <Step16Payment data={data} setData={setData} onNext={handleNext} />;
       case 16: return <Step1Terms accepted={termsAccepted} setAccepted={setTermsAccepted} onComplete={handleComplete} />;
       default: return null;
     }
@@ -1902,7 +1903,7 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
   );
 }
 
-function Step16Payment({ data }: { data: OnboardingData }) {
+function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setData: (d: OnboardingData) => void; onNext: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const [testCode, setTestCode] = useState("");
   const [, setLocation] = useLocation();
@@ -1911,17 +1912,15 @@ function Step16Payment({ data }: { data: OnboardingData }) {
 
   const handleTestCodeSubmit = async () => {
     if (testCode === "NG1") {
-      setIsLoading(true);
-      try {
-        localStorage.setItem("onboardingData", JSON.stringify(data));
-        toast({
-          title: "Test code accepted",
-          description: "Proceeding as if payment was received",
-        });
-        setLocation(`/register?onboarded=true&email=${encodeURIComponent(email)}&testMode=true`);
-      } catch (error) {
-        setIsLoading(false);
-      }
+      // Store test mode flag in data and advance to Terms & Conditions
+      const updatedData = { ...data, testMode: true };
+      setData(updatedData);
+      localStorage.setItem("onboardingData", JSON.stringify(updatedData));
+      toast({
+        title: "Test code accepted",
+        description: "Please accept the Terms and Conditions to continue",
+      });
+      onNext(); // Advance to Terms & Conditions step
     } else {
       toast({
         title: "Invalid code",
