@@ -58,6 +58,37 @@ interface PetData {
   emergencyInfo: string;
 }
 
+interface ChildrenData {
+  numberOfChildren: string;
+  ageRange: string;
+  emergencyDetails: string;
+}
+
+interface PartnerTravelData {
+  destinations: string;
+  address: string;
+  localPhone: string;
+}
+
+interface RuralData {
+  accessInstructions: string;
+  lockedGates: string;
+  specialNotes: string;
+}
+
+interface SoloTravelData {
+  destinations: string;
+  localAddress: string;
+  localPhone: string;
+}
+
+interface LoneWorkerData {
+  companyName: string;
+  supervisorName: string;
+  supervisorPhone: string;
+  emergencyContact: string;
+}
+
 // Helper function to format multiple contact names
 function formatContactNames(contacts: ContactData[], fallback: string = "your contacts"): string {
   const names = contacts.filter(c => c.name.trim()).map(c => c.name.trim());
@@ -87,6 +118,11 @@ interface OnboardingData {
   contactLandlineCountry: string;
   contacts: ContactData[];
   pets: PetData[];
+  childrenData: ChildrenData;
+  partnerTravelData: PartnerTravelData;
+  ruralData: RuralData;
+  soloTravelData: SoloTravelData;
+  loneWorkerData: LoneWorkerData;
   whatMatters: string[];
   healthConditions: string[];
   checkInFrequency: string;
@@ -128,6 +164,11 @@ export default function Onboarding() {
     pets: [
       { name: "", type: "", nutrition: "", vetName: "", vetPhone: "", emergencyInfo: "" },
     ],
+    childrenData: { numberOfChildren: "", ageRange: "", emergencyDetails: "" },
+    partnerTravelData: { destinations: "", address: "", localPhone: "" },
+    ruralData: { accessInstructions: "", lockedGates: "", specialNotes: "" },
+    soloTravelData: { destinations: "", localAddress: "", localPhone: "" },
+    loneWorkerData: { companyName: "", supervisorName: "", supervisorPhone: "", emergencyContact: "" },
     whatMatters: [],
     healthConditions: [],
     checkInFrequency: "daily",
@@ -939,6 +980,248 @@ function Step6ContactName({ data, setData }: { data: OnboardingData; setData: (d
                 Add another pet
               </Button>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {data.livingSituation === "single-parent" && (
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Baby className="h-5 w-5 text-primary" />
+              <h2 className="text-lg sm:text-xl font-bold" data-testid="text-children-title">Children Details (Optional)</h2>
+            </div>
+            <p className="text-muted-foreground mb-6 text-sm">
+              This information helps emergency responders understand your situation.
+            </p>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Number of children</label>
+                  <Input
+                    value={data.childrenData.numberOfChildren}
+                    onChange={(e) => setData({ ...data, childrenData: { ...data.childrenData, numberOfChildren: e.target.value } })}
+                    placeholder="e.g., 2"
+                    data-testid="input-children-number"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Age range</label>
+                  <Input
+                    value={data.childrenData.ageRange}
+                    onChange={(e) => setData({ ...data, childrenData: { ...data.childrenData, ageRange: e.target.value } })}
+                    placeholder="e.g., 5-12 years"
+                    data-testid="input-children-age"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Emergency details</label>
+                <Input
+                  value={data.childrenData.emergencyDetails}
+                  onChange={(e) => setData({ ...data, childrenData: { ...data.childrenData, emergencyDetails: e.target.value } })}
+                  placeholder="e.g., School pickup at 3pm, allergies, special needs"
+                  data-testid="input-children-emergency"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {data.livingSituation === "partner-travels" && (
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Plane className="h-5 w-5 text-primary" />
+              <h2 className="text-lg sm:text-xl font-bold" data-testid="text-partner-title">Partner Travel Details (Optional)</h2>
+            </div>
+            <p className="text-muted-foreground mb-6 text-sm">
+              Details about where your partner travels can help in emergencies.
+            </p>
+            
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Common destinations</label>
+                <Input
+                  value={data.partnerTravelData.destinations}
+                  onChange={(e) => setData({ ...data, partnerTravelData: { ...data.partnerTravelData, destinations: e.target.value } })}
+                  placeholder="e.g., New York, Dubai, Singapore"
+                  data-testid="input-partner-destinations"
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Address when travelling</label>
+                <Input
+                  value={data.partnerTravelData.address}
+                  onChange={(e) => setData({ ...data, partnerTravelData: { ...data.partnerTravelData, address: e.target.value } })}
+                  placeholder="e.g., Hotel or office address"
+                  data-testid="input-partner-address"
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Local phone number</label>
+                <Input
+                  value={data.partnerTravelData.localPhone}
+                  onChange={(e) => setData({ ...data, partnerTravelData: { ...data.partnerTravelData, localPhone: e.target.value } })}
+                  placeholder="e.g., +1 555 123 4567"
+                  data-testid="input-partner-phone"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {data.livingSituation === "rural" && (
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <TreePine className="h-5 w-5 text-primary" />
+              <h2 className="text-lg sm:text-xl font-bold" data-testid="text-rural-title">Rural Access Details (Optional)</h2>
+            </div>
+            <p className="text-muted-foreground mb-6 text-sm">
+              Help emergency services find and access your property.
+            </p>
+            
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Vehicular access instructions</label>
+                <Input
+                  value={data.ruralData.accessInstructions}
+                  onChange={(e) => setData({ ...data, ruralData: { ...data.ruralData, accessInstructions: e.target.value } })}
+                  placeholder="e.g., Turn left at the oak tree, gravel track for 500m"
+                  data-testid="input-rural-access"
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Locked gates / Entry codes</label>
+                <Input
+                  value={data.ruralData.lockedGates}
+                  onChange={(e) => setData({ ...data, ruralData: { ...data.ruralData, lockedGates: e.target.value } })}
+                  placeholder="e.g., Gate code 1234, key under flowerpot"
+                  data-testid="input-rural-gates"
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Special notes</label>
+                <Input
+                  value={data.ruralData.specialNotes}
+                  onChange={(e) => setData({ ...data, ruralData: { ...data.ruralData, specialNotes: e.target.value } })}
+                  placeholder="e.g., Dogs on property, uneven ground"
+                  data-testid="input-rural-notes"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {data.livingSituation === "solo-traveller" && (
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Globe className="h-5 w-5 text-primary" />
+              <h2 className="text-lg sm:text-xl font-bold" data-testid="text-travel-title">Travel Details (Optional)</h2>
+            </div>
+            <p className="text-muted-foreground mb-6 text-sm">
+              Keep your contacts informed about your travel plans.
+            </p>
+            
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Current / Planned destinations</label>
+                <Input
+                  value={data.soloTravelData.destinations}
+                  onChange={(e) => setData({ ...data, soloTravelData: { ...data.soloTravelData, destinations: e.target.value } })}
+                  placeholder="e.g., Thailand, Vietnam, Japan"
+                  data-testid="input-travel-destinations"
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Local address</label>
+                <Input
+                  value={data.soloTravelData.localAddress}
+                  onChange={(e) => setData({ ...data, soloTravelData: { ...data.soloTravelData, localAddress: e.target.value } })}
+                  placeholder="e.g., Hostel or hotel address"
+                  data-testid="input-travel-address"
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Local phone number</label>
+                <Input
+                  value={data.soloTravelData.localPhone}
+                  onChange={(e) => setData({ ...data, soloTravelData: { ...data.soloTravelData, localPhone: e.target.value } })}
+                  placeholder="e.g., +66 81 234 5678"
+                  data-testid="input-travel-phone"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {data.livingSituation === "lone-worker" && (
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              <h2 className="text-lg sm:text-xl font-bold" data-testid="text-worker-title">Work Details (Optional)</h2>
+            </div>
+            <p className="text-muted-foreground mb-6 text-sm">
+              Your workplace details can be shared in emergency alerts.
+            </p>
+            
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Company name</label>
+                <Input
+                  value={data.loneWorkerData.companyName}
+                  onChange={(e) => setData({ ...data, loneWorkerData: { ...data.loneWorkerData, companyName: e.target.value } })}
+                  placeholder="e.g., ABC Services Ltd"
+                  data-testid="input-worker-company"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Supervisor name</label>
+                  <Input
+                    value={data.loneWorkerData.supervisorName}
+                    onChange={(e) => setData({ ...data, loneWorkerData: { ...data.loneWorkerData, supervisorName: e.target.value } })}
+                    placeholder="e.g., John Smith"
+                    data-testid="input-worker-supervisor"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Supervisor phone</label>
+                  <Input
+                    value={data.loneWorkerData.supervisorPhone}
+                    onChange={(e) => setData({ ...data, loneWorkerData: { ...data.loneWorkerData, supervisorPhone: e.target.value } })}
+                    placeholder="e.g., 07700 123456"
+                    data-testid="input-worker-supervisor-phone"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Work emergency contact</label>
+                <Input
+                  value={data.loneWorkerData.emergencyContact}
+                  onChange={(e) => setData({ ...data, loneWorkerData: { ...data.loneWorkerData, emergencyContact: e.target.value } })}
+                  placeholder="e.g., HR department: 0800 123 456"
+                  data-testid="input-worker-emergency"
+                />
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
