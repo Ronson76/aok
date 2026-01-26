@@ -39,6 +39,34 @@ export default function Landing() {
   const [isYearly, setIsYearly] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const handleShare = async () => {
+    const shareData = {
+      title: 'aok - Personal Safety Check-In App',
+      text: 'Stay connected with your loved ones. Check in regularly and get help when you need it.',
+      url: window.location.origin,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        toast({
+          title: "Link copied",
+          description: "The aok link has been copied to your clipboard.",
+        });
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        await navigator.clipboard.writeText(shareData.url);
+        toast({
+          title: "Link copied",
+          description: "The aok link has been copied to your clipboard.",
+        });
+      }
+    }
+  };
+
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
@@ -115,38 +143,6 @@ export default function Landing() {
     },
   ];
 
-  const handleShare = async () => {
-    const shareUrl = "https://aok.care";
-    const shareText = "Stay safe with aok - a personal safety check-in app that alerts your emergency contacts if something happens to you.";
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "aok - Personal Safety Check-in",
-          text: shareText,
-          url: shareUrl,
-        });
-        return;
-      } catch (err) {
-        if ((err as Error).name === 'AbortError') return;
-      }
-    }
-    
-    try {
-      await navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
-      toast({
-        title: "Link copied",
-        description: "Share link copied to clipboard.",
-      });
-    } catch (err) {
-      toast({
-        title: "Unable to share",
-        description: "Please copy this link: " + shareUrl,
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-background border-b shadow-sm">
@@ -205,26 +201,30 @@ export default function Landing() {
                 <Button size="sm" data-testid="button-sign-in">Sign In</Button>
               </Link>
             )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="outline" onClick={handleShare} data-testid="button-share-aok">
+                <Share2 className="h-4 w-4 mr-2" />
+                Share aok
+              </Button>
+              <DropdownMenu>
+              <DropdownMenuTrigger asChild className="md:hidden">
                 <Button size="icon" variant="ghost" data-testid="button-menu">
                   <MoreVertical className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild className="md:hidden">
+                <DropdownMenuItem asChild>
                   <a href="#features" data-testid="link-nav-features-mobile">Features</a>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="md:hidden">
+                <DropdownMenuItem asChild>
                   <a href="#how-it-works" data-testid="link-nav-how-it-works-mobile">How It Works</a>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="md:hidden">
+                <DropdownMenuItem asChild>
                   <a href="#use-cases" data-testid="link-nav-use-cases-mobile">Who Uses aok</a>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="md:hidden">
+                <DropdownMenuItem asChild>
                   <a href="#pricing" data-testid="link-nav-pricing-mobile">Pricing</a>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="md:hidden">
+                <DropdownMenuItem asChild>
                   <a href="#faq" data-testid="link-nav-faq-mobile">FAQ</a>
                 </DropdownMenuItem>
                 {user && (
