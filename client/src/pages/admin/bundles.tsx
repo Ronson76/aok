@@ -37,7 +37,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { 
-  Package, LogOut, Shield, Trash2, ArrowLeft, Plus, Loader2
+  Package, LogOut, ShieldCheck, Trash2, ArrowLeft, Plus, Loader2
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { OrganizationBundle, UserProfile } from "@shared/schema";
@@ -188,13 +188,9 @@ export default function AdminBundles() {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/">
-              <div className="flex flex-col items-center cursor-pointer" data-testid="link-home-logo">
-                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center hover:opacity-90 transition-opacity">
-                  <Shield className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <span className="text-[10px] text-muted-foreground">&copy; Ghuman</span>
-              </div>
+            <Link href="/" className="flex flex-col items-center cursor-pointer" data-testid="link-home-logo">
+              <ShieldCheck className="h-10 w-10 text-green-600" />
+              <span className="text-sm font-semibold text-green-600">aok</span>
             </Link>
             <div>
               <h1 className="text-xl font-semibold">Bundle Management</h1>
