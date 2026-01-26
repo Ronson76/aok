@@ -1968,10 +1968,6 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
       const updatedData = { ...data, testMode: true };
       setData(updatedData);
       localStorage.setItem("onboardingData", JSON.stringify(updatedData));
-      toast({
-        title: "Test code accepted",
-        description: "Please accept the Terms and Conditions to continue",
-      });
       onNext(); // Advance to Terms & Conditions step
     } else {
       toast({
