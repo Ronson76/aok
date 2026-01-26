@@ -270,7 +270,7 @@ export default function Landing() {
               <div className="flex items-center justify-between gap-2 mt-6 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
-                  <span>7 day free trial</span>
+                  <span>Free trial</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
@@ -278,7 +278,7 @@ export default function Landing() {
                 </div>
                 <div className="flex items-center gap-1">
                   <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
-                  <span>Set up in 2 mins</span>
+                  <span>Easy set up</span>
                 </div>
               </div>
             </div>
