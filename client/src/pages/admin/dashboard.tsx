@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Users, Building2, User, CheckCircle, XCircle, Package, 
-  LogOut, Shield, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff
+  LogOut, ShieldCheck, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { useState } from "react";
@@ -193,13 +193,9 @@ export default function AdminDashboard() {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/">
-              <div className="flex flex-col items-center cursor-pointer" data-testid="link-home-logo">
-                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center hover:opacity-90 transition-opacity">
-                  <Shield className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <span className="text-[10px] text-muted-foreground">&copy; Ghuman</span>
-              </div>
+            <Link href="/" className="flex flex-col items-center cursor-pointer" data-testid="link-home-logo">
+              <ShieldCheck className="h-10 w-10 text-green-600" />
+              <span className="text-sm font-semibold text-green-600">aok</span>
             </Link>
             <div>
               <h1 className="text-xl font-semibold">Admin Dashboard</h1>
