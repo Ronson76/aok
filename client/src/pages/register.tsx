@@ -202,7 +202,7 @@ export default function Register() {
           const intervalHours = onboardingData.intervalHours || frequencyToHours[onboardingData.checkInFrequency] || 24;
           const scheduleTime = onboardingData.scheduleStartTime || timeToSchedule[onboardingData.checkInTime] || "10:00";
           
-          // Calculate next check-in due based on schedule time
+          // Calculate next check-in due based on schedule time from step 12
           const now = new Date();
           const [hours, minutes] = scheduleTime.split(":").map(Number);
           const scheduleDate = new Date();
@@ -213,14 +213,14 @@ export default function Register() {
             scheduleDate.setDate(scheduleDate.getDate() + 1);
           }
           
-          // Start timer immediately from registration - nextCheckInDue is NOW + interval
-          const nextDue = new Date(now.getTime() + intervalHours * 60 * 60 * 1000);
+          // Next check-in due is based on the scheduled time from step 12
+          const nextDue = scheduleDate;
           
           // Apply settings (set both scheduleStartTime for future reference and nextCheckInDue for timer)
           const settingsUpdate: any = { 
             intervalHours,
             nextCheckInDue: nextDue.toISOString(),
-            lastCheckIn: now.toISOString(), // Mark registration as first check-in
+            lastCheckIn: now.toISOString(), // Mark registration date (no time shown)
           };
           if (onboardingData.scheduleEnabled !== false) {
             settingsUpdate.scheduleStartTime = scheduleDate.toISOString();
