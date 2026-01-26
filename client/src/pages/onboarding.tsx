@@ -1991,23 +1991,27 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
   const { toast } = useToast();
   const email = data.email; // Email already collected on page 1
 
-  const handleTestCodeSubmit = async () => {
-    if (testCode === "NG1") {
-      // Store test mode flag in data and advance to Terms & Conditions
-      const updatedData = { ...data, testMode: true };
-      setData(updatedData);
-      localStorage.setItem("onboardingData", JSON.stringify(updatedData));
-      onNext(); // Advance to Terms & Conditions step
-    } else {
-      toast({
-        title: "Invalid code",
-        description: "The code you entered is not valid",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleStartTrial = async () => {
+    // Check if promo code is entered - if valid, skip payment and go to terms
+    if (testCode.trim()) {
+      if (testCode.trim().toUpperCase() === "NG1") {
+        // Store test mode flag in data and advance to Terms & Conditions
+        const updatedData = { ...data, testMode: true };
+        setData(updatedData);
+        localStorage.setItem("onboardingData", JSON.stringify(updatedData));
+        onNext(); // Advance to Terms & Conditions step
+        return;
+      } else {
+        toast({
+          title: "Invalid code",
+          description: "The promotional code you entered is not valid",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
+    // No promo code - proceed to Stripe checkout
     setIsLoading(true);
     try {
       const response = await apiRequest("POST", "/api/stripe/create-subscription-checkout", {
@@ -2101,23 +2105,13 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
 
             <div className="border-t pt-4 mt-4">
               <p className="text-xs text-muted-foreground mb-2 text-center">Have a promotional code?</p>
-              <div className="flex gap-2">
-                <Input
-                  value={testCode}
-                  onChange={(e) => setTestCode(e.target.value)}
-                  placeholder="Enter code"
-                  className="flex-1"
-                  data-testid="input-test-code"
-                />
-                <Button
-                  variant="outline"
-                  onClick={handleTestCodeSubmit}
-                  disabled={isLoading || !testCode}
-                  data-testid="button-apply-code"
-                >
-                  Apply
-                </Button>
-              </div>
+              <Input
+                value={testCode}
+                onChange={(e) => setTestCode(e.target.value)}
+                placeholder="Enter code"
+                className="text-center"
+                data-testid="input-test-code"
+              />
             </div>
           </div>
         </CardContent>
