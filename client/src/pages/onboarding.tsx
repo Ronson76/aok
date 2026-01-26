@@ -1148,15 +1148,13 @@ const timeOptions = Array.from({ length: 96 }, (_, i) => {
 });
 
 function Step13Time({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
-  const [tempTime, setTempTime] = useState(data.scheduleStartTime);
-
   const handleIntervalChange = (value: number[]) => {
     const hours = indexToHours(value[0]);
     setData({ ...data, intervalHours: hours });
   };
 
-  const handleSetTime = () => {
-    setData({ ...data, scheduleStartTime: tempTime, checkInTime: tempTime });
+  const handleTimeChange = (time: string) => {
+    setData({ ...data, scheduleStartTime: time, checkInTime: time });
   };
 
   return (
@@ -1176,28 +1174,16 @@ function Step13Time({ data, setData }: { data: OnboardingData; setData: (d: Onbo
             <p className="text-sm text-muted-foreground mb-3">
               Set the time of day your check-in schedule starts from.
             </p>
-            <div className="flex gap-2 items-center">
-              <select
-                value={tempTime}
-                onChange={(e) => setTempTime(e.target.value)}
-                className="flex-1 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                data-testid="select-schedule-start-time"
-              >
-                {timeOptions.map((time) => (
-                  <option key={time} value={time}>{time}</option>
-                ))}
-              </select>
-              <Button 
-                onClick={handleSetTime}
-                className="bg-primary text-primary-foreground px-6"
-                data-testid="button-set-time"
-              >
-                Set
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Current schedule: {data.scheduleStartTime}
-            </p>
+            <select
+              value={data.scheduleStartTime}
+              onChange={(e) => handleTimeChange(e.target.value)}
+              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              data-testid="select-schedule-start-time"
+            >
+              {timeOptions.map((time) => (
+                <option key={time} value={time}>{time}</option>
+              ))}
+            </select>
           </div>
 
           <div className="border-t pt-4 space-y-4">
