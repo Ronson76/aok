@@ -142,6 +142,11 @@ export default function Register() {
         form.setValue("password", onboardingData.password);
         form.setValue("confirmPassword", onboardingData.password);
       }
+      // Pre-fill mobile number from onboarding (stored as userPhone)
+      if (onboardingData.userPhone) {
+        const countryCode = onboardingData.userPhoneCountry || "+44";
+        form.setValue("mobileNumber", countryCode + onboardingData.userPhone);
+      }
     }
   }, [onboardingData, form]);
   
