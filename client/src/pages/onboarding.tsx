@@ -1358,40 +1358,40 @@ function Step8Summary({ data }: { data: OnboardingData }) {
           </p>
           
           <div className="space-y-4">
-            <div className="bg-destructive/10 p-3 rounded-lg">
-              <div className="font-semibold text-destructive mb-2 flex items-center gap-2">
-                <X className="h-4 w-4" />
+            <div className="bg-destructive/10 p-4 rounded-lg">
+              <div className="font-semibold text-destructive mb-3 flex items-center gap-2">
+                <X className="h-5 w-5 flex-shrink-0" />
                 WITHOUT AOK
               </div>
-              <ul className="space-y-1 text-sm">
-                <li className="flex items-center gap-2">
-                  <X className="h-4 w-4 text-destructive" />
-                  {content.withoutDelay}
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-3">
+                  <X className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
+                  <span>{content.withoutDelay}</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <X className="h-4 w-4 text-destructive" />
-                  {content.withoutDetail}
+                <li className="flex items-start gap-3">
+                  <X className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
+                  <span>{content.withoutDetail}</span>
                 </li>
               </ul>
             </div>
             
-            <div className="bg-emerald-500/10 p-3 rounded-lg">
-              <div className="font-semibold text-emerald-600 dark:text-emerald-400 mb-2 flex items-center gap-2">
-                <Check className="h-4 w-4" />
+            <div className="bg-emerald-500/10 p-4 rounded-lg">
+              <div className="font-semibold text-emerald-600 dark:text-emerald-400 mb-3 flex items-center gap-2">
+                <Check className="h-5 w-5 flex-shrink-0" />
                 WITH AOK
               </div>
-              <ul className="space-y-1 text-sm">
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-500" />
-                  You miss your scheduled check-in
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-3">
+                  <Check className="h-4 w-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <span>You miss your scheduled check-in</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-500" />
-                  {content.withAokDetail}
+                <li className="flex items-start gap-3">
+                  <Check className="h-4 w-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <span>{content.withAokDetail}</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-500" />
-                  Timely support when it matters most
+                <li className="flex items-start gap-3">
+                  <Check className="h-4 w-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <span>Timely support when it matters most</span>
                 </li>
               </ul>
             </div>
