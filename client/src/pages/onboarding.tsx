@@ -877,7 +877,7 @@ function Step6ContactName({ data, setData }: { data: OnboardingData; setData: (d
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-2">
               <Heart className="h-5 w-5 text-primary" />
-              <h2 className="text-lg sm:text-xl font-bold" data-testid="text-pet-title">Pet Protection Details</h2>
+              <h2 className="text-lg sm:text-xl font-bold" data-testid="text-pet-title">Pet Protection Details (Optional)</h2>
             </div>
             <p className="text-muted-foreground mb-6 text-sm">
               If something happens to you, we'll include your pet's care information in emergency alerts.
