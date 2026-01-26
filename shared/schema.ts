@@ -167,6 +167,7 @@ export const settings = pgTable("settings", {
   alertsEnabled: boolean("alerts_enabled").notNull().default(true),
   pushStatus: text("push_status").notNull().$type<PushStatus>().default("unknown"),
   redAlertEnabled: boolean("red_alert_enabled").notNull().default(false),
+  trackingEnabled: boolean("tracking_enabled").notNull().default(false),
   // Additional living situation info (pets, children, partner travel, rural access, solo travel, lone worker)
   additionalInfo: text("additional_info"),
   // Living situation from onboarding (with-pets, with-children, partner-travels, rural-area, solo-travel, lone-worker)
@@ -182,6 +183,7 @@ export type Settings = {
   alertsEnabled: boolean;
   pushStatus: PushStatus;
   redAlertEnabled: boolean;
+  trackingEnabled: boolean;
   additionalInfo: string | null;
   livingSituation: string | null;
 };
@@ -190,9 +192,12 @@ export const updateSettingsSchema = z.object({
   frequency: z.enum(checkInFrequencies).optional(),
   intervalHours: z.number().min(0.08).max(48).optional(), // Min 0.08 (~5 mins) for testing
   scheduleStartTime: z.string().optional(),
+  nextCheckInDue: z.string().optional(),
+  lastCheckIn: z.string().optional(),
   alertsEnabled: z.boolean().optional(),
   pushStatus: z.enum(pushStatuses).optional(),
   redAlertEnabled: z.boolean().optional(),
+  trackingEnabled: z.boolean().optional(),
   password: z.string().optional(),
   additionalInfo: z.string().optional(),
   livingSituation: z.string().optional(),

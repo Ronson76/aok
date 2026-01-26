@@ -213,8 +213,15 @@ export default function Register() {
             scheduleDate.setDate(scheduleDate.getDate() + 1);
           }
           
-          // Apply settings (only set scheduleStartTime if scheduling is enabled)
-          const settingsUpdate: any = { intervalHours };
+          // Start timer immediately from registration - nextCheckInDue is NOW + interval
+          const nextDue = new Date(now.getTime() + intervalHours * 60 * 60 * 1000);
+          
+          // Apply settings (set both scheduleStartTime for future reference and nextCheckInDue for timer)
+          const settingsUpdate: any = { 
+            intervalHours,
+            nextCheckInDue: nextDue.toISOString(),
+            lastCheckIn: now.toISOString(), // Mark registration as first check-in
+          };
           if (onboardingData.scheduleEnabled !== false) {
             settingsUpdate.scheduleStartTime = scheduleDate.toISOString();
           }
