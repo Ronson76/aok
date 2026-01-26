@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Shield, UserPlus, Eye, EyeOff } from "lucide-react";
+import { Loader2, ShieldCheck, UserPlus, Eye, EyeOff } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function AdminLogin() {
@@ -82,14 +82,9 @@ export default function AdminLogin() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex flex-col items-center mb-4">
-            <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-              {needsSetup ? (
-                <UserPlus className="w-6 h-6 text-primary-foreground" />
-              ) : (
-                <Shield className="w-6 h-6 text-primary-foreground" />
-              )}
-            </div>
-            <span className="text-xs text-muted-foreground mt-1">&copy; Ghuman</span>
+            <ShieldCheck className="h-12 w-12 text-green-600" />
+            <span className="text-lg font-semibold text-green-600">aok</span>
+            <span className="text-xs text-muted-foreground mt-1">Admin Portal</span>
           </div>
           <CardTitle className="text-2xl">
             {needsSetup ? "Create Admin Account" : "Admin Login"}

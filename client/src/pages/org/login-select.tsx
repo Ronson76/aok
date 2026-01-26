@@ -20,10 +20,9 @@ export default function OrgLoginSelect() {
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <div className="rounded-full bg-primary/10 p-4">
-                <ShieldCheck className="h-10 w-10 text-primary" />
-              </div>
+            <div className="flex flex-col items-center justify-center mb-4">
+              <ShieldCheck className="h-12 w-12 text-green-600" />
+              <span className="text-lg font-semibold text-green-600">aok</span>
             </div>
             <h1 className="text-2xl font-bold mb-2">Organisation Portal</h1>
             <p className="text-muted-foreground">Choose how you'd like to sign in</p>

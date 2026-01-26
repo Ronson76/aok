@@ -61,8 +61,8 @@ export default function Activate() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Link href="/" className="flex flex-col items-center mb-6 cursor-pointer" data-testid="link-logo-home">
-          <ShieldCheck className="h-12 w-12 text-primary mb-2" />
-          <h1 className="text-2xl font-bold">aok</h1>
+          <ShieldCheck className="h-12 w-12 text-green-600" />
+          <span className="text-lg font-semibold text-green-600">aok</span>
           <p className="text-muted-foreground text-sm">Personal Safety Check-In</p>
         </Link>
         
