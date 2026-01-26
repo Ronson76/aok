@@ -139,9 +139,9 @@ export default function OrganizationClientLogin() {
 
       <footer className="border-t py-4 px-4">
         <div className="container mx-auto text-center">
-          <div className="flex items-center justify-center gap-2 text-muted-foreground">
-            <ShieldCheck className="h-4 w-4" />
-            <span className="text-sm font-semibold">aok</span>
+          <div className="flex items-center justify-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-green-600" />
+            <span className="text-sm font-semibold text-green-600">aok</span>
           </div>
         </div>
       </footer>
