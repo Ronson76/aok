@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAdmin } from "@/contexts/admin-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,11 +81,11 @@ export default function AdminLogin() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex flex-col items-center mb-4">
+          <Link href="/" className="flex flex-col items-center mb-4" data-testid="link-logo-home">
             <ShieldCheck className="h-12 w-12 text-green-600" />
             <span className="text-lg font-semibold text-green-600">aok</span>
             <span className="text-xs text-muted-foreground mt-1">Admin Portal</span>
-          </div>
+          </Link>
           <CardTitle className="text-2xl">
             {needsSetup ? "Create Admin Account" : "Admin Login"}
           </CardTitle>
