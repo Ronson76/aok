@@ -305,24 +305,24 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-center">
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <header className="container mx-auto px-4 py-3 flex items-center justify-center">
           <Link href="/" className="flex items-center gap-2 md:gap-3" data-testid="link-logo-home">
-            <ShieldCheck className="h-8 w-8 md:h-12 md:w-12 text-green-600" />
-            <span className="text-xl md:text-3xl font-bold text-green-600">aok</span>
+            <ShieldCheck className="h-7 w-7 md:h-10 md:w-10 text-green-600" />
+            <span className="text-lg md:text-2xl font-bold text-green-600">aok</span>
           </Link>
-        </div>
-      </header>
+        </header>
 
-      <div className="sticky top-[72px] z-40 px-4 py-3 bg-background border-b">
-        <div className="flex justify-between items-center text-sm text-muted-foreground mb-2">
-          <span data-testid="text-step-indicator">Step {currentStep} of {TOTAL_STEPS}</span>
-          <span data-testid="text-progress-percent">{progress}%</span>
+        <div className="px-4 pb-3">
+          <div className="flex justify-between items-center text-sm text-muted-foreground mb-2">
+            <span data-testid="text-step-indicator">Step {currentStep} of {TOTAL_STEPS}</span>
+            <span data-testid="text-progress-percent">{progress}%</span>
+          </div>
+          <Progress value={progress} className="h-2" data-testid="progress-bar" />
         </div>
-        <Progress value={progress} className="h-2" data-testid="progress-bar" />
       </div>
 
-      <div className="flex-1 px-4 pt-6 pb-6 overflow-y-auto">
+      <div className="flex-1 px-4 py-4 overflow-y-auto">
         <div className="max-w-md mx-auto">
           {renderStep()}
         </div>
