@@ -197,7 +197,7 @@ function AppRoutes() {
 }
 
 function AppLayout() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [location] = useLocation();
   const [alarmPlaying, setAlarmPlaying] = useState(false);
   const [showQRDialog, setShowQRDialog] = useState(false);
@@ -336,20 +336,35 @@ function AppLayout() {
               </div>
             </Link>
             <div className="h-8 w-px bg-muted-foreground/30" />
-            <a 
-              href="https://health-insight-engine.replit.app" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex flex-col items-center"
-              data-testid="link-health-insight"
-            >
-              <div className="relative h-6 w-6 flex items-center justify-center">
-                <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
-                <div className="w-1.5 h-5 bg-green-600 absolute rounded-sm" />
-                <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
+            {user?.termsAcceptedAt ? (
+              <a 
+                href="https://health-insight-engine.replit.app" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex flex-col items-center"
+                data-testid="link-health-insight"
+              >
+                <div className="relative h-6 w-6 flex items-center justify-center">
+                  <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
+                  <div className="w-1.5 h-5 bg-green-600 absolute rounded-sm" />
+                  <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
+                </div>
+                <span className="text-[10px] font-medium text-green-600 mt-0.5">wellbeing-ai</span>
+              </a>
+            ) : (
+              <div 
+                className="flex flex-col items-center opacity-40 cursor-not-allowed"
+                title="Complete registration to access"
+                data-testid="link-health-insight-disabled"
+              >
+                <div className="relative h-6 w-6 flex items-center justify-center">
+                  <div className="w-5 h-1.5 bg-muted-foreground absolute rounded-sm" />
+                  <div className="w-1.5 h-5 bg-muted-foreground absolute rounded-sm" />
+                  <Heart className="h-2.5 w-2.5 text-muted-foreground absolute -bottom-1 -right-1" fill="currentColor" />
+                </div>
+                <span className="text-[10px] font-medium text-muted-foreground mt-0.5">wellbeing-ai</span>
               </div>
-              <span className="text-[10px] font-medium text-green-600 mt-0.5">wellbeing-ai</span>
-            </a>
+            )}
           </div>
           {showMenu ? (
             <DropdownMenu>
