@@ -236,9 +236,9 @@ export default function Onboarding() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-center">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-8 w-8 text-green-600" />
-            <span className="text-xl font-bold text-green-600">aok</span>
+          <div className="flex items-center gap-2 md:gap-3">
+            <ShieldCheck className="h-8 w-8 md:h-12 md:w-12 text-green-600" />
+            <span className="text-xl md:text-3xl font-bold text-green-600">aok</span>
           </div>
         </div>
       </header>
