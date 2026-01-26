@@ -14,8 +14,9 @@ const coreNavItems = [
   { path: "/app", icon: Home, label: "Home" },
   { path: "/app/contacts", icon: Users, label: "Contacts" },
   { path: "/app/history", icon: History, label: "History" },
-  { path: "/app/settings", icon: Settings, label: "Settings" },
 ];
+
+const settingsNavItem = { path: "/app/settings", icon: Settings, label: "Settings" };
 
 const organizationNavItems = [
   { path: "/app", icon: Building2, label: "Dashboard" },
@@ -192,6 +193,22 @@ export function BottomNav() {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+        )}
+        
+        {/* Settings - shown after Wellbeing for regular users */}
+        {!isOrganization && !isOrgManagedClient && (
+          <Link
+            href={settingsNavItem.path}
+            className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[56px] ${
+              location === settingsNavItem.path
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            data-testid="nav-settings"
+          >
+            <Settings className={`h-5 w-5 ${location === settingsNavItem.path ? "text-primary" : ""}`} />
+            <span className="text-xs font-medium">Settings</span>
+          </Link>
         )}
       </div>
     </nav>
