@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck, Loader2, Building2, ArrowLeft } from "lucide-react";
 
-export default function OrganizationLogin() {
+export default function OrganizationClientLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
@@ -55,10 +55,10 @@ export default function OrganizationLogin() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4">
-          <Link href="/">
-            <Button variant="ghost" size="sm" data-testid="button-back-home">
+          <Link href="/org/login">
+            <Button variant="ghost" size="sm" data-testid="button-back">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
+              Back
             </Button>
           </Link>
         </div>
@@ -72,9 +72,9 @@ export default function OrganizationLogin() {
                 <Building2 className="h-10 w-10 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-2xl">Organisation Login</CardTitle>
+            <CardTitle className="text-2xl">Client Login</CardTitle>
             <CardDescription>
-              Sign in a client using their email and reference code
+              Sign in using your email and reference code
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
@@ -127,10 +127,10 @@ export default function OrganizationLogin() {
                 )}
               </Button>
               <p className="text-sm text-muted-foreground text-center">
-                Need an organisation account?{" "}
-                <a href="mailto:organisations@aok.care?subject=Organisation%20Account%20Enquiry" className="text-primary hover:underline">
-                  Contact us
-                </a>
+                From an organisation?{" "}
+                <Link href="/org/staff-login">
+                  <span className="text-primary hover:underline cursor-pointer">Staff login</span>
+                </Link>
               </p>
             </CardFooter>
           </form>
