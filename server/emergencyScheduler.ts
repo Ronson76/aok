@@ -1,9 +1,10 @@
 import { storage } from "./storage";
-import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification } from "./notifications";
+import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder } from "./notifications";
 
 let schedulerInterval: NodeJS.Timeout | null = null;
 let cleanupInterval: NodeJS.Timeout | null = null;
 let pushNotificationInterval: NodeJS.Timeout | null = null;
+let contactReminderInterval: NodeJS.Timeout | null = null;
 
 // Minimum interval between push notifications to same user (30 seconds)
 const PUSH_NOTIFICATION_COOLDOWN_MS = 30 * 1000;
@@ -76,6 +77,59 @@ async function cleanupExpiredContacts(): Promise<void> {
     // Only log if contacts were deleted (reduce noise)
   } catch (error) {
     console.error('[CLEANUP] Error cleaning up expired contacts:', error);
+  }
+}
+
+// Send SMS reminders to contacts that haven't confirmed and are within 1 hour of expiry
+async function sendContactReminders(): Promise<void> {
+  try {
+    const contactsNeedingReminder = await storage.getContactsNeedingReminder();
+    
+    if (contactsNeedingReminder.length === 0) {
+      return;
+    }
+
+    console.log(`[CONTACT REMINDER] Found ${contactsNeedingReminder.length} contacts needing confirmation reminder`);
+
+    for (const contact of contactsNeedingReminder) {
+      try {
+        // Get the user who added this contact
+        const user = await storage.getUserById(contact.userId);
+        if (!user) {
+          console.log(`[CONTACT REMINDER] User not found for contact ${contact.id}, skipping`);
+          continue;
+        }
+
+        if (!contact.phone) {
+          console.log(`[CONTACT REMINDER] No phone number for contact ${contact.name}, skipping`);
+          continue;
+        }
+
+        // Build the confirmation link
+        const baseUrl = process.env.REPL_SLUG 
+          ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+          : process.env.BASE_URL || 'http://localhost:5000';
+        const confirmationLink = `${baseUrl}/confirm-contact?token=${contact.confirmationToken}`;
+
+        const result = await sendContactConfirmationReminder(
+          contact.phone,
+          contact.name,
+          user.name,
+          confirmationLink
+        );
+
+        if (result.success) {
+          await storage.markContactReminderSent(contact.id);
+          console.log(`[CONTACT REMINDER] Sent reminder to ${contact.name} (${contact.phone})`);
+        } else {
+          console.error(`[CONTACT REMINDER] Failed to send reminder to ${contact.name}: ${result.error}`);
+        }
+      } catch (error) {
+        console.error(`[CONTACT REMINDER] Error processing reminder for ${contact.name}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('[CONTACT REMINDER] Error sending contact reminders:', error);
   }
 }
 
@@ -156,6 +210,7 @@ export function startEmergencyScheduler(): void {
 
   console.log('[EMERGENCY SCHEDULER] Starting emergency alert scheduler (checks every minute)');
   console.log('[PUSH SCHEDULER] Starting push notification scheduler (checks every 30 seconds)');
+  console.log('[CONTACT REMINDER] Starting contact reminder scheduler (checks every 5 minutes)');
   
   schedulerInterval = setInterval(async () => {
     await processOverdueEmergencyAlerts();
@@ -167,6 +222,11 @@ export function startEmergencyScheduler(): void {
     await processOverduePushNotifications();
   }, 30 * 1000);
 
+  // Contact reminders run every 5 minutes to catch contacts approaching expiry
+  contactReminderInterval = setInterval(async () => {
+    await sendContactReminders();
+  }, 5 * 60 * 1000);
+
   // Run cleanup daily (every 24 hours)
   cleanupInterval = setInterval(async () => {
     await cleanupOldLocationData();
@@ -177,6 +237,7 @@ export function startEmergencyScheduler(): void {
   processOverduePushNotifications();
   cleanupOldLocationData();
   cleanupExpiredContacts();
+  sendContactReminders();
 }
 
 export function stopEmergencyScheduler(): void {
@@ -191,6 +252,10 @@ export function stopEmergencyScheduler(): void {
   if (pushNotificationInterval) {
     clearInterval(pushNotificationInterval);
     pushNotificationInterval = null;
+  }
+  if (contactReminderInterval) {
+    clearInterval(contactReminderInterval);
+    contactReminderInterval = null;
   }
   console.log('[EMERGENCY SCHEDULER] Scheduler stopped');
 }

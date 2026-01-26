@@ -926,6 +926,18 @@ export async function registerRoutes(
         streak = dates.size;
       }
 
+      // Check for contacts about to expire (within 1 hour of 24-hour deadline)
+      const now = new Date();
+      const expiringContacts = contacts
+        .filter(c => {
+          if (c.confirmedAt) return false; // Already confirmed
+          if (!c.confirmationExpiry) return false;
+          const expiry = new Date(c.confirmationExpiry);
+          const hoursUntilExpiry = (expiry.getTime() - now.getTime()) / (1000 * 60 * 60);
+          return hoursUntilExpiry > 0 && hoursUntilExpiry <= 1; // Within last hour before expiry
+        })
+        .map(c => ({ name: c.name, expiresAt: c.confirmationExpiry!.toString() }));
+
       const statusData: StatusData = {
         status,
         lastCheckIn: settings.lastCheckIn,
@@ -933,6 +945,7 @@ export async function registerRoutes(
         streak,
         hoursUntilDue,
         contactCount: contacts.length,
+        expiringContacts: expiringContacts.length > 0 ? expiringContacts : undefined,
       };
 
       res.json(statusData);

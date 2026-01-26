@@ -950,10 +950,13 @@ export default function Settings() {
             {features?.isOrgClient && (
               <span className="block mt-1 text-xs">Some features may be controlled by your organisation.</span>
             )}
+            {!user?.termsAcceptedAt && (
+              <span className="block mt-1 text-xs text-amber-600">Complete registration to unlock these features.</span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          {features?.featureMoodTracking !== false ? (
+          {features?.featureMoodTracking !== false && user?.termsAcceptedAt ? (
             <Link href="/app/mood">
               <div className="flex items-center justify-between p-3 rounded-lg hover-elevate cursor-pointer" data-testid="link-mood">
                 <div className="flex items-center gap-3">
@@ -976,14 +979,16 @@ export default function Settings() {
                 </div>
                 <div>
                   <p className="font-medium text-muted-foreground">Wellness Tracking</p>
-                  <p className="text-xs text-muted-foreground">Not enabled by your organisation</p>
+                  <p className="text-xs text-muted-foreground">
+                    {!user?.termsAcceptedAt ? "Complete registration to access" : "Not enabled by your organisation"}
+                  </p>
                 </div>
               </div>
               <Lock className="h-5 w-5 text-muted-foreground" />
             </div>
           )}
           
-          {features?.featurePetProtection !== false ? (
+          {features?.featurePetProtection !== false && user?.termsAcceptedAt ? (
             <Link href="/app/pets">
               <div className="flex items-center justify-between p-3 rounded-lg hover-elevate cursor-pointer" data-testid="link-pets">
                 <div className="flex items-center gap-3">
@@ -1006,14 +1011,16 @@ export default function Settings() {
                 </div>
                 <div>
                   <p className="font-medium text-muted-foreground">Pet Protection</p>
-                  <p className="text-xs text-muted-foreground">Not enabled by your organisation</p>
+                  <p className="text-xs text-muted-foreground">
+                    {!user?.termsAcceptedAt ? "Complete registration to access" : "Not enabled by your organisation"}
+                  </p>
                 </div>
               </div>
               <Lock className="h-5 w-5 text-muted-foreground" />
             </div>
           )}
           
-          {features?.featureDigitalWill !== false ? (
+          {features?.featureDigitalWill !== false && user?.termsAcceptedAt ? (
             <Link href="/app/documents">
               <div className="flex items-center justify-between p-3 rounded-lg hover-elevate cursor-pointer" data-testid="link-documents">
                 <div className="flex items-center gap-3">
@@ -1036,7 +1043,9 @@ export default function Settings() {
                 </div>
                 <div>
                   <p className="font-medium text-muted-foreground">Digital Will</p>
-                  <p className="text-xs text-muted-foreground">Not enabled by your organisation</p>
+                  <p className="text-xs text-muted-foreground">
+                    {!user?.termsAcceptedAt ? "Complete registration to access" : "Not enabled by your organisation"}
+                  </p>
                 </div>
               </div>
               <Lock className="h-5 w-5 text-muted-foreground" />

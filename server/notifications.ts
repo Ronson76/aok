@@ -1593,6 +1593,25 @@ Enter this code when you open the app to get started.`;
 }
 
 /**
+ * Send confirmation reminder SMS to contact approaching expiry
+ */
+export async function sendContactConfirmationReminder(
+  contactPhone: string,
+  contactName: string,
+  userName: string,
+  confirmationLink: string
+): Promise<{ success: boolean; error?: string }> {
+  const message = `REMINDER: ${userName} has added you as an emergency contact on aok. Please confirm within the next hour or the link will expire.
+
+Confirm here: ${confirmationLink}
+
+If you did not expect this, you can ignore this message.`;
+
+  console.log(`[SMS REMINDER] Sending confirmation reminder to ${contactName} at ${contactPhone}`);
+  return await sendSMS(contactPhone, message);
+}
+
+/**
  * Diagnostic function to check Twilio credentials without sending
  */
 export async function diagnoseTwilioCredentials(): Promise<{
