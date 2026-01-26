@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { 
@@ -105,7 +106,7 @@ interface OnboardingData {
   confirmPassword: string;
   userPhone: string;
   userPhoneCountry: string;
-  locationPermission: 'pending' | 'granted' | 'denied' | 'unavailable';
+  locationSharingEnabled: boolean;
   ageGroup: string;
   livingSituation: string;
   whoWorries: string;
@@ -148,7 +149,7 @@ export default function Onboarding() {
     confirmPassword: "",
     userPhone: "",
     userPhoneCountry: "+44",
-    locationPermission: "pending",
+    locationSharingEnabled: false,
     ageGroup: "",
     livingSituation: "",
     whoWorries: "",
@@ -457,56 +458,8 @@ function Step1Terms({ accepted, setAccepted, onComplete }: { accepted: boolean; 
 }
 
 function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
-  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  const handleRequestLocation = async () => {
-    if (!('geolocation' in navigator)) {
-      setData({ ...data, locationPermission: 'unavailable' });
-      return;
-    }
-    
-    setIsRequestingLocation(true);
-    
-    // Check permission state first (if supported)
-    try {
-      if ('permissions' in navigator) {
-        const permission = await navigator.permissions.query({ name: 'geolocation' });
-        if (permission.state === 'denied') {
-          setData({ ...data, locationPermission: 'denied' });
-          setIsRequestingLocation(false);
-          return;
-        }
-      }
-    } catch {
-      // permissions API not supported (Safari), continue with request
-    }
-    
-    navigator.geolocation.getCurrentPosition(
-      () => {
-        setData({ ...data, locationPermission: 'granted' });
-        setIsRequestingLocation(false);
-      },
-      (error) => {
-        console.log('Location error:', error.code, error.message);
-        // For Safari and other browsers that don't show permission prompt
-        // error.code 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT
-        if (error.code === 1) {
-          setData({ ...data, locationPermission: 'denied' });
-        } else {
-          // For timeout or position unavailable, still allow continuing
-          setData({ ...data, locationPermission: 'unavailable' });
-        }
-        setIsRequestingLocation(false);
-      },
-      { 
-        enableHighAccuracy: false, // Safari works better with this off
-        timeout: 15000, // Longer timeout for Safari
-        maximumAge: 60000 // Allow cached position
-      }
-    );
-  };
 
   return (
     <Card className="border-0 shadow-lg">
@@ -634,61 +587,23 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
           </div>
 
           <div className="space-y-2 pt-2">
-            <label className="text-sm font-medium flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-primary" />
-              Location permission
-            </label>
-            {data.locationPermission === 'granted' ? (
-              <div className="flex items-center gap-2 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                <Check className="h-5 w-5 text-emerald-600" />
-                <span className="text-sm text-emerald-700 dark:text-emerald-300">Location access granted</span>
-              </div>
-            ) : data.locationPermission === 'denied' ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                  <Info className="h-5 w-5 text-amber-600" />
-                  <span className="text-sm text-amber-700 dark:text-amber-300">Location access declined</span>
+            <div className="flex items-center justify-between p-3 bg-card border rounded-lg">
+              <div className="flex items-center gap-3">
+                <MapPin className={`h-5 w-5 ${data.locationSharingEnabled ? "text-emerald-500" : "text-muted-foreground"}`} />
+                <div>
+                  <p className="text-sm font-medium">Location sharing</p>
+                  <p className="text-xs text-muted-foreground">Share your location in emergencies</p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  No problem - you can continue without location. You can enable this feature later in Settings if needed.
-                </p>
               </div>
-            ) : data.locationPermission === 'unavailable' ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                  <Info className="h-5 w-5 text-amber-600" />
-                  <span className="text-sm text-amber-700 dark:text-amber-300">Location not available on this device</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  No problem - you can continue without location. You can enable this feature later in Settings if needed.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  Optional - helps share your location with emergency contacts. You can skip this and enable it later in Settings.
-                </p>
-                <Button 
-                  variant="outline" 
-                  onClick={handleRequestLocation}
-                  disabled={isRequestingLocation}
-                  className="w-full"
-                  data-testid="button-enable-location"
-                >
-                  {isRequestingLocation ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Requesting...
-                    </>
-                  ) : (
-                    <>
-                      <MapPin className="h-4 w-4 mr-2" />
-                      Enable Location
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
+              <Switch
+                checked={data.locationSharingEnabled}
+                onCheckedChange={(checked) => setData({ ...data, locationSharingEnabled: checked })}
+                data-testid="switch-location-sharing"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              You can adjust this later in Settings.
+            </p>
           </div>
         </div>
       </CardContent>
