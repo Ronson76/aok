@@ -996,7 +996,7 @@ export async function registerRoutes(
       res.status(201).json({
         ...contact,
         pending: true,
-        message: "Confirmation email sent. Contact must confirm within 10 minutes."
+        message: "Confirmation email sent. Contact must confirm within 24 hours."
       });
     } catch (error) {
       console.error("[ROUTES] Error creating contact:", error);

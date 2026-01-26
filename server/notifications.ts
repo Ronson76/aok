@@ -509,7 +509,7 @@ Reference ID: ${user.referenceId}
 
 aok is a personal safety check-in app. If this person misses a check-in, you will be notified automatically via email, SMS, or phone call.
 
-IMPORTANT: You must confirm within 10 minutes to become an emergency contact.
+IMPORTANT: You must confirm within 24 hours to become an emergency contact.
 
 To ACCEPT and become an emergency contact, click this link:
 ${confirmUrl}
@@ -529,7 +529,7 @@ aok is a personal safety check-in app. If ${user.name} misses a check-in, you wi
 
 This means ${user.name} trusts you to help ensure their safety.
 
-IMPORTANT: You must confirm within 10 minutes to become an emergency contact.
+IMPORTANT: You must confirm within 24 hours to become an emergency contact.
 
 To ACCEPT and become an emergency contact, click this link:
 ${confirmUrl}
@@ -564,7 +564,7 @@ Thank you,
   <p><strong>aok</strong> is a personal safety check-in app. If ${isOrganization ? 'this person' : userName} misses a check-in, you will be notified automatically via email, SMS, or phone call.</p>
   
   <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 20px 0;">
-    <strong style="color: #92400e;">IMPORTANT:</strong> You must confirm within 10 minutes to become an emergency contact.
+    <strong style="color: #92400e;">IMPORTANT:</strong> You must confirm within 24 hours to become an emergency contact.
   </div>
   
   <div style="text-align: center; margin: 30px 0;">

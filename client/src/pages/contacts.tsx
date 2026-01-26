@@ -172,7 +172,7 @@ export default function Contacts() {
       form.reset();
       toast({
         title: "Confirmation email sent",
-        description: "Your contact must click the link in their email to confirm within 10 minutes.",
+        description: "Your contact must click the link in their email to confirm within 24 hours.",
       });
     },
     onError: () => {
