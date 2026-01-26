@@ -595,25 +595,18 @@ export default function Landing() {
                 className="block"
                 data-testid="link-wellbeing-feature"
               >
-                <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-gradient-to-b from-green-600 to-green-800 border border-green-500 shadow-xl mb-4 max-w-[200px] mx-auto flex flex-col items-center justify-center p-4">
-                  <div className="absolute top-3 left-0 right-0 flex justify-center">
-                    <Badge className="bg-amber-500 text-white text-[10px]">Exclusive</Badge>
+                <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-black border border-green-600/30 shadow-xl mb-4 max-w-[200px] mx-auto flex flex-col items-center justify-center p-6">
+                  <div className="relative h-16 w-16 mb-4 flex items-center justify-center">
+                    <div className="w-14 h-4 bg-green-600 absolute rounded-sm" />
+                    <div className="w-4 h-14 bg-green-600 absolute rounded-sm" />
+                    <Heart className="h-6 w-6 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
                   </div>
-                  <div className="relative h-12 w-12 mb-3 flex items-center justify-center">
-                    <div className="w-10 h-3 bg-white absolute rounded-sm" />
-                    <div className="w-3 h-10 bg-white absolute rounded-sm" />
-                    <Heart className="h-5 w-5 text-white absolute -bottom-1 -right-1" fill="currentColor" />
-                  </div>
-                  <span className="text-white font-bold text-lg mb-2">wellbeing-ai</span>
-                  <p className="text-green-100 text-xs text-center mb-3">AI-powered health advice at your fingertips</p>
-                  <div className="bg-white/20 rounded-lg px-3 py-2 text-white text-xs text-center">
-                    <Sparkles className="h-3 w-3 inline mr-1" />
-                    Only with aok
-                  </div>
+                  <span className="text-green-600 font-bold text-xl mb-3">wellbeing-ai</span>
+                  <p className="text-gray-400 text-xs text-center leading-relaxed">AI-powered health advice at your fingertips</p>
                 </div>
               </a>
               <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-wellbeing">Built-in Wellbeing App</h4>
-              <p className="text-xs md:text-sm text-muted-foreground">AI health advice included free</p>
+              <p className="text-xs md:text-sm text-muted-foreground">AI health advice included</p>
             </div>
           </div>
         </div>
