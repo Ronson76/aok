@@ -212,14 +212,14 @@ export default function Onboarding() {
   const canProceed = useCallback(() => {
     switch (currentStep) {
       case 1: {
-        // Require name, valid email, password (min 8 chars), matching passwords, valid phone, and location permission granted
+        // Require name, valid email, password (min 8 chars), matching passwords, valid phone
+        // Location is optional - users can enable later in Settings
         const hasName = data.name.trim().length > 0;
         const hasEmail = data.email.includes("@") && data.email.includes(".");
         const hasPassword = data.password.length >= 8;
         const passwordsMatch = data.password === data.confirmPassword;
         const hasPhone = isValidMobileNumber(data.userPhone, data.userPhoneCountry);
-        const hasLocation = data.locationPermission === "granted";
-        return hasName && hasEmail && hasPassword && passwordsMatch && hasPhone && hasLocation;
+        return hasName && hasEmail && hasPassword && passwordsMatch && hasPhone;
       }
       case 2: return data.ageGroup !== "";
       case 3: return data.livingSituation !== "";
