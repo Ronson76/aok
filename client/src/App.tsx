@@ -37,7 +37,9 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminBundles from "@/pages/admin/bundles";
 import OrganizationDashboard from "@/pages/org/dashboard";
-import OrganizationLogin from "@/pages/org/login";
+import OrgLoginSelect from "@/pages/org/login-select";
+import OrganizationClientLogin from "@/pages/org/client-login";
+import OrganizationStaffLogin from "@/pages/org/staff-login";
 import Activate from "@/pages/activate";
 import Pricing from "@/pages/pricing";
 import Onboarding from "@/pages/onboarding";
@@ -490,7 +492,15 @@ function Router() {
   }
 
   if (location === "/org/login") {
-    return <AuthRoute component={OrganizationLogin} />;
+    return <OrgLoginSelect />;
+  }
+
+  if (location === "/org/client-login") {
+    return <OrganizationClientLogin />;
+  }
+
+  if (location === "/org/staff-login") {
+    return <OrganizationStaffLogin />;
   }
 
   if (location === "/pricing") {
