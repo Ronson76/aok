@@ -322,7 +322,7 @@ export default function Onboarding() {
         <Progress value={progress} className="h-2" data-testid="progress-bar" />
       </div>
 
-      <div className="flex-1 px-4 py-6 overflow-y-auto">
+      <div className="flex-1 px-4 pt-4 pb-6 overflow-y-auto">
         <div className="max-w-md mx-auto">
           {renderStep()}
         </div>
