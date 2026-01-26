@@ -1907,8 +1907,32 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
 
 function Step16Payment({ data }: { data: OnboardingData }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [testCode, setTestCode] = useState("");
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const email = data.email; // Email already collected on page 1
+
+  const handleTestCodeSubmit = async () => {
+    if (testCode === "NG1") {
+      setIsLoading(true);
+      try {
+        localStorage.setItem("onboardingData", JSON.stringify(data));
+        toast({
+          title: "Test code accepted",
+          description: "Proceeding as if payment was received",
+        });
+        setLocation(`/register?onboarded=true&email=${encodeURIComponent(email)}&testMode=true`);
+      } catch (error) {
+        setIsLoading(false);
+      }
+    } else {
+      toast({
+        title: "Invalid code",
+        description: "The code you entered is not valid",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleStartTrial = async () => {
     setIsLoading(true);
@@ -2001,6 +2025,27 @@ function Step16Payment({ data }: { data: OnboardingData }) {
                 "Start Free Trial"
               )}
             </Button>
+
+            <div className="border-t pt-4 mt-4">
+              <p className="text-xs text-muted-foreground mb-2 text-center">Have a promotional code?</p>
+              <div className="flex gap-2">
+                <Input
+                  value={testCode}
+                  onChange={(e) => setTestCode(e.target.value)}
+                  placeholder="Enter code"
+                  className="flex-1"
+                  data-testid="input-test-code"
+                />
+                <Button
+                  variant="outline"
+                  onClick={handleTestCodeSubmit}
+                  disabled={isLoading || !testCode}
+                  data-testid="button-apply-code"
+                >
+                  Apply
+                </Button>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
