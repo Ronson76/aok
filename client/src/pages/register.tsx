@@ -323,6 +323,30 @@ export default function Register() {
             }
           }
           
+          // Create pets from onboarding data
+          if (onboardingData.pets && Array.isArray(onboardingData.pets)) {
+            const validPets = onboardingData.pets.filter((p: any) => 
+              p.name?.trim() && p.type?.trim()
+            );
+            
+            for (let i = 0; i < validPets.length; i++) {
+              const pet = validPets[i];
+              try {
+                await apiRequest("POST", "/api/pets", {
+                  name: pet.name.trim(),
+                  type: pet.type.trim().toLowerCase(),
+                  feedingInstructions: pet.nutrition?.trim() || undefined,
+                  vetName: pet.vetName?.trim() || undefined,
+                  vetPhone: pet.vetPhone?.trim() || undefined,
+                  specialInstructions: pet.emergencyInfo?.trim() || undefined,
+                });
+                console.log(`Pet ${i + 1} created from onboarding:`, pet.name);
+              } catch (petError) {
+                console.log(`Failed to create pet ${i + 1}:`, petError);
+              }
+            }
+          }
+          
           // Clear onboarding data
           localStorage.removeItem("onboardingData");
         } catch (e) {

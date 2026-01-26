@@ -353,16 +353,16 @@ function AppLayout() {
               </a>
             ) : (
               <div 
-                className="flex flex-col items-center opacity-40 cursor-not-allowed"
+                className="flex flex-col items-center cursor-not-allowed"
                 title="Complete registration to access"
                 data-testid="link-health-insight-disabled"
               >
                 <div className="relative h-6 w-6 flex items-center justify-center">
-                  <div className="w-5 h-1.5 bg-muted-foreground absolute rounded-sm" />
-                  <div className="w-1.5 h-5 bg-muted-foreground absolute rounded-sm" />
-                  <Heart className="h-2.5 w-2.5 text-muted-foreground absolute -bottom-1 -right-1" fill="currentColor" />
+                  <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
+                  <div className="w-1.5 h-5 bg-green-600 absolute rounded-sm" />
+                  <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
                 </div>
-                <span className="text-[10px] font-medium text-muted-foreground mt-0.5">wellbeing-ai</span>
+                <span className="text-[10px] font-medium text-green-600 mt-0.5">wellbeing-ai</span>
               </div>
             )}
           </div>
