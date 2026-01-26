@@ -518,6 +518,7 @@ class DatabaseStorage implements IStorage {
         alertsEnabled: true,
         pushStatus: "unknown",
         redAlertEnabled: false,
+        trackingEnabled: false,
         additionalInfo: null,
         livingSituation: null,
       };
@@ -533,6 +534,7 @@ class DatabaseStorage implements IStorage {
       alertsEnabled: row.alertsEnabled,
       pushStatus: (row.pushStatus as "unknown" | "enabled" | "declined") || "unknown",
       redAlertEnabled: row.redAlertEnabled ?? false,
+      trackingEnabled: row.trackingEnabled ?? false,
       additionalInfo: row.additionalInfo || null,
       livingSituation: row.livingSituation || null,
     };
@@ -545,8 +547,17 @@ class DatabaseStorage implements IStorage {
     if (updates.alertsEnabled !== undefined) dbUpdates.alertsEnabled = updates.alertsEnabled;
     if (updates.pushStatus !== undefined) dbUpdates.pushStatus = updates.pushStatus;
     if (updates.redAlertEnabled !== undefined) dbUpdates.redAlertEnabled = updates.redAlertEnabled;
+    if (updates.trackingEnabled !== undefined) dbUpdates.trackingEnabled = updates.trackingEnabled;
     if (updates.additionalInfo !== undefined) dbUpdates.additionalInfo = updates.additionalInfo;
     if (updates.livingSituation !== undefined) dbUpdates.livingSituation = updates.livingSituation;
+    
+    // Handle direct nextCheckInDue and lastCheckIn updates (from registration)
+    if (updates.nextCheckInDue !== undefined) {
+      dbUpdates.nextCheckInDue = new Date(updates.nextCheckInDue);
+    }
+    if (updates.lastCheckIn !== undefined) {
+      dbUpdates.lastCheckIn = new Date(updates.lastCheckIn);
+    }
     
     // Handle schedule start time - this is the initial check-in time
     if (updates.scheduleStartTime !== undefined) {
