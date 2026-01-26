@@ -322,7 +322,8 @@ function AppLayout() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background border-b">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-center relative">
+          {/* Centered logo and wellbeing-ai */}
           <div className="flex items-center gap-4">
             <Link href="/app">
               <div className="flex items-center gap-2 cursor-pointer relative" data-testid="link-home-logo">
@@ -366,32 +367,33 @@ function AppLayout() {
               </div>
             )}
           </div>
-          {showMenu ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="icon" variant="ghost" data-testid="button-menu">
-                  <MoreVertical className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleShareLink} data-testid="menu-share-link">
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share Link
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowQRDialog(true)} data-testid="menu-share-qr">
-                  <QrCode className="h-4 w-4 mr-2" />
-                  Share QR Code
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <a href="mailto:support@aok.app" className="flex items-center gap-2" data-testid="link-contact-us">
-                    <Mail className="h-4 w-4" />
-                    Contact Us
-                  </a>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="w-10" />
+          {/* Menu positioned absolutely on the right */}
+          {showMenu && (
+            <div className="absolute right-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="ghost" data-testid="button-menu">
+                    <MoreVertical className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleShareLink} data-testid="menu-share-link">
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share Link
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowQRDialog(true)} data-testid="menu-share-qr">
+                    <QrCode className="h-4 w-4 mr-2" />
+                    Share QR Code
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <a href="mailto:support@aok.app" className="flex items-center gap-2" data-testid="link-contact-us">
+                      <Mail className="h-4 w-4" />
+                      Contact Us
+                    </a>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
         </div>
       </header>
