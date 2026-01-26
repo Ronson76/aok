@@ -724,7 +724,7 @@ function Step4LivingSituation({ data, setData }: { data: OnboardingData; setData
 
 function Step5WhoWorries({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   const options = [
-    { value: "adult-children", label: "My adult children", icon: <Users className="h-6 w-6" /> },
+    { value: "adult-children", label: "My children", icon: <Users className="h-6 w-6" /> },
     { value: "parents", label: "My parents", icon: <Users className="h-6 w-6" /> },
     { value: "siblings", label: "My siblings", icon: <Users className="h-6 w-6" /> },
     { value: "spouse", label: "My spouse/partner", icon: <Heart className="h-6 w-6" /> },
