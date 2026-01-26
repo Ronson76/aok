@@ -869,22 +869,6 @@ function Step8Summary({ data }: { data: OnboardingData }) {
           </div>
         </CardContent>
       </Card>
-
-      <Card className="border-0 shadow-lg">
-        <CardContent className="p-4 text-center">
-          <div className="flex justify-center gap-1 text-amber-400 mb-2">
-            <Star className="h-5 w-5 fill-current" />
-            <Star className="h-5 w-5 fill-current" />
-            <Star className="h-5 w-5 fill-current" />
-            <Star className="h-5 w-5 fill-current" />
-            <Star className="h-5 w-5 fill-current" />
-          </div>
-          <p className="italic text-muted-foreground mb-2" data-testid="text-testimonial">
-            "Living alone for the first time after college. My parents feel better knowing I'm okay."
-          </p>
-          <p className="font-medium">Jordan</p>
-        </CardContent>
-      </Card>
     </div>
   );
 }
