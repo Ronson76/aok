@@ -29,7 +29,6 @@ import { useAuth } from "@/contexts/auth-context";
 
 import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_animation.mp4";
 import alertsVideo from "@assets/generated_videos/english_sms_alert_notification.mp4";
-import locationVideo from "@assets/generated_videos/uk_streets_gps_map_tracking.mp4";
 
 const MONTHLY_PRICE = 6.99;
 const YEARLY_PRICE = 69.99;
@@ -621,18 +620,39 @@ export default function Landing() {
               <div className="relative aspect-[9/19] rounded-[2.5rem] overflow-hidden bg-gradient-to-b from-gray-300 to-gray-400 border-[3px] border-gray-300 shadow-xl mb-4 max-w-[200px] mx-auto">
                 {/* Silver notch */}
                 <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-5 bg-gradient-to-b from-gray-400 to-gray-500 rounded-full z-10" />
-                {/* Screen content */}
-                <div className="absolute inset-1 rounded-[2rem] overflow-hidden">
-                  <video 
-                    src={locationVideo} 
-                    autoPlay 
-                    loop 
-                    muted 
-                    playsInline
-                    aria-label="Demo video showing GPS location tracking and sharing"
-                    className="w-full h-full object-cover pointer-events-none"
-                    data-testid="video-location"
-                  />
+                {/* Screen content - Map mockup */}
+                <div className="absolute inset-1 rounded-[2rem] overflow-hidden bg-green-100">
+                  {/* Map background pattern */}
+                  <div className="absolute inset-0 opacity-30">
+                    <div className="absolute top-[20%] left-0 right-0 h-[2px] bg-amber-400" />
+                    <div className="absolute top-[40%] left-0 right-0 h-[2px] bg-amber-400" />
+                    <div className="absolute top-[60%] left-0 right-0 h-[2px] bg-amber-400" />
+                    <div className="absolute top-[80%] left-0 right-0 h-[2px] bg-amber-400" />
+                    <div className="absolute left-[25%] top-0 bottom-0 w-[2px] bg-amber-400" />
+                    <div className="absolute left-[50%] top-0 bottom-0 w-[2px] bg-amber-400" />
+                    <div className="absolute left-[75%] top-0 bottom-0 w-[2px] bg-amber-400" />
+                  </div>
+                  {/* Location pin */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+                    <div className="animate-bounce" style={{ animationDuration: '2s' }}>
+                      <MapPin className="h-12 w-12 text-red-500 drop-shadow-lg" fill="currentColor" />
+                    </div>
+                    <div className="w-6 h-6 bg-blue-400/50 rounded-full animate-ping absolute top-6" style={{ animationDuration: '2s' }} />
+                  </div>
+                  {/* what3words address */}
+                  <div className="absolute bottom-4 left-2 right-2 bg-white rounded-lg p-2 shadow-lg">
+                    <div className="flex items-center gap-1 mb-1">
+                      <div className="w-4 h-4 bg-red-500 rounded-sm flex items-center justify-center">
+                        <span className="text-white text-[8px] font-bold">///</span>
+                      </div>
+                      <span className="text-[9px] text-gray-800 font-semibold">what3words</span>
+                    </div>
+                    <p className="text-[10px] text-red-500 font-medium">///filled.count.soap</p>
+                    <p className="text-[8px] text-gray-500 mt-0.5">London, United Kingdom</p>
+                  </div>
+                  {/* Street labels */}
+                  <div className="absolute top-8 left-4 bg-white/80 px-1 py-0.5 rounded text-[7px] text-gray-700">High Street</div>
+                  <div className="absolute top-16 right-3 bg-white/80 px-1 py-0.5 rounded text-[7px] text-gray-700">Queen's Road</div>
                 </div>
               </div>
               <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-location">GPS Location Sharing</h4>
