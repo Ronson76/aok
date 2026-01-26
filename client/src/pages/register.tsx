@@ -226,6 +226,11 @@ export default function Register() {
             settingsUpdate.scheduleStartTime = scheduleDate.toISOString();
           }
           
+          // Enable location sharing if toggled during onboarding
+          if (onboardingData.locationSharingEnabled === true) {
+            settingsUpdate.redAlertEnabled = true;
+          }
+          
           // Save living situation from onboarding
           if (onboardingData.livingSituation) {
             settingsUpdate.livingSituation = onboardingData.livingSituation;
@@ -310,15 +315,6 @@ export default function Register() {
               } catch (contactError) {
                 console.log(`Failed to create contact ${i + 1}:`, contactError);
               }
-            }
-          }
-          
-          // Enable location sharing if enabled during onboarding
-          if (onboardingData.locationSharingEnabled) {
-            try {
-              await apiRequest("PATCH", "/api/settings", { redAlertEnabled: true });
-            } catch (trackingError) {
-              console.log("Failed to enable location sharing:", trackingError);
             }
           }
           
