@@ -161,15 +161,15 @@ export default function Landing() {
               href="https://health-insight-engine.replit.app" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5"
+              className="flex flex-col items-start"
               data-testid="link-health-insight"
             >
-              <div className="relative h-5 w-5 flex items-center justify-center">
-                <div className="w-4 h-1.5 bg-green-600 absolute rounded-sm" />
-                <div className="w-1.5 h-4 bg-green-600 absolute rounded-sm" />
-                <Heart className="h-2 w-2 text-green-600 absolute -bottom-0.5 -right-0.5" fill="currentColor" />
+              <div className="relative h-4 w-4 flex items-center justify-center mb-0.5">
+                <div className="w-3.5 h-1 bg-green-600 absolute rounded-sm" />
+                <div className="w-1 h-3.5 bg-green-600 absolute rounded-sm" />
+                <Heart className="h-1.5 w-1.5 text-green-600 absolute -bottom-0.5 -right-0.5" fill="currentColor" />
               </div>
-              <span className="text-xs font-medium text-green-600">wellbeing-ai</span>
+              <span className="text-[9px] font-medium text-green-600 leading-none">wellbeing-ai</span>
             </a>
           </div>
           <nav className="hidden md:flex items-center gap-6">
