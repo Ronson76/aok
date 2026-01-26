@@ -12,7 +12,7 @@ import {
   AlertTriangle, Activity, Scissors, Accessibility, Calendar,
   Clock, RefreshCw, Sun, Sunset, Settings, Search, Bot, Smartphone,
   Mail, Star, Phone, X, Loader2, Wallet, ShieldCheck, Info, Plus,
-  Eye, EyeOff
+  Eye, EyeOff, MessageSquare
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -125,6 +125,7 @@ interface OnboardingData {
   loneWorkerData: LoneWorkerData;
   whatMatters: string[];
   healthConditions: string[];
+  healthConditionsOther?: string;
   checkInFrequency: string;
   checkInTime: string;
   scheduleStartTime: string;
@@ -172,6 +173,7 @@ export default function Onboarding() {
     loneWorkerData: { companyName: "", supervisorName: "", supervisorPhone: "", emergencyContact: "" },
     whatMatters: [],
     healthConditions: [],
+    healthConditionsOther: "",
     checkInFrequency: "daily",
     checkInTime: "morning",
     scheduleStartTime: "10:00",
@@ -1412,6 +1414,8 @@ function Step9WhatMatters({ data, setData }: { data: OnboardingData; setData: (d
 }
 
 function Step10HealthConditions({ data, setData, onSkip }: { data: OnboardingData; setData: (d: OnboardingData) => void; onSkip: () => void }) {
+  const [otherText, setOtherText] = useState(data.healthConditionsOther || "");
+  
   const options = [
     { value: "fall-concerns", label: "Fall concerns", icon: <AlertTriangle className="h-6 w-6" /> },
     { value: "chronic-condition", label: "Chronic health condition", icon: <Activity className="h-6 w-6" /> },
@@ -1426,6 +1430,21 @@ function Step10HealthConditions({ data, setData, onSkip }: { data: OnboardingDat
     } else {
       setData({ ...data, healthConditions: [...current, value] });
     }
+  };
+
+  const toggleOther = () => {
+    const current = data.healthConditions;
+    if (current.includes("other")) {
+      setData({ ...data, healthConditions: current.filter(v => v !== "other"), healthConditionsOther: "" });
+      setOtherText("");
+    } else {
+      setData({ ...data, healthConditions: [...current, "other"] });
+    }
+  };
+
+  const handleOtherTextChange = (value: string) => {
+    setOtherText(value);
+    setData({ ...data, healthConditionsOther: value });
   };
 
   return (
@@ -1456,6 +1475,39 @@ function Step10HealthConditions({ data, setData, onSkip }: { data: OnboardingDat
               </div>
             </button>
           ))}
+          
+          {/* Other option */}
+          <button
+            onClick={toggleOther}
+            className={`w-full p-4 rounded-lg border text-left transition-all ${
+              data.healthConditions.includes("other") ? "border-primary bg-primary/5" : "border-border hover-elevate"
+            }`}
+            data-testid="option-health-other"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="text-primary"><MessageSquare className="h-6 w-6" /></div>
+                <span className="font-medium">Other</span>
+              </div>
+              <Checkbox 
+                checked={data.healthConditions.includes("other")}
+                className="pointer-events-none"
+              />
+            </div>
+          </button>
+          
+          {/* Other text input - shown when Other is selected */}
+          {data.healthConditions.includes("other") && (
+            <div className="pl-4 border-l-2 border-primary/30">
+              <Input
+                value={otherText}
+                onChange={(e) => handleOtherTextChange(e.target.value)}
+                placeholder="Please describe your situation..."
+                className="mt-2"
+                data-testid="input-health-other"
+              />
+            </div>
+          )}
         </div>
 
         <Button 
