@@ -313,13 +313,13 @@ export default function Register() {
             }
           }
           
-          // Enable tracking if location was granted during onboarding
+          // Enable location sharing if location was granted during onboarding
           if (onboardingData.locationPermission === "granted") {
             try {
-              await apiRequest("PATCH", "/api/settings", { trackingEnabled: true });
-              console.log("Tracking enabled from location permission");
+              await apiRequest("PATCH", "/api/settings", { redAlertEnabled: true });
+              console.log("Location sharing enabled from location permission");
             } catch (trackingError) {
-              console.log("Failed to enable tracking:", trackingError);
+              console.log("Failed to enable location sharing:", trackingError);
             }
           }
           
