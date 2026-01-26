@@ -20,6 +20,7 @@ import { QRCodeSVG } from "qrcode.react";
 import type { StatusData } from "@shared/schema";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
+import LoginSelect from "@/pages/login-select";
 import Register from "@/pages/register";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
@@ -465,6 +466,10 @@ function Router() {
   }
 
   if (location === "/login") {
+    return <AuthRoute component={LoginSelect} />;
+  }
+
+  if (location === "/login/individual") {
     return <AuthRoute component={Login} />;
   }
 
