@@ -637,31 +637,28 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
               </div>
             ) : data.locationPermission === 'denied' ? (
               <div className="space-y-2">
-                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                  <AlertTriangle className="h-5 w-5 text-red-600" />
-                  <span className="text-sm text-red-700 dark:text-red-300">Location access denied</span>
+                <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <Info className="h-5 w-5 text-amber-600" />
+                  <span className="text-sm text-amber-700 dark:text-amber-300">Location access declined</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Please enable location in your browser settings, then try again.
+                  No problem - you can continue without location. You can enable this feature later in Settings if needed.
                 </p>
-                <Button 
-                  variant="outline" 
-                  onClick={handleRequestLocation}
-                  className="w-full"
-                  data-testid="button-retry-location"
-                >
-                  Try Again
-                </Button>
               </div>
             ) : data.locationPermission === 'unavailable' ? (
-              <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                <Info className="h-5 w-5 text-amber-600" />
-                <span className="text-sm text-amber-700 dark:text-amber-300">Location not available on this device</span>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <Info className="h-5 w-5 text-amber-600" />
+                  <span className="text-sm text-amber-700 dark:text-amber-300">Location not available on this device</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  No problem - you can continue without location. You can enable this feature later in Settings if needed.
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">
-                  Required for emergency alerts to share your location with contacts.
+                  Optional - helps share your location with emergency contacts. You can skip this and enable it later in Settings.
                 </p>
                 <Button 
                   variant="outline" 
