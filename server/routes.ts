@@ -1781,5 +1781,18 @@ export async function registerRoutes(
     }
   });
 
+  // Backup download route
+  app.get("/api/download-backup", async (_req, res) => {
+    const path = require("path");
+    const fs = require("fs");
+    const backupPath = path.join(process.cwd(), "aok-code-backup.tar.gz");
+    
+    if (fs.existsSync(backupPath)) {
+      res.download(backupPath, "aok-code-backup.tar.gz");
+    } else {
+      res.status(404).json({ error: "Backup file not found" });
+    }
+  });
+
   return httpServer;
 }
