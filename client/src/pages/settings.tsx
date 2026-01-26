@@ -925,13 +925,7 @@ export default function Settings() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Appearance</CardTitle>
-          <CardDescription>
-            Customise the look of the app.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-0.5">
               <Label className="font-medium">Dark Mode</Label>
