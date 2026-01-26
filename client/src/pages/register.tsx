@@ -152,9 +152,12 @@ export default function Register() {
   
   // For PWA (mobile app): require location permission (granted or unavailable)
   // For web browser: allow signup without location (always true)
-  const canSubmit = isPWA 
-    ? (locationPermission === 'granted' || locationPermission === 'unavailable')
-    : true; // Web browsers can sign up without location
+  // For users coming from onboarding: they already granted location in step 1
+  const canSubmit = fromOnboarding
+    ? true // Onboarding already handled location permission
+    : isPWA 
+      ? (locationPermission === 'granted' || locationPermission === 'unavailable')
+      : true; // Web browsers can sign up without location
 
   const registerMutation = useMutation({
     mutationFn: async (data: InsertUser) => {
