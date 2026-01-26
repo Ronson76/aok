@@ -985,13 +985,17 @@ export default function Landing() {
             <p className="text-sm text-muted-foreground" data-testid="text-copyright">
               &copy; {new Date().getFullYear()} aok by Ghuman. All rights reserved.
             </p>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2">
               <Link href="/admin/login">
-                <span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-admin">Admin</span>
+                <Button variant="outline" size="sm" data-testid="link-footer-admin">
+                  Admin Login
+                </Button>
               </Link>
-              <a href="mailto:support@aok.care" className="hover:text-foreground transition-colors" data-testid="link-footer-support">
-                support@aok.care
-              </a>
+              <Link href="/org/login">
+                <Button variant="outline" size="sm" data-testid="link-footer-org">
+                  Organisation Login
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
