@@ -1686,8 +1686,6 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
     );
   }
   
-  const mobileValid = currentContact.phone.trim() === '' || isValidMobileNumber(currentContact.phone, currentContact.phoneCountry);
-  
   const updateCurrentContact = (field: keyof ContactData, value: string) => {
     const originalIndex = data.contacts.findIndex(c => c.name === currentContact.name);
     if (originalIndex === -1) return;
@@ -1769,22 +1767,21 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
                 type="tel"
                 value={currentContact.phone}
                 onChange={(e) => {
+                  const value = e.target.value.replace(/[^\d\s]/g, '');
+                  updateCurrentContact('phone', value);
+                }}
+                onBlur={(e) => {
                   let value = e.target.value.replace(/[^\d\s]/g, '');
                   value = value.replace(/^0+/, '');
                   updateCurrentContact('phone', value);
                 }}
                 placeholder={currentContact.phoneCountry === "+44" ? "7700 900000" : "Phone number"}
-                className={`flex-1 ${!mobileValid ? 'border-destructive' : ''}`}
+                className="flex-1"
                 data-testid="input-contact-phone"
               />
             </div>
-            {!mobileValid && (
-              <p className="text-xs text-destructive mt-1">
-                Please enter a valid mobile number (UK mobiles start with 7 and have 10 digits)
-              </p>
-            )}
             <p className="text-xs text-muted-foreground mt-1">
-              For SMS alerts and voice calls
+              For SMS alerts and voice calls. {currentContact.phoneCountry === "+44" ? "UK mobiles: 10 digits starting with 7" : ""}
             </p>
           </div>
 

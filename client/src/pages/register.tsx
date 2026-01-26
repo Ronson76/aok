@@ -204,6 +204,53 @@ export default function Register() {
           if (onboardingData.scheduleEnabled !== false) {
             settingsUpdate.scheduleStartTime = scheduleDate.toISOString();
           }
+          
+          // Save living situation from onboarding
+          if (onboardingData.livingSituation) {
+            settingsUpdate.livingSituation = onboardingData.livingSituation;
+          }
+          
+          // Compile additional info based on living situation
+          const additionalInfoData: any = {};
+          
+          // Pets info
+          if (onboardingData.pets && onboardingData.pets.length > 0) {
+            const petsWithData = onboardingData.pets.filter((p: any) => p.name || p.type);
+            if (petsWithData.length > 0) {
+              additionalInfoData.pets = petsWithData;
+            }
+          }
+          
+          // Children info
+          if (onboardingData.childrenData && (onboardingData.childrenData.numberOfChildren || onboardingData.childrenData.agesDescription)) {
+            additionalInfoData.children = onboardingData.childrenData;
+          }
+          
+          // Partner travel info
+          if (onboardingData.partnerTravelData && (onboardingData.partnerTravelData.typicalDestinations || onboardingData.partnerTravelData.address)) {
+            additionalInfoData.partnerTravel = onboardingData.partnerTravelData;
+          }
+          
+          // Rural area info
+          if (onboardingData.ruralData && (onboardingData.ruralData.accessInstructions || onboardingData.ruralData.gateCode)) {
+            additionalInfoData.rural = onboardingData.ruralData;
+          }
+          
+          // Solo travel info
+          if (onboardingData.soloTravelData && (onboardingData.soloTravelData.typicalDestinations || onboardingData.soloTravelData.localAddress)) {
+            additionalInfoData.soloTravel = onboardingData.soloTravelData;
+          }
+          
+          // Lone worker info
+          if (onboardingData.loneWorkerData && (onboardingData.loneWorkerData.companyName || onboardingData.loneWorkerData.supervisorName)) {
+            additionalInfoData.loneWorker = onboardingData.loneWorkerData;
+          }
+          
+          // Save additional info if any data was collected
+          if (Object.keys(additionalInfoData).length > 0) {
+            settingsUpdate.additionalInfo = JSON.stringify(additionalInfoData);
+          }
+          
           await apiRequest("PATCH", "/api/settings", settingsUpdate);
           
           // Create primary contact from onboarding data

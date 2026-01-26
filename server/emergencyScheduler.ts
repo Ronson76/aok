@@ -103,6 +103,9 @@ export async function processOverdueEmergencyAlerts(): Promise<void> {
           continue;
         }
 
+        // Get settings for additional info
+        const settings = await storage.getSettings(alert.userId);
+
         const location = alert.latitude && alert.longitude
           ? { latitude: parseFloat(alert.latitude), longitude: parseFloat(alert.longitude) }
           : undefined;
@@ -111,7 +114,13 @@ export async function processOverdueEmergencyAlerts(): Promise<void> {
 
         // For 5-minute location updates: only send email and SMS (no phone calls)
         // Phone calls are only made on the initial emergency trigger
-        const alertResult = await sendEmergencyAlert(contacts, user, location, true);
+        const alertResult = await sendEmergencyAlert(
+          contacts, 
+          user, 
+          location, 
+          true,
+          settings?.additionalInfo
+        );
 
         await storage.updateEmergencyAlertDispatchTime(alert.id);
 

@@ -765,9 +765,98 @@ Thank you for being there.
   }
 }
 
+// Helper function to format additional info for alerts
+function formatAdditionalInfo(additionalInfoJson: string | null): string {
+  if (!additionalInfoJson) return "";
+  
+  try {
+    const info = JSON.parse(additionalInfoJson);
+    const sections: string[] = [];
+    
+    // Pets info
+    if (info.pets && info.pets.length > 0) {
+      const petDetails = info.pets.map((pet: any) => {
+        let detail = `${pet.name || 'Pet'}`;
+        if (pet.type) detail += ` (${pet.type})`;
+        const extras: string[] = [];
+        if (pet.nutritionNeeds) extras.push(`Nutrition: ${pet.nutritionNeeds}`);
+        if (pet.vetInfo) extras.push(`Vet: ${pet.vetInfo}`);
+        if (pet.emergencyInstructions) extras.push(`Emergency: ${pet.emergencyInstructions}`);
+        if (extras.length > 0) detail += ` - ${extras.join(', ')}`;
+        return detail;
+      }).join('\n  ');
+      sections.push(`PETS:\n  ${petDetails}`);
+    }
+    
+    // Children info
+    if (info.children) {
+      const childDetails: string[] = [];
+      if (info.children.numberOfChildren) childDetails.push(`Number: ${info.children.numberOfChildren}`);
+      if (info.children.agesDescription) childDetails.push(`Ages: ${info.children.agesDescription}`);
+      if (info.children.emergencyDetails) childDetails.push(`Emergency contact: ${info.children.emergencyDetails}`);
+      if (childDetails.length > 0) {
+        sections.push(`CHILDREN:\n  ${childDetails.join('\n  ')}`);
+      }
+    }
+    
+    // Partner travel info
+    if (info.partnerTravel) {
+      const travelDetails: string[] = [];
+      if (info.partnerTravel.typicalDestinations) travelDetails.push(`Typical destinations: ${info.partnerTravel.typicalDestinations}`);
+      if (info.partnerTravel.address) travelDetails.push(`Address when away: ${info.partnerTravel.address}`);
+      if (info.partnerTravel.phone) travelDetails.push(`Phone when away: ${info.partnerTravel.phone}`);
+      if (travelDetails.length > 0) {
+        sections.push(`PARTNER TRAVEL INFO:\n  ${travelDetails.join('\n  ')}`);
+      }
+    }
+    
+    // Rural access info
+    if (info.rural) {
+      const ruralDetails: string[] = [];
+      if (info.rural.accessInstructions) ruralDetails.push(`Access instructions: ${info.rural.accessInstructions}`);
+      if (info.rural.gateCode) ruralDetails.push(`Gate code: ${info.rural.gateCode}`);
+      if (info.rural.additionalNotes) ruralDetails.push(`Notes: ${info.rural.additionalNotes}`);
+      if (ruralDetails.length > 0) {
+        sections.push(`RURAL ACCESS INFO:\n  ${ruralDetails.join('\n  ')}`);
+      }
+    }
+    
+    // Solo travel info
+    if (info.soloTravel) {
+      const soloDetails: string[] = [];
+      if (info.soloTravel.typicalDestinations) soloDetails.push(`Typical destinations: ${info.soloTravel.typicalDestinations}`);
+      if (info.soloTravel.localAddress) soloDetails.push(`Local address: ${info.soloTravel.localAddress}`);
+      if (info.soloTravel.localPhone) soloDetails.push(`Local phone: ${info.soloTravel.localPhone}`);
+      if (soloDetails.length > 0) {
+        sections.push(`SOLO TRAVEL INFO:\n  ${soloDetails.join('\n  ')}`);
+      }
+    }
+    
+    // Lone worker info
+    if (info.loneWorker) {
+      const workerDetails: string[] = [];
+      if (info.loneWorker.companyName) workerDetails.push(`Company: ${info.loneWorker.companyName}`);
+      if (info.loneWorker.supervisorName) workerDetails.push(`Supervisor: ${info.loneWorker.supervisorName}`);
+      if (info.loneWorker.emergencyContact) workerDetails.push(`Work emergency contact: ${info.loneWorker.emergencyContact}`);
+      if (workerDetails.length > 0) {
+        sections.push(`LONE WORKER INFO:\n  ${workerDetails.join('\n  ')}`);
+      }
+    }
+    
+    if (sections.length > 0) {
+      return `\n\n--- ADDITIONAL INFORMATION ---\n${sections.join('\n\n')}`;
+    }
+  } catch (error) {
+    console.error('[ALERT] Failed to parse additional info:', error);
+  }
+  
+  return "";
+}
+
 export async function sendMissedCheckInAlert(
   contacts: Contact[],
-  user: User
+  user: User,
+  additionalInfo?: string | null
 ): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number; whatsappSent: number; whatsappFailed: number }> {
   const isOrganization = user.accountType === "organization";
   const identifier = isOrganization 
@@ -834,12 +923,14 @@ ${user.country || ""}`;
 Mobile number: ${user.mobileNumber}`;
     }
     
+    const additionalInfoText = formatAdditionalInfo(additionalInfo || null);
+    
     const emailBody = `Hi ${contact.name},
 
 This is an automated alert from aok.
 
 ${identifier} has missed their scheduled check-in. This may indicate they need assistance.
-${locationInfo}
+${locationInfo}${additionalInfoText}
 
 Please try to reach out to ensure their safety.
 
@@ -977,7 +1068,8 @@ export async function sendEmergencyAlert(
   contacts: Contact[],
   user: User,
   gpsLocation?: { latitude: number; longitude: number },
-  isLocationUpdate: boolean = false
+  isLocationUpdate: boolean = false,
+  additionalInfo?: string | null
 ): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number; whatsappSent: number; whatsappFailed: number }> {
   const isOrganization = user.accountType === "organization";
   const identifier = isOrganization 
@@ -1041,6 +1133,8 @@ Mobile number: ${user.mobileNumber}`;
       timeStyle: 'long' 
     });
     
+    const additionalInfoText = formatAdditionalInfo(additionalInfo || null);
+    
     const emailBody = isLocationUpdate 
       ? `*** LOCATION UPDATE ***
 
@@ -1049,7 +1143,7 @@ Hi ${contact.name},
 This is an automatic LOCATION UPDATE for ${identifier}'s ongoing emergency alert as of ${alertTime}.
 
 The emergency alert is still active. Updated location information below:
-${locationInfo}
+${locationInfo}${additionalInfoText}
 
 PLEASE CONTINUE TRYING TO REACH THEM.
 
@@ -1063,7 +1157,7 @@ Hi ${contact.name},
 ${identifier} has triggered an EMERGENCY ALERT on aok at ${alertTime}.
 
 This is NOT a routine missed check-in. They have manually pressed the emergency button indicating they need immediate assistance.
-${locationInfo}
+${locationInfo}${additionalInfoText}
 
 PLEASE CONTACT THEM IMMEDIATELY.
 
