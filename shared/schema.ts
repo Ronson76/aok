@@ -166,6 +166,10 @@ export const settings = pgTable("settings", {
   alertsEnabled: boolean("alerts_enabled").notNull().default(true),
   pushStatus: text("push_status").notNull().$type<PushStatus>().default("unknown"),
   redAlertEnabled: boolean("red_alert_enabled").notNull().default(false),
+  // Additional living situation info (pets, children, partner travel, rural access, solo travel, lone worker)
+  additionalInfo: text("additional_info"),
+  // Living situation from onboarding (with-pets, with-children, partner-travels, rural-area, solo-travel, lone-worker)
+  livingSituation: text("living_situation"),
 });
 
 export type Settings = {
@@ -177,6 +181,8 @@ export type Settings = {
   alertsEnabled: boolean;
   pushStatus: PushStatus;
   redAlertEnabled: boolean;
+  additionalInfo: string | null;
+  livingSituation: string | null;
 };
 
 export const updateSettingsSchema = z.object({
@@ -187,6 +193,8 @@ export const updateSettingsSchema = z.object({
   pushStatus: z.enum(pushStatuses).optional(),
   redAlertEnabled: z.boolean().optional(),
   password: z.string().optional(),
+  additionalInfo: z.string().optional(),
+  livingSituation: z.string().optional(),
 });
 
 export type UpdateSettings = z.infer<typeof updateSettingsSchema>;
