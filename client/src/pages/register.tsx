@@ -721,8 +721,8 @@ export default function Register() {
                 </div>
               )}
 
-              {/* Location Permission Section - only for individual accounts */}
-              {accountType !== "organization" && (
+              {/* Location Permission Section - only for individual accounts, not from onboarding */}
+              {accountType !== "organization" && !fromOnboarding && (
               <div className="space-y-3 pt-2">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <MapPin className="h-4 w-4" />
