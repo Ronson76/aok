@@ -176,7 +176,7 @@ export default function Landing() {
           <nav className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-features">Features</a>
             <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">How It Works</a>
-            <a href="#use-cases" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-use-cases">Use Cases</a>
+            <a href="#use-cases" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-use-cases">Case Reviews</a>
             <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-pricing">Pricing</a>
             <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-faq">FAQ</a>
           </nav>
@@ -220,7 +220,7 @@ export default function Landing() {
                   <a href="#how-it-works" data-testid="link-nav-how-it-works-mobile">How It Works</a>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="md:hidden">
-                  <a href="#use-cases" data-testid="link-nav-use-cases-mobile">Use Cases</a>
+                  <a href="#use-cases" data-testid="link-nav-use-cases-mobile">Case Reviews</a>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="md:hidden">
                   <a href="#pricing" data-testid="link-nav-pricing-mobile">Pricing</a>
