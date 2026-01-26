@@ -263,8 +263,8 @@ export default function Landing() {
         <div className="container mx-auto max-w-6xl relative">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                <Shield className="h-4 w-4" />
+              <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1 md:py-1.5 rounded-full bg-primary/10 text-primary text-sm md:text-lg font-medium mb-6">
+                <Shield className="h-4 w-4 md:h-5 md:w-5" />
                 Personal Safety Made Simple
               </div>
               <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
