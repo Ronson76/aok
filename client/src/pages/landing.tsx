@@ -151,13 +151,13 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-background border-b shadow-sm">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="h-7 w-7 text-green-600" />
-              <span className="text-lg font-bold text-green-600">aok</span>
+              <ShieldCheck className="h-9 w-9 text-green-600" />
+              <span className="text-2xl font-bold text-green-600">aok</span>
             </div>
-            <div className="h-6 w-px bg-muted-foreground/30" />
+            <div className="h-8 w-px bg-muted-foreground/30" />
             <a 
               href="https://health-insight-engine.replit.app" 
               target="_blank" 
@@ -165,29 +165,29 @@ export default function Landing() {
               className="flex flex-col items-start"
               data-testid="link-health-insight"
             >
-              <div className="relative h-5 w-5 flex items-center justify-center mb-0.5">
-                <div className="w-4 h-1.5 bg-green-600 absolute rounded-sm" />
-                <div className="w-1.5 h-4 bg-green-600 absolute rounded-sm" />
-                <Heart className="h-2 w-2 text-green-600 absolute -bottom-0.5 -right-0.5" fill="currentColor" />
+              <div className="relative h-7 w-7 flex items-center justify-center mb-0.5">
+                <div className="w-5 h-2 bg-green-600 absolute rounded-sm" />
+                <div className="w-2 h-5 bg-green-600 absolute rounded-sm" />
+                <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-0.5 -right-0.5" fill="currentColor" />
               </div>
-              <span className="text-[11px] font-medium text-green-600 leading-none whitespace-nowrap">wellbeing-ai</span>
+              <span className="text-xs font-semibold text-green-600 leading-none whitespace-nowrap">wellbeing-ai</span>
             </a>
           </div>
           <nav className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-features">Features</a>
-            <a href="#how-it-works" className="text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">How It Works</a>
-            <a href="#use-cases" className="text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-use-cases">Who Uses aok</a>
-            <a href="#pricing" className="text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-pricing">Pricing</a>
-            <a href="#faq" className="text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-faq">FAQ</a>
+            <a href="#features" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-features">Features</a>
+            <a href="#how-it-works" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">How It Works</a>
+            <a href="#use-cases" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-use-cases">Who Uses aok</a>
+            <a href="#pricing" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-pricing">Pricing</a>
+            <a href="#faq" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-faq">FAQ</a>
           </nav>
           <div className="flex items-center gap-2">
             <div className="hidden md:flex items-center gap-2 mr-2">
-              <a href="#" className="flex items-center gap-1 px-2 py-1 rounded border border-border text-xs hover-elevate" data-testid="link-app-store-header">
-                <SiApple className="h-4 w-4 text-black dark:text-white" />
+              <a href="#" className="flex items-center gap-1 px-2.5 py-1.5 rounded border border-border hover-elevate" data-testid="link-app-store-header">
+                <SiApple className="h-5 w-5 text-black dark:text-white" />
                 <span className="sr-only">App Store</span>
               </a>
-              <a href="#" className="flex items-center gap-1 px-2 py-1 rounded border border-border text-xs hover-elevate" data-testid="link-play-store-header">
-                <SiGoogleplay className="h-4 w-4 text-[#414141] dark:text-[#34A853]" />
+              <a href="#" className="flex items-center gap-1 px-2.5 py-1.5 rounded border border-border hover-elevate" data-testid="link-play-store-header">
+                <SiGoogleplay className="h-5 w-5 text-[#414141] dark:text-[#34A853]" />
                 <span className="sr-only">Google Play</span>
               </a>
             </div>
