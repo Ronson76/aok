@@ -72,7 +72,7 @@ export default function Terms() {
             <section>
               <h2 className="text-xl font-semibold mb-3">5. Emergency Contact Consent</h2>
               <p className="text-muted-foreground leading-relaxed">
-                When you add emergency contacts, they will receive a confirmation request. Contacts must accept this request within 10 minutes to be activated. You are responsible for obtaining verbal consent from your contacts before adding them to aok.
+                When you add emergency contacts, they will receive a confirmation request. Contacts must accept this request within 24 hours to be activated. You are responsible for obtaining verbal consent from your contacts before adding them to aok.
               </p>
             </section>
 

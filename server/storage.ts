@@ -319,10 +319,10 @@ class DatabaseStorage implements IStorage {
     const existingContacts = await this.getConfirmedContacts(userId);
     const shouldBePrimary = existingContacts.length === 0;
     
-    // Generate a confirmation token (expires in 10 minutes)
+    // Generate a confirmation token (expires in 24 hours)
     const rawToken = randomBytes(32).toString("hex");
     const tokenHash = createHash("sha256").update(rawToken).digest("hex");
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
     
     console.log(`[STORAGE] Creating contact for user ${userId}:`, {
       name: contact.name,

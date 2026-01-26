@@ -401,7 +401,7 @@ function Step1Terms({ accepted, setAccepted, onComplete }: { accepted: boolean; 
           
           <section>
             <h3 className="font-semibold text-foreground mb-2">3. Emergency Contacts</h3>
-            <p>Your emergency contacts will receive notifications when you miss a check-in or trigger an emergency alert. They must confirm their consent via email within 10 minutes.</p>
+            <p>Your emergency contacts will receive notifications when you miss a check-in or trigger an emergency alert. They must confirm their consent via email within 24 hours.</p>
           </section>
           
           <section>
