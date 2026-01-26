@@ -302,7 +302,7 @@ export default function Landing() {
             </div>
             <div className="relative">
               <div className="relative mx-auto w-64 md:w-80">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 rounded-3xl blur-3xl" />
+                <div className="absolute -inset-4 bg-green-500/30 rounded-3xl blur-2xl animate-[glow_3s_ease-in-out_infinite]" />
                 <div className="relative bg-card border rounded-3xl p-6 shadow-2xl">
                   <div className="text-center mb-6">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10 mb-4">
