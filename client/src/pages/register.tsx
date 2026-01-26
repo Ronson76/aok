@@ -576,10 +576,17 @@ export default function Register() {
                         <span className="text-sm text-muted-foreground">Email</span>
                         <span className="text-sm font-medium break-all" data-testid="text-onboarding-email">{onboardingData?.email || "—"}</span>
                       </div>
-                      {onboardingData?.contactName && (
+                      {onboardingData?.contacts && onboardingData.contacts.filter((c: any) => c.name?.trim()).length > 0 && (
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                          <span className="text-sm text-muted-foreground">Emergency Contact</span>
-                          <span className="text-sm font-medium">{onboardingData.contactName}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {onboardingData.contacts.filter((c: any) => c.name?.trim()).length > 1 ? "Emergency Contacts" : "Emergency Contact"}
+                          </span>
+                          <span className="text-sm font-medium text-right">
+                            {onboardingData.contacts
+                              .filter((c: any) => c.name?.trim())
+                              .map((c: any) => c.name.trim())
+                              .join(", ")}
+                          </span>
                         </div>
                       )}
                     </div>
