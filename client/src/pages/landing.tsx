@@ -539,17 +539,9 @@ export default function Landing() {
           
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
             <div className="text-center">
-              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-card border shadow-xl mb-4 max-w-[200px] mx-auto">
-                <video 
-                  src={checkInVideo} 
-                  autoPlay 
-                  loop 
-                  muted 
-                  playsInline
-                  aria-label="Demo video showing how easy check-ins work in the aok app"
-                  className="w-full h-full object-cover pointer-events-none"
-                  data-testid="video-checkin"
-                />
+              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl mb-4 max-w-[200px] mx-auto flex flex-col items-center justify-center p-6">
+                <Check className="h-20 w-20 text-green-600 mb-4" strokeWidth={3} />
+                <span className="text-gray-800 dark:text-gray-200 font-semibold text-lg">you're aok</span>
               </div>
               <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-checkin">Easy Check-Ins</h4>
               <p className="text-xs md:text-sm text-muted-foreground">One tap to confirm you're aok</p>
