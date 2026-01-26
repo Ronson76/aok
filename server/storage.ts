@@ -515,6 +515,8 @@ class DatabaseStorage implements IStorage {
         alertsEnabled: true,
         pushStatus: "unknown",
         redAlertEnabled: false,
+        additionalInfo: null,
+        livingSituation: null,
       };
     }
 
@@ -528,6 +530,8 @@ class DatabaseStorage implements IStorage {
       alertsEnabled: row.alertsEnabled,
       pushStatus: (row.pushStatus as "unknown" | "enabled" | "declined") || "unknown",
       redAlertEnabled: row.redAlertEnabled ?? false,
+      additionalInfo: row.additionalInfo || null,
+      livingSituation: row.livingSituation || null,
     };
   }
 
@@ -538,6 +542,8 @@ class DatabaseStorage implements IStorage {
     if (updates.alertsEnabled !== undefined) dbUpdates.alertsEnabled = updates.alertsEnabled;
     if (updates.pushStatus !== undefined) dbUpdates.pushStatus = updates.pushStatus;
     if (updates.redAlertEnabled !== undefined) dbUpdates.redAlertEnabled = updates.redAlertEnabled;
+    if (updates.additionalInfo !== undefined) dbUpdates.additionalInfo = updates.additionalInfo;
+    if (updates.livingSituation !== undefined) dbUpdates.livingSituation = updates.livingSituation;
     
     // Handle schedule start time - this is the initial check-in time
     if (updates.scheduleStartTime !== undefined) {
@@ -711,7 +717,11 @@ class DatabaseStorage implements IStorage {
       
       try {
         // Send email and SMS alerts
-        const { emailsSent, emailsFailed, smsSent, smsFailed } = await sendMissedCheckInAlert(contactsToAlert, user);
+        const { emailsSent, emailsFailed, smsSent, smsFailed } = await sendMissedCheckInAlert(
+          contactsToAlert, 
+          user,
+          row.additionalInfo
+        );
         
         // Send voice calls to landline contacts
         const { callsMade, callsFailed } = await sendVoiceAlerts(contactsToAlert, user, 'missed_checkin');

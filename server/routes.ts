@@ -1197,7 +1197,13 @@ export async function registerRoutes(
       }
       
       // Send email and SMS alerts
-      const alertResult = await sendEmergencyAlert(contacts, user, location);
+      const alertResult = await sendEmergencyAlert(
+        contacts, 
+        user, 
+        location,
+        false, // isLocationUpdate
+        userSettings?.additionalInfo
+      );
       
       // Send voice calls to landline contacts
       const voiceResult = await sendVoiceAlerts(contacts, user, 'emergency');
