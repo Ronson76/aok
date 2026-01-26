@@ -151,25 +151,25 @@ export default function Landing() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <ShieldCheck className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
-              <span className="text-base sm:text-xl font-bold text-green-600">aok</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-7 w-7 text-green-600" />
+              <span className="text-lg font-bold text-green-600">aok</span>
             </div>
-            <div className="h-6 sm:h-8 w-px bg-muted-foreground/30" />
+            <div className="h-6 w-px bg-muted-foreground/30" />
             <a 
               href="https://health-insight-engine.replit.app" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex items-center gap-1 sm:gap-1.5"
+              className="flex items-center gap-1.5"
               data-testid="link-health-insight"
             >
-              <div className="relative h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center">
-                <div className="w-3.5 sm:w-4 h-1 sm:h-1.5 bg-green-600 absolute rounded-sm" />
-                <div className="w-1 sm:w-1.5 h-3.5 sm:h-4 bg-green-600 absolute rounded-sm" />
-                <Heart className="h-2 w-2 sm:h-2.5 sm:w-2.5 text-green-600 absolute -bottom-0.5 -right-0.5" fill="currentColor" />
+              <div className="relative h-4 w-4 flex items-center justify-center">
+                <div className="w-3 h-1 bg-green-600 absolute rounded-sm" />
+                <div className="w-1 h-3 bg-green-600 absolute rounded-sm" />
+                <Heart className="h-1.5 w-1.5 text-green-600 absolute -bottom-0.5 -right-0.5" fill="currentColor" />
               </div>
-              <span className="text-[9px] sm:text-[10px] font-medium text-green-600">wellbeing-ai</span>
+              <span className="text-[10px] font-medium text-green-600">wellbeing-ai</span>
             </a>
           </div>
           <nav className="hidden md:flex items-center gap-6">
@@ -202,7 +202,7 @@ export default function Landing() {
               </Button>
             ) : (
               <Link href="/login">
-                <Button data-testid="button-sign-in">Sign In</Button>
+                <Button size="sm" data-testid="button-sign-in">Sign In</Button>
               </Link>
             )}
             <DropdownMenu>
