@@ -322,7 +322,7 @@ export default function Onboarding() {
         </div>
       </div>
 
-      <div className="flex-1 px-4 py-4 overflow-y-auto">
+      <div className="flex-1 px-4 py-4 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-muted-foreground/50 [&::-webkit-scrollbar-thumb]:rounded-full">
         <div className="max-w-md mx-auto">
           {renderStep()}
         </div>
