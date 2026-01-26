@@ -883,9 +883,20 @@ export default function Dashboard() {
           <CardContent>
             {status?.lastCheckIn ? (
               <div className="space-y-1">
-                <p className="text-lg font-semibold" data-testid="text-last-checkin-date">
-                  {format(new Date(status.lastCheckIn), "d MMMM yyyy")}
-                </p>
+                {status.streak && status.streak > 0 ? (
+                  <>
+                    <p className="text-lg font-semibold" data-testid="text-last-checkin-time">
+                      {format(new Date(status.lastCheckIn), "h:mm a")}
+                    </p>
+                    <p className="text-sm text-muted-foreground" data-testid="text-last-checkin-date">
+                      {format(new Date(status.lastCheckIn), "d MMMM yyyy")}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-lg font-semibold" data-testid="text-last-checkin-date">
+                    {format(new Date(status.lastCheckIn), "d MMMM yyyy")}
+                  </p>
+                )}
               </div>
             ) : (
               <p className="text-muted-foreground">No check-ins yet</p>
