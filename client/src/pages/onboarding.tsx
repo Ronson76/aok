@@ -314,7 +314,7 @@ export default function Onboarding() {
         </div>
       </header>
 
-      <div className="px-4 py-3 bg-background">
+      <div className="sticky top-[72px] z-40 px-4 py-3 bg-background border-b">
         <div className="flex justify-between items-center text-sm text-muted-foreground mb-2">
           <span data-testid="text-step-indicator">Step {currentStep} of {TOTAL_STEPS}</span>
           <span data-testid="text-progress-percent">{progress}%</span>
@@ -322,7 +322,7 @@ export default function Onboarding() {
         <Progress value={progress} className="h-2" data-testid="progress-bar" />
       </div>
 
-      <div className="flex-1 px-4 pt-4 pb-6 overflow-y-auto">
+      <div className="flex-1 px-4 pt-6 pb-6 overflow-y-auto">
         <div className="max-w-md mx-auto">
           {renderStep()}
         </div>
