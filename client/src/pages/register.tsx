@@ -275,18 +275,36 @@ export default function Register() {
           
           await apiRequest("PATCH", "/api/settings", settingsUpdate);
           
-          // Create primary contact from onboarding data
-          if (onboardingData.contactName && onboardingData.contactEmail) {
+          // Create contacts from onboarding data (from the contacts array)
+          if (onboardingData.contacts && Array.isArray(onboardingData.contacts)) {
+            const validContacts = onboardingData.contacts.filter((c: any) => 
+              c.name?.trim() && c.email?.trim()
+            );
+            
+            for (let i = 0; i < validContacts.length; i++) {
+              const contact = validContacts[i];
+              try {
+                await apiRequest("POST", "/api/contacts", {
+                  name: contact.name.trim(),
+                  email: contact.email.trim(),
+                  phone: contact.phone || "",
+                  landline: contact.landline || "",
+                  isPrimary: i === 0, // First contact is primary
+                });
+                console.log(`Contact ${i + 1} created from onboarding:`, contact.name);
+              } catch (contactError) {
+                console.log(`Failed to create contact ${i + 1}:`, contactError);
+              }
+            }
+          }
+          
+          // Enable tracking if location was granted during onboarding
+          if (onboardingData.locationPermission === "granted") {
             try {
-              await apiRequest("POST", "/api/contacts", {
-                name: onboardingData.contactName,
-                email: onboardingData.contactEmail,
-                phone: onboardingData.contactPhone || "",
-                isPrimary: true,
-              });
-              console.log("Primary contact created from onboarding data");
-            } catch (contactError) {
-              console.log("Failed to create primary contact:", contactError);
+              await apiRequest("PATCH", "/api/settings", { trackingEnabled: true });
+              console.log("Tracking enabled from location permission");
+            } catch (trackingError) {
+              console.log("Failed to enable tracking:", trackingError);
             }
           }
           
