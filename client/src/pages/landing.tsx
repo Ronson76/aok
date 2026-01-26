@@ -555,41 +555,51 @@ export default function Landing() {
           
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
             <div className="text-center">
-              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl mb-4 max-w-[200px] mx-auto flex flex-col items-center justify-center p-6">
-                <div className="animate-pulse">
-                  <Check className="h-20 w-20 text-green-600 mb-4 animate-bounce" strokeWidth={3} style={{ animationDuration: '2s' }} />
+              <div className="relative aspect-[9/19] rounded-[2.5rem] overflow-hidden bg-gray-900 border-[3px] border-gray-800 shadow-xl mb-4 max-w-[200px] mx-auto">
+                {/* Phone notch */}
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-5 bg-black rounded-full z-10" />
+                {/* Screen content */}
+                <div className="absolute inset-1 rounded-[2rem] bg-white dark:bg-gray-900 flex flex-col items-center justify-center p-6">
+                  <div className="animate-pulse">
+                    <Check className="h-20 w-20 text-green-600 mb-4 animate-bounce" strokeWidth={3} style={{ animationDuration: '2s' }} />
+                  </div>
+                  <span className="text-gray-800 dark:text-gray-200 font-semibold text-lg animate-pulse" style={{ animationDuration: '3s' }}>you're aok</span>
                 </div>
-                <span className="text-gray-800 dark:text-gray-200 font-semibold text-lg animate-pulse" style={{ animationDuration: '3s' }}>you're aok</span>
               </div>
               <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-checkin">Easy Check-Ins</h4>
               <p className="text-xs md:text-sm text-muted-foreground">One tap to confirm you're aok</p>
             </div>
             
             <div className="text-center">
-              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl mb-4 max-w-[200px] mx-auto flex flex-col items-center justify-center p-4 gap-3">
-                <div className="flex items-center gap-3 w-full px-2 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg animate-pulse" style={{ animationDelay: '0s', animationDuration: '2s' }}>
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <MessageCircle className="h-4 w-4 text-white" />
+              <div className="relative aspect-[9/19] rounded-[2.5rem] overflow-hidden bg-gray-900 border-[3px] border-gray-800 shadow-xl mb-4 max-w-[200px] mx-auto">
+                {/* Phone notch */}
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-5 bg-black rounded-full z-10" />
+                {/* Screen content */}
+                <div className="absolute inset-1 rounded-[2rem] bg-white dark:bg-gray-900 flex flex-col items-center justify-center p-4 gap-2">
+                  <div className="flex items-center gap-2 w-full px-2 py-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg animate-pulse" style={{ animationDelay: '0s', animationDuration: '2s' }}>
+                    <div className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <MessageCircle className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    <span className="text-[10px] text-gray-700 dark:text-gray-300 font-medium">WhatsApp Alert</span>
                   </div>
-                  <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">WhatsApp Alert</span>
-                </div>
-                <div className="flex items-center gap-3 w-full px-2 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg animate-pulse" style={{ animationDelay: '0.5s', animationDuration: '2s' }}>
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <MessageSquare className="h-4 w-4 text-white" />
+                  <div className="flex items-center gap-2 w-full px-2 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg animate-pulse" style={{ animationDelay: '0.5s', animationDuration: '2s' }}>
+                    <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <MessageSquare className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    <span className="text-[10px] text-gray-700 dark:text-gray-300 font-medium">SMS Alert</span>
                   </div>
-                  <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">SMS Alert</span>
-                </div>
-                <div className="flex items-center gap-3 w-full px-2 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg animate-pulse" style={{ animationDelay: '1s', animationDuration: '2s' }}>
-                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Mail className="h-4 w-4 text-white" />
+                  <div className="flex items-center gap-2 w-full px-2 py-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg animate-pulse" style={{ animationDelay: '1s', animationDuration: '2s' }}>
+                    <div className="w-7 h-7 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Mail className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    <span className="text-[10px] text-gray-700 dark:text-gray-300 font-medium">Email Alert</span>
                   </div>
-                  <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">Email Alert</span>
-                </div>
-                <div className="flex items-center gap-3 w-full px-2 py-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg animate-pulse" style={{ animationDelay: '1.5s', animationDuration: '2s' }}>
-                  <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Phone className="h-4 w-4 text-white" />
+                  <div className="flex items-center gap-2 w-full px-2 py-1.5 bg-orange-50 dark:bg-orange-900/20 rounded-lg animate-pulse" style={{ animationDelay: '1.5s', animationDuration: '2s' }}>
+                    <div className="w-7 h-7 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Phone className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    <span className="text-[10px] text-gray-700 dark:text-gray-300 font-medium">Phone Call</span>
                   </div>
-                  <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">Phone Call</span>
                 </div>
               </div>
               <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-alerts">Multi-Channel Alerts</h4>
@@ -597,17 +607,22 @@ export default function Landing() {
             </div>
             
             <div className="text-center">
-              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-card border shadow-xl mb-4 max-w-[200px] mx-auto">
-                <video 
-                  src={locationVideo} 
-                  autoPlay 
-                  loop 
-                  muted 
-                  playsInline
-                  aria-label="Demo video showing GPS location tracking and sharing"
-                  className="w-full h-full object-cover pointer-events-none"
-                  data-testid="video-location"
-                />
+              <div className="relative aspect-[9/19] rounded-[2.5rem] overflow-hidden bg-gray-900 border-[3px] border-gray-800 shadow-xl mb-4 max-w-[200px] mx-auto">
+                {/* Phone notch */}
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-5 bg-black rounded-full z-10" />
+                {/* Screen content */}
+                <div className="absolute inset-1 rounded-[2rem] overflow-hidden">
+                  <video 
+                    src={locationVideo} 
+                    autoPlay 
+                    loop 
+                    muted 
+                    playsInline
+                    aria-label="Demo video showing GPS location tracking and sharing"
+                    className="w-full h-full object-cover pointer-events-none"
+                    data-testid="video-location"
+                  />
+                </div>
               </div>
               <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-location">GPS Location Sharing</h4>
               <p className="text-xs md:text-sm text-muted-foreground">Precise what3words addresses</p>
@@ -621,13 +636,18 @@ export default function Landing() {
                 className="block"
                 data-testid="link-wellbeing-feature"
               >
-                <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-black border border-green-600/30 shadow-xl mb-4 max-w-[200px] mx-auto flex flex-col items-center justify-center p-6">
-                  <div className="relative h-16 w-16 mb-4 flex items-center justify-center animate-pulse" style={{ animationDuration: '2s' }}>
-                    <div className="w-14 h-4 bg-green-600 absolute rounded-md" />
-                    <div className="w-4 h-14 bg-green-600 absolute rounded-md" />
-                    <Heart className="h-4 w-4 text-green-600 absolute -bottom-1 -right-1 animate-bounce" style={{ animationDuration: '1.5s' }} fill="currentColor" />
+                <div className="relative aspect-[9/19] rounded-[2.5rem] overflow-hidden bg-gray-900 border-[3px] border-gray-800 shadow-xl mb-4 max-w-[200px] mx-auto">
+                  {/* Phone notch */}
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-5 bg-black rounded-full z-10" />
+                  {/* Screen content */}
+                  <div className="absolute inset-1 rounded-[2rem] bg-black border border-green-600/30 flex flex-col items-center justify-center p-6">
+                    <div className="relative h-16 w-16 mb-4 flex items-center justify-center animate-pulse" style={{ animationDuration: '2s' }}>
+                      <div className="w-14 h-4 bg-green-600 absolute rounded-md" />
+                      <div className="w-4 h-14 bg-green-600 absolute rounded-md" />
+                      <Heart className="h-4 w-4 text-green-600 absolute -bottom-1 -right-1 animate-bounce" style={{ animationDuration: '1.5s' }} fill="currentColor" />
+                    </div>
+                    <p className="text-gray-400 text-xs text-center leading-relaxed animate-pulse" style={{ animationDuration: '3s' }}>AI-powered health advice at your fingertips</p>
                   </div>
-                  <p className="text-gray-400 text-xs text-center leading-relaxed animate-pulse" style={{ animationDuration: '3s' }}>AI-powered health advice at your fingertips</p>
                 </div>
               </a>
               <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-wellbeing">Built-in Wellbeing App</h4>
