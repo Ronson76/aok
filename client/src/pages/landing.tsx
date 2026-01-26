@@ -247,13 +247,9 @@ export default function Landing() {
         <div className="container mx-auto max-w-6xl relative">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
                 <Shield className="h-4 w-4" />
                 Personal Safety Made Simple
-              </div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium mb-6 ml-0 sm:ml-2">
-                <Sparkles className="h-3 w-3" />
-                The only safety app with built-in wellbeing support
               </div>
               <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
                 Stay Safe.<br />
@@ -261,7 +257,7 @@ export default function Landing() {
               </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-lg">
                 The personal safety check-in app that alerts your emergency contacts 
-                via email, SMS, and phone calls if something happens to you — plus instant access to AI-powered health advice through our sister app.
+                via email, SMS, and phone calls if something happens to you — plus instant access to AI-powered health advice.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/onboarding">
