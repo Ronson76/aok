@@ -20,7 +20,8 @@ import {
 import { 
   ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail, 
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
-  ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles
+  ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles,
+  MessageCircle, MessageSquare
 } from "lucide-react";
 import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
@@ -548,20 +549,34 @@ export default function Landing() {
             </div>
             
             <div className="text-center">
-              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-card border shadow-xl mb-4 max-w-[200px] mx-auto">
-                <video 
-                  src={alertsVideo} 
-                  autoPlay 
-                  loop 
-                  muted 
-                  playsInline
-                  aria-label="Demo video showing multi-channel alert notifications"
-                  className="w-full h-full object-cover pointer-events-none"
-                  data-testid="video-alerts"
-                />
+              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl mb-4 max-w-[200px] mx-auto flex flex-col items-center justify-center p-4 gap-3">
+                <div className="flex items-center gap-3 w-full px-2 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <MessageCircle className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">WhatsApp Alert</span>
+                </div>
+                <div className="flex items-center gap-3 w-full px-2 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <MessageSquare className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">SMS Alert</span>
+                </div>
+                <div className="flex items-center gap-3 w-full px-2 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Mail className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">Email Alert</span>
+                </div>
+                <div className="flex items-center gap-3 w-full px-2 py-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                  <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Phone className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">Phone Call</span>
+                </div>
               </div>
               <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-alerts">Multi-Channel Alerts</h4>
-              <p className="text-xs md:text-sm text-muted-foreground">Email, SMS, and phone calls</p>
+              <p className="text-xs md:text-sm text-muted-foreground">Email, SMS, WhatsApp, and calls</p>
             </div>
             
             <div className="text-center">
