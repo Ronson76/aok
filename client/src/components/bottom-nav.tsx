@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, Users, History, Settings, Building2, TrendingUp, PawPrint, FileText, MoreHorizontal, Lock } from "lucide-react";
+import { Home, Users, History, Settings, Building2, TrendingUp, PawPrint, FileText, Heart, Lock } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -117,10 +117,10 @@ export function BottomNav() {
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                data-testid="nav-more"
+                data-testid="nav-wellbeing"
               >
-                <MoreHorizontal className={`h-5 w-5 ${isMoreActive ? "text-primary" : ""}`} />
-                <span className="text-xs font-medium">More</span>
+                <Heart className={`h-5 w-5 ${isMoreActive ? "text-primary" : ""}`} />
+                <span className="text-xs font-medium">Wellbeing</span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 mb-2">
@@ -135,7 +135,7 @@ export function BottomNav() {
                         href={feature.path}
                         className={`flex items-center gap-3 cursor-pointer ${isActive ? "text-primary" : ""}`}
                         onClick={() => setMoreOpen(false)}
-                        data-testid={`nav-more-${feature.label.toLowerCase()}`}
+                        data-testid={`nav-wellbeing-${feature.label.toLowerCase()}`}
                       >
                         <Icon className="h-4 w-4" />
                         <span>{feature.label}</span>
@@ -148,7 +148,7 @@ export function BottomNav() {
                       key={feature.path} 
                       disabled 
                       className="flex items-center gap-3 opacity-50"
-                      data-testid={`nav-more-${feature.label.toLowerCase()}-disabled`}
+                      data-testid={`nav-wellbeing-${feature.label.toLowerCase()}-disabled`}
                     >
                       <Icon className="h-4 w-4" />
                       <span>{feature.label}</span>
@@ -157,6 +157,39 @@ export function BottomNav() {
                   );
                 }
               })}
+              
+              {/* Wellbeing-ai external link */}
+              {isRegistrationComplete ? (
+                <DropdownMenuItem asChild>
+                  <a
+                    href="https://health-insight-engine.replit.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 cursor-pointer text-green-600"
+                    onClick={() => setMoreOpen(false)}
+                    data-testid="nav-wellbeing-ai"
+                  >
+                    <div className="relative h-4 w-4 flex items-center justify-center">
+                      <div className="w-3 h-1 bg-green-600 absolute rounded-sm" />
+                      <div className="w-1 h-3 bg-green-600 absolute rounded-sm" />
+                    </div>
+                    <span>wellbeing-ai</span>
+                  </a>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem 
+                  disabled 
+                  className="flex items-center gap-3 opacity-50"
+                  data-testid="nav-wellbeing-ai-disabled"
+                >
+                  <div className="relative h-4 w-4 flex items-center justify-center">
+                    <div className="w-3 h-1 bg-muted-foreground absolute rounded-sm" />
+                    <div className="w-1 h-3 bg-muted-foreground absolute rounded-sm" />
+                  </div>
+                  <span>wellbeing-ai</span>
+                  <Lock className="h-3 w-3 ml-auto" />
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
