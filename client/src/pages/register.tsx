@@ -622,6 +622,28 @@ export default function Register() {
                           </span>
                         </div>
                       )}
+                      {onboardingData?.scheduleStartTime && (
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                          <span className="text-sm text-muted-foreground">Check-in starts</span>
+                          <span className="text-sm font-medium" data-testid="text-schedule-time">
+                            {(() => {
+                              const [hours, minutes] = onboardingData.scheduleStartTime.split(':');
+                              const hour = parseInt(hours, 10);
+                              const ampm = hour >= 12 ? 'pm' : 'am';
+                              const hour12 = hour % 12 || 12;
+                              return `${hour12}:${minutes}${ampm}`;
+                            })()}
+                          </span>
+                        </div>
+                      )}
+                      {onboardingData?.intervalHours && (
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                          <span className="text-sm text-muted-foreground">Check-in frequency</span>
+                          <span className="text-sm font-medium" data-testid="text-check-in-frequency">
+                            Every {onboardingData.intervalHours} {onboardingData.intervalHours === 1 ? 'hour' : 'hours'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
