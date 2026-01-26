@@ -198,7 +198,12 @@ export default function Onboarding() {
   };
 
   const handleComplete = () => {
-    localStorage.setItem("onboardingData", JSON.stringify(data));
+    // Save termsAcceptedAt timestamp when completing onboarding
+    const dataWithTerms = {
+      ...data,
+      termsAcceptedAt: new Date().toISOString(),
+    };
+    localStorage.setItem("onboardingData", JSON.stringify(dataWithTerms));
     setLocation("/register?onboarded=true");
   };
 

@@ -158,7 +158,18 @@ export default function Register() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: InsertUser) => {
-      const res = await apiRequest("POST", "/api/auth/register", data);
+      // Include termsAcceptedAt from onboarding data if available
+      const onboardingDataStr = localStorage.getItem("onboardingData");
+      let termsAcceptedAt = null;
+      if (onboardingDataStr) {
+        const onboardingData = JSON.parse(onboardingDataStr);
+        termsAcceptedAt = onboardingData.termsAcceptedAt;
+      }
+      
+      const res = await apiRequest("POST", "/api/auth/register", {
+        ...data,
+        termsAcceptedAt,
+      });
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to register");
