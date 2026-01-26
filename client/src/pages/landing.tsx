@@ -267,16 +267,16 @@ export default function Landing() {
                   </Button>
                 </Link>
               </div>
-              <div className="flex flex-wrap justify-center md:justify-start items-center gap-x-6 gap-y-2 mt-8 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4 mt-8 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1.5">
                   <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                   <span>7 day free trial</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                   <span>No commitment</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                   <span>Set up in 2 mins</span>
                 </div>
