@@ -815,10 +815,61 @@ function Step7ContactDistance({ data, setData }: { data: OnboardingData; setData
 }
 
 function Step8Summary({ data }: { data: OnboardingData }) {
+  // Get scenario content based on contact distance
+  const getScenarioContent = () => {
+    const contactName = formatContactNames(data.contacts, "your contact");
+    const contactNameCapitalized = formatContactNames(data.contacts, "Your contact");
+    
+    switch (data.contactDistance) {
+      case "lives-with":
+        return {
+          stat: "Even people living together can go hours without checking on each other",
+          scenario: "It's a weekday morning. Your housemate has left for work. You have a fall and can't easily reach your phone.",
+          withoutDelay: `Hours before ${contactName} returns home and realises you need help`,
+          withoutDetail: "You're alone all day with no way to call for help",
+          withAokDetail: `${contactNameCapitalized} ${data.contacts.filter(c => c.name).length === 1 ? "gets" : "get"} an instant alert - even while at work`
+        };
+      case "same-city":
+        return {
+          stat: "43% of emergencies at home happen when we're alone",
+          scenario: "It's Wednesday morning. You have a fall and can't easily reach your phone.",
+          withoutDelay: `3-6 hours before ${contactName} realises something is wrong`,
+          withoutDetail: "Hours pass with no one knowing you need help",
+          withAokDetail: `${contactNameCapitalized} ${data.contacts.filter(c => c.name).length === 1 ? "is" : "are"} alerted and can reach you within 30 minutes`
+        };
+      case "few-hours":
+        return {
+          stat: "When contacts live hours away, delays in getting help can be critical",
+          scenario: "It's Wednesday morning. You have a fall and can't easily reach your phone.",
+          withoutDelay: `6-12 hours before ${contactName} starts to worry`,
+          withoutDetail: "By the time they realise, precious time has been lost",
+          withAokDetail: `${contactNameCapitalized} ${data.contacts.filter(c => c.name).length === 1 ? "gets" : "get"} an instant alert and can arrange local help`
+        };
+      case "different-country":
+        return {
+          stat: "When loved ones are overseas, missed calls can go unnoticed for days",
+          scenario: "It's Wednesday morning. You have a fall and can't easily reach your phone.",
+          withoutDelay: `24-48 hours before ${contactName} realises you're not responding`,
+          withoutDetail: "Time zone differences mean delayed concern",
+          withAokDetail: `${contactNameCapitalized} ${data.contacts.filter(c => c.name).length === 1 ? "gets" : "get"} an instant alert regardless of time zone`
+        };
+      default:
+        return {
+          stat: "23% of young adults living alone have no local emergency contact",
+          scenario: "It's Wednesday morning. You have a fall and can't easily reach your phone.",
+          withoutDelay: `6-12 hours before ${contactName} realises you need help`,
+          withoutDetail: "Hours pass with no one knowing",
+          withAokDetail: `${contactNameCapitalized} ${data.contacts.filter(c => c.name).length === 1 ? "gets" : "get"} an instant alert`
+        };
+    }
+  };
+
+  const content = getScenarioContent();
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl sm:text-2xl font-bold" data-testid="text-summary-title">Here's what we've built for you, {data.name}</h1>
-      <p className="text-muted-foreground">23% of young adults living alone have no local emergency contact</p>
+      <p className="text-muted-foreground">{content.stat}</p>
 
       <Card className="border-0 overflow-hidden">
         <div className="bg-primary text-primary-foreground p-3">
@@ -826,7 +877,7 @@ function Step8Summary({ data }: { data: OnboardingData }) {
         </div>
         <CardContent className="p-4">
           <p className="mb-4" data-testid="text-scenario">
-            It's Wednesday morning. You have a fall and can't easily reach your phone.
+            {content.scenario}
           </p>
           
           <div className="space-y-4">
@@ -838,11 +889,11 @@ function Step8Summary({ data }: { data: OnboardingData }) {
               <ul className="space-y-1 text-sm">
                 <li className="flex items-center gap-2">
                   <X className="h-4 w-4 text-destructive" />
-                  6-12 hours before {formatContactNames(data.contacts, "anyone")} realises you need help
+                  {content.withoutDelay}
                 </li>
                 <li className="flex items-center gap-2">
                   <X className="h-4 w-4 text-destructive" />
-                  Hours pass with no one knowing
+                  {content.withoutDetail}
                 </li>
               </ul>
             </div>
@@ -859,11 +910,11 @@ function Step8Summary({ data }: { data: OnboardingData }) {
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-500" />
-                  {formatContactNames(data.contacts, "Your contacts")} {data.contacts.filter(c => c.name).length === 1 ? "gets" : "get"} an instant alert
+                  {content.withAokDetail}
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-500" />
-                  Timely support within hours
+                  Timely support when it matters most
                 </li>
               </ul>
             </div>
