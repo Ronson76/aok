@@ -11,7 +11,7 @@ import {
   MoodEntry, InsertMoodEntry, Pet, InsertPet, UpdatePet, DigitalDocument, InsertDigitalDocument, UpdateDigitalDocument
 } from "@shared/schema";
 import { ensureDb } from "./db";
-import { eq, desc, and, isNull, lt, gte, count, sql } from "drizzle-orm";
+import { eq, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql } from "drizzle-orm";
 import { randomUUID, randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
 import { sendMissedCheckInAlert, sendVoiceAlerts, sendPushNotification } from "./notifications";
@@ -441,6 +441,35 @@ class DatabaseStorage implements IStorage {
     }
     
     return result.length;
+  }
+
+  async getContactsNeedingReminder(): Promise<Contact[]> {
+    // Get contacts that:
+    // 1. Have never been confirmed (confirmedAt is null)
+    // 2. Have phone number (for SMS)
+    // 3. Have expiry within 1 hour
+    // 4. Have not had a reminder sent yet
+    const now = new Date();
+    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+    
+    const result = await getDb().select().from(contacts)
+      .where(
+        and(
+          isNull(contacts.confirmedAt),
+          isNotNull(contacts.phone),
+          gt(contacts.confirmationExpiry, now),
+          lte(contacts.confirmationExpiry, oneHourFromNow),
+          isNull(contacts.reminderSentAt)
+        )
+      );
+    
+    return result;
+  }
+
+  async markContactReminderSent(contactId: string): Promise<void> {
+    await getDb().update(contacts)
+      .set({ reminderSentAt: new Date() })
+      .where(eq(contacts.id, contactId));
   }
 
   // Check-ins

@@ -633,6 +633,31 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+        {/* Expiring Contact Warning */}
+        {status?.expiringContacts && status.expiringContacts.length > 0 && (
+          <Card className="border-destructive border-2 bg-destructive/10">
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-6 w-6 text-destructive flex-shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-destructive">
+                    Contact confirmation expiring soon
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {status.expiringContacts.map(c => c.name).join(", ")} {status.expiringContacts.length === 1 ? "hasn't" : "haven't"} confirmed yet. 
+                    The confirmation link will expire within the hour.
+                  </p>
+                  <Link href="/app/contacts">
+                    <Button variant="outline" size="sm" className="mt-2">
+                      View Contacts
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Emergency / Red Alert Section */}
         {isRedAlertMode ? (
           <Card className="border-destructive border-2 bg-destructive/20">

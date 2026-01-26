@@ -111,6 +111,7 @@ export const contacts = pgTable("contacts", {
   confirmedAt: timestamp("confirmed_at"),
   confirmationToken: text("confirmation_token"),
   confirmationExpiry: timestamp("confirmation_expiry"),
+  reminderSentAt: timestamp("reminder_sent_at"),
 });
 
 export const insertContactSchema = createInsertSchema(contacts).omit({ id: true, userId: true, isPrimary: true }).extend({
@@ -312,6 +313,7 @@ export interface StatusData {
   streak: number;
   hoursUntilDue: number | null;
   contactCount: number;
+  expiringContacts?: { name: string; expiresAt: string }[];
 }
 
 // User profile (safe to send to frontend, without password)
