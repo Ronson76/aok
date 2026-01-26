@@ -425,6 +425,9 @@ export async function registerRoutes(
         email, password, accountType, name, referenceId, dateOfBirth, 
         mobileNumber, addressLine1, addressLine2, city, postalCode, country 
       } = parsed.data;
+      
+      // Check for terms acceptance from onboarding (passed separately)
+      const termsAcceptedAt = req.body.termsAcceptedAt ? new Date(req.body.termsAcceptedAt) : null;
 
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(email.toLowerCase());
@@ -449,6 +452,7 @@ export async function registerRoutes(
         city,
         postalCode,
         country,
+        termsAcceptedAt,
       });
 
       // Initialize settings for new user

@@ -36,6 +36,7 @@ export interface IStorage {
     city?: string;
     postalCode?: string;
     country?: string;
+    termsAcceptedAt?: Date | null;
   }): Promise<User>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserById(id: string): Promise<User | undefined>;
@@ -155,6 +156,7 @@ class DatabaseStorage implements IStorage {
     city?: string;
     postalCode?: string;
     country?: string;
+    termsAcceptedAt?: Date | null;
   }): Promise<User> {
     const result = await getDb().insert(users).values({
       email: data.email,
@@ -169,6 +171,7 @@ class DatabaseStorage implements IStorage {
       city: data.city || null,
       postalCode: data.postalCode || null,
       country: data.country || null,
+      termsAcceptedAt: data.termsAcceptedAt || null,
     }).returning();
     return result[0];
   }
