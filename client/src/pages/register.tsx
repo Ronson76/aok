@@ -246,6 +246,14 @@ export default function Register() {
             additionalInfoData.loneWorker = onboardingData.loneWorkerData;
           }
           
+          // Health conditions info
+          if (onboardingData.healthConditions && onboardingData.healthConditions.length > 0) {
+            additionalInfoData.healthConditions = {
+              conditions: onboardingData.healthConditions,
+              other: onboardingData.healthConditionsOther || ""
+            };
+          }
+          
           // Save additional info if any data was collected
           if (Object.keys(additionalInfoData).length > 0) {
             settingsUpdate.additionalInfo = JSON.stringify(additionalInfoData);

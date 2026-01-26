@@ -843,6 +843,35 @@ function formatAdditionalInfo(additionalInfoJson: string | null): string {
       }
     }
     
+    // Health conditions info
+    if (info.healthConditions) {
+      const healthDetails: string[] = [];
+      const conditionLabels: Record<string, string> = {
+        "fall-concerns": "Fall concerns",
+        "chronic-condition": "Chronic health condition",
+        "surgery": "Recent surgery or recovery",
+        "mobility": "Limited mobility",
+        "other": "Other"
+      };
+      
+      if (info.healthConditions.conditions && info.healthConditions.conditions.length > 0) {
+        const conditionNames = info.healthConditions.conditions
+          .filter((c: string) => c !== "other")
+          .map((c: string) => conditionLabels[c] || c);
+        if (conditionNames.length > 0) {
+          healthDetails.push(`Conditions: ${conditionNames.join(', ')}`);
+        }
+      }
+      
+      if (info.healthConditions.other) {
+        healthDetails.push(`Other details: ${info.healthConditions.other}`);
+      }
+      
+      if (healthDetails.length > 0) {
+        sections.push(`HEALTH CONDITIONS:\n  ${healthDetails.join('\n  ')}`);
+      }
+    }
+    
     if (sections.length > 0) {
       return `\n\n--- ADDITIONAL INFORMATION ---\n${sections.join('\n\n')}`;
     }
