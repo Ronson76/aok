@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PasswordInput } from "@/components/password-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Loader2, User, Building2, MapPin, AlertTriangle } from "lucide-react";
+import { ShieldCheck, Loader2, User, Building2, MapPin, AlertTriangle, Info } from "lucide-react";
 import { insertUserSchema, type InsertUser } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -150,14 +150,9 @@ export default function Register() {
     }
   }, [onboardingData, form]);
   
-  // For PWA (mobile app): require location permission (granted or unavailable)
-  // For web browser: allow signup without location (always true)
-  // For users coming from onboarding: they already granted location in step 1
-  const canSubmit = fromOnboarding
-    ? true // Onboarding already handled location permission
-    : isPWA 
-      ? (locationPermission === 'granted' || locationPermission === 'unavailable')
-      : true; // Web browsers can sign up without location
+  // Allow all users to register regardless of location permission
+  // Location can be enabled later in settings if needed
+  const canSubmit = true;
 
   const registerMutation = useMutation({
     mutationFn: async (data: InsertUser) => {
@@ -508,17 +503,17 @@ export default function Register() {
                         </AlertDescription>
                       </Alert>
                     ) : locationPermission === 'denied' ? (
-                      <Alert variant="destructive">
-                        <AlertTriangle className="h-4 w-4" />
+                      <Alert>
+                        <Info className="h-4 w-4" />
                         <AlertDescription>
-                          Location access was denied. Please enable it in your device settings to use aok.
+                          Location access was declined. You can still continue - location can be enabled later in Settings if needed.
                         </AlertDescription>
                       </Alert>
                     ) : locationPermission === 'unavailable' ? (
                       <Alert>
-                        <AlertTriangle className="h-4 w-4" />
+                        <Info className="h-4 w-4" />
                         <AlertDescription>
-                          Location services are not available on this device.
+                          Location is not available on this device. You can still continue - this feature is optional.
                         </AlertDescription>
                       </Alert>
                     ) : (
@@ -554,7 +549,7 @@ export default function Register() {
                     type="button"
                     className="w-full"
                     onClick={handleOrgActivation}
-                    disabled={!referenceId || referenceId.length !== 6 || activateMutation.isPending || (locationPermission !== 'granted' && locationPermission !== 'unavailable')}
+                    disabled={!referenceId || referenceId.length !== 6 || activateMutation.isPending}
                     data-testid="button-org-continue"
                   >
                     {activateMutation.isPending ? (
@@ -562,8 +557,6 @@ export default function Register() {
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Signing in...
                       </>
-                    ) : locationPermission !== 'granted' && locationPermission !== 'unavailable' ? (
-                      "Grant Location Access to Continue"
                     ) : (
                       "Continue"
                     )}
@@ -737,20 +730,17 @@ export default function Register() {
                     </AlertDescription>
                   </Alert>
                 ) : locationPermission === 'denied' ? (
-                  <Alert variant={isPWA ? "destructive" : "default"}>
-                    <AlertTriangle className="h-4 w-4" />
+                  <Alert>
+                    <Info className="h-4 w-4" />
                     <AlertDescription>
-                      {isPWA 
-                        ? "Location access was denied. Please enable it in your device settings to use aok. This is required for the mobile app."
-                        : "Location access was denied. You can still sign up, but emergency alerts will be sent without your location."
-                      }
+                      Location access was declined. You can still continue - location can be enabled later in Settings if needed.
                     </AlertDescription>
                   </Alert>
                 ) : locationPermission === 'unavailable' ? (
                   <Alert>
-                    <AlertTriangle className="h-4 w-4" />
+                    <Info className="h-4 w-4" />
                     <AlertDescription>
-                      Location services are not available on this device. Emergency alerts will be sent without location data.
+                      Location is not available on this device. You can still continue - this feature is optional.
                     </AlertDescription>
                   </Alert>
                 ) : isPWA ? (
