@@ -883,11 +883,8 @@ export default function Dashboard() {
           <CardContent>
             {status?.lastCheckIn ? (
               <div className="space-y-1">
-                <p className="text-lg font-semibold">
-                  {format(new Date(status.lastCheckIn), "h:mm a")}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {format(new Date(status.lastCheckIn), "MMMM d, yyyy")}
+                <p className="text-lg font-semibold" data-testid="text-last-checkin-date">
+                  {format(new Date(status.lastCheckIn), "d MMMM yyyy")}
                 </p>
               </div>
             ) : (
@@ -909,8 +906,8 @@ export default function Dashboard() {
                 <p className="text-2xl font-bold font-mono tracking-tight" data-testid="text-countdown">
                   {countdown || "Due now"}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  {format(new Date(status.nextCheckInDue), "MMMM d, yyyy 'at' h:mm a")}
+                <p className="text-sm text-muted-foreground" data-testid="text-next-checkin-datetime">
+                  {format(new Date(status.nextCheckInDue), "d MMMM yyyy 'at' h:mm a")}
                 </p>
               </div>
             ) : (
