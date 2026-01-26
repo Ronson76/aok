@@ -185,6 +185,14 @@ export default function Onboarding() {
 
   const progress = Math.round((currentStep / TOTAL_STEPS) * 100);
 
+  // Persist onboarding data to localStorage whenever it changes
+  useEffect(() => {
+    // Only save if user has started filling in data (has a name or email)
+    if (data.name || data.email) {
+      localStorage.setItem("onboardingData", JSON.stringify(data));
+    }
+  }, [data]);
+
   const handleNext = () => {
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
