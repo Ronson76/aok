@@ -153,10 +153,10 @@ export default function Landing() {
       <header className="sticky top-0 z-50 bg-background border-b shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2" data-testid="link-logo-home">
               <ShieldCheck className="h-9 w-9 text-green-600" />
               <span className="text-2xl font-bold text-green-600">aok</span>
-            </div>
+            </Link>
             <div className="h-8 w-px bg-muted-foreground/30" />
             <a 
               href="https://health-insight-engine.replit.app" 
@@ -923,10 +923,10 @@ export default function Landing() {
         <div className="container mx-auto max-w-6xl">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
-              <div className="flex items-center gap-2 mb-4">
+              <Link href="/" className="flex items-center gap-2 mb-4" data-testid="link-footer-logo-home">
                 <ShieldCheck className="h-6 w-6 text-green-600" />
                 <span className="font-bold text-green-600">aok</span>
-              </div>
+              </Link>
               <p className="text-sm text-muted-foreground">
                 Your personal safety check-in companion. Stay safe, stay connected.
               </p>

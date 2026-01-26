@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -298,10 +298,10 @@ export default function Onboarding() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-center">
-          <div className="flex items-center gap-2 md:gap-3">
+          <Link href="/" className="flex items-center gap-2 md:gap-3" data-testid="link-logo-home">
             <ShieldCheck className="h-8 w-8 md:h-12 md:w-12 text-green-600" />
             <span className="text-xl md:text-3xl font-bold text-green-600">aok</span>
-          </div>
+          </Link>
         </div>
       </header>
 
@@ -453,23 +453,50 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
-  const handleRequestLocation = () => {
+  const handleRequestLocation = async () => {
     if (!('geolocation' in navigator)) {
       setData({ ...data, locationPermission: 'unavailable' });
       return;
     }
     
     setIsRequestingLocation(true);
+    
+    // Check permission state first (if supported)
+    try {
+      if ('permissions' in navigator) {
+        const permission = await navigator.permissions.query({ name: 'geolocation' });
+        if (permission.state === 'denied') {
+          setData({ ...data, locationPermission: 'denied' });
+          setIsRequestingLocation(false);
+          return;
+        }
+      }
+    } catch {
+      // permissions API not supported (Safari), continue with request
+    }
+    
     navigator.geolocation.getCurrentPosition(
       () => {
         setData({ ...data, locationPermission: 'granted' });
         setIsRequestingLocation(false);
       },
-      () => {
-        setData({ ...data, locationPermission: 'denied' });
+      (error) => {
+        console.log('Location error:', error.code, error.message);
+        // For Safari and other browsers that don't show permission prompt
+        // error.code 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT
+        if (error.code === 1) {
+          setData({ ...data, locationPermission: 'denied' });
+        } else {
+          // For timeout or position unavailable, still allow continuing
+          setData({ ...data, locationPermission: 'unavailable' });
+        }
         setIsRequestingLocation(false);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { 
+        enableHighAccuracy: false, // Safari works better with this off
+        timeout: 15000, // Longer timeout for Safari
+        maximumAge: 60000 // Allow cached position
+      }
     );
   };
 
