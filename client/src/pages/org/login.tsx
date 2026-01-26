@@ -7,18 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Loader2, Building2, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { ShieldCheck, Loader2, Building2, ArrowLeft } from "lucide-react";
 
 export default function OrganizationLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [referenceCode, setReferenceCode] = useState("");
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/auth/login", { email, password });
+      const response = await apiRequest("POST", "/api/auth/org-client-login", { email, referenceCode });
       return response.json();
     },
     onSuccess: async (data) => {
@@ -75,7 +74,7 @@ export default function OrganizationLogin() {
             </div>
             <CardTitle className="text-2xl">Organisation Login</CardTitle>
             <CardDescription>
-              Sign in to manage your organisation's clients and check-ins
+              Sign in a client using their email and reference code
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
@@ -93,33 +92,22 @@ export default function OrganizationLogin() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="pr-10"
-                    autoComplete="off"
-                    data-testid="input-org-password"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    data-testid="button-toggle-password"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                </div>
+                <Label htmlFor="referenceCode">Reference Code</Label>
+                <Input
+                  id="referenceCode"
+                  type="text"
+                  placeholder="e.g. ABC123"
+                  value={referenceCode}
+                  onChange={(e) => setReferenceCode(e.target.value.toUpperCase())}
+                  required
+                  maxLength={6}
+                  className="uppercase tracking-widest text-center font-mono text-lg"
+                  autoComplete="off"
+                  data-testid="input-org-reference"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter the 6-character code sent to the client
+                </p>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
