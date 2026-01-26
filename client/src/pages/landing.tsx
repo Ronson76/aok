@@ -598,10 +598,9 @@ export default function Landing() {
                 data-testid="link-wellbeing-feature"
               >
                 <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-black border border-green-600/30 shadow-xl mb-4 max-w-[200px] mx-auto flex flex-col items-center justify-center p-6">
-                  <div className="relative h-16 w-16 mb-4 flex items-center justify-center">
-                    <div className="w-14 h-4 bg-green-600 absolute rounded-sm" />
-                    <div className="w-4 h-14 bg-green-600 absolute rounded-sm" />
-                    <Heart className="h-6 w-6 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
+                  <div className="relative h-20 w-20 mb-4 flex items-center justify-center">
+                    <div className="w-16 h-5 bg-green-600 absolute rounded-md" />
+                    <div className="w-5 h-16 bg-green-600 absolute rounded-md" />
                   </div>
                   <span className="text-green-600 font-bold text-xl mb-3">wellbeing-ai</span>
                   <p className="text-gray-400 text-xs text-center leading-relaxed">AI-powered health advice at your fingertips</p>
