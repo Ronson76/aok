@@ -547,7 +547,7 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <p className={`text-xs ${data.confirmPassword.length > 0 && data.password === data.confirmPassword ? "text-green-600" : "text-muted-foreground"}`}>
+            <p className={`text-xs ${data.confirmPassword.length > 0 ? (data.password === data.confirmPassword ? "text-green-600" : "text-red-500") : "text-muted-foreground"}`}>
               {data.confirmPassword.length > 0 
                 ? (data.password === data.confirmPassword ? "Passwords match" : "Passwords don't match")
                 : "Enter the same password again."}
