@@ -20,7 +20,7 @@ import {
 import { 
   ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail, 
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
-  ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut
+  ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles
 } from "lucide-react";
 import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
@@ -88,7 +88,7 @@ export default function Landing() {
         { text: "Mood & wellness tracking", icon: TrendingUp },
         { text: "Pet protection profiles", icon: PawPrint },
         { text: "Digital will storage", icon: Scroll },
-        { text: "Wellbeing AI (Health Insight)", icon: Heart },
+        { text: "Wellbeing AI (Exclusive)", icon: Sparkles },
       ],
       cta: "Get Started",
       ctaLink: "/onboarding",
@@ -151,25 +151,25 @@ export default function Landing() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-7 w-7 sm:h-8 sm:w-8 text-green-600" />
-              <span className="text-lg sm:text-xl font-bold text-green-600">aok</span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <ShieldCheck className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
+              <span className="text-base sm:text-xl font-bold text-green-600">aok</span>
             </div>
-            <div className="hidden sm:block h-8 w-px bg-muted-foreground/30" />
+            <div className="h-6 sm:h-8 w-px bg-muted-foreground/30" />
             <a 
               href="https://health-insight-engine.replit.app" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="hidden sm:flex flex-col items-center"
+              className="flex items-center gap-1 sm:gap-1.5"
               data-testid="link-health-insight"
             >
-              <div className="relative h-6 w-6 flex items-center justify-center">
-                <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
-                <div className="w-1.5 h-5 bg-green-600 absolute rounded-sm" />
-                <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
+              <div className="relative h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center">
+                <div className="w-3.5 sm:w-4 h-1 sm:h-1.5 bg-green-600 absolute rounded-sm" />
+                <div className="w-1 sm:w-1.5 h-3.5 sm:h-4 bg-green-600 absolute rounded-sm" />
+                <Heart className="h-2 w-2 sm:h-2.5 sm:w-2.5 text-green-600 absolute -bottom-0.5 -right-0.5" fill="currentColor" />
               </div>
-              <span className="text-[10px] font-medium text-green-600 mt-0.5">wellbeing-ai</span>
+              <span className="text-[9px] sm:text-[10px] font-medium text-green-600">wellbeing-ai</span>
             </a>
           </div>
           <nav className="hidden md:flex items-center gap-6">
@@ -247,9 +247,13 @@ export default function Landing() {
         <div className="container mx-auto max-w-6xl relative">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
                 <Shield className="h-4 w-4" />
                 Personal Safety Made Simple
+              </div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium mb-6 ml-0 sm:ml-2">
+                <Sparkles className="h-3 w-3" />
+                The only safety app with built-in wellbeing support
               </div>
               <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
                 Stay Safe.<br />
@@ -257,7 +261,7 @@ export default function Landing() {
               </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-lg">
                 The personal safety check-in app that alerts your emergency contacts 
-                via email, SMS, and phone calls if something happens to you.
+                via email, SMS, and phone calls if something happens to you — plus instant access to AI-powered health advice through our sister app.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/onboarding">
@@ -531,13 +535,13 @@ export default function Landing() {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Key Features in Motion</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              See how aok keeps you safe with these core features.
+              See how aok keeps you safe — the only safety app with built-in wellbeing support.
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
             <div className="text-center">
-              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-card border shadow-xl mb-4 max-w-[240px] mx-auto">
+              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-card border shadow-xl mb-4 max-w-[200px] mx-auto">
                 <video 
                   src={checkInVideo} 
                   autoPlay 
@@ -549,12 +553,12 @@ export default function Landing() {
                   data-testid="video-checkin"
                 />
               </div>
-              <h4 className="font-semibold mb-1" data-testid="text-feature-checkin">Easy Check-Ins</h4>
-              <p className="text-sm text-muted-foreground">One tap to confirm you're aok</p>
+              <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-checkin">Easy Check-Ins</h4>
+              <p className="text-xs md:text-sm text-muted-foreground">One tap to confirm you're aok</p>
             </div>
             
             <div className="text-center">
-              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-card border shadow-xl mb-4 max-w-[240px] mx-auto">
+              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-card border shadow-xl mb-4 max-w-[200px] mx-auto">
                 <video 
                   src={alertsVideo} 
                   autoPlay 
@@ -566,12 +570,12 @@ export default function Landing() {
                   data-testid="video-alerts"
                 />
               </div>
-              <h4 className="font-semibold mb-1" data-testid="text-feature-alerts">Multi-Channel Alerts</h4>
-              <p className="text-sm text-muted-foreground">Email, SMS, and phone calls</p>
+              <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-alerts">Multi-Channel Alerts</h4>
+              <p className="text-xs md:text-sm text-muted-foreground">Email, SMS, and phone calls</p>
             </div>
             
             <div className="text-center">
-              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-card border shadow-xl mb-4 max-w-[240px] mx-auto">
+              <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-card border shadow-xl mb-4 max-w-[200px] mx-auto">
                 <video 
                   src={locationVideo} 
                   autoPlay 
@@ -583,8 +587,37 @@ export default function Landing() {
                   data-testid="video-location"
                 />
               </div>
-              <h4 className="font-semibold mb-1" data-testid="text-feature-location">GPS Location Sharing</h4>
-              <p className="text-sm text-muted-foreground">Precise what3words addresses</p>
+              <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-location">GPS Location Sharing</h4>
+              <p className="text-xs md:text-sm text-muted-foreground">Precise what3words addresses</p>
+            </div>
+            
+            <div className="text-center">
+              <a 
+                href="https://health-insight-engine.replit.app" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block"
+                data-testid="link-wellbeing-feature"
+              >
+                <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-gradient-to-b from-green-600 to-green-800 border border-green-500 shadow-xl mb-4 max-w-[200px] mx-auto flex flex-col items-center justify-center p-4">
+                  <div className="absolute top-3 left-0 right-0 flex justify-center">
+                    <Badge className="bg-amber-500 text-white text-[10px]">Exclusive</Badge>
+                  </div>
+                  <div className="relative h-12 w-12 mb-3 flex items-center justify-center">
+                    <div className="w-10 h-3 bg-white absolute rounded-sm" />
+                    <div className="w-3 h-10 bg-white absolute rounded-sm" />
+                    <Heart className="h-5 w-5 text-white absolute -bottom-1 -right-1" fill="currentColor" />
+                  </div>
+                  <span className="text-white font-bold text-lg mb-2">wellbeing-ai</span>
+                  <p className="text-green-100 text-xs text-center mb-3">AI-powered health advice at your fingertips</p>
+                  <div className="bg-white/20 rounded-lg px-3 py-2 text-white text-xs text-center">
+                    <Sparkles className="h-3 w-3 inline mr-1" />
+                    Only with aok
+                  </div>
+                </div>
+              </a>
+              <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-wellbeing">Built-in Wellbeing App</h4>
+              <p className="text-xs md:text-sm text-muted-foreground">AI health advice included free</p>
             </div>
           </div>
         </div>
