@@ -49,6 +49,15 @@ interface ContactData {
   landlineCountry: string;
 }
 
+interface PetData {
+  name: string;
+  type: string;
+  nutrition: string;
+  vetName: string;
+  vetPhone: string;
+  emergencyInfo: string;
+}
+
 // Helper function to format multiple contact names
 function formatContactNames(contacts: ContactData[], fallback: string = "your contacts"): string {
   const names = contacts.filter(c => c.name.trim()).map(c => c.name.trim());
@@ -77,6 +86,7 @@ interface OnboardingData {
   contactLandline: string;
   contactLandlineCountry: string;
   contacts: ContactData[];
+  pets: PetData[];
   whatMatters: string[];
   healthConditions: string[];
   checkInFrequency: string;
@@ -114,6 +124,9 @@ export default function Onboarding() {
     contacts: [
       { name: "", email: "", phone: "", phoneCountry: "+44", landline: "", landlineCountry: "+44" },
       { name: "", email: "", phone: "", phoneCountry: "+44", landline: "", landlineCountry: "+44" },
+    ],
+    pets: [
+      { name: "", type: "", nutrition: "", vetName: "", vetPhone: "", emergencyInfo: "" },
     ],
     whatMatters: [],
     healthConditions: [],
@@ -709,6 +722,7 @@ function Step6ContactName({ data, setData }: { data: OnboardingData; setData: (d
   };
   
   const labels = relationshipLabels[data.whoWorries] || { singular: "contact", plural: "contacts" };
+  const hasPets = data.livingSituation === "alone-pets";
 
   const updateContactName = (index: number, name: string) => {
     const newContacts = [...data.contacts];
@@ -732,55 +746,203 @@ function Step6ContactName({ data, setData }: { data: OnboardingData; setData: (d
     }
   };
 
+  const updatePet = (index: number, field: keyof PetData, value: string) => {
+    const newPets = [...data.pets];
+    newPets[index] = { ...newPets[index], [field]: value };
+    setData({ ...data, pets: newPets });
+  };
+
+  const addPet = () => {
+    if (data.pets.length < 5) {
+      setData({
+        ...data,
+        pets: [...data.pets, { name: "", type: "", nutrition: "", vetName: "", vetPhone: "", emergencyInfo: "" }]
+      });
+    }
+  };
+
+  const removePet = (index: number) => {
+    if (data.pets.length > 1) {
+      const newPets = data.pets.filter((_, i) => i !== index);
+      setData({ ...data, pets: newPets });
+    }
+  };
+
+  const petTypes = [
+    { value: "dog", label: "Dog" },
+    { value: "cat", label: "Cat" },
+    { value: "bird", label: "Bird" },
+    { value: "rabbit", label: "Rabbit" },
+    { value: "fish", label: "Fish" },
+    { value: "hamster", label: "Hamster" },
+    { value: "guinea-pig", label: "Guinea Pig" },
+    { value: "reptile", label: "Reptile" },
+    { value: "other", label: "Other" },
+  ];
+
   return (
-    <Card className="border-0 shadow-lg">
-      <CardContent className="p-4 sm:p-6">
-        <h1 className="text-xl sm:text-2xl font-bold mb-2" data-testid="text-contact-title">Who are your {labels.plural}?</h1>
-        <p className="text-muted-foreground mb-6">Enter their names. You can add a second contact if you wish.</p>
-        
-        <div className="space-y-3">
-          {data.contacts.map((contact, index) => (
-            <div key={index} className="flex gap-2 items-center">
-              <div className="flex-1">
-                <label className="text-sm text-muted-foreground mb-1 block">
-                  {index === 0 ? "Primary contact" : `Contact ${index + 1}`}
-                </label>
-                <Input
-                  value={contact.name}
-                  onChange={(e) => updateContactName(index, e.target.value)}
-                  placeholder={index === 0 ? "Jessica" : "Name"}
-                  className="text-lg"
-                  data-testid={`input-contact-name-${index}`}
-                />
+    <div className="space-y-4">
+      <Card className="border-0 shadow-lg">
+        <CardContent className="p-4 sm:p-6">
+          <h1 className="text-xl sm:text-2xl font-bold mb-2" data-testid="text-contact-title">Who are your {labels.plural}?</h1>
+          <p className="text-muted-foreground mb-6">Enter their names. You can add a second contact if you wish.</p>
+          
+          <div className="space-y-3">
+            {data.contacts.map((contact, index) => (
+              <div key={index} className="flex gap-2 items-center">
+                <div className="flex-1">
+                  <label className="text-sm text-muted-foreground mb-1 block">
+                    {index === 0 ? "Primary contact" : `Contact ${index + 1}`}
+                  </label>
+                  <Input
+                    value={contact.name}
+                    onChange={(e) => updateContactName(index, e.target.value)}
+                    placeholder={index === 0 ? "Jessica" : "Name"}
+                    className="text-lg"
+                    data-testid={`input-contact-name-${index}`}
+                  />
+                </div>
+                {index >= 2 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeContact(index)}
+                    className="mt-5"
+                    data-testid={`button-remove-contact-${index}`}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
-              {index >= 2 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeContact(index)}
-                  className="mt-5"
-                  data-testid={`button-remove-contact-${index}`}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
+            ))}
+          </div>
+          
+          {data.contacts.length < 5 && (
+            <Button
+              variant="outline"
+              onClick={addContact}
+              className="w-full mt-4"
+              data-testid="button-add-contact"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add another contact
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {hasPets && (
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Heart className="h-5 w-5 text-primary" />
+              <h2 className="text-lg sm:text-xl font-bold" data-testid="text-pet-title">Pet Protection Details</h2>
             </div>
-          ))}
-        </div>
-        
-        {data.contacts.length < 5 && (
-          <Button
-            variant="outline"
-            onClick={addContact}
-            className="w-full mt-4"
-            data-testid="button-add-contact"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add another contact
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+            <p className="text-muted-foreground mb-6 text-sm">
+              If something happens to you, we'll include your pet's care information in emergency alerts.
+            </p>
+            
+            {data.pets.map((pet, index) => (
+              <div key={index} className="space-y-4 pb-4 mb-4 border-b last:border-b-0 last:mb-0 last:pb-0">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-sm">Pet {index + 1}</span>
+                  {index > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removePet(index)}
+                      data-testid={`button-remove-pet-${index}`}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Remove
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Pet's name</label>
+                    <Input
+                      value={pet.name}
+                      onChange={(e) => updatePet(index, "name", e.target.value)}
+                      placeholder="Bella"
+                      data-testid={`input-pet-name-${index}`}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Type of pet</label>
+                    <select
+                      value={pet.type}
+                      onChange={(e) => updatePet(index, "type", e.target.value)}
+                      className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      data-testid={`select-pet-type-${index}`}
+                    >
+                      <option value="">Select type</option>
+                      {petTypes.map((type) => (
+                        <option key={type.value} value={type.value}>{type.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Nutrition / Feeding details</label>
+                  <Input
+                    value={pet.nutrition}
+                    onChange={(e) => updatePet(index, "nutrition", e.target.value)}
+                    placeholder="e.g., Dry food twice daily, morning and evening"
+                    data-testid={`input-pet-nutrition-${index}`}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Vet name / Practice</label>
+                    <Input
+                      value={pet.vetName}
+                      onChange={(e) => updatePet(index, "vetName", e.target.value)}
+                      placeholder="e.g., Greenfield Vets"
+                      data-testid={`input-pet-vet-name-${index}`}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Vet phone number</label>
+                    <Input
+                      value={pet.vetPhone}
+                      onChange={(e) => updatePet(index, "vetPhone", e.target.value)}
+                      placeholder="01onal234 567890"
+                      data-testid={`input-pet-vet-phone-${index}`}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Emergency / Special care information</label>
+                  <Input
+                    value={pet.emergencyInfo}
+                    onChange={(e) => updatePet(index, "emergencyInfo", e.target.value)}
+                    placeholder="e.g., On daily medication, allergic to chicken"
+                    data-testid={`input-pet-emergency-${index}`}
+                  />
+                </div>
+              </div>
+            ))}
+            
+            {data.pets.length < 5 && (
+              <Button
+                variant="outline"
+                onClick={addPet}
+                className="w-full mt-2"
+                data-testid="button-add-pet"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add another pet
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
 
