@@ -46,6 +46,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   passwordHash: true, 
   createdAt: true,
   disabled: true,
+  termsAcceptedAt: true, // Handled separately in backend to allow string input
 }).extend({
   accountType: z.enum(accountTypes),
   password: z.string().min(6, "Password must be at least 6 characters"),
