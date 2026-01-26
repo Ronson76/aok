@@ -284,18 +284,18 @@ export default function Landing() {
                 </Link>
               </div>
               <div className="w-full flex justify-center mt-6">
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
-                    <span>Free trial</span>
+                <div className="flex items-center gap-4 md:gap-6 text-xs md:text-base text-muted-foreground">
+                  <div className="flex items-center gap-1 md:gap-2">
+                    <CheckCircle className="h-3 w-3 md:h-5 md:w-5 text-green-500 flex-shrink-0" />
+                    <span className="md:font-medium">Free trial</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
-                    <span>No commitment</span>
+                  <div className="flex items-center gap-1 md:gap-2">
+                    <CheckCircle className="h-3 w-3 md:h-5 md:w-5 text-green-500 flex-shrink-0" />
+                    <span className="md:font-medium">No commitment</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
-                    <span>Easy set up</span>
+                  <div className="flex items-center gap-1 md:gap-2">
+                    <CheckCircle className="h-3 w-3 md:h-5 md:w-5 text-green-500 flex-shrink-0" />
+                    <span className="md:font-medium">2 min set up</span>
                   </div>
                 </div>
               </div>
