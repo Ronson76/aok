@@ -291,12 +291,20 @@ export default function Register() {
             for (let i = 0; i < validContacts.length; i++) {
               const contact = validContacts[i];
               try {
+                // Format phone number with country code if provided
+                let formattedPhone = "";
+                if (contact.phone?.trim()) {
+                  const phoneCountry = contact.phoneCountry || "+44";
+                  const cleanPhone = contact.phone.replace(/^0+/, ""); // Remove leading zeros
+                  formattedPhone = `${phoneCountry}${cleanPhone}`;
+                }
+                
                 await apiRequest("POST", "/api/contacts", {
                   name: contact.name.trim(),
                   email: contact.email.trim(),
-                  phone: contact.phone || "",
-                  landline: contact.landline || "",
-                  isPrimary: i === 0, // First contact is primary
+                  phone: formattedPhone || undefined,
+                  phoneType: contact.landline?.trim() ? "landline" : "mobile",
+                  relationship: "Emergency Contact",
                 });
                 console.log(`Contact ${i + 1} created from onboarding:`, contact.name);
               } catch (contactError) {

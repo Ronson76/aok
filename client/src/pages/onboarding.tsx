@@ -2099,7 +2099,7 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
                   Redirecting to checkout...
                 </>
               ) : (
-                "Start Free Trial"
+                "Continue"
               )}
             </Button>
 
