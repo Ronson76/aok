@@ -425,7 +425,7 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
             <Input
               value={data.name}
               onChange={(e) => setData({ ...data, name: e.target.value })}
-              placeholder="Sarah"
+              placeholder="Enter your full name"
               className="text-lg"
               data-testid="input-name"
             />
