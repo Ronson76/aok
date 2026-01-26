@@ -150,18 +150,18 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="h-8 w-8 text-green-600" />
-              <span className="text-xl font-bold text-green-600">aok</span>
+              <ShieldCheck className="h-7 w-7 sm:h-8 sm:w-8 text-green-600" />
+              <span className="text-lg sm:text-xl font-bold text-green-600">aok</span>
             </div>
-            <div className="h-8 w-px bg-muted-foreground/30" />
+            <div className="hidden sm:block h-8 w-px bg-muted-foreground/30" />
             <a 
               href="https://health-insight-engine.replit.app" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex flex-col items-center"
+              className="hidden sm:flex flex-col items-center"
               data-testid="link-health-insight"
             >
               <div className="relative h-6 w-6 flex items-center justify-center">
