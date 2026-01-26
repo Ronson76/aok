@@ -150,7 +150,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <header className="sticky top-0 z-50 bg-background border-b shadow-sm">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
@@ -174,11 +174,11 @@ export default function Landing() {
             </a>
           </div>
           <nav className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-features">Features</a>
-            <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">How It Works</a>
-            <a href="#use-cases" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-use-cases">Who Uses aok</a>
-            <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-pricing">Pricing</a>
-            <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-faq">FAQ</a>
+            <a href="#features" className="text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-features">Features</a>
+            <a href="#how-it-works" className="text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">How It Works</a>
+            <a href="#use-cases" className="text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-use-cases">Who Uses aok</a>
+            <a href="#pricing" className="text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-pricing">Pricing</a>
+            <a href="#faq" className="text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-faq">FAQ</a>
           </nav>
           <div className="flex items-center gap-2">
             <div className="hidden md:flex items-center gap-2 mr-2">
