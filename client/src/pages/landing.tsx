@@ -213,6 +213,21 @@ export default function Landing() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild className="md:hidden">
+                  <a href="#features" data-testid="link-nav-features-mobile">Features</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="md:hidden">
+                  <a href="#how-it-works" data-testid="link-nav-how-it-works-mobile">How It Works</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="md:hidden">
+                  <a href="#use-cases" data-testid="link-nav-use-cases-mobile">Use Cases</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="md:hidden">
+                  <a href="#pricing" data-testid="link-nav-pricing-mobile">Pricing</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="md:hidden">
+                  <a href="#faq" data-testid="link-nav-faq-mobile">FAQ</a>
+                </DropdownMenuItem>
                 {user && (
                   <>
                     <DropdownMenuItem asChild>
