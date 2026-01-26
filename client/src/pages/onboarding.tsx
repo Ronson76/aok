@@ -305,21 +305,15 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <header className="container mx-auto px-4 py-3 flex items-center justify-center">
-          <Link href="/" className="flex items-center gap-2 md:gap-3" data-testid="link-logo-home">
-            <ShieldCheck className="h-7 w-7 md:h-10 md:w-10 text-green-600" />
-            <span className="text-lg md:text-2xl font-bold text-green-600">aok</span>
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b px-4 py-2">
+        <div className="flex items-center justify-between mb-2">
+          <Link href="/" className="flex items-center gap-1" data-testid="link-logo-home">
+            <ShieldCheck className="h-5 w-5 text-green-600" />
+            <span className="text-sm font-bold text-green-600">aok</span>
           </Link>
-        </header>
-
-        <div className="px-4 pb-3">
-          <div className="flex justify-between items-center text-sm text-muted-foreground mb-2">
-            <span data-testid="text-step-indicator">Step {currentStep} of {TOTAL_STEPS}</span>
-            <span data-testid="text-progress-percent">{progress}%</span>
-          </div>
-          <Progress value={progress} className="h-2" data-testid="progress-bar" />
+          <span className="text-xs text-muted-foreground" data-testid="text-step-indicator">Step {currentStep}/{TOTAL_STEPS}</span>
         </div>
+        <Progress value={progress} className="h-1.5" data-testid="progress-bar" />
       </div>
 
       <div className="flex-1 px-4 py-4 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-muted-foreground/50 [&::-webkit-scrollbar-thumb]:rounded-full">
