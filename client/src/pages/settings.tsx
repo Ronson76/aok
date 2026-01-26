@@ -257,10 +257,10 @@ function SubscriptionCard() {
             <Button
               variant="outline"
               onClick={() => setShowCancelDialog(true)}
-              className="w-full"
+              className="w-full text-destructive hover:text-destructive"
               data-testid="button-cancel-subscription"
             >
-              Cancel Subscription
+              {subscription.status === 'trialing' ? 'Cancel Trial' : 'Cancel Subscription'}
             </Button>
           )}
         </CardContent>
@@ -274,11 +274,13 @@ function SubscriptionCard() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-destructive" />
-              Cancel Subscription
+              {subscription.status === 'trialing' ? 'Cancel Trial' : 'Cancel Subscription'}
             </DialogTitle>
             <DialogDescription>
-              Your subscription will remain active until the end of your billing period. 
-              You can reactivate anytime before then.
+              {subscription.status === 'trialing' 
+                ? "Your trial will be cancelled immediately and you won't be charged."
+                : "Your subscription will remain active until the end of your billing period. You can reactivate anytime before then."
+              }
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -321,7 +323,7 @@ function SubscriptionCard() {
               }}
               data-testid="button-cancel-dialog-close"
             >
-              Keep Subscription
+              {subscription.status === 'trialing' ? 'Keep Trial' : 'Keep Subscription'}
             </Button>
             <Button
               variant="destructive"
@@ -332,7 +334,7 @@ function SubscriptionCard() {
               {cancelMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
-              Confirm Cancellation
+              {subscription.status === 'trialing' ? 'Cancel Trial' : 'Confirm Cancellation'}
             </Button>
           </DialogFooter>
         </DialogContent>
