@@ -541,8 +541,10 @@ export default function Landing() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
             <div className="text-center">
               <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl mb-4 max-w-[200px] mx-auto flex flex-col items-center justify-center p-6">
-                <Check className="h-20 w-20 text-green-600 mb-4" strokeWidth={3} />
-                <span className="text-gray-800 dark:text-gray-200 font-semibold text-lg">you're aok</span>
+                <div className="animate-pulse">
+                  <Check className="h-20 w-20 text-green-600 mb-4 animate-bounce" strokeWidth={3} style={{ animationDuration: '2s' }} />
+                </div>
+                <span className="text-gray-800 dark:text-gray-200 font-semibold text-lg animate-pulse" style={{ animationDuration: '3s' }}>you're aok</span>
               </div>
               <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-checkin">Easy Check-Ins</h4>
               <p className="text-xs md:text-sm text-muted-foreground">One tap to confirm you're aok</p>
@@ -550,25 +552,25 @@ export default function Landing() {
             
             <div className="text-center">
               <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl mb-4 max-w-[200px] mx-auto flex flex-col items-center justify-center p-4 gap-3">
-                <div className="flex items-center gap-3 w-full px-2 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div className="flex items-center gap-3 w-full px-2 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg animate-pulse" style={{ animationDelay: '0s', animationDuration: '2s' }}>
                   <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <MessageCircle className="h-4 w-4 text-white" />
                   </div>
                   <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">WhatsApp Alert</span>
                 </div>
-                <div className="flex items-center gap-3 w-full px-2 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div className="flex items-center gap-3 w-full px-2 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg animate-pulse" style={{ animationDelay: '0.5s', animationDuration: '2s' }}>
                   <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <MessageSquare className="h-4 w-4 text-white" />
                   </div>
                   <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">SMS Alert</span>
                 </div>
-                <div className="flex items-center gap-3 w-full px-2 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                <div className="flex items-center gap-3 w-full px-2 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg animate-pulse" style={{ animationDelay: '1s', animationDuration: '2s' }}>
                   <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <Mail className="h-4 w-4 text-white" />
                   </div>
                   <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">Email Alert</span>
                 </div>
-                <div className="flex items-center gap-3 w-full px-2 py-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                <div className="flex items-center gap-3 w-full px-2 py-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg animate-pulse" style={{ animationDelay: '1.5s', animationDuration: '2s' }}>
                   <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <Phone className="h-4 w-4 text-white" />
                   </div>
@@ -605,12 +607,12 @@ export default function Landing() {
                 data-testid="link-wellbeing-feature"
               >
                 <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-black border border-green-600/30 shadow-xl mb-4 max-w-[200px] mx-auto flex flex-col items-center justify-center p-6">
-                  <div className="relative h-16 w-16 mb-4 flex items-center justify-center">
+                  <div className="relative h-16 w-16 mb-4 flex items-center justify-center animate-pulse" style={{ animationDuration: '2s' }}>
                     <div className="w-14 h-4 bg-green-600 absolute rounded-md" />
                     <div className="w-4 h-14 bg-green-600 absolute rounded-md" />
-                    <Heart className="h-4 w-4 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
+                    <Heart className="h-4 w-4 text-green-600 absolute -bottom-1 -right-1 animate-bounce" style={{ animationDuration: '1.5s' }} fill="currentColor" />
                   </div>
-                  <p className="text-gray-400 text-xs text-center leading-relaxed">AI-powered health advice at your fingertips</p>
+                  <p className="text-gray-400 text-xs text-center leading-relaxed animate-pulse" style={{ animationDuration: '3s' }}>AI-powered health advice at your fingertips</p>
                 </div>
               </a>
               <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-wellbeing">Built-in Wellbeing App</h4>
