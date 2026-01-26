@@ -182,13 +182,13 @@ export default function Landing() {
           </nav>
           <div className="flex items-center gap-2">
             <div className="hidden md:flex items-center gap-2 mr-2">
-              <a href="#" className="flex items-center gap-1 px-2.5 py-1.5 rounded border border-border hover-elevate" data-testid="link-app-store-header">
+              <a href="#" className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-border hover-elevate" data-testid="link-app-store-header">
                 <SiApple className="h-5 w-5 text-black dark:text-white" />
-                <span className="sr-only">App Store</span>
+                <span className="text-sm font-medium">App Store</span>
               </a>
-              <a href="#" className="flex items-center gap-1 px-2.5 py-1.5 rounded border border-border hover-elevate" data-testid="link-play-store-header">
+              <a href="#" className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-border hover-elevate" data-testid="link-play-store-header">
                 <SiGoogleplay className="h-5 w-5 text-[#414141] dark:text-[#34A853]" />
-                <span className="sr-only">Google Play</span>
+                <span className="text-sm font-medium">Google Play</span>
               </a>
             </div>
             {user ? (
