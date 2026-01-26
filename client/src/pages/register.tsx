@@ -314,10 +314,9 @@ export default function Register() {
           }
           
           // Enable location sharing if enabled during onboarding
-          if (onboardingData.locationSharingEnabled === true) {
+          if (onboardingData.locationSharingEnabled) {
             try {
               await apiRequest("PATCH", "/api/settings", { redAlertEnabled: true });
-              console.log("Location sharing enabled from onboarding");
             } catch (trackingError) {
               console.log("Failed to enable location sharing:", trackingError);
             }
