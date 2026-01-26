@@ -427,7 +427,13 @@ export async function registerRoutes(
       } = parsed.data;
       
       // Check for terms acceptance from onboarding (passed separately)
-      const termsAcceptedAt = req.body.termsAcceptedAt ? new Date(req.body.termsAcceptedAt) : null;
+      let termsAcceptedAt: Date | null = null;
+      if (req.body.termsAcceptedAt) {
+        const parsedDate = new Date(req.body.termsAcceptedAt);
+        if (!isNaN(parsedDate.getTime())) {
+          termsAcceptedAt = parsedDate;
+        }
+      }
 
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(email.toLowerCase());

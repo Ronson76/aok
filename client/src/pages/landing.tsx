@@ -924,8 +924,8 @@ export default function Landing() {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <ShieldCheck className="h-6 w-6 text-primary" />
-                <span className="font-bold text-primary">aok</span>
+                <ShieldCheck className="h-6 w-6 text-green-600" />
+                <span className="font-bold text-green-600">aok</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 Your personal safety check-in companion. Stay safe, stay connected.
