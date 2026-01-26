@@ -601,7 +601,7 @@ export default function Landing() {
                   <div className="relative h-20 w-20 mb-4 flex items-center justify-center">
                     <div className="w-16 h-5 bg-green-600 absolute rounded-md" />
                     <div className="w-5 h-16 bg-green-600 absolute rounded-md" />
-                    <Heart className="h-5 w-5 text-green-600 absolute -bottom-2 -right-2" fill="currentColor" />
+                    <Heart className="h-4 w-4 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
                   </div>
                   <span className="text-green-600 font-bold text-xl mb-3">wellbeing-ai</span>
                   <p className="text-gray-400 text-xs text-center leading-relaxed">AI-powered health advice at your fingertips</p>
