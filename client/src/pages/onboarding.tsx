@@ -258,12 +258,12 @@ export default function Onboarding() {
       </div>
 
       <div className="px-4 py-4 border-t bg-background">
-        <div className="max-w-md mx-auto flex gap-3">
+        <div className="max-w-md mx-auto flex justify-center gap-3">
           {currentStep > 1 && (
             <Button 
               variant="outline" 
               onClick={handleBack}
-              className="flex-shrink-0"
+              size="sm"
               data-testid="button-back"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -273,7 +273,8 @@ export default function Onboarding() {
             <Button 
               onClick={handleNext}
               disabled={!canProceed()}
-              className="flex-1"
+              size="sm"
+              className="px-8"
               data-testid="button-continue"
             >
               Continue
