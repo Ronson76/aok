@@ -533,7 +533,7 @@ export function registerOrganizationRoutes(app: Express) {
 
       // If client is registered (has a user account), add to their contacts
       if (orgClient.clientId) {
-        const contact = await storage.createContact(orgClient.clientId, {
+        const result = await storage.createContact(orgClient.clientId, {
           name,
           email,
           phone: phone || undefined,
@@ -541,10 +541,10 @@ export function registerOrganizationRoutes(app: Express) {
           relationship: relationship || "",
         });
         // Set as primary if requested
-        if (isPrimary && contact) {
-          await storage.setPrimaryContact(orgClient.clientId, contact.id);
+        if (isPrimary && result.contact) {
+          await storage.setPrimaryContact(orgClient.clientId, result.contact.id);
         }
-        res.status(201).json(contact);
+        res.status(201).json(result.contact);
       } else {
         // Otherwise add to pending contacts
         await organizationStorage.addPendingClientContact(orgClientId, {
@@ -672,7 +672,7 @@ export function registerOrganizationRoutes(app: Express) {
       }
 
       // Verify the user is an organisation
-      const user = await storage.getUser(tokenData.userId);
+      const user = await storage.getUserById(tokenData.userId);
       if (!user || user.accountType !== "organization") {
         return res.status(400).json({ error: "Invalid reset link." });
       }
@@ -709,7 +709,7 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      const user = await storage.getUser(userId);
+      const user = await storage.getUserById(userId);
       if (!user || !user.passwordHash) {
         return res.status(400).json({ error: "Cannot change password for this account" });
       }

@@ -766,6 +766,25 @@ export async function registerRoutes(
     }
 
     const { passwordHash, ...userProfile } = user;
+    
+    // Check if user is an org client and apply org's feature restrictions
+    const orgClientFeatures = await organizationStorage.getClientFeaturesByUserId(user.id);
+    if (orgClientFeatures) {
+      // Org client features override user's own feature settings
+      // Features are only enabled if BOTH org allows it AND user has it enabled
+      const mergedProfile = {
+        ...userProfile,
+        featureWellbeingAi: orgClientFeatures.featureWellbeingAi && userProfile.featureWellbeingAi,
+        featureShakeToAlert: orgClientFeatures.featureShakeToAlert && userProfile.featureShakeToAlert,
+        featureWellness: orgClientFeatures.featureMoodTracking && userProfile.featureWellness,
+        featurePetProtection: orgClientFeatures.featurePetProtection && userProfile.featurePetProtection,
+        featureDigitalWill: orgClientFeatures.featureDigitalWill && userProfile.featureDigitalWill,
+        // Include org restrictions so client knows what's available
+        orgFeatureRestrictions: orgClientFeatures,
+      };
+      return res.json(mergedProfile);
+    }
+    
     res.json(userProfile);
   });
 

@@ -177,13 +177,13 @@ export default function OrganizationDashboard() {
     isPrimary: false,
   });
 
-  // Client feature settings state
+  // Client feature settings state (all ON by default)
   const [clientFeatures, setClientFeatures] = useState({
-    featureWellbeingAi: false,
+    featureWellbeingAi: true,
     featureShakeToAlert: true,
-    featureMoodTracking: false,
-    featurePetProtection: false,
-    featureDigitalWill: false,
+    featureMoodTracking: true,
+    featurePetProtection: true,
+    featureDigitalWill: true,
   });
   const [loadingFeatures, setLoadingFeatures] = useState(false);
   const [savingFeatures, setSavingFeatures] = useState(false);
@@ -464,11 +464,11 @@ export default function OrganizationDashboard() {
     } catch (error) {
       console.error("Failed to fetch features:", error);
       setClientFeatures({
-        featureWellbeingAi: false,
+        featureWellbeingAi: true,
         featureShakeToAlert: true,
-        featureMoodTracking: false,
-        featurePetProtection: false,
-        featureDigitalWill: false,
+        featureMoodTracking: true,
+        featurePetProtection: true,
+        featureDigitalWill: true,
       });
     } finally {
       setLoadingFeatures(false);
