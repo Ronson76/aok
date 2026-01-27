@@ -7,35 +7,39 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ShieldCheck, User, Building2, MoreVertical, Mail, ChevronRight } from "lucide-react";
+import { ShieldCheck, User, Building2, MoreVertical, Mail, ChevronRight, ArrowLeft } from "lucide-react";
 
 export default function LoginSelect() {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
-      <div className="absolute top-4 right-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="ghost" data-testid="button-menu">
-              <MoreVertical className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <a href="mailto:support@aok.care" className="flex items-center gap-2" data-testid="link-contact-us">
-                <Mail className="h-4 w-4" />
-                Contact Us
-              </a>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-2">
-          <Link href="/" className="flex flex-col items-center justify-center mb-2 cursor-pointer" data-testid="link-logo-home">
-            <ShieldCheck className="h-12 w-12 text-green-600" />
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="border-b">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home-logo">
+            <ArrowLeft className="h-5 w-5 text-green-600" />
+            <ShieldCheck className="h-9 w-9 text-green-600" />
             <span className="text-2xl font-bold text-green-600">aok</span>
           </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="ghost" data-testid="button-menu">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <a href="mailto:support@aok.care" className="flex items-center gap-2" data-testid="link-contact-us">
+                  <Mail className="h-4 w-4" />
+                  Contact Us
+                </a>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+      
+      <div className="flex-1 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center space-y-2">
           <CardTitle className="text-2xl">Sign In</CardTitle>
           <CardDescription>
             Choose how you'd like to sign in
@@ -88,6 +92,7 @@ export default function LoginSelect() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
