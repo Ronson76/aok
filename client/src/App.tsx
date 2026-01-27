@@ -210,56 +210,7 @@ function AppLayout() {
   const [showQRDialog, setShowQRDialog] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const alarmIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
-  
-  // Inactivity timeout - 5 minutes
-  const INACTIVITY_TIMEOUT = 5 * 60 * 1000;
-  
-  const resetInactivityTimer = useCallback(() => {
-    if (inactivityTimeoutRef.current) {
-      clearTimeout(inactivityTimeoutRef.current);
-    }
-    
-    if (isAuthenticated) {
-      inactivityTimeoutRef.current = setTimeout(async () => {
-        toast({
-          title: "Session expired",
-          description: "You've been logged out due to inactivity.",
-        });
-        await logout();
-        setLocation("/login");
-      }, INACTIVITY_TIMEOUT);
-    }
-  }, [isAuthenticated, logout, setLocation, toast]);
-  
-  // Set up inactivity tracking
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    
-    const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
-    
-    const handleActivity = () => {
-      resetInactivityTimer();
-    };
-    
-    // Start the timer
-    resetInactivityTimer();
-    
-    // Add event listeners
-    events.forEach(event => {
-      document.addEventListener(event, handleActivity, { passive: true });
-    });
-    
-    return () => {
-      if (inactivityTimeoutRef.current) {
-        clearTimeout(inactivityTimeoutRef.current);
-      }
-      events.forEach(event => {
-        document.removeEventListener(event, handleActivity);
-      });
-    };
-  }, [isAuthenticated, resetInactivityTimer]);
   
   const appUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const shareUrl = "https://aok.care";
