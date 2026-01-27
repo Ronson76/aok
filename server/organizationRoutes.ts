@@ -634,13 +634,26 @@ export function registerOrganizationRoutes(app: Express) {
       if (user && user.accountType === "organization") {
         const rawToken = await storage.createPasswordResetToken(user.id);
         
-        // Get host from multiple sources for reliability
-        const host = req.get('x-forwarded-host') || req.get('host') || req.headers.host;
-        const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
-        const baseUrl = `${protocol}://${host}`;
+        // Get base URL from Origin header first (most reliable), then fall back to other sources
+        const origin = req.get('origin');
+        let baseUrl: string;
+        
+        if (origin) {
+          baseUrl = origin;
+        } else {
+          const host = req.get('x-forwarded-host') || req.get('host') || req.headers.host;
+          const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+          if (host) {
+            baseUrl = `${protocol}://${host}`;
+          } else {
+            // Fallback to production domain
+            baseUrl = 'https://aok.care';
+          }
+        }
+        
         const resetUrl = `${baseUrl}/org/reset-password?token=${rawToken}`;
         
-        console.log(`[ORG PASSWORD RESET] Generating URL with host: ${host}, protocol: ${protocol}, baseUrl: ${baseUrl}`);
+        console.log(`[ORG PASSWORD RESET] Origin: ${origin}, baseUrl: ${baseUrl}`);
         
         try {
           await sendPasswordResetEmail(user.email, resetUrl, user.name);

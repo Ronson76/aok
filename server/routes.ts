@@ -825,13 +825,26 @@ export async function registerRoutes(
         // Generate reset token
         const rawToken = await storage.createPasswordResetToken(user.id);
         
-        // Build full reset URL - get host from multiple sources for reliability
-        const host = req.get('x-forwarded-host') || req.get('host') || req.headers.host;
-        const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
-        const baseUrl = `${protocol}://${host}`;
+        // Get base URL from Origin header first (most reliable), then fall back to other sources
+        const origin = req.get('origin');
+        let baseUrl: string;
+        
+        if (origin) {
+          baseUrl = origin;
+        } else {
+          const host = req.get('x-forwarded-host') || req.get('host') || req.headers.host;
+          const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+          if (host) {
+            baseUrl = `${protocol}://${host}`;
+          } else {
+            // Fallback to production domain
+            baseUrl = 'https://aok.care';
+          }
+        }
+        
         const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
         
-        console.log(`[PASSWORD RESET] Generating URL with host: ${host}, protocol: ${protocol}`);
+        console.log(`[PASSWORD RESET] Origin: ${origin}, baseUrl: ${baseUrl}`);
         
         // Send password reset email
         try {
