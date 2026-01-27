@@ -149,7 +149,6 @@ export default function Landing() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-logo-home">
-              <ArrowLeft className="h-5 w-5 text-green-600" />
               <ShieldCheck className="h-9 w-9 text-green-600" />
               <span className="text-2xl font-bold text-green-600">aok</span>
             </Link>
@@ -976,7 +975,6 @@ export default function Landing() {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <Link href="/" className="flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity" data-testid="link-footer-logo-home">
-                <ArrowLeft className="h-4 w-4 text-green-600" />
                 <ShieldCheck className="h-6 w-6 text-green-600" />
                 <span className="font-bold text-green-600">aok</span>
               </Link>
