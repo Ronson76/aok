@@ -260,7 +260,7 @@ export default function Landing() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10" />
         <div className="container mx-auto max-w-6xl relative">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
+            <div className="text-center md:text-left">
               <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1 md:py-1.5 rounded-full bg-primary/10 text-primary text-sm md:text-lg font-medium mb-6">
                 <Shield className="h-4 w-4 md:h-5 md:w-5" />
                 Personal Safety Made Simple
@@ -269,11 +269,11 @@ export default function Landing() {
                 Stay Safe.<br />
                 <span className="text-primary">Stay Connected.</span>
               </h1>
-              <p className="text-xl text-muted-foreground mb-8 max-w-lg">
+              <p className="text-xl text-muted-foreground mb-8 max-w-lg mx-auto md:mx-0">
                 The personal safety check-in app that alerts your emergency contacts 
                 via email, SMS, and phone calls if something happens to you - with unlimited access to our AI-powered health assistant.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                 <Link href="/onboarding">
                   <Button size="lg" className="w-full sm:w-auto gap-2" data-testid="button-get-started">
                     Get Started Free
@@ -281,8 +281,8 @@ export default function Landing() {
                   </Button>
                 </Link>
               </div>
-              <div className="w-full flex justify-center mt-6">
-                <div className="flex items-center gap-4 md:gap-6 text-xs md:text-base text-muted-foreground">
+              <div className="w-full flex justify-center md:justify-start mt-6">
+                <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 md:gap-6 text-xs md:text-base text-muted-foreground">
                   <div className="flex items-center gap-1 md:gap-2">
                     <CheckCircle className="h-3 w-3 md:h-5 md:w-5 text-green-500 flex-shrink-0" />
                     <span className="md:font-medium">Free trial</span>
