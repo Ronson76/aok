@@ -30,6 +30,7 @@ const orgManagedClientNavItems = [
 
 interface FeatureFlags {
   isOrgClient: boolean;
+  featureWellbeingAi: boolean;
   featureMoodTracking: boolean;
   featurePetProtection: boolean;
   featureDigitalWill: boolean;
@@ -159,8 +160,8 @@ export function BottomNav() {
                 }
               })}
               
-              {/* Wellbeing-ai external link */}
-              {isRegistrationComplete ? (
+              {/* Wellbeing-ai external link - only enabled if registration complete AND feature enabled */}
+              {isRegistrationComplete && features?.featureWellbeingAi !== false ? (
                 <DropdownMenuItem asChild>
                   <a
                     href="https://health-insight-engine.replit.app"

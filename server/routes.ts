@@ -1509,14 +1509,14 @@ export async function registerRoutes(
         });
       }
 
-      // Regular individual user - all features enabled
+      // Regular individual user - return their actual feature settings from the database
       res.json({
         isOrgAccount: false,
         isOrgClient: false,
-        featureWellbeingAi: true,
-        featureMoodTracking: true,
-        featurePetProtection: true,
-        featureDigitalWill: true,
+        featureWellbeingAi: user.featureWellbeingAi ?? true,
+        featureMoodTracking: user.featureWellness ?? true,
+        featurePetProtection: user.featurePetProtection ?? true,
+        featureDigitalWill: user.featureDigitalWill ?? true,
       });
     } catch (error) {
       console.error("[API] Failed to get features:", error);
