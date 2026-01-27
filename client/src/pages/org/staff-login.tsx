@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Building2, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Loader2, Building2, ArrowLeft, Eye, EyeOff, ShieldCheck } from "lucide-react";
 
 export default function OrganizationStaffLogin() {
   const [, setLocation] = useLocation();
@@ -55,7 +55,11 @@ export default function OrganizationStaffLogin() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2" data-testid="link-home">
+            <ShieldCheck className="h-8 w-8 text-green-600" />
+            <span className="text-lg font-semibold text-green-600">aok</span>
+          </Link>
           <Link href="/org/login">
             <Button variant="ghost" size="sm" data-testid="button-back">
               <ArrowLeft className="h-4 w-4 mr-2" />
