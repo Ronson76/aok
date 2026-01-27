@@ -1252,12 +1252,14 @@ If you cannot reach them, consider contacting local emergency services.
 export async function sendPasswordResetEmail(
   email: string,
   resetUrl: string,
-  userName: string
+  userName: string,
+  userType: 'admin' | 'organisation' | 'individual' = 'individual'
 ): Promise<boolean> {
-  const subject = "Reset your aok password";
+  const typeLabel = userType === 'admin' ? 'admin' : userType === 'organisation' ? 'organisation' : 'individual';
+  const subject = `Reset your aok ${typeLabel} password`;
   const body = `Hi ${userName},
 
-You requested to reset your aok password. Click the link below to set a new password:
+You requested to reset your aok ${typeLabel} password. Click the link below to set a new password:
 
 ${resetUrl}
 
@@ -1285,11 +1287,11 @@ If you didn't request this, you can safely ignore this email.
     </div>
   </div>
   
-  <h2 style="color: #1f2937; margin-bottom: 20px;">Reset Your Password</h2>
+  <h2 style="color: #1f2937; margin-bottom: 20px;">Reset Your ${typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1)} Password</h2>
   
   <p>Hi ${escapeHtml(userName)},</p>
   
-  <p>You requested to reset your aok password. Click the button below to set a new password:</p>
+  <p>You requested to reset your aok ${typeLabel} password. Click the button below to set a new password:</p>
   
   <div style="text-align: center; margin: 30px 0;">
     <a href="${resetUrl}" style="display: inline-block; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">Reset Password</a>

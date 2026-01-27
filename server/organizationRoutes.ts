@@ -643,7 +643,7 @@ export function registerOrganizationRoutes(app: Express) {
         console.log(`[ORG PASSWORD RESET] host=${host}, baseUrl=${baseUrl}, resetUrl=${resetUrl}`);
         
         try {
-          await sendPasswordResetEmail(user.email, resetUrl, user.name);
+          await sendPasswordResetEmail(user.email, resetUrl, user.name, 'organisation');
         } catch (error) {
           console.error("Failed to send organisation password reset email:", error);
           if (process.env.NODE_ENV !== "production") {
