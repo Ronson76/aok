@@ -262,6 +262,7 @@ let connectionSettings: any;
 async function getResendCredentials() {
   // First try environment variable (user's own API key)
   const apiKey = process.env.RESEND_API_KEY2 || process.env.RESEND_API_KEY;
+  console.log(`[RESEND] Checking credentials - API key ${apiKey ? 'found (starts with ' + apiKey.substring(0, 8) + '...)' : 'not found'}`);
   if (apiKey) {
     return { 
       apiKey, 
