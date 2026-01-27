@@ -489,12 +489,39 @@ class DatabaseStorage implements IStorage {
     }).returning();
 
     const userSettings = await this.getSettings(userId);
-    const hoursToAdd = userSettings.intervalHours || 24;
-    const nextDue = new Date(Date.now() + hoursToAdd * 60 * 60 * 1000);
+    const intervalHours = userSettings.intervalHours || 24;
+    const now = new Date();
+    
+    let nextDue: Date;
+    
+    // If user has a scheduleStartTime, calculate next due based on that schedule
+    // Otherwise fall back to adding interval from current time
+    if (userSettings.scheduleStartTime) {
+      const scheduleTime = new Date(userSettings.scheduleStartTime);
+      const scheduleHour = scheduleTime.getHours();
+      const scheduleMinute = scheduleTime.getMinutes();
+      
+      // Start from today at the scheduled time
+      nextDue = new Date(now);
+      nextDue.setHours(scheduleHour, scheduleMinute, 0, 0);
+      
+      // If we're past the scheduled time for today, start from the next scheduled occurrence
+      if (nextDue <= now) {
+        nextDue = new Date(nextDue.getTime() + intervalHours * 60 * 60 * 1000);
+      }
+      
+      // Ensure the next due is in the future
+      while (nextDue <= now) {
+        nextDue = new Date(nextDue.getTime() + intervalHours * 60 * 60 * 1000);
+      }
+    } else {
+      // No schedule set - use current time + interval (legacy behaviour)
+      nextDue = new Date(now.getTime() + intervalHours * 60 * 60 * 1000);
+    }
 
     await getDb().update(settings)
       .set({ 
-        lastCheckIn: new Date(),
+        lastCheckIn: now,
         nextCheckInDue: nextDue,
       })
       .where(eq(settings.userId, userId));
@@ -553,6 +580,7 @@ class DatabaseStorage implements IStorage {
         trackingEnabled: false,
         additionalInfo: null,
         livingSituation: null,
+        shakeToSOSEnabled: true,
       };
     }
 
@@ -569,6 +597,7 @@ class DatabaseStorage implements IStorage {
       trackingEnabled: row.trackingEnabled ?? false,
       additionalInfo: row.additionalInfo || null,
       livingSituation: row.livingSituation || null,
+      shakeToSOSEnabled: row.shakeToSOSEnabled ?? true,
     };
   }
 

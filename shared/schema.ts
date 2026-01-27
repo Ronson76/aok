@@ -198,8 +198,8 @@ export const settings = pgTable("settings", {
   additionalInfo: text("additional_info"),
   // Living situation from onboarding (with-pets, with-children, partner-travels, rural-area, solo-travel, lone-worker)
   livingSituation: text("living_situation"),
-  // Shake-to-SOS feature
-  shakeToSOSEnabled: boolean("shake_to_sos_enabled").notNull().default(false),
+  // Shake-to-SOS feature (enabled by default, user can disable in settings)
+  shakeToSOSEnabled: boolean("shake_to_sos_enabled").notNull().default(true),
 });
 
 export type Settings = {
@@ -505,12 +505,12 @@ export const organizationClients = pgTable("organization_clients", {
   scheduleStartTime: timestamp("schedule_start_time"),
   checkInIntervalHours: integer("check_in_interval_hours").default(24),
   addedAt: timestamp("added_at").notNull().defaultNow(),
-  // Feature controls - organizations can enable/disable features for each client
-  featureWellbeingAi: boolean("feature_wellbeing_ai").notNull().default(false),
+  // Feature controls - organizations can enable/disable features for each client (all ON by default)
+  featureWellbeingAi: boolean("feature_wellbeing_ai").notNull().default(true),
   featureShakeToAlert: boolean("feature_shake_to_alert").notNull().default(true),
-  featureMoodTracking: boolean("feature_mood_tracking").notNull().default(false),
-  featurePetProtection: boolean("feature_pet_protection").notNull().default(false),
-  featureDigitalWill: boolean("feature_digital_will").notNull().default(false),
+  featureMoodTracking: boolean("feature_mood_tracking").notNull().default(true),
+  featurePetProtection: boolean("feature_pet_protection").notNull().default(true),
+  featureDigitalWill: boolean("feature_digital_will").notNull().default(true),
 });
 
 export const insertOrganizationClientSchema = createInsertSchema(organizationClients).omit({
