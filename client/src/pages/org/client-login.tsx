@@ -57,8 +57,8 @@ export default function OrganizationClientLogin() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
             <ArrowLeft className="h-5 w-5 text-green-600" />
-            <ShieldCheck className="h-8 w-8 text-green-600" />
-            <span className="text-lg font-semibold text-green-600">aok</span>
+            <ShieldCheck className="h-9 w-9 text-green-600" />
+            <span className="text-2xl font-bold text-green-600">aok</span>
           </Link>
           <Link href="/org/login">
             <Button variant="ghost" size="sm" data-testid="button-back">
@@ -145,8 +145,8 @@ export default function OrganizationClientLogin() {
       <footer className="border-t py-4 px-4">
         <div className="container mx-auto text-center">
           <Link href="/" className="flex items-center justify-center gap-2" data-testid="link-footer-logo-home">
-            <ShieldCheck className="h-4 w-4 text-green-600" />
-            <span className="text-sm font-semibold text-green-600">aok</span>
+            <ShieldCheck className="h-5 w-5 text-green-600" />
+            <span className="text-sm font-bold text-green-600">aok</span>
           </Link>
         </div>
       </footer>

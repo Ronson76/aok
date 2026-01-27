@@ -418,8 +418,8 @@ function AppLayout() {
             <Link href="/app">
               <div className="flex items-center gap-2 cursor-pointer relative hover:opacity-80 transition-opacity" data-testid="link-home-logo">
                 <ArrowLeft className="h-5 w-5 text-green-600" />
-                <ShieldCheck className="h-8 w-8 text-green-600" />
-                <span className="text-xl font-bold text-green-600">aok</span>
+                <ShieldCheck className="h-9 w-9 text-green-600" />
+                <span className="text-2xl font-bold text-green-600">aok</span>
                 {isOverdue && (
                   <span className="absolute -top-1 -right-3 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                     1

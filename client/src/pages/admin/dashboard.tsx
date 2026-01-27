@@ -304,8 +304,8 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" data-testid="link-home-logo">
               <ArrowLeft className="h-5 w-5 text-green-600" />
-              <ShieldCheck className="h-10 w-10 text-green-600" />
-              <span className="text-sm font-semibold text-green-600">aok</span>
+              <ShieldCheck className="h-9 w-9 text-green-600" />
+              <span className="text-2xl font-bold text-green-600">aok</span>
             </Link>
             <div>
               <h1 className="text-xl font-semibold">Admin Dashboard</h1>

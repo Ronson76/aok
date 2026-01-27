@@ -93,7 +93,7 @@ export default function AdminLogin() {
         <CardHeader className="text-center">
           <div className="flex flex-col items-center mb-4">
             <ShieldCheck className="h-12 w-12 text-green-600" />
-            <span className="text-lg font-semibold text-green-600">aok</span>
+            <span className="text-2xl font-bold text-green-600">aok</span>
             <span className="text-xs text-muted-foreground mt-1">Admin Portal</span>
           </div>
           <CardTitle className="text-2xl">
