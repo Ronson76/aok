@@ -634,10 +634,13 @@ export function registerOrganizationRoutes(app: Express) {
       if (user && user.accountType === "organization") {
         const rawToken = await storage.createPasswordResetToken(user.id);
         
-        const baseUrl = process.env.NODE_ENV === "production" 
-          ? `https://${req.get('host')}`
-          : `http://${req.get('host')}`;
+        // Get host from multiple sources for reliability
+        const host = req.get('x-forwarded-host') || req.get('host') || req.headers.host;
+        const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+        const baseUrl = `${protocol}://${host}`;
         const resetUrl = `${baseUrl}/org/reset-password?token=${rawToken}`;
+        
+        console.log(`[ORG PASSWORD RESET] Generating URL with host: ${host}, protocol: ${protocol}, baseUrl: ${baseUrl}`);
         
         try {
           await sendPasswordResetEmail(user.email, resetUrl, user.name);
