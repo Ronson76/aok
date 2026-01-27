@@ -67,7 +67,7 @@ export function PageHeader({ title, rightContent }: PageHeaderProps) {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={handleShare} data-testid="button-share">
               <Share2 className="h-4 w-4 mr-2" />
-              Share aok
+              Share
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <a href="mailto:support@aok.app" className="flex items-center gap-2" data-testid="link-contact-us">
