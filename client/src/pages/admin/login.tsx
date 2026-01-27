@@ -78,14 +78,23 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="border-b">
+        <div className="container mx-auto px-4 py-4">
+          <Link href="/" className="flex items-center gap-2" data-testid="link-home">
+            <ShieldCheck className="h-8 w-8 text-green-600" />
+            <span className="text-lg font-semibold text-green-600">aok</span>
+          </Link>
+        </div>
+      </header>
+      <div className="flex-1 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <Link href="/" className="flex flex-col items-center mb-4" data-testid="link-logo-home">
+          <div className="flex flex-col items-center mb-4">
             <ShieldCheck className="h-12 w-12 text-green-600" />
             <span className="text-lg font-semibold text-green-600">aok</span>
             <span className="text-xs text-muted-foreground mt-1">Admin Portal</span>
-          </Link>
+          </div>
           <CardTitle className="text-2xl">
             {needsSetup ? "Create Admin Account" : "Admin Login"}
           </CardTitle>
@@ -178,6 +187,7 @@ export default function AdminLogin() {
           </form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
