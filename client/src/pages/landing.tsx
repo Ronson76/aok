@@ -201,9 +201,8 @@ export default function Landing() {
                 <Button size="sm" data-testid="button-sign-in">Sign In</Button>
               </Link>
             )}
-            <Button size="sm" variant="outline" onClick={handleShare} data-testid="button-share-aok">
-                <Share2 className="h-4 w-4 mr-2" />
-                Share aok
+            <Button size="icon" variant="outline" onClick={handleShare} data-testid="button-share-aok">
+                <Share2 className="h-4 w-4" />
               </Button>
               <DropdownMenu>
               <DropdownMenuTrigger asChild className="md:hidden">
@@ -243,7 +242,7 @@ export default function Landing() {
                 )}
                 <DropdownMenuItem onClick={handleShare} data-testid="button-share">
                   <Share2 className="h-4 w-4 mr-2" />
-                  Share aok
+                  Share
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <a href="mailto:support@aok.care?subject=Support%20Enquiry" className="flex items-center gap-2" data-testid="link-contact-us">

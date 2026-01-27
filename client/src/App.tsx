@@ -451,7 +451,7 @@ function AppLayout() {
       <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Share aok</DialogTitle>
+            <DialogTitle>Share</DialogTitle>
             <DialogDescription>
               Scan this QR code to download the aok app and stay safe with your loved ones.
             </DialogDescription>
