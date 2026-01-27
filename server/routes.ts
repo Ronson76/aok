@@ -409,8 +409,14 @@ export async function registerRoutes(
   // Register admin routes
   registerAdminRoutes(app);
 
-  // Register organization routes (requires auth middleware for all /api/org/* routes)
-  app.use("/api/org", authMiddleware);
+  // Register organization routes (requires auth middleware for /api/org/* routes except auth routes)
+  app.use("/api/org", (req, res, next) => {
+    // Allow public auth routes without authentication
+    if (req.path.startsWith("/auth/forgot-password") || req.path.startsWith("/auth/reset-password")) {
+      return next();
+    }
+    return authMiddleware(req, res, next);
+  });
   registerOrganizationRoutes(app);
 
   // Auth routes (public)
@@ -533,6 +539,59 @@ export async function registerRoutes(
     }
     res.clearCookie("session");
     res.json({ success: true });
+  });
+
+  // Organisation staff login
+  app.post("/api/auth/org-login", async (req, res) => {
+    try {
+      const parsed = loginSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
+      }
+
+      const { email, password } = parsed.data;
+
+      const user = await storage.getUserByEmail(email.toLowerCase());
+      if (!user) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      // Verify user is an organization account
+      if (user.accountType !== "organization") {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      if (!user.passwordHash) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      const validPassword = await bcrypt.compare(password, user.passwordHash);
+      if (!validPassword) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      // Check if user is disabled
+      if (user.disabled) {
+        return res.status(403).json({ error: "Your account has been disabled. Please contact support." });
+      }
+
+      // Create session
+      const session = await storage.createSession(user.id);
+
+      // Set cookie
+      res.cookie("session", session.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 14 * 24 * 60 * 60 * 1000,
+      });
+
+      const { passwordHash, ...userProfile } = user;
+      res.json(userProfile);
+    } catch (error) {
+      console.error("Org login error:", error);
+      res.status(500).json({ error: "Failed to login" });
+    }
   });
 
   // Activate/login org-managed client with reference code only
