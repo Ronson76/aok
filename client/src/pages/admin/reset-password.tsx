@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { PasswordInput } from "@/components/password-input";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { ShieldCheck, Loader2, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 
@@ -144,7 +144,8 @@ export default function AdminResetPassword() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2" data-testid="link-home">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
+            <ArrowLeft className="h-5 w-5 text-green-600" />
             <ShieldCheck className="h-8 w-8 text-green-600" />
             <span className="text-lg font-semibold text-green-600">aok</span>
           </Link>

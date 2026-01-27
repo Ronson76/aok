@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Users, Building2, User, CheckCircle, XCircle, Package, 
-  LogOut, ShieldCheck, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff, KeyRound
+  LogOut, ShieldCheck, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff, KeyRound, ArrowLeft
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -299,7 +299,8 @@ export default function AdminDashboard() {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex flex-col items-center cursor-pointer" data-testid="link-home-logo">
+            <Link href="/" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" data-testid="link-home-logo">
+              <ArrowLeft className="h-5 w-5 text-green-600" />
               <ShieldCheck className="h-10 w-10 text-green-600" />
               <span className="text-sm font-semibold text-green-600">aok</span>
             </Link>

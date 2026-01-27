@@ -13,7 +13,7 @@ import {
   AlertTriangle, Activity, Scissors, Accessibility, Calendar,
   Clock, RefreshCw, Sun, Sunset, Settings, Search, Bot, Smartphone,
   Mail, Star, Phone, X, Loader2, Wallet, ShieldCheck, Info, Plus,
-  Eye, EyeOff, MessageSquare
+  Eye, EyeOff, MessageSquare, ArrowLeft
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -306,7 +306,8 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="container mx-auto px-4 py-4 flex items-center justify-center border-b">
-        <Link href="/" className="flex items-center gap-2 md:gap-3" data-testid="link-logo-home">
+        <Link href="/" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity" data-testid="link-logo-home">
+          <ArrowLeft className="h-5 w-5 text-green-600" />
           <ShieldCheck className="h-8 w-8 md:h-10 md:w-10 text-green-600" />
           <span className="text-xl md:text-2xl font-bold text-green-600">aok</span>
         </Link>

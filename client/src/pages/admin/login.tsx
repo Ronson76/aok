@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ShieldCheck, UserPlus, Eye, EyeOff } from "lucide-react";
+import { Loader2, ShieldCheck, UserPlus, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function AdminLogin() {
@@ -81,7 +81,8 @@ export default function AdminLogin() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4">
-          <Link href="/" className="flex items-center gap-2" data-testid="link-home">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
+            <ArrowLeft className="h-5 w-5 text-green-600" />
             <ShieldCheck className="h-8 w-8 text-green-600" />
             <span className="text-lg font-semibold text-green-600">aok</span>
           </Link>

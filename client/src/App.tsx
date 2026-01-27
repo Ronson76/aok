@@ -8,7 +8,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { SplashScreen } from "@/components/splash-screen";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
-import { Loader2, ShieldCheck, Volume2, MoreVertical, Mail, QrCode, Share2, Plus, Heart } from "lucide-react";
+import { Loader2, ShieldCheck, Volume2, MoreVertical, Mail, QrCode, Share2, Plus, Heart, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -416,7 +416,8 @@ function AppLayout() {
           {/* Centered logo and wellbeing-ai */}
           <div className="flex items-center gap-4">
             <Link href="/app">
-              <div className="flex items-center gap-2 cursor-pointer relative" data-testid="link-home-logo">
+              <div className="flex items-center gap-2 cursor-pointer relative hover:opacity-80 transition-opacity" data-testid="link-home-logo">
+                <ArrowLeft className="h-5 w-5 text-green-600" />
                 <ShieldCheck className="h-8 w-8 text-green-600" />
                 <span className="text-xl font-bold text-green-600">aok</span>
                 {isOverdue && (
