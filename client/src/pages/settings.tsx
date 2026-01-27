@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle, Smartphone, Eye, EyeOff, ExternalLink, CreditCard, AlertCircle, MapPin } from "lucide-react";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle, Smartphone, Eye, EyeOff, ExternalLink, CreditCard, AlertCircle, MapPin, Vibrate } from "lucide-react";
+import ShakeDetector from "@/lib/shake-detector";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -531,7 +532,7 @@ export default function Settings() {
   }, []);
 
   const updateMutation = useMutation({
-    mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean; scheduleStartTime?: string; password?: string; redAlertEnabled?: boolean }) =>
+    mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean; scheduleStartTime?: string; password?: string; redAlertEnabled?: boolean; shakeToSOSEnabled?: boolean }) =>
       apiRequest("PATCH", "/api/settings", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
@@ -921,6 +922,75 @@ export default function Settings() {
               </ul>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className={settings?.shakeToSOSEnabled ? "border-orange-500 dark:border-orange-600" : ""}>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Vibrate className={`h-4 w-4 ${settings?.shakeToSOSEnabled ? "text-orange-500" : "text-muted-foreground"}`} />
+            Shake-to-SOS
+          </CardTitle>
+          <CardDescription>
+            Shake your phone to trigger an emergency alert.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!ShakeDetector.isSupported() ? (
+            <div className="flex items-start gap-2 p-3 rounded-md bg-muted">
+              <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                Shake detection is not supported on this device or browser.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-0.5">
+                  <Label htmlFor="shake-to-sos-enabled" className="font-medium">
+                    Enable Shake-to-SOS
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Shake your phone vigorously to trigger an emergency alert
+                  </p>
+                </div>
+                <Switch
+                  id="shake-to-sos-enabled"
+                  checked={settings?.shakeToSOSEnabled ?? false}
+                  onCheckedChange={async (checked) => {
+                    if (checked && ShakeDetector.requiresPermission()) {
+                      const permission = await ShakeDetector.requestPermission();
+                      if (permission === 'denied') {
+                        toast({
+                          title: "Permission Denied",
+                          description: "Motion sensor permission is required for shake detection.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      // Store permission in localStorage so the hook knows permission was granted
+                      localStorage.setItem('motionPermission', 'granted');
+                    }
+                    updateMutation.mutate({ shakeToSOSEnabled: checked });
+                  }}
+                  disabled={updateMutation.isPending}
+                  data-testid="switch-shake-to-sos-enabled"
+                />
+              </div>
+
+              <div className="flex items-start gap-2 p-3 rounded-md bg-orange-50 dark:bg-orange-950/30">
+                <Vibrate className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <p><strong>How it works:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 ml-1">
+                    <li>Shake your phone vigorously 3 times</li>
+                    <li>A 5-second countdown will appear</li>
+                    <li>Confirm to send alert, or hold Cancel for 3 seconds to dismiss</li>
+                  </ul>
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

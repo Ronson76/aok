@@ -1,6 +1,6 @@
 import { Switch, Route, useLocation, Redirect } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "./lib/queryClient";
+import { QueryClientProvider, useQuery, useMutation } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -17,7 +17,10 @@ import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QRCodeSVG } from "qrcode.react";
-import type { StatusData } from "@shared/schema";
+import type { StatusData, Settings as SettingsType } from "@shared/schema";
+import { useShakeDetector } from "@/hooks/use-shake-detector";
+import { EmergencyConfirmOverlay } from "@/components/emergency-confirm-overlay";
+import { shakeDetector } from "@/lib/shake-detector";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import LoginSelect from "@/pages/login-select";
@@ -298,6 +301,89 @@ function AppLayout() {
     enabled: isAuthenticated,
   });
 
+  // Fetch settings for shake-to-SOS
+  const { data: settings } = useQuery<SettingsType>({
+    queryKey: ["/api/settings"],
+    enabled: isAuthenticated,
+  });
+
+  // Shake-to-SOS state
+  const [showShakeOverlay, setShowShakeOverlay] = useState(false);
+  const [shakeLocation, setShakeLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  // Emergency mutation for shake-triggered alerts
+  const shakeEmergencyMutation = useMutation({
+    mutationFn: async (data: { location?: { latitude: number; longitude: number }; isAutoSend?: boolean }) => {
+      const response = await apiRequest("POST", "/api/emergency", { 
+        location: data.location,
+        trigger_type: "shake",
+        created_at: new Date().toISOString(),
+      });
+      return response;
+    },
+    onSuccess: () => {
+      setShowShakeOverlay(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/emergency/status"] });
+      toast({
+        title: "Emergency Alert Sent",
+        description: "Your emergency contacts have been notified.",
+      });
+    },
+    onError: (error: any) => {
+      setShowShakeOverlay(false);
+      toast({
+        title: "Alert Failed",
+        description: error?.message || "Failed to send emergency alert",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle shake detection
+  const handleShakeDetected = useCallback(() => {
+    if (showShakeOverlay) return; // Already showing overlay
+    
+    // Try to get current location
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setShakeLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        () => {
+          setShakeLocation(null); // Location failed, continue without it
+        },
+        { timeout: 5000, enableHighAccuracy: false }
+      );
+    }
+    
+    setShowShakeOverlay(true);
+  }, [showShakeOverlay]);
+
+  // Use shake detector hook
+  useShakeDetector({
+    enabled: isAuthenticated && (settings?.shakeToSOSEnabled ?? false),
+    onShakeDetected: handleShakeDetected,
+  });
+
+  const handleShakeConfirm = useCallback(() => {
+    shakeDetector.recordConfirmed();
+    shakeEmergencyMutation.mutate({ location: shakeLocation || undefined, isAutoSend: false });
+  }, [shakeLocation, shakeEmergencyMutation]);
+
+  const handleShakeAutoSend = useCallback(() => {
+    shakeDetector.recordAutoSent();
+    shakeEmergencyMutation.mutate({ location: shakeLocation || undefined, isAutoSend: true });
+  }, [shakeLocation, shakeEmergencyMutation]);
+
+  const handleShakeCancel = useCallback(() => {
+    shakeDetector.recordCancellation();
+    setShowShakeOverlay(false);
+    setShakeLocation(null);
+  }, []);
+
   const isOverdue = status?.status === "overdue";
 
   const playAlarmSound = () => {
@@ -497,6 +583,16 @@ function AppLayout() {
         <AppRoutes />
       </main>
       <BottomNav />
+      
+      {/* Shake-to-SOS Emergency Overlay */}
+      <EmergencyConfirmOverlay
+        isOpen={showShakeOverlay}
+        onConfirm={handleShakeConfirm}
+        onAutoSend={handleShakeAutoSend}
+        onCancel={handleShakeCancel}
+        triggerType="shake"
+        isPending={shakeEmergencyMutation.isPending}
+      />
     </div>
   );
 }

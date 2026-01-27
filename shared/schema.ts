@@ -173,6 +173,8 @@ export const settings = pgTable("settings", {
   additionalInfo: text("additional_info"),
   // Living situation from onboarding (with-pets, with-children, partner-travels, rural-area, solo-travel, lone-worker)
   livingSituation: text("living_situation"),
+  // Shake-to-SOS feature
+  shakeToSOSEnabled: boolean("shake_to_sos_enabled").notNull().default(false),
 });
 
 export type Settings = {
@@ -187,6 +189,7 @@ export type Settings = {
   trackingEnabled: boolean;
   additionalInfo: string | null;
   livingSituation: string | null;
+  shakeToSOSEnabled: boolean;
 };
 
 export const updateSettingsSchema = z.object({
@@ -199,6 +202,7 @@ export const updateSettingsSchema = z.object({
   pushStatus: z.enum(pushStatuses).optional(),
   redAlertEnabled: z.boolean().optional(),
   trackingEnabled: z.boolean().optional(),
+  shakeToSOSEnabled: z.boolean().optional(),
   password: z.string().optional(),
   additionalInfo: z.string().optional(),
   livingSituation: z.string().optional(),
