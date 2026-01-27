@@ -1,7 +1,7 @@
 import { Express, Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
 import { adminStorage, organizationStorage, storage } from "./storage";
-import { adminLoginSchema, AdminUserProfile, orgClientStatuses } from "@shared/schema";
+import { adminLoginSchema, AdminUserProfile, orgClientStatuses, updateUserFeaturesSchema } from "@shared/schema";
 import { z } from "zod";
 
 const ADMIN_SESSION_COOKIE = "admin_session";
@@ -461,6 +461,59 @@ export function registerAdminRoutes(app: Express) {
     } catch (error) {
       console.error("Error removing client:", error);
       res.status(500).json({ error: "Failed to remove client" });
+    }
+  });
+
+  // ==================== USER FEATURE CONTROLS ====================
+
+  // Update user feature settings
+  app.patch("/api/admin/users/:userId/features", adminAuthMiddleware, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const parsed = updateUserFeaturesSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.issues });
+      }
+
+      const user = await storage.updateUserFeatures(userId, parsed.data);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "update",
+        "user_features",
+        userId,
+        `Updated user features: ${JSON.stringify(parsed.data)}`
+      );
+
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user features:", error);
+      res.status(500).json({ error: "Failed to update user features" });
+    }
+  });
+
+  // Get user feature settings
+  app.get("/api/admin/users/:userId/features", adminAuthMiddleware, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json({
+        featureWellbeingAi: user.featureWellbeingAi,
+        featureShakeToAlert: user.featureShakeToAlert,
+        featureWellness: user.featureWellness,
+        featurePetProtection: user.featurePetProtection,
+        featureDigitalWill: user.featureDigitalWill,
+      });
+    } catch (error) {
+      console.error("Error fetching user features:", error);
+      res.status(500).json({ error: "Failed to fetch user features" });
     }
   });
 }

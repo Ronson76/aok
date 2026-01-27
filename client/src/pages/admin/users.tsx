@@ -28,10 +28,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
-  Users, LogOut, Shield, ShieldCheck, Trash2, ArrowLeft, Building2, User, Ban, CheckCircle, Plus, Loader2, Eye, EyeOff
+  Users, LogOut, Shield, ShieldCheck, Trash2, ArrowLeft, Building2, User, Ban, CheckCircle, Plus, Loader2, Eye, EyeOff, Settings2
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { apiRequest } from "@/lib/queryClient";
-import type { UserProfile } from "@shared/schema";
+import type { UserProfile, UserFeatureSettings } from "@shared/schema";
 import { useState } from "react";
 
 export default function AdminUsers() {
@@ -45,6 +46,17 @@ export default function AdminUsers() {
   const [orgEmail, setOrgEmail] = useState("");
   const [orgPassword, setOrgPassword] = useState("");
   const [showOrgPassword, setShowOrgPassword] = useState(false);
+  
+  // Feature management
+  const [showFeaturesDialog, setShowFeaturesDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [userFeatures, setUserFeatures] = useState<UserFeatureSettings>({
+    featureWellbeingAi: true,
+    featureShakeToAlert: true,
+    featureWellness: true,
+    featurePetProtection: true,
+    featureDigitalWill: true,
+  });
 
   const { data: users, isLoading } = useQuery<UserProfile[]>({
     queryKey: ["/api/admin/users"],
@@ -92,6 +104,49 @@ export default function AdminUsers() {
       });
     },
   });
+
+  const updateFeaturesMutation = useMutation({
+    mutationFn: async ({ userId, features }: { userId: string; features: Partial<UserFeatureSettings> }) => {
+      await apiRequest("PATCH", `/api/admin/users/${userId}/features`, features);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "Features updated",
+        description: "User feature settings have been updated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: error.message || "Could not update feature settings",
+      });
+    },
+  });
+
+  const openFeaturesDialog = (user: UserProfile) => {
+    setSelectedUser(user);
+    setUserFeatures({
+      featureWellbeingAi: user.featureWellbeingAi ?? true,
+      featureShakeToAlert: user.featureShakeToAlert ?? true,
+      featureWellness: user.featureWellness ?? true,
+      featurePetProtection: user.featurePetProtection ?? true,
+      featureDigitalWill: user.featureDigitalWill ?? true,
+    });
+    setShowFeaturesDialog(true);
+  };
+
+  const handleFeatureToggle = (feature: keyof UserFeatureSettings, value: boolean) => {
+    const newFeatures = { ...userFeatures, [feature]: value };
+    setUserFeatures(newFeatures);
+    if (selectedUser) {
+      updateFeaturesMutation.mutate({ 
+        userId: selectedUser.id, 
+        features: { [feature]: value } 
+      });
+    }
+  };
 
   const createOrgMutation = useMutation({
     mutationFn: async () => {
@@ -259,6 +314,15 @@ export default function AdminUsers() {
                       <span className="text-xs text-muted-foreground">
                         {formatDate(user.createdAt?.toString() || "")}
                       </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openFeaturesDialog(user)}
+                        title="Manage features"
+                        data-testid={`button-features-user-${user.id}`}
+                      >
+                        <Settings2 className="w-4 h-4" />
+                      </Button>
                       {isSuperAdmin && (
                         <Button
                           variant="ghost"
@@ -408,6 +472,90 @@ export default function AdminUsers() {
               ) : (
                 "Create Organisation"
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Features Management Dialog */}
+      <Dialog open={showFeaturesDialog} onOpenChange={setShowFeaturesDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage Features</DialogTitle>
+            <DialogDescription>
+              Toggle features for {selectedUser?.name}. Changes are saved automatically.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="feature-wellbeing-ai" className="font-medium">Wellbeing AI</Label>
+                <p className="text-xs text-muted-foreground">Health Insight integration</p>
+              </div>
+              <Switch
+                id="feature-wellbeing-ai"
+                checked={userFeatures.featureWellbeingAi}
+                onCheckedChange={(checked) => handleFeatureToggle("featureWellbeingAi", checked)}
+                disabled={updateFeaturesMutation.isPending}
+                data-testid="switch-wellbeing-ai"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="feature-shake-to-alert" className="font-medium">Shake to Alert</Label>
+                <p className="text-xs text-muted-foreground">Emergency SOS via phone shake</p>
+              </div>
+              <Switch
+                id="feature-shake-to-alert"
+                checked={userFeatures.featureShakeToAlert}
+                onCheckedChange={(checked) => handleFeatureToggle("featureShakeToAlert", checked)}
+                disabled={updateFeaturesMutation.isPending}
+                data-testid="switch-shake-to-alert"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="feature-wellness" className="font-medium">Wellness</Label>
+                <p className="text-xs text-muted-foreground">Mood and wellbeing tracking</p>
+              </div>
+              <Switch
+                id="feature-wellness"
+                checked={userFeatures.featureWellness}
+                onCheckedChange={(checked) => handleFeatureToggle("featureWellness", checked)}
+                disabled={updateFeaturesMutation.isPending}
+                data-testid="switch-wellness"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="feature-pet-protection" className="font-medium">Pet Protection</Label>
+                <p className="text-xs text-muted-foreground">Pet care profiles and alerts</p>
+              </div>
+              <Switch
+                id="feature-pet-protection"
+                checked={userFeatures.featurePetProtection}
+                onCheckedChange={(checked) => handleFeatureToggle("featurePetProtection", checked)}
+                disabled={updateFeaturesMutation.isPending}
+                data-testid="switch-pet-protection"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="feature-digital-will" className="font-medium">Digital Will</Label>
+                <p className="text-xs text-muted-foreground">Secure document storage</p>
+              </div>
+              <Switch
+                id="feature-digital-will"
+                checked={userFeatures.featureDigitalWill}
+                onCheckedChange={(checked) => handleFeatureToggle("featureDigitalWill", checked)}
+                disabled={updateFeaturesMutation.isPending}
+                data-testid="switch-digital-will"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowFeaturesDialog(false)} data-testid="button-close-features">
+              Done
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import type { OrganizationDashboardStats, OrganizationClientWithDetails, OrganizationBundle, OrganizationClientProfile, AlertLog, OrgClientStatus, Contact } from "@shared/schema";
@@ -174,6 +174,7 @@ export default function OrganizationDashboard() {
   // Client feature settings state
   const [clientFeatures, setClientFeatures] = useState({
     featureWellbeingAi: false,
+    featureShakeToAlert: true,
     featureMoodTracking: false,
     featurePetProtection: false,
     featureDigitalWill: false,
@@ -415,6 +416,7 @@ export default function OrganizationDashboard() {
       console.error("Failed to fetch features:", error);
       setClientFeatures({
         featureWellbeingAi: false,
+        featureShakeToAlert: true,
         featureMoodTracking: false,
         featurePetProtection: false,
         featureDigitalWill: false,
@@ -1607,11 +1609,29 @@ export default function OrganizationDashboard() {
 
                     <div className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-3">
+                        <div className="rounded-full bg-red-500/10 p-2">
+                          <Smartphone className="h-5 w-5 text-red-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Shake to Alert</p>
+                          <p className="text-sm text-muted-foreground">Emergency SOS via phone shake gesture</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={clientFeatures.featureShakeToAlert}
+                        onCheckedChange={(checked) => updateClientFeature(selectedClient.id, "featureShakeToAlert", checked)}
+                        disabled={savingFeatures}
+                        data-testid="switch-feature-shake-to-alert"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
                         <div className="rounded-full bg-blue-500/10 p-2">
                           <TrendingUp className="h-5 w-5 text-blue-500" />
                         </div>
                         <div>
-                          <p className="font-medium">Mood Tracking</p>
+                          <p className="font-medium">Wellness</p>
                           <p className="text-sm text-muted-foreground">Track wellness and mood patterns over time</p>
                         </div>
                       </div>
