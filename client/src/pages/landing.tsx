@@ -165,7 +165,7 @@ export default function Landing() {
                 <div className="w-2 h-5 bg-green-600 absolute rounded-sm" />
                 <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-0.5 -right-0.5" fill="currentColor" />
               </div>
-              <span className="text-xs font-semibold text-green-600 leading-none whitespace-nowrap">wellbeing-ai</span>
+              <span className="text-xs font-semibold text-green-600 leading-none whitespace-nowrap">Wellbeing AI</span>
             </a>
           </div>
           <nav className="hidden md:flex items-center gap-6">
