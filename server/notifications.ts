@@ -1484,15 +1484,33 @@ export async function sendLogoutNotification(
 
   const subject = `aok Alert: ${identifier} has signed out`;
   
-  // Include location information if available
-  const locationSection = location 
-    ? `
+  // Include location information if available - use what3words
+  let locationSection = "";
+  if (location) {
+    let what3wordsAddress: string | null = null;
+    try {
+      what3wordsAddress = await getWhat3WordsAddress(location.latitude, location.longitude);
+    } catch (error) {
+      console.error('[LOGOUT NOTIFICATION] Failed to get what3words address:', error);
+    }
+    
+    if (what3wordsAddress) {
+      const w3wUrl = `https://what3words.com/${what3wordsAddress}`;
+      locationSection = `
 
 LAST KNOWN LOCATION:
-Google Maps: https://www.google.com/maps?q=${location.latitude},${location.longitude}
+what3words: ///${what3wordsAddress}
+View on map: ${w3wUrl}
+`;
+    } else {
+      // Fallback to coordinates only if what3words fails
+      locationSection = `
+
+LAST KNOWN LOCATION:
 Coordinates: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}
-`
-    : "";
+`;
+    }
+  }
   
   const body = `Hello ${primaryContact.name},
 
