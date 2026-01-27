@@ -634,10 +634,13 @@ export function registerOrganizationRoutes(app: Express) {
       if (user && user.accountType === "organization") {
         const rawToken = await storage.createPasswordResetToken(user.id);
         
+        const host = req.get('host') || 'aok.care';
         const baseUrl = process.env.NODE_ENV === "production" 
-          ? `https://${req.get('host')}`
-          : `http://${req.get('host')}`;
+          ? `https://${host}`
+          : `http://${host}`;
         const resetUrl = `${baseUrl}/org/reset-password?token=${rawToken}`;
+        
+        console.log(`[ORG PASSWORD RESET] host=${host}, baseUrl=${baseUrl}, resetUrl=${resetUrl}`);
         
         try {
           await sendPasswordResetEmail(user.email, resetUrl, user.name);
