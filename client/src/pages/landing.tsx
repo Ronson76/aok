@@ -242,7 +242,7 @@ export default function Landing() {
                 )}
                 <DropdownMenuItem onClick={handleShare} data-testid="button-share">
                   <Share2 className="h-4 w-4 mr-2" />
-                  Share
+                  Share aok
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <a href="mailto:support@aok.care?subject=Support%20Enquiry" className="flex items-center gap-2" data-testid="link-contact-us">
