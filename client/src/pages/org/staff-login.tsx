@@ -61,12 +61,6 @@ export default function OrganizationStaffLogin() {
             <ShieldCheck className="h-9 w-9 text-green-600" />
             <span className="text-2xl font-bold text-green-600">aok</span>
           </Link>
-          <Link href="/org/login">
-            <Button variant="ghost" size="sm" data-testid="button-back">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-          </Link>
         </div>
       </header>
 
