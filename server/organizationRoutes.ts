@@ -634,26 +634,21 @@ export function registerOrganizationRoutes(app: Express) {
       if (user && user.accountType === "organization") {
         const rawToken = await storage.createPasswordResetToken(user.id);
         
-        // Get base URL from Origin header first (most reliable), then fall back to other sources
-        const origin = req.get('origin');
+        // Use production domain directly when in production, otherwise use request headers
         let baseUrl: string;
         
-        if (origin) {
-          baseUrl = origin;
+        if (process.env.REPL_SLUG || process.env.REPLIT_DEPLOYMENT) {
+          // We're on Replit - use production domain
+          baseUrl = 'https://aok.care';
         } else {
-          const host = req.get('x-forwarded-host') || req.get('host') || req.headers.host;
-          const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
-          if (host) {
-            baseUrl = `${protocol}://${host}`;
-          } else {
-            // Fallback to production domain
-            baseUrl = 'https://aok.care';
-          }
+          // Development environment
+          const host = req.get('host') || 'localhost:5000';
+          baseUrl = `http://${host}`;
         }
         
         const resetUrl = `${baseUrl}/org/reset-password?token=${rawToken}`;
         
-        console.log(`[ORG PASSWORD RESET] Origin: ${origin}, baseUrl: ${baseUrl}`);
+        console.log(`[ORG PASSWORD RESET] baseUrl: ${baseUrl}`);
         
         try {
           await sendPasswordResetEmail(user.email, resetUrl, user.name, 'organisation');
