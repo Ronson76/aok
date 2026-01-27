@@ -1,0 +1,61 @@
+Implement “Shake-to-SOS” in the AOK web app (PWA-ready) using Web Motion Sensors.
+
+GOAL
+When the user shakes their phone intentionally, show a full-screen emergency confirmation overlay:
+- Big button: “YES – SEND EMERGENCY”
+- Secondary button: “CANCEL”
+- 5-second countdown (default) that auto-sends the alert if not cancelled.
+Cancellation must be tamper-resistant:
+- Cancel requires a LONG PRESS (press-and-hold) for 3 seconds (default).
+- If biometric auth is available in the environment, require biometric to cancel; otherwise long-press cancel.
+
+TECH REQUIREMENTS (WEB)
+1) Use DeviceMotionEvent + devicemotion listener (mobile browsers) to detect shake:
+- Read accelerationIncludingGravity.x/y/z each event.
+- Compute magnitude = sqrt(x^2 + y^2 + z^2).
+- Use a high-pass filter to remove gravity / slow movement.
+- Trigger condition (tunable defaults):
+  - thresholdMagnitude: 18 (m/s^2 equivalent on accelIncludingGravity signal)
+  - requiredPeaks: 3 peaks above threshold
+  - windowMs: 1200ms sliding window
+  - minPeakGapMs: 120ms (ignore peaks closer than this)
+  - cooldownMs: 10000ms (10s lockout after a trigger)
+  - debounceMs: 500ms (ignore rapid repeats)
+2) iOS permission handling:
+- If DeviceMotionEvent.requestPermission exists, request permission on a user gesture (button tap) and store “motionEnabled=true”.
+- Provide a Settings toggle: “Enable Shake-to-SOS” which calls requestPermission() on iOS.
+3) Run detection only when:
+- user is logged in
+- shake feature enabled in settings
+- app is in foreground (document.visibilityState === 'visible')
+4) On shake trigger:
+- Enter state: COUNTDOWN_ARMED
+- Render a full-screen modal overlay (blocks interaction with the rest of the app).
+- Play haptic/vibrate if supported (navigator.vibrate([200,100,200])).
+- Start countdownTimerSeconds = 5.
+- If user taps YES → immediately call existing “sendAlert()” flow (same as panic button).
+- If countdown reaches 0 → call sendAlert().
+5) Cancel logic:
+- CANCEL is NOT a simple tap.
+- Implement “hold-to-cancel”: user must press and hold CANCEL for 3000ms to cancel.
+- Releasing early does nothing (alert continues).
+- After cancel success → state becomes CANCELLED and overlay closes.
+- Disable Escape/back navigation from dismissing the overlay.
+6) Alert payload:
+- Include trigger_type = "shake"
+- Include created_at timestamp
+- Include lastKnownLocation if permission granted (use Geolocation API; do not block send if location fails).
+7) Logging / analytics:
+- Log events: shake_detected, countdown_started, alert_confirmed, alert_auto_sent, alert_cancelled.
+- Include false_trigger_count metric (cancelled before send).
+
+DELIVERABLES
+- A reusable ShakeDetector module/service.
+- A UI component: EmergencyConfirmOverlay.
+- A settings toggle to enable motion permissions.
+- Unit tests / basic test harness to simulate devicemotion events.
+- Clear in-code constants for thresholdMagnitude, requiredPeaks, windowMs, cooldownMs, longPressMs.
+
+NOTES / CONSTRAINTS
+- Web apps cannot reliably detect shake while locked/background, especially on iOS. Foreground-only is acceptable for now.
+- Use feature detection and graceful fallback: if DeviceMotionEvent unavailable, hide the toggle and show “Shake not supported on this device/browser”.
