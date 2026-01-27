@@ -538,7 +538,7 @@ export function registerAdminRoutes(app: Express) {
         const resetUrl = `${baseUrl}/admin/reset-password?token=${rawToken}`;
         
         try {
-          await sendPasswordResetEmail(admin.email, resetUrl, admin.name);
+          await sendPasswordResetEmail(admin.email, resetUrl, admin.name, 'admin');
         } catch (error) {
           console.error("Failed to send admin password reset email:", error);
           if (process.env.NODE_ENV !== "production") {

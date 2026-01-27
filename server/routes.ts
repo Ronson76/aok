@@ -848,7 +848,7 @@ export async function registerRoutes(
         
         // Send password reset email
         try {
-          await sendPasswordResetEmail(user.email, resetUrl, user.name);
+          await sendPasswordResetEmail(user.email, resetUrl, user.name, 'individual');
         } catch (error) {
           console.error("Failed to send password reset email:", error);
           // Log in development for testing
