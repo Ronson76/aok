@@ -149,6 +149,12 @@ export default function OrganizationDashboard() {
   const [confirmClientPassword, setConfirmClientPassword] = useState("");
   const [orgPassword, setOrgPassword] = useState("");
   
+  // Change own password dialog state
+  const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  
   // Profile editing state
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState<Partial<OrganizationClientProfile>>({});
@@ -334,6 +340,49 @@ export default function OrganizationDashboard() {
       });
     },
   });
+
+  const changeOwnPasswordMutation = useMutation({
+    mutationFn: async ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) => {
+      const response = await apiRequest("POST", "/api/org/auth/change-password", {
+        currentPassword,
+        newPassword,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      setShowChangePasswordDialog(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      toast({
+        title: "Password changed",
+        description: "Your password has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to change password",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleChangeOwnPassword = () => {
+    if (!currentPassword.trim()) {
+      toast({ title: "Error", description: "Please enter your current password.", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast({ title: "Error", description: "New password must be at least 8 characters.", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      toast({ title: "Error", description: "Passwords do not match.", variant: "destructive" });
+      return;
+    }
+    changeOwnPasswordMutation.mutate({ currentPassword, newPassword });
+  };
 
   const updateClientStatusMutation = useMutation({
     mutationFn: async ({ orgClientId, status }: { orgClientId: string; status: OrgClientStatus }) => {
@@ -627,6 +676,10 @@ export default function OrganizationDashboard() {
           >
             <UserPlus className="h-4 w-4 mr-2" />
             Register Client
+          </Button>
+          <Button variant="outline" onClick={() => setShowChangePasswordDialog(true)} data-testid="button-org-change-password">
+            <KeyRound className="h-4 w-4 mr-2" />
+            Change Password
           </Button>
           <Button variant="outline" onClick={handleLogout} data-testid="button-org-logout">
             <LogOut className="h-4 w-4 mr-2" />
@@ -1880,6 +1933,76 @@ export default function OrganizationDashboard() {
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
               ) : (
                 editingContactId ? "Update Contact" : "Add Contact"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Own Password Dialog */}
+      <Dialog open={showChangePasswordDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowChangePasswordDialog(false);
+          setCurrentPassword("");
+          setNewPassword("");
+          setConfirmNewPassword("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Enter your current password and a new password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Current Password</Label>
+              <Input
+                id="current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Enter current password"
+                data-testid="input-current-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="At least 8 characters"
+                data-testid="input-new-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-new-password">Confirm New Password</Label>
+              <Input
+                id="confirm-new-password"
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                placeholder="Confirm new password"
+                data-testid="input-confirm-new-password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowChangePasswordDialog(false)} data-testid="button-cancel-change-password">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleChangeOwnPassword}
+              disabled={changeOwnPasswordMutation.isPending}
+              data-testid="button-submit-change-password"
+            >
+              {changeOwnPasswordMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Changing...</>
+              ) : (
+                "Change Password"
               )}
             </Button>
           </DialogFooter>

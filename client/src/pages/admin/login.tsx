@@ -168,6 +168,13 @@ export default function AdminLogin() {
                 needsSetup ? "Create Admin Account" : "Sign In"
               )}
             </Button>
+            {!needsSetup && (
+              <div className="text-center">
+                <Link href="/admin/forgot-password" className="text-sm text-primary hover:underline" data-testid="link-forgot-password">
+                  Forgot password?
+                </Link>
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>

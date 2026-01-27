@@ -1,7 +1,7 @@
 import { 
   contacts, checkIns, settings, alertLogs, users, sessions, passwordResetTokens, pushSubscriptions,
   adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs, organizationClients, organizationClientProfiles,
-  pendingClientContacts, activeEmergencyAlerts, moodEntries, pets, digitalDocuments, globalFeatureFlags,
+  pendingClientContacts, activeEmergencyAlerts, moodEntries, pets, digitalDocuments, globalFeatureFlags, adminPasswordResetTokens,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
   AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo,
   OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData, OrgClientStatus,
@@ -1529,6 +1529,57 @@ class AdminStorage implements IAdminStorage {
         });
       }
     }
+  }
+
+  // Admin password reset tokens
+  async createAdminPasswordResetToken(adminId: string): Promise<string> {
+    await getDb().delete(adminPasswordResetTokens).where(eq(adminPasswordResetTokens.adminId, adminId));
+
+    const rawToken = randomBytes(32).toString("hex");
+    const tokenHash = createHash("sha256").update(rawToken).digest("hex");
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await getDb().insert(adminPasswordResetTokens).values({
+      adminId,
+      tokenHash,
+      expiresAt,
+    });
+
+    return rawToken;
+  }
+
+  async validateAdminPasswordResetToken(token: string): Promise<{ adminId: string; tokenId: string } | null> {
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+
+    const result = await getDb().select().from(adminPasswordResetTokens).where(
+      and(
+        eq(adminPasswordResetTokens.tokenHash, tokenHash),
+        isNull(adminPasswordResetTokens.usedAt)
+      )
+    );
+
+    const resetToken = result[0];
+    if (!resetToken) {
+      return null;
+    }
+
+    if (new Date(resetToken.expiresAt) < new Date()) {
+      return null;
+    }
+
+    return { adminId: resetToken.adminId, tokenId: resetToken.id };
+  }
+
+  async markAdminPasswordResetTokenUsed(tokenId: string): Promise<void> {
+    await getDb().update(adminPasswordResetTokens).set({ usedAt: new Date() }).where(eq(adminPasswordResetTokens.id, tokenId));
+  }
+
+  async updateAdminPassword(adminId: string, passwordHash: string): Promise<void> {
+    await getDb().update(adminUsers).set({ passwordHash }).where(eq(adminUsers.id, adminId));
+  }
+
+  async deleteAllAdminSessions(adminId: string): Promise<void> {
+    await getDb().delete(adminSessions).where(eq(adminSessions.adminId, adminId));
   }
 }
 

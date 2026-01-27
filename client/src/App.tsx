@@ -39,10 +39,14 @@ import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminBundles from "@/pages/admin/bundles";
+import AdminForgotPassword from "@/pages/admin/forgot-password";
+import AdminResetPassword from "@/pages/admin/reset-password";
 import OrganizationDashboard from "@/pages/org/dashboard";
 import OrgLoginSelect from "@/pages/org/login-select";
 import OrganizationClientLogin from "@/pages/org/client-login";
 import OrganizationStaffLogin from "@/pages/org/staff-login";
+import OrgForgotPassword from "@/pages/org/forgot-password";
+import OrgResetPassword from "@/pages/org/reset-password";
 import Activate from "@/pages/activate";
 import Pricing from "@/pages/pricing";
 import Onboarding from "@/pages/onboarding";
@@ -665,6 +669,14 @@ function Router() {
     return <OrganizationStaffLogin />;
   }
 
+  if (location === "/org/forgot-password") {
+    return <OrgForgotPassword />;
+  }
+
+  if (location.startsWith("/org/reset-password")) {
+    return <OrgResetPassword />;
+  }
+
   if (location === "/pricing") {
     return <Pricing />;
   }
@@ -687,6 +699,14 @@ function Router() {
         <AdminAuthRoute component={AdminLogin} />
       </AdminProvider>
     );
+  }
+
+  if (location === "/admin/forgot-password") {
+    return <AdminForgotPassword />;
+  }
+
+  if (location.startsWith("/admin/reset-password")) {
+    return <AdminResetPassword />;
   }
 
   if (location.startsWith("/admin")) {
