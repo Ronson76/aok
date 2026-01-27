@@ -390,6 +390,7 @@ async function sendEmail(to: string, subject: string, body: string, html?: strin
   // Use Resend as primary email provider (support@aok.care)
   try {
     const { client, fromEmail } = await getResendClient();
+    console.log(`[EMAIL] Got Resend client, fromEmail: ${fromEmail}`);
     
     const emailData: {
       from: string;
@@ -409,11 +410,17 @@ async function sendEmail(to: string, subject: string, body: string, html?: strin
       emailData.html = html;
     }
     
-    await client.emails.send(emailData);
+    console.log(`[EMAIL] Sending email from ${emailData.from} to ${to}...`);
+    const result = await client.emails.send(emailData);
+    console.log(`[EMAIL] Resend API response:`, JSON.stringify(result));
     
     console.log(`[EMAIL] Successfully sent email via Resend to ${to}`);
-  } catch (error) {
+  } catch (error: any) {
     console.error(`[EMAIL] Failed to send email to ${to}:`, error);
+    console.error(`[EMAIL] Error details - message: ${error?.message}, statusCode: ${error?.statusCode}, name: ${error?.name}`);
+    if (error?.response) {
+      console.error(`[EMAIL] Response body:`, JSON.stringify(error.response));
+    }
     throw error;
   }
 }
