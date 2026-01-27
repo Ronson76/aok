@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PasswordInput } from "@/components/password-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Loader2, User, Building2, MapPin, AlertTriangle, Info } from "lucide-react";
+import { ShieldCheck, Loader2, User, Building2, MapPin, AlertTriangle, Info, ArrowLeft } from "lucide-react";
 import { insertUserSchema, type InsertUser } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -420,13 +420,21 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 py-12">
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="container mx-auto px-4 py-4 flex items-center justify-between border-b">
+        <Link href="/" className="flex items-center hover:opacity-80 transition-opacity" data-testid="link-back-home">
+          <ArrowLeft className="h-5 w-5 text-green-600" />
+        </Link>
+        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-logo-home">
+          <ShieldCheck className="h-9 w-9 text-green-600" />
+          <span className="text-2xl font-bold text-green-600">aok</span>
+        </Link>
+        <div className="w-5"></div>
+      </header>
+      
+      <div className="flex-1 flex items-center justify-center p-4 py-12">
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center space-y-2">
-          <Link href="/" className="flex flex-col items-center justify-center mb-2 cursor-pointer" data-testid="link-logo-home">
-            <ShieldCheck className="h-12 w-12 text-green-600" />
-            <span className="text-2xl font-bold text-green-600">aok</span>
-          </Link>
           <CardTitle className="text-2xl">
             {fromOnboarding ? "Registration Complete" : "Create Your Account"}
           </CardTitle>
@@ -914,6 +922,7 @@ export default function Register() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
