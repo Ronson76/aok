@@ -88,6 +88,10 @@ Preferred communication style: Simple, everyday language.
 - **Subscription Management**: Settings page displays subscription status (Active/Trial/Cancelling) with plan details, cancel/reactivate buttons with password confirmation
 - **Forgot Password**: Complete password reset flow via email (`/forgot-password`, `/reset-password?token=xxx`)
 - **Auth Improvements**: Subscription endpoints protected with authMiddleware
+- **Org/Admin Password Management**: Both org dashboard and admin dashboard now have forgot password flows and change password functionality
+- **Feature Toggle Propagation**: Org dashboard feature restrictions now apply to client apps via merged feature flags in `/api/auth/me` endpoint (AND logic - features only enabled if both org allows AND user has enabled)
+- **Shake to SOS Default**: Enabled by default for all users (can be disabled in user settings)
+- **Check-in Timing Fix**: Next check-in now calculates based on scheduleStartTime + intervalHours instead of last check-in time (e.g., scheduled 10am daily, check in at 2pm, next due is still 10am next day)
 
 ### Build Tools
 - Vite
