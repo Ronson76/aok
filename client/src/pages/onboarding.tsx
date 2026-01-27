@@ -305,12 +305,15 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="container mx-auto px-4 py-4 flex items-center justify-center border-b">
-        <Link href="/" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity" data-testid="link-logo-home">
+      <header className="container mx-auto px-4 py-4 flex items-center justify-between border-b">
+        <Link href="/" className="flex items-center hover:opacity-80 transition-opacity" data-testid="link-back-home">
           <ArrowLeft className="h-5 w-5 text-green-600" />
+        </Link>
+        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-logo-home">
           <ShieldCheck className="h-9 w-9 text-green-600" />
           <span className="text-2xl font-bold text-green-600">aok</span>
         </Link>
+        <div className="w-5"></div>
       </header>
 
       <div className="px-4 py-2 border-b bg-background">
