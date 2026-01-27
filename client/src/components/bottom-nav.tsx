@@ -135,7 +135,7 @@ export function BottomNav() {
                     <DropdownMenuItem key={feature.path} asChild>
                       <Link
                         href={feature.path}
-                        className={`flex items-center gap-3 cursor-pointer ${isActive ? "text-primary" : ""}`}
+                        className={`flex items-center gap-3 cursor-pointer text-green-600 ${isActive ? "font-semibold" : ""}`}
                         onClick={() => setMoreOpen(false)}
                         data-testid={`nav-wellbeing-${feature.label.toLowerCase()}`}
                       >
@@ -149,7 +149,7 @@ export function BottomNav() {
                     <DropdownMenuItem 
                       key={feature.path} 
                       disabled 
-                      className="flex items-center gap-3 opacity-50"
+                      className="flex items-center gap-3 text-muted-foreground opacity-50"
                       data-testid={`nav-wellbeing-${feature.label.toLowerCase()}-disabled`}
                     >
                       <Icon className="h-4 w-4" />
