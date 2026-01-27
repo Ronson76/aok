@@ -53,9 +53,10 @@ export default function OrgForgotPassword() {
       <div className="min-h-screen bg-background flex flex-col">
         <header className="border-b">
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2" data-testid="link-home">
-              <ShieldCheck className="h-8 w-8 text-green-600" />
-              <span className="text-lg font-semibold text-green-600">aok</span>
+            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
+              <ArrowLeft className="h-5 w-5 text-green-600" />
+              <ShieldCheck className="h-9 w-9 text-green-600" />
+              <span className="text-2xl font-bold text-green-600">aok</span>
             </Link>
           </div>
         </header>
@@ -90,8 +91,8 @@ export default function OrgForgotPassword() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
             <ArrowLeft className="h-5 w-5 text-green-600" />
-            <ShieldCheck className="h-8 w-8 text-green-600" />
-            <span className="text-lg font-semibold text-green-600">aok</span>
+            <ShieldCheck className="h-9 w-9 text-green-600" />
+            <span className="text-2xl font-bold text-green-600">aok</span>
           </Link>
           <Link href="/org/staff-login">
             <Button variant="ghost" size="sm" data-testid="button-back">
