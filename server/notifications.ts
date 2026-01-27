@@ -1132,18 +1132,24 @@ export async function sendEmergencyAlert(
     let smsLocationInfo = "";
     
     if (gpsLocation) {
-      const mapsUrl = `https://www.google.com/maps?q=${gpsLocation.latitude},${gpsLocation.longitude}`;
-      const w3wUrl = what3wordsAddress ? `https://what3words.com/${what3wordsAddress}` : null;
-      locationInfo = `
+      if (what3wordsAddress) {
+        const w3wUrl = `https://what3words.com/${what3wordsAddress}`;
+        locationInfo = `
 CURRENT GPS LOCATION:
-Coordinates: ${gpsLocation.latitude.toFixed(6)}, ${gpsLocation.longitude.toFixed(6)}${what3wordsAddress ? `
 what3words: ///${what3wordsAddress}
-what3words map: ${w3wUrl}` : ''}
-View on Google Maps: ${mapsUrl}
+View on map: ${w3wUrl}
 `;
-      smsLocationInfo = what3wordsAddress 
-        ? `Location: ///${what3wordsAddress} (${w3wUrl})` 
-        : `Location: ${mapsUrl}`;
+        smsLocationInfo = `Location: ///${what3wordsAddress} (${w3wUrl})`;
+      } else {
+        // Fallback to Google Maps only if what3words is unavailable
+        const mapsUrl = `https://www.google.com/maps?q=${gpsLocation.latitude},${gpsLocation.longitude}`;
+        locationInfo = `
+CURRENT GPS LOCATION:
+Coordinates: ${gpsLocation.latitude.toFixed(6)}, ${gpsLocation.longitude.toFixed(6)}
+View on map: ${mapsUrl}
+`;
+        smsLocationInfo = `Location: ${mapsUrl}`;
+      }
     }
     
     if (user.addressLine1) {
@@ -1503,11 +1509,13 @@ what3words: ///${what3wordsAddress}
 View on map: ${w3wUrl}
 `;
     } else {
-      // Fallback to coordinates only if what3words fails
+      // Fallback to Google Maps only if what3words is unavailable
+      const mapsUrl = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
       locationSection = `
 
 LAST KNOWN LOCATION:
 Coordinates: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}
+View on map: ${mapsUrl}
 `;
     }
   }
