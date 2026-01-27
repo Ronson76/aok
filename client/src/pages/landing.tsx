@@ -568,6 +568,8 @@ export default function Landing() {
                   </div>
                   <span className="text-white font-semibold text-base animate-pulse" style={{ animationDuration: '3s' }}>you're aok</span>
                 </div>
+                {/* Glass reflection overlay */}
+                <div className="absolute inset-1 rounded-[2rem] pointer-events-none bg-gradient-to-br from-white/30 via-transparent to-transparent" />
               </div>
               <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-checkin">Easy Check-Ins</h4>
               <p className="text-xs md:text-sm text-muted-foreground">One tap to confirm you're aok</p>
@@ -609,6 +611,8 @@ export default function Landing() {
                     <p className="text-[8px] text-gray-600 mt-0.5">Incoming phone call</p>
                   </div>
                 </div>
+                {/* Glass reflection overlay */}
+                <div className="absolute inset-1 rounded-[2rem] pointer-events-none bg-gradient-to-br from-white/30 via-transparent to-transparent" />
               </div>
               <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-alerts">Multi-Channel Alerts</h4>
               <p className="text-xs md:text-sm text-muted-foreground">Email, SMS, WhatsApp, and calls</p>
@@ -653,6 +657,8 @@ export default function Landing() {
                   <div className="absolute top-8 left-4 bg-white/80 px-1 py-0.5 rounded text-[7px] text-gray-700">High Street</div>
                   <div className="absolute top-16 right-3 bg-white/80 px-1 py-0.5 rounded text-[7px] text-gray-700">Queen's Road</div>
                 </div>
+                {/* Glass reflection overlay */}
+                <div className="absolute inset-1 rounded-[2rem] pointer-events-none bg-gradient-to-br from-white/30 via-transparent to-transparent" />
               </div>
               <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-location">GPS Location Sharing</h4>
               <p className="text-xs md:text-sm text-muted-foreground">Precise what3words addresses</p>
@@ -679,6 +685,8 @@ export default function Landing() {
                     </div>
                     <p className="text-gray-400 text-xs text-center leading-relaxed animate-pulse" style={{ animationDuration: '3s' }}>AI-powered health advice at your fingertips</p>
                   </div>
+                  {/* Glass reflection overlay */}
+                  <div className="absolute inset-1 rounded-[2rem] pointer-events-none bg-gradient-to-br from-white/30 via-transparent to-transparent" />
                 </div>
               </a>
               <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-wellbeing">Built-in Wellbeing App</h4>
