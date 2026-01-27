@@ -7,7 +7,11 @@ export default function OrgLoginSelect() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2" data-testid="link-home">
+            <ShieldCheck className="h-8 w-8 text-green-600" />
+            <span className="text-lg font-semibold text-green-600">aok</span>
+          </Link>
           <Link href="/">
             <Button variant="ghost" size="sm" data-testid="button-back-home">
               <ArrowLeft className="h-4 w-4 mr-2" />

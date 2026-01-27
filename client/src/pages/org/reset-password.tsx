@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { PasswordInput } from "@/components/password-input";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Building2, Loader2, CheckCircle, AlertCircle, ShieldCheck, ArrowLeft } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 
@@ -116,7 +116,22 @@ export default function OrgResetPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="border-b">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2" data-testid="link-home">
+            <ShieldCheck className="h-8 w-8 text-green-600" />
+            <span className="text-lg font-semibold text-green-600">aok</span>
+          </Link>
+          <Link href="/org/staff-login">
+            <Button variant="ghost" size="sm" data-testid="button-back">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Login
+            </Button>
+          </Link>
+        </div>
+      </header>
+      <div className="flex-1 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-2">
@@ -185,6 +200,7 @@ export default function OrgResetPassword() {
           </Form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
