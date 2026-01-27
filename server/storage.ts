@@ -1,11 +1,11 @@
 import { 
   contacts, checkIns, settings, alertLogs, users, sessions, passwordResetTokens, pushSubscriptions,
   adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs, organizationClients, organizationClientProfiles,
-  pendingClientContacts, activeEmergencyAlerts, moodEntries, pets, digitalDocuments,
+  pendingClientContacts, activeEmergencyAlerts, moodEntries, pets, digitalDocuments, globalFeatureFlags,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
   AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo,
   OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData, OrgClientStatus,
-  OrgClientRegistrationStatus, UpdateClientFeatures, ClientFeatureSettings,
+  OrgClientRegistrationStatus, UpdateClientFeatures, ClientFeatureSettings, featureKeys, UpdateUserFeatures,
   OrganizationClientProfile, UpdateOrganizationClientProfile, AdminOrganizationClientView, AdminOrganizationView,
   PushSubscription, InsertPushSubscription, ActiveEmergencyAlert,
   MoodEntry, InsertMoodEntry, Pet, InsertPet, UpdatePet, DigitalDocument, InsertDigitalDocument, UpdateDigitalDocument
@@ -138,6 +138,9 @@ export interface IStorage {
   createDigitalDocument(userId: string, data: InsertDigitalDocument): Promise<DigitalDocument>;
   updateDigitalDocument(userId: string, id: string, updates: UpdateDigitalDocument): Promise<DigitalDocument | undefined>;
   deleteDigitalDocument(userId: string, id: string): Promise<boolean>;
+
+  // User feature controls
+  updateUserFeatures(userId: string, features: UpdateUserFeatures): Promise<User | undefined>;
 }
 
 class DatabaseStorage implements IStorage {
@@ -1182,6 +1185,15 @@ class DatabaseStorage implements IStorage {
       .returning();
     return result.length > 0;
   }
+
+  async updateUserFeatures(userId: string, features: UpdateUserFeatures): Promise<User | undefined> {
+    const result = await getDb()
+      .update(users)
+      .set(features)
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0];
+  }
 }
 
 export const storage = new DatabaseStorage();
@@ -1220,6 +1232,11 @@ export interface IAdminStorage {
   // Audit logs
   createAuditLog(adminId: string, action: string, entityType: string, entityId?: string, details?: string): Promise<AdminAuditLog>;
   getAuditLogs(limit?: number): Promise<AdminAuditLog[]>;
+  
+  // Global feature flags
+  getGlobalFeatures(): Promise<Record<string, boolean>>;
+  updateGlobalFeatures(features: Record<string, boolean>, adminId: string): Promise<void>;
+  initializeGlobalFeatures(): Promise<void>;
 }
 
 class AdminStorage implements IAdminStorage {
@@ -1470,6 +1487,48 @@ class AdminStorage implements IAdminStorage {
 
   async getAuditLogs(limit: number = 100): Promise<AdminAuditLog[]> {
     return await getDb().select().from(adminAuditLogs).orderBy(desc(adminAuditLogs.createdAt)).limit(limit);
+  }
+
+  // Global feature flags
+  async getGlobalFeatures(): Promise<Record<string, boolean>> {
+    const flags = await getDb().select().from(globalFeatureFlags);
+    const result: Record<string, boolean> = {};
+    for (const key of featureKeys) {
+      const flag = flags.find(f => f.featureKey === key);
+      result[key] = flag?.enabled ?? true; // Default to enabled if not found
+    }
+    return result;
+  }
+
+  async updateGlobalFeatures(features: Record<string, boolean>, adminId: string): Promise<void> {
+    for (const [key, enabled] of Object.entries(features)) {
+      if (featureKeys.includes(key as any)) {
+        const existing = await getDb().select().from(globalFeatureFlags).where(eq(globalFeatureFlags.featureKey, key));
+        if (existing.length > 0) {
+          await getDb().update(globalFeatureFlags)
+            .set({ enabled, updatedAt: new Date(), updatedBy: adminId })
+            .where(eq(globalFeatureFlags.featureKey, key));
+        } else {
+          await getDb().insert(globalFeatureFlags).values({
+            featureKey: key,
+            enabled,
+            updatedBy: adminId,
+          });
+        }
+      }
+    }
+  }
+
+  async initializeGlobalFeatures(): Promise<void> {
+    for (const key of featureKeys) {
+      const existing = await getDb().select().from(globalFeatureFlags).where(eq(globalFeatureFlags.featureKey, key));
+      if (existing.length === 0) {
+        await getDb().insert(globalFeatureFlags).values({
+          featureKey: key,
+          enabled: true,
+        });
+      }
+    }
   }
 }
 
@@ -1801,6 +1860,7 @@ class OrganizationStorage implements IOrganizationStorage {
     const result = await getDb()
       .select({
         featureWellbeingAi: organizationClients.featureWellbeingAi,
+        featureShakeToAlert: organizationClients.featureShakeToAlert,
         featureMoodTracking: organizationClients.featureMoodTracking,
         featurePetProtection: organizationClients.featurePetProtection,
         featureDigitalWill: organizationClients.featureDigitalWill,

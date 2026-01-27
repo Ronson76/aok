@@ -469,6 +469,7 @@ export function registerOrganizationRoutes(app: Express) {
 
       res.json({
         featureWellbeingAi: orgClient.featureWellbeingAi,
+        featureShakeToAlert: orgClient.featureShakeToAlert,
         featureMoodTracking: orgClient.featureMoodTracking,
         featurePetProtection: orgClient.featurePetProtection,
         featureDigitalWill: orgClient.featureDigitalWill,

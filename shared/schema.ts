@@ -39,6 +39,12 @@ export const users = pgTable("users", {
   // Track when user accepted terms and conditions (null = not accepted)
   termsAcceptedAt: timestamp("terms_accepted_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  // Per-user feature toggles (all ON by default)
+  featureWellbeingAi: boolean("feature_wellbeing_ai").notNull().default(true),
+  featureShakeToAlert: boolean("feature_shake_to_alert").notNull().default(true),
+  featureWellness: boolean("feature_wellness").notNull().default(true),
+  featurePetProtection: boolean("feature_pet_protection").notNull().default(true),
+  featureDigitalWill: boolean("feature_digital_will").notNull().default(true),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ 
@@ -86,6 +92,25 @@ export const insertUserSchema = createInsertSchema(users).omit({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+// Schema for updating user feature settings
+export const updateUserFeaturesSchema = z.object({
+  featureWellbeingAi: z.boolean().optional(),
+  featureShakeToAlert: z.boolean().optional(),
+  featureWellness: z.boolean().optional(),
+  featurePetProtection: z.boolean().optional(),
+  featureDigitalWill: z.boolean().optional(),
+});
+export type UpdateUserFeatures = z.infer<typeof updateUserFeaturesSchema>;
+
+// Type for user feature settings
+export type UserFeatureSettings = {
+  featureWellbeingAi: boolean;
+  featureShakeToAlert: boolean;
+  featureWellness: boolean;
+  featurePetProtection: boolean;
+  featureDigitalWill: boolean;
+};
 
 // Sessions table
 export const sessions = pgTable("sessions", {
@@ -354,6 +379,36 @@ export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type AdminUserProfile = Omit<AdminUser, "passwordHash">;
 
+// Global feature flags table (admin-level control of features)
+export const globalFeatureFlags = pgTable("global_feature_flags", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  featureKey: text("feature_key").notNull().unique(),
+  enabled: boolean("enabled").notNull().default(true),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  updatedBy: varchar("updated_by").references(() => adminUsers.id),
+});
+
+export const featureKeys = [
+  "wellbeing_ai",
+  "shake_to_alert", 
+  "wellness",
+  "pet_protection",
+  "digital_will"
+] as const;
+
+export type FeatureKey = typeof featureKeys[number];
+export type GlobalFeatureFlag = typeof globalFeatureFlags.$inferSelect;
+
+export const updateGlobalFeaturesSchema = z.object({
+  wellbeing_ai: z.boolean().optional(),
+  shake_to_alert: z.boolean().optional(),
+  wellness: z.boolean().optional(),
+  pet_protection: z.boolean().optional(),
+  digital_will: z.boolean().optional(),
+});
+
+export type UpdateGlobalFeatures = z.infer<typeof updateGlobalFeaturesSchema>;
+
 // Admin sessions table
 export const adminSessions = pgTable("admin_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -440,6 +495,7 @@ export const organizationClients = pgTable("organization_clients", {
   addedAt: timestamp("added_at").notNull().defaultNow(),
   // Feature controls - organizations can enable/disable features for each client
   featureWellbeingAi: boolean("feature_wellbeing_ai").notNull().default(false),
+  featureShakeToAlert: boolean("feature_shake_to_alert").notNull().default(true),
   featureMoodTracking: boolean("feature_mood_tracking").notNull().default(false),
   featurePetProtection: boolean("feature_pet_protection").notNull().default(false),
   featureDigitalWill: boolean("feature_digital_will").notNull().default(false),
@@ -479,6 +535,7 @@ export type OrganizationClient = typeof organizationClients.$inferSelect;
 // Schema for updating client feature settings
 export const updateClientFeaturesSchema = z.object({
   featureWellbeingAi: z.boolean().optional(),
+  featureShakeToAlert: z.boolean().optional(),
   featureMoodTracking: z.boolean().optional(),
   featurePetProtection: z.boolean().optional(),
   featureDigitalWill: z.boolean().optional(),
@@ -488,6 +545,7 @@ export type UpdateClientFeatures = z.infer<typeof updateClientFeaturesSchema>;
 // Type for client feature settings
 export type ClientFeatureSettings = {
   featureWellbeingAi: boolean;
+  featureShakeToAlert: boolean;
   featureMoodTracking: boolean;
   featurePetProtection: boolean;
   featureDigitalWill: boolean;
