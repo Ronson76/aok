@@ -15,8 +15,10 @@ import {
   LogOut, ShieldCheck, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff, KeyRound
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { DashboardStats, AdminOrganizationView, AdminOrganizationClientView, OrgClientStatus } from "@shared/schema";
+
+const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 function getClientStatusBadge(status: OrgClientStatus) {
   switch (status) {
@@ -44,6 +46,61 @@ export default function AdminDashboard() {
   const { admin, logout } = useAdmin();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  
+  // Refs for inactivity timeout
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const toastRef = useRef(toast);
+  const logoutRef = useRef(logout);
+  const setLocationRef = useRef(setLocation);
+  
+  // Keep refs updated
+  useEffect(() => {
+    toastRef.current = toast;
+    logoutRef.current = logout;
+    setLocationRef.current = setLocation;
+  }, [toast, logout, setLocation]);
+  
+  // Inactivity timeout handler
+  const resetActivityTimer = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(async () => {
+      toastRef.current({
+        title: "Session expired",
+        description: "You have been logged out due to inactivity.",
+        variant: "destructive",
+      });
+      await logoutRef.current();
+      setLocationRef.current("/admin/login");
+    }, SESSION_TIMEOUT_MS);
+  }, []);
+  
+  // Set up inactivity tracking
+  useEffect(() => {
+    const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+    
+    const handleActivity = () => {
+      resetActivityTimer();
+    };
+    
+    // Start the timer
+    resetActivityTimer();
+    
+    // Add event listeners
+    events.forEach(event => {
+      document.addEventListener(event, handleActivity, { passive: true });
+    });
+    
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      events.forEach(event => {
+        document.removeEventListener(event, handleActivity);
+      });
+    };
+  }, [resetActivityTimer]);
   
   // State for viewing organization clients
   const [selectedOrg, setSelectedOrg] = useState<AdminOrganizationView | null>(null);
