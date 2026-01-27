@@ -825,11 +825,13 @@ export async function registerRoutes(
         // Generate reset token
         const rawToken = await storage.createPasswordResetToken(user.id);
         
-        // Build full reset URL
-        const baseUrl = process.env.NODE_ENV === "production" 
-          ? `https://${req.get('host')}`
-          : `http://${req.get('host')}`;
+        // Build full reset URL - get host from multiple sources for reliability
+        const host = req.get('x-forwarded-host') || req.get('host') || req.headers.host;
+        const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+        const baseUrl = `${protocol}://${host}`;
         const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
+        
+        console.log(`[PASSWORD RESET] Generating URL with host: ${host}, protocol: ${protocol}`);
         
         // Send password reset email
         try {
