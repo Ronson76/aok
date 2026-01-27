@@ -2,8 +2,8 @@ import { Express, Request, Response } from "express";
 import { organizationStorage, storage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema } from "@shared/schema";
-import { sendAppInviteSMS } from "./notifications";
+import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
+import { sendAppInviteSMS, sendPasswordResetEmail } from "./notifications";
 
 // Generate a unique 6-character reference code
 function generateReferenceCode(): string {
@@ -617,6 +617,115 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("[ORG] Failed to delete client contact:", error);
       res.status(500).json({ error: "Failed to delete client contact" });
+    }
+  });
+
+  // Organisation forgot password (public)
+  app.post("/api/org/auth/forgot-password", async (req, res) => {
+    try {
+      const parsed = forgotPasswordSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid email" });
+      }
+
+      const { email } = parsed.data;
+      const user = await storage.getUserByEmail(email.toLowerCase());
+
+      if (user && user.accountType === "organization") {
+        const rawToken = await storage.createPasswordResetToken(user.id);
+        
+        const baseUrl = process.env.NODE_ENV === "production" 
+          ? `https://${req.get('host')}`
+          : `http://${req.get('host')}`;
+        const resetUrl = `${baseUrl}/org/reset-password?token=${rawToken}`;
+        
+        try {
+          await sendPasswordResetEmail(user.email, resetUrl, user.name);
+        } catch (error) {
+          console.error("Failed to send organisation password reset email:", error);
+          if (process.env.NODE_ENV !== "production") {
+            console.log(`[DEV] Organisation password reset link for ${email}: ${resetUrl}`);
+          }
+        }
+      }
+
+      res.json({ success: true, message: "If an organisation account with that email exists, a reset link has been sent." });
+    } catch (error) {
+      console.error("Organisation forgot password error:", error);
+      res.status(500).json({ error: "Failed to process request" });
+    }
+  });
+
+  // Organisation reset password (public)
+  app.post("/api/org/auth/reset-password", async (req, res) => {
+    try {
+      const parsed = resetPasswordSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
+      }
+
+      const { token, password } = parsed.data;
+
+      const tokenData = await storage.validatePasswordResetToken(token);
+      if (!tokenData) {
+        return res.status(400).json({ error: "Invalid or expired reset link. Please request a new one." });
+      }
+
+      // Verify the user is an organisation
+      const user = await storage.getUser(tokenData.userId);
+      if (!user || user.accountType !== "organization") {
+        return res.status(400).json({ error: "Invalid reset link." });
+      }
+
+      const passwordHash = await bcrypt.hash(password, 10);
+      await storage.updateUserPassword(tokenData.userId, passwordHash);
+      await storage.markPasswordResetTokenUsed(tokenData.tokenId);
+      await storage.deleteAllUserSessions(tokenData.userId);
+
+      res.json({ success: true, message: "Password reset successfully. Please log in with your new password." });
+    } catch (error) {
+      console.error("Organisation reset password error:", error);
+      res.status(500).json({ error: "Failed to reset password" });
+    }
+  });
+
+  // Organisation change password (authenticated)
+  app.post("/api/org/auth/change-password", requireOrganization, async (req, res) => {
+    try {
+      const schema = z.object({
+        currentPassword: z.string().min(1, "Current password is required"),
+        newPassword: z.string().min(8, "New password must be at least 8 characters"),
+      });
+
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
+      }
+
+      const { currentPassword, newPassword } = parsed.data;
+      const userId = req.userId;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.passwordHash) {
+        return res.status(400).json({ error: "Cannot change password for this account" });
+      }
+
+      const validPassword = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!validPassword) {
+        return res.status(400).json({ error: "Current password is incorrect" });
+      }
+
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+      await storage.updateUserPassword(userId, passwordHash);
+
+      res.json({ success: true, message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Organisation change password error:", error);
+      res.status(500).json({ error: "Failed to change password" });
     }
   });
 }

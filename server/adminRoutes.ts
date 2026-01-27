@@ -1,8 +1,9 @@
 import { Express, Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
 import { adminStorage, organizationStorage, storage } from "./storage";
-import { adminLoginSchema, AdminUserProfile, orgClientStatuses, updateUserFeaturesSchema } from "@shared/schema";
+import { adminLoginSchema, AdminUserProfile, orgClientStatuses, updateUserFeaturesSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import { z } from "zod";
+import { sendPasswordResetEmail } from "./notifications";
 
 const ADMIN_SESSION_COOKIE = "admin_session";
 
@@ -514,6 +515,109 @@ export function registerAdminRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching user features:", error);
       res.status(500).json({ error: "Failed to fetch user features" });
+    }
+  });
+
+  // Admin forgot password (public)
+  app.post("/api/admin/auth/forgot-password", async (req, res) => {
+    try {
+      const parsed = forgotPasswordSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid email" });
+      }
+
+      const { email } = parsed.data;
+      const admin = await adminStorage.getAdminByEmail(email.toLowerCase());
+
+      if (admin) {
+        const rawToken = await adminStorage.createAdminPasswordResetToken(admin.id);
+        
+        const baseUrl = process.env.NODE_ENV === "production" 
+          ? `https://${req.get('host')}`
+          : `http://${req.get('host')}`;
+        const resetUrl = `${baseUrl}/admin/reset-password?token=${rawToken}`;
+        
+        try {
+          await sendPasswordResetEmail(admin.email, resetUrl, admin.name);
+        } catch (error) {
+          console.error("Failed to send admin password reset email:", error);
+          if (process.env.NODE_ENV !== "production") {
+            console.log(`[DEV] Admin password reset link for ${email}: ${resetUrl}`);
+          }
+        }
+      }
+
+      res.json({ success: true, message: "If an admin account with that email exists, a reset link has been sent." });
+    } catch (error) {
+      console.error("Admin forgot password error:", error);
+      res.status(500).json({ error: "Failed to process request" });
+    }
+  });
+
+  // Admin reset password (public)
+  app.post("/api/admin/auth/reset-password", async (req, res) => {
+    try {
+      const parsed = resetPasswordSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
+      }
+
+      const { token, password } = parsed.data;
+
+      const tokenData = await adminStorage.validateAdminPasswordResetToken(token);
+      if (!tokenData) {
+        return res.status(400).json({ error: "Invalid or expired reset link. Please request a new one." });
+      }
+
+      const passwordHash = await bcrypt.hash(password, 10);
+      await adminStorage.updateAdminPassword(tokenData.adminId, passwordHash);
+      await adminStorage.markAdminPasswordResetTokenUsed(tokenData.tokenId);
+      await adminStorage.deleteAllAdminSessions(tokenData.adminId);
+
+      res.json({ success: true, message: "Password reset successfully. Please log in with your new password." });
+    } catch (error) {
+      console.error("Admin reset password error:", error);
+      res.status(500).json({ error: "Failed to reset password" });
+    }
+  });
+
+  // Admin change password (authenticated)
+  app.post("/api/admin/auth/change-password", adminAuthMiddleware, async (req, res) => {
+    try {
+      const schema = z.object({
+        currentPassword: z.string().min(1, "Current password is required"),
+        newPassword: z.string().min(8, "New password must be at least 8 characters"),
+      });
+
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
+      }
+
+      const { currentPassword, newPassword } = parsed.data;
+      const adminId = req.admin?.id;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const admin = await adminStorage.getAdminById(adminId);
+      if (!admin) {
+        return res.status(400).json({ error: "Admin not found" });
+      }
+
+      const validPassword = await bcrypt.compare(currentPassword, admin.passwordHash);
+      if (!validPassword) {
+        return res.status(400).json({ error: "Current password is incorrect" });
+      }
+
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+      await adminStorage.updateAdminPassword(adminId, passwordHash);
+
+      res.json({ success: true, message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Admin change password error:", error);
+      res.status(500).json({ error: "Failed to change password" });
     }
   });
 }

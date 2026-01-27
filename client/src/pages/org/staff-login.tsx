@@ -138,12 +138,17 @@ export default function OrganizationStaffLogin() {
                   "Sign In"
                 )}
               </Button>
-              <p className="text-sm text-muted-foreground text-center">
-                Are you a client?{" "}
-                <Link href="/org/client-login">
-                  <span className="text-primary hover:underline cursor-pointer">Sign in here</span>
+              <div className="text-center space-y-2">
+                <Link href="/org/forgot-password">
+                  <span className="text-sm text-primary hover:underline cursor-pointer" data-testid="link-forgot-password">Forgot password?</span>
                 </Link>
-              </p>
+                <p className="text-sm text-muted-foreground">
+                  Are you a client?{" "}
+                  <Link href="/org/client-login">
+                    <span className="text-primary hover:underline cursor-pointer">Sign in here</span>
+                  </Link>
+                </p>
+              </div>
             </CardFooter>
           </form>
         </Card>

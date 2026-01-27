@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Users, Building2, User, CheckCircle, XCircle, Package, 
-  LogOut, ShieldCheck, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff
+  LogOut, ShieldCheck, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff, KeyRound
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { useState } from "react";
@@ -56,6 +56,12 @@ export default function AdminDashboard() {
   const [newOrgEmail, setNewOrgEmail] = useState("");
   const [newOrgPassword, setNewOrgPassword] = useState("");
   const [showNewOrgPassword, setShowNewOrgPassword] = useState(false);
+  
+  // State for changing own password
+  const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
   
   const isSuperAdmin = admin?.role === "super_admin";
 
@@ -157,6 +163,49 @@ export default function AdminDashboard() {
     });
   };
   
+  const changePasswordMutation = useMutation({
+    mutationFn: async ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) => {
+      const response = await apiRequest("POST", "/api/admin/auth/change-password", {
+        currentPassword,
+        newPassword,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      setShowChangePasswordDialog(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      toast({
+        title: "Password changed",
+        description: "Your password has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to change password",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleChangePassword = () => {
+    if (!currentPassword.trim()) {
+      toast({ title: "Error", description: "Please enter your current password.", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast({ title: "Error", description: "New password must be at least 8 characters.", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      toast({ title: "Error", description: "Passwords do not match.", variant: "destructive" });
+      return;
+    }
+    changePasswordMutation.mutate({ currentPassword, newPassword });
+  };
+  
   const fetchOrgClients = async (orgId: string) => {
     setLoadingClients(true);
     try {
@@ -238,6 +287,10 @@ export default function AdminDashboard() {
                 Create Organisation
               </Button>
             )}
+            <Button variant="outline" size="sm" onClick={() => setShowChangePasswordDialog(true)} data-testid="button-admin-change-password">
+              <KeyRound className="w-4 h-4 mr-2" />
+              Change Password
+            </Button>
             <Button variant="outline" size="sm" onClick={handleLogout} data-testid="button-admin-logout">
               <LogOut className="w-4 h-4 mr-2" />
               Logout
@@ -772,6 +825,76 @@ export default function AdminDashboard() {
                     <Plus className="w-4 h-4 mr-2" />
                     Create Organisation
                   </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Change Password Dialog */}
+        <Dialog open={showChangePasswordDialog} onOpenChange={(open) => {
+          if (!open) {
+            setShowChangePasswordDialog(false);
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmNewPassword("");
+          }
+        }}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Change Password</DialogTitle>
+              <DialogDescription>
+                Enter your current password and a new password.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin-current-password">Current Password</Label>
+                <Input
+                  id="admin-current-password"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                  data-testid="input-admin-current-password"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-new-password">New Password</Label>
+                <Input
+                  id="admin-new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  data-testid="input-admin-new-password"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-confirm-new-password">Confirm New Password</Label>
+                <Input
+                  id="admin-confirm-new-password"
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  data-testid="input-admin-confirm-new-password"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowChangePasswordDialog(false)} data-testid="button-cancel-admin-change-password">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleChangePassword}
+                disabled={changePasswordMutation.isPending}
+                data-testid="button-submit-admin-change-password"
+              >
+                {changePasswordMutation.isPending ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Changing...</>
+                ) : (
+                  "Change Password"
                 )}
               </Button>
             </DialogFooter>

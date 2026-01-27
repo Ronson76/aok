@@ -379,6 +379,18 @@ export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type AdminUserProfile = Omit<AdminUser, "passwordHash">;
 
+// Admin password reset tokens table
+export const adminPasswordResetTokens = pgTable("admin_password_reset_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").notNull().references(() => adminUsers.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type AdminPasswordResetToken = typeof adminPasswordResetTokens.$inferSelect;
+
 // Global feature flags table (admin-level control of features)
 export const globalFeatureFlags = pgTable("global_feature_flags", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
