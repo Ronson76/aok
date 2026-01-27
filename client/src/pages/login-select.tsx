@@ -34,7 +34,7 @@ export default function LoginSelect() {
         <CardHeader className="text-center space-y-2">
           <Link href="/" className="flex flex-col items-center justify-center mb-2 cursor-pointer" data-testid="link-logo-home">
             <ShieldCheck className="h-12 w-12 text-green-600" />
-            <span className="text-lg font-semibold text-green-600">aok</span>
+            <span className="text-2xl font-bold text-green-600">aok</span>
           </Link>
           <CardTitle className="text-2xl">Sign In</CardTitle>
           <CardDescription>

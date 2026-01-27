@@ -108,7 +108,7 @@ export default function AdminForgotPassword() {
           <div className="flex justify-center mb-2">
             <ShieldCheck className="h-12 w-12 text-green-600" />
           </div>
-          <span className="text-lg font-semibold text-green-600">aok</span>
+          <span className="text-2xl font-bold text-green-600">aok</span>
           <span className="text-xs text-muted-foreground">Admin Portal</span>
           <CardTitle className="text-2xl">Forgot Password</CardTitle>
           <CardDescription>
