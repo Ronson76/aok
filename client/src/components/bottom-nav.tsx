@@ -175,7 +175,7 @@ export function BottomNav() {
                       <div className="w-3 h-1 bg-green-600 absolute rounded-sm" />
                       <div className="w-1 h-3 bg-green-600 absolute rounded-sm" />
                     </div>
-                    <span>wellbeing-ai</span>
+                    <span>Wellbeing AI</span>
                   </a>
                 </DropdownMenuItem>
               ) : (
@@ -188,7 +188,7 @@ export function BottomNav() {
                     <div className="w-3 h-1 bg-muted-foreground absolute rounded-sm" />
                     <div className="w-1 h-3 bg-muted-foreground absolute rounded-sm" />
                   </div>
-                  <span>wellbeing-ai</span>
+                  <span>Wellbeing AI</span>
                   <Lock className="h-3 w-3 ml-auto" />
                 </DropdownMenuItem>
               )}
