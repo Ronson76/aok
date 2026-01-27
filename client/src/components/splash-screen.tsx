@@ -25,12 +25,12 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-b from-sky-50 to-white dark:from-slate-900 dark:to-slate-800 transition-opacity duration-1000 ${
+      className={`fixed inset-0 z-50 w-full h-full flex items-center justify-center bg-gradient-to-b from-sky-50 to-white dark:from-slate-900 dark:to-slate-800 transition-opacity duration-1000 ${
         fadeOut ? "opacity-0" : "opacity-100"
       }`}
       data-testid="splash-screen"
     >
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center justify-center text-center gap-4 w-full px-4">
         <ShieldCheck className="w-24 h-24 text-green-600 animate-pulse" />
         <h1 className="text-2xl font-bold text-green-600">aok</h1>
         <p className="text-sm text-muted-foreground italic">Stay Connected, Stay Safe, Stay Well</p>
