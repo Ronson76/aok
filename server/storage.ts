@@ -2696,6 +2696,12 @@ class OrganizationStorage implements IOrganizationStorage {
         activeAlertId,
         addedAt: client.addedAt,
         bundleId: client.bundleId,
+        clientPhone: client.clientPhone || null,
+        featureWellbeingAi: client.featureWellbeingAi ?? true,
+        featureShakeToAlert: client.featureShakeToAlert ?? true,
+        featureMoodTracking: client.featureMoodTracking ?? true,
+        featurePetProtection: client.featurePetProtection ?? true,
+        featureDigitalWill: client.featureDigitalWill ?? true,
       });
     }
     

@@ -12,8 +12,9 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Users, Building2, User, CheckCircle, XCircle, Package, 
-  LogOut, ShieldCheck, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff, KeyRound, ArrowLeft, RotateCcw, AlertTriangle, BellOff, Search
+  LogOut, ShieldCheck, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff, KeyRound, ArrowLeft, RotateCcw, AlertTriangle, BellOff, Search, Settings, MessageSquare
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { format, formatDistanceToNow } from "date-fns";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import type { DashboardStats, AdminOrganizationView, AdminOrganizationClientView, OrgClientStatus } from "@shared/schema";
@@ -137,6 +138,17 @@ export default function AdminDashboard() {
   const [scheduleStartTime, setScheduleStartTime] = useState("09:00");
   const [scheduleIntervalHours, setScheduleIntervalHours] = useState(24);
   const [loadingSchedule, setLoadingSchedule] = useState(false);
+  
+  // State for editing client feature toggles
+  const [showFeaturesDialog, setShowFeaturesDialog] = useState(false);
+  const [editingFeaturesClient, setEditingFeaturesClient] = useState<AdminOrganizationClientView | null>(null);
+  const [clientFeatures, setClientFeatures] = useState({
+    featureWellbeingAi: true,
+    featureShakeToAlert: true,
+    featureMoodTracking: true,
+    featurePetProtection: true,
+    featureDigitalWill: true,
+  });
   
   // Filter and sort org clients based on search
   const filteredOrgClients = useMemo(() => {
@@ -323,6 +335,57 @@ export default function AdminDashboard() {
       setLoadingSchedule(false);
     }
   };
+  
+  // Mutation for updating client features
+  const updateClientFeaturesMutation = useMutation({
+    mutationFn: async ({ organizationId, clientId, features }: { 
+      organizationId: string; 
+      clientId: string; 
+      features: typeof clientFeatures;
+    }) => {
+      const response = await apiRequest("PATCH", `/api/admin/organizations/${organizationId}/clients/${clientId}/features`, features);
+      return response.json();
+    },
+    onSuccess: () => {
+      if (selectedOrg) {
+        fetchOrgClients(selectedOrg.id);
+      }
+      setShowFeaturesDialog(false);
+      setEditingFeaturesClient(null);
+      toast({
+        title: "Features updated",
+        description: "The client's feature settings have been updated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update features",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Mutation for sending reminder with reference number
+  const sendReminderMutation = useMutation({
+    mutationFn: async ({ organizationId, clientId }: { organizationId: string; clientId: string }) => {
+      const response = await apiRequest("POST", `/api/admin/organizations/${organizationId}/clients/${clientId}/send-reminder`, {});
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Reminder sent",
+        description: "The reference number reminder has been sent via SMS.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to send reminder",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
   
   const createOrgMutation = useMutation({
     mutationFn: async (data: { name: string; email: string; password: string }) => {
@@ -965,16 +1028,26 @@ export default function AdminDashboard() {
                 {filteredOrgClients.map((client) => (
                   <div
                     key={client.id}
-                    className={`flex items-center justify-between p-4 border rounded-lg ${client.clientStatus !== "active" ? "opacity-60" : ""}`}
+                    className={`flex items-center justify-between p-4 border rounded-lg ${client.clientStatus !== "active" ? "opacity-60" : ""} ${client.hasActiveAlert ? "border-destructive bg-destructive/5" : ""}`}
                     data-testid={`admin-client-${client.id}`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted text-muted-foreground font-bold">
-                        {client.clientOrdinal}
-                      </div>
+                      {/* Flashing alert icon or reference number */}
+                      {client.hasActiveAlert ? (
+                        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-destructive animate-flash-alert">
+                          <AlertOctagon className="h-6 w-6 text-white" />
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted text-muted-foreground font-bold">
+                          {client.clientOrdinal}
+                        </div>
+                      )}
                       <div>
                         <div className="font-medium flex items-center gap-2 flex-wrap">
                           <code className="px-2 py-1 bg-muted rounded text-sm font-mono">{client.referenceCode}</code>
+                          {client.hasActiveAlert && (
+                            <span className="text-sm font-medium text-muted-foreground">#{client.clientOrdinal}</span>
+                          )}
                           {getClientStatusBadge(client.clientStatus)}
                           {!client.isActivated && (
                             <Badge variant="outline" className="text-xs">
@@ -984,12 +1057,18 @@ export default function AdminDashboard() {
                           {client.hasActiveAlert && (
                             <Badge variant="destructive" className="text-xs flex items-center gap-1">
                               <AlertTriangle className="h-3 w-3" />
-                              Active Alert
+                              EMERGENCY
                             </Badge>
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
                           Added: {formatDistanceToNow(new Date(client.addedAt), { addSuffix: true })}
+                          {client.clientPhone && (
+                            <span className="ml-2">
+                              <Phone className="h-3 w-3 inline mr-1" />
+                              {client.clientPhone}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1065,6 +1144,42 @@ export default function AdminDashboard() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => {
+                              setEditingFeaturesClient(client);
+                              setClientFeatures({
+                                featureWellbeingAi: client.featureWellbeingAi ?? true,
+                                featureShakeToAlert: client.featureShakeToAlert ?? true,
+                                featureMoodTracking: client.featureMoodTracking ?? true,
+                                featurePetProtection: client.featurePetProtection ?? true,
+                                featureDigitalWill: client.featureDigitalWill ?? true,
+                              });
+                              setShowFeaturesDialog(true);
+                            }}
+                            className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950"
+                            data-testid={`button-features-${client.id}`}
+                          >
+                            Features
+                          </Button>
+                          
+                          {client.clientPhone && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => sendReminderMutation.mutate({ 
+                                organizationId: selectedOrg!.id, 
+                                clientId: client.id 
+                              })}
+                              disabled={sendReminderMutation.isPending}
+                              className="text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-950"
+                              data-testid={`button-send-reminder-${client.id}`}
+                            >
+                              {sendReminderMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Ref"}
+                            </Button>
+                          )}
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => removeClientMutation.mutate({ 
                               organizationId: selectedOrg!.id, 
                               clientId: client.id 
@@ -1082,6 +1197,96 @@ export default function AdminDashboard() {
                 ))}
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+        
+        {/* Client Features Dialog */}
+        <Dialog open={showFeaturesDialog} onOpenChange={(open) => { 
+          setShowFeaturesDialog(open);
+          if (!open) setEditingFeaturesClient(null);
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Client Features - #{editingFeaturesClient?.clientOrdinal}
+              </DialogTitle>
+              <DialogDescription>
+                Enable or disable features for this client.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Wellbeing AI</Label>
+                  <p className="text-xs text-muted-foreground">AI-powered wellness insights</p>
+                </div>
+                <Switch
+                  checked={clientFeatures.featureWellbeingAi}
+                  onCheckedChange={(checked) => setClientFeatures(prev => ({ ...prev, featureWellbeingAi: checked }))}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Shake to Alert</Label>
+                  <p className="text-xs text-muted-foreground">Emergency SOS by shaking device</p>
+                </div>
+                <Switch
+                  checked={clientFeatures.featureShakeToAlert}
+                  onCheckedChange={(checked) => setClientFeatures(prev => ({ ...prev, featureShakeToAlert: checked }))}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Mood Tracking</Label>
+                  <p className="text-xs text-muted-foreground">Daily mood and wellness logging</p>
+                </div>
+                <Switch
+                  checked={clientFeatures.featureMoodTracking}
+                  onCheckedChange={(checked) => setClientFeatures(prev => ({ ...prev, featureMoodTracking: checked }))}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Pet Protection</Label>
+                  <p className="text-xs text-muted-foreground">Pet care profiles and instructions</p>
+                </div>
+                <Switch
+                  checked={clientFeatures.featurePetProtection}
+                  onCheckedChange={(checked) => setClientFeatures(prev => ({ ...prev, featurePetProtection: checked }))}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Digital Will</Label>
+                  <p className="text-xs text-muted-foreground">Secure document storage</p>
+                </div>
+                <Switch
+                  checked={clientFeatures.featureDigitalWill}
+                  onCheckedChange={(checked) => setClientFeatures(prev => ({ ...prev, featureDigitalWill: checked }))}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowFeaturesDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (editingFeaturesClient && selectedOrg) {
+                    updateClientFeaturesMutation.mutate({
+                      organizationId: selectedOrg.id,
+                      clientId: editingFeaturesClient.id,
+                      features: clientFeatures,
+                    });
+                  }
+                }}
+                disabled={updateClientFeaturesMutation.isPending}
+              >
+                {updateClientFeaturesMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Save Features
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
         

@@ -620,6 +620,80 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  // Update client feature toggles (super admin only)
+  app.patch("/api/admin/organizations/:organizationId/clients/:clientId/features", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { organizationId, clientId } = req.params;
+      const { featureWellbeingAi, featureShakeToAlert, featureMoodTracking, featurePetProtection, featureDigitalWill } = req.body;
+      
+      // Get the org client to verify it belongs to this organization
+      const orgClient = await organizationStorage.getClientById(clientId);
+      if (!orgClient || orgClient.organizationId !== organizationId) {
+        return res.status(404).json({ error: "Client not found in this organization" });
+      }
+
+      // Update the org client feature toggles
+      await organizationStorage.updateClientFeatures(clientId, {
+        featureWellbeingAi,
+        featureShakeToAlert,
+        featureMoodTracking,
+        featurePetProtection,
+        featureDigitalWill,
+      });
+
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "update",
+        "organization_client",
+        clientId,
+        `Updated feature toggles for client in organization ${organizationId}`
+      );
+
+      res.json({ success: true, message: "Client features updated" });
+    } catch (error) {
+      console.error("Error updating client features:", error);
+      res.status(500).json({ error: "Failed to update client features" });
+    }
+  });
+
+  // Send reminder with reference number (super admin only)
+  app.post("/api/admin/organizations/:organizationId/clients/:clientId/send-reminder", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { organizationId, clientId } = req.params;
+      
+      // Get the org client to verify it belongs to this organization
+      const orgClient = await organizationStorage.getClientById(clientId);
+      if (!orgClient || orgClient.organizationId !== organizationId) {
+        return res.status(404).json({ error: "Client not found in this organization" });
+      }
+
+      if (!orgClient.clientPhone) {
+        return res.status(400).json({ error: "Client has no phone number" });
+      }
+
+      // Get organization name from the users table
+      const orgUser = await storage.getUserById(organizationId);
+      const orgName = orgUser?.name || "Your organisation";
+
+      // Send SMS with reference number using notifications module
+      const { sendReferenceCodeSMS } = await import("./notifications");
+      await sendReferenceCodeSMS(orgClient.clientPhone, orgClient.referenceCode, orgName);
+
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "update",
+        "organization_client",
+        clientId,
+        `Sent reference number reminder to client phone`
+      );
+
+      res.json({ success: true, message: "Reminder sent successfully" });
+    } catch (error) {
+      console.error("Error sending reminder:", error);
+      res.status(500).json({ error: "Failed to send reminder" });
+    }
+  });
+
   // ==================== USER FEATURE CONTROLS ====================
 
   // Update user feature settings
