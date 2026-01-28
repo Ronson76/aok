@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, Plus } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, Plus, RotateCcw } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
@@ -407,6 +407,27 @@ export default function OrganizationDashboard() {
     onError: (error: any) => {
       toast({
         title: "Failed to send reference code",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetSchedulerMutation = useMutation({
+    mutationFn: async ({ clientId }: { clientId: string }) => {
+      const response = await apiRequest("POST", `/api/org/clients/${clientId}/reset-scheduler`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      toast({
+        title: "Scheduler reset",
+        description: "The client's check-in timer has been reset.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to reset scheduler",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
@@ -1341,15 +1362,27 @@ export default function OrganizationDashboard() {
                       <Phone className="h-4 w-4 text-orange-600" />
                     </Button>
                     {client.client && client.clientId && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleResendPasswordClick(client)}
-                        data-testid={`button-resend-password-${client.clientId}`}
-                        title="Resend password via SMS"
-                      >
-                        <KeyRound className="h-4 w-4" />
-                      </Button>
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleResendPasswordClick(client)}
+                          data-testid={`button-resend-password-${client.clientId}`}
+                          title="Resend password via SMS"
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => resetSchedulerMutation.mutate({ clientId: client.clientId! })}
+                          disabled={resetSchedulerMutation.isPending}
+                          data-testid={`button-reset-scheduler-${client.clientId}`}
+                          title="Reset check-in timer"
+                        >
+                          <RotateCcw className="h-4 w-4 text-blue-500" />
+                        </Button>
+                      </>
                     )}
                     <Button
                       variant="ghost"

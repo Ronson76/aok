@@ -15,7 +15,7 @@ import {
   CaseStatus, RiskLevel
 } from "@shared/schema";
 import { ensureDb } from "./db";
-import { eq, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql } from "drizzle-orm";
+import { eq, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray } from "drizzle-orm";
 import { randomUUID, randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
 import { sendMissedCheckInAlert, sendVoiceAlerts, sendPushNotification } from "./notifications";
@@ -1724,16 +1724,38 @@ class AdminStorage implements IAdminStorage {
   async getDashboardStats(): Promise<DashboardStats> {
     const db = getDb();
     
-    // Get total users count
-    const totalUsersResult = await db.select({ count: count() }).from(users);
-    const totalUsers = totalUsersResult[0]?.count || 0;
-
     // Get organizations count
     const orgsResult = await db.select({ count: count() }).from(users).where(eq(users.accountType, "organization"));
     const totalOrganizations = orgsResult[0]?.count || 0;
 
-    // Get individuals count
-    const totalIndividuals = totalUsers - totalOrganizations;
+    // Get individual users who are NOT organization clients
+    const orgClientIds = await db
+      .select({ clientId: organizationClients.clientId })
+      .from(organizationClients)
+      .where(isNotNull(organizationClients.clientId));
+    const clientIdList = orgClientIds.map(oc => oc.clientId).filter((id): id is string => id !== null);
+    
+    let independentIndividualsCount = 0;
+    if (clientIdList.length > 0) {
+      const indResult = await db.select({ count: count() }).from(users).where(
+        and(
+          eq(users.accountType, "individual"),
+          notInArray(users.id, clientIdList)
+        )
+      );
+      independentIndividualsCount = indResult[0]?.count || 0;
+    } else {
+      const indResult = await db.select({ count: count() }).from(users).where(eq(users.accountType, "individual"));
+      independentIndividualsCount = indResult[0]?.count || 0;
+    }
+
+    // Get total organization clients count (all clients added to organizations)
+    const orgClientsResult = await db.select({ count: count() }).from(organizationClients);
+    const totalOrgClients = orgClientsResult[0]?.count || 0;
+
+    // Total users = independent individuals + all org clients (grand total of people being monitored/using the app)
+    const totalUsers = independentIndividualsCount + totalOrgClients;
+    const totalIndividuals = independentIndividualsCount;
 
     // Get check-ins stats
     const checkInsResult = await db.select({ count: count() }).from(checkIns);
@@ -1753,12 +1775,40 @@ class AdminStorage implements IAdminStorage {
     const totalSeatsAllocated = seatsResult[0]?.totalSeats || 0;
     const totalSeatsUsed = seatsResult[0]?.usedSeats || 0;
 
-    // Get recent users (last 10)
+    // Get recent users (last 10) with org client info if applicable
     const recentUsersData = await db.select().from(users).orderBy(desc(users.createdAt)).limit(10);
-    const recentUsers: UserProfile[] = recentUsersData.map(u => {
+    
+    // For each user, check if they're an org client and get their reference code and org name
+    const recentUsersWithOrgInfo = await Promise.all(recentUsersData.map(async (u) => {
       const { passwordHash, ...profile } = u;
-      return profile;
-    });
+      
+      // Check if this user is an organization client
+      const orgClientRecord = await db.select({
+        referenceCode: organizationClients.referenceCode,
+        organizationId: organizationClients.organizationId,
+      })
+        .from(organizationClients)
+        .where(eq(organizationClients.clientId, u.id))
+        .limit(1);
+      
+      if (orgClientRecord.length > 0 && orgClientRecord[0].organizationId) {
+        // Get organization name
+        const orgUser = await db.select({ name: users.name })
+          .from(users)
+          .where(eq(users.id, orgClientRecord[0].organizationId))
+          .limit(1);
+        
+        return {
+          ...profile,
+          orgClientReferenceCode: orgClientRecord[0].referenceCode,
+          organizationName: orgUser[0]?.name || null,
+        };
+      }
+      
+      return { ...profile, orgClientReferenceCode: null, organizationName: null };
+    }));
+    
+    const recentUsers = recentUsersWithOrgInfo;
 
     // Get daily registrations for last 30 days
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -1823,7 +1873,31 @@ class AdminStorage implements IAdminStorage {
 
   // User management
   async getAllUsers(): Promise<UserProfile[]> {
-    const result = await getDb().select().from(users).orderBy(desc(users.createdAt));
+    // Get all client IDs that belong to organizations
+    const orgClientIds = await getDb()
+      .select({ clientId: organizationClients.clientId })
+      .from(organizationClients)
+      .where(isNotNull(organizationClients.clientId));
+    
+    const clientIdList = orgClientIds
+      .map(oc => oc.clientId)
+      .filter((id): id is string => id !== null);
+    
+    // Get all users except those who are organization clients, and exclude organizations
+    let query = getDb().select().from(users);
+    
+    if (clientIdList.length > 0) {
+      query = query.where(
+        and(
+          notInArray(users.id, clientIdList),
+          eq(users.accountType, "individual")
+        )
+      ) as typeof query;
+    } else {
+      query = query.where(eq(users.accountType, "individual")) as typeof query;
+    }
+    
+    const result = await query.orderBy(desc(users.createdAt));
     return result.map(u => {
       const { passwordHash, ...profile } = u;
       return profile;

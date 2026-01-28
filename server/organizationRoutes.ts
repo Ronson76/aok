@@ -458,6 +458,40 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
+  // Reset client's check-in scheduler
+  app.post("/api/org/clients/:clientId/reset-scheduler", requireOrganization, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+
+      // Verify the client belongs to this organization
+      const isClient = await organizationStorage.isClientOfOrganization(req.userId!, clientId);
+      if (!isClient) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      // Get the org client record to get the check-in interval
+      const orgClient = await organizationStorage.getOrganizationClientByClientId(req.userId!, clientId);
+      if (!orgClient) {
+        return res.status(404).json({ error: "Client record not found" });
+      }
+
+      // Reset the user's check-in data
+      const now = new Date();
+      const intervalHours = orgClient.checkInIntervalHours || 24;
+      const nextDue = new Date(now.getTime() + intervalHours * 60 * 60 * 1000);
+      
+      await storage.updateSettings(clientId, {
+        nextCheckInDue: nextDue.toISOString(),
+      });
+
+      console.log(`[ORG] Reset scheduler for client ${clientId}: next due ${nextDue.toISOString()}`);
+      res.json({ success: true, message: "Client scheduler has been reset", nextCheckInDue: nextDue });
+    } catch (error) {
+      console.error("[ORG] Failed to reset client scheduler:", error);
+      res.status(500).json({ error: "Failed to reset client scheduler" });
+    }
+  });
+
   // Get client profile by organization client ID
   app.get("/api/org/clients/:orgClientId/profile", requireOrganization, async (req, res) => {
     try {

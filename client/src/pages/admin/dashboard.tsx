@@ -598,19 +598,26 @@ export default function AdminDashboard() {
                     <p className="text-muted-foreground text-center py-4">No users yet</p>
                   ) : (
                     <div className="space-y-3">
-                      {stats.recentUsers.slice(0, 5).map((user) => (
+                      {stats.recentUsers.slice(0, 5).map((user: any) => (
                         <div 
                           key={user.id} 
                           className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
                           data-testid={`recent-user-${user.id}`}
                         >
                           <div>
-                            <p className="font-medium">{user.name}</p>
+                            <p className="font-medium">
+                              {user.orgClientReferenceCode ? user.orgClientReferenceCode : user.name}
+                            </p>
                             <p className="text-sm text-muted-foreground">{user.email}</p>
+                            {user.organizationName && (
+                              <p className="text-xs text-muted-foreground italic">
+                                Client of {user.organizationName}
+                              </p>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge variant={user.accountType === "organization" ? "default" : "secondary"}>
-                              {user.accountType}
+                            <Badge variant={user.accountType === "organization" ? "default" : user.organizationName ? "outline" : "secondary"}>
+                              {user.organizationName ? "org client" : user.accountType}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
                               {formatDate(user.createdAt?.toString() || "")}
