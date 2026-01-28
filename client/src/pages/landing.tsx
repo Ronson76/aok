@@ -680,33 +680,40 @@ export default function Landing() {
               <p className="text-xs md:text-sm text-muted-foreground">Precise what3words addresses</p>
             </div>
             
-            {/* Phone 4: Wellbeing App - Silver frame */}
+            {/* Phone 4: Shake to Alert - Red frame */}
             <div className="text-center">
-              <a 
-                href="https://health-insight-engine.replit.app" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="block"
-                data-testid="link-wellbeing-feature"
+              <div 
+                className="relative aspect-[9/19] rounded-[2.5rem] overflow-hidden bg-gradient-to-b from-red-400 to-red-600 border-[3px] border-red-400 shadow-xl mb-4 max-w-[200px] mx-auto animate-[shake_0.5s_ease-in-out_infinite]"
+                style={{ 
+                  animation: 'shake 0.5s ease-in-out infinite',
+                }}
+                data-testid="phone-shake-to-alert"
               >
-                <div className="relative aspect-[9/19] rounded-[2.5rem] overflow-hidden bg-gradient-to-b from-gray-300 to-gray-400 border-[3px] border-gray-300 shadow-xl mb-4 max-w-[200px] mx-auto">
-                  {/* Silver notch */}
-                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-5 bg-gradient-to-b from-gray-400 to-gray-500 rounded-full z-10" />
-                  {/* Screen content */}
-                  <div className="absolute inset-1 rounded-[2rem] bg-black flex flex-col items-center justify-center p-6">
-                    <div className="relative h-16 w-16 mb-4 flex items-center justify-center animate-pulse" style={{ animationDuration: '2s' }}>
-                      <div className="w-14 h-4 bg-green-600 absolute rounded-md" />
-                      <div className="w-4 h-14 bg-green-600 absolute rounded-md" />
-                      <Heart className="h-4 w-4 text-green-600 absolute -bottom-1 -right-1 animate-bounce" style={{ animationDuration: '1.5s' }} fill="currentColor" />
+                {/* Red notch */}
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-5 bg-gradient-to-b from-red-500 to-red-700 rounded-full z-10" />
+                {/* Screen content */}
+                <div className="absolute inset-1 rounded-[2rem] bg-black flex flex-col items-center justify-center p-6">
+                  <div className="relative mb-4">
+                    <div className="h-16 w-16 rounded-full bg-red-600/20 flex items-center justify-center animate-pulse">
+                      <Zap className="h-10 w-10 text-red-500" fill="currentColor" />
                     </div>
-                    <p className="text-gray-400 text-xs text-center leading-relaxed animate-pulse" style={{ animationDuration: '3s' }}>AI-powered health advice at your fingertips</p>
+                    <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full animate-ping" />
                   </div>
-                  {/* Glass reflection overlay */}
-                  <div className="absolute inset-1 rounded-[2rem] pointer-events-none bg-gradient-to-br from-white/30 via-transparent to-transparent" />
+                  <p className="text-red-400 text-xs text-center font-bold uppercase tracking-wider">Shake Detected!</p>
+                  <p className="text-gray-500 text-xs text-center mt-2">Sending emergency alert...</p>
                 </div>
-              </a>
-              <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-wellbeing">Built-in Wellbeing App</h4>
-              <p className="text-xs md:text-sm text-muted-foreground">AI health advice included</p>
+                {/* Glass reflection overlay */}
+                <div className="absolute inset-1 rounded-[2rem] pointer-events-none bg-gradient-to-br from-white/30 via-transparent to-transparent" />
+              </div>
+              <style>{`
+                @keyframes shake {
+                  0%, 100% { transform: translateX(0) rotate(0deg); }
+                  25% { transform: translateX(-3px) rotate(-2deg); }
+                  75% { transform: translateX(3px) rotate(2deg); }
+                }
+              `}</style>
+              <h4 className="font-semibold mb-1 text-sm md:text-base" data-testid="text-feature-shake-to-alert">Shake to Alert</h4>
+              <p className="text-xs md:text-sm text-muted-foreground">Instant emergency help</p>
             </div>
           </div>
         </div>
