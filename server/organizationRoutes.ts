@@ -1066,9 +1066,14 @@ export function registerOrganizationRoutes(app: Express) {
   app.post("/api/org/safeguarding/welfare-concerns", requireOrganization, async (req, res) => {
     try {
       const orgId = (req.user as any).id;
+      const orgEmail = (req.user as any).email;
+      const orgName = (req.user as any).name || "Organisation";
+      
+      // Extract recipientEmail from body before validation
+      const { recipientEmail, ...concernData } = req.body;
       
       // Validate request body
-      const parseResult = insertWelfareConcernSchema.safeParse(req.body);
+      const parseResult = insertWelfareConcernSchema.safeParse(concernData);
       if (!parseResult.success) {
         return res.status(400).json({ error: "Invalid welfare concern data", details: parseResult.error.errors });
       }
@@ -1076,13 +1081,59 @@ export function registerOrganizationRoutes(app: Express) {
       const concern = await storage.createWelfareConcern(orgId, parseResult.data);
       
       await storage.createAuditEntry(orgId, {
-        userEmail: (req.user as any).email,
+        userEmail: orgEmail,
         userRole: "organisation",
         action: "create",
         entityType: "welfare_concern",
         entityId: concern.id,
         newData: concern,
       });
+      
+      // Send email if recipientEmail provided
+      if (recipientEmail && recipientEmail.includes("@")) {
+        try {
+          const { sendAlertEmail } = await import("./notifications");
+          
+          // Get client info if provided
+          let clientInfo = "Not specified";
+          if (parseResult.data.clientId) {
+            // Try to get client info - using just the ID for privacy
+            clientInfo = `Client ID: ${parseResult.data.clientId}`;
+          }
+          
+          // Handle observedBehaviours - could be array or string
+          const behaviours = parseResult.data.observedBehaviours;
+          const behavioursText = Array.isArray(behaviours) 
+            ? behaviours.join(", ") 
+            : (behaviours || "");
+          
+          const emailBody = `
+            <h2>Welfare Concern Reported</h2>
+            <p><strong>Organisation:</strong> ${orgName}</p>
+            <p><strong>Concern Type:</strong> ${parseResult.data.concernType || "General Welfare"}</p>
+            <p><strong>Client:</strong> ${clientInfo}</p>
+            <p><strong>Description:</strong></p>
+            <p>${parseResult.data.description}</p>
+            ${behavioursText ? `<p><strong>Observed Behaviours:</strong> ${behavioursText}</p>` : ""}
+            <p><strong>Anonymous Report:</strong> ${parseResult.data.isAnonymous ? "Yes" : "No"}</p>
+            <p><strong>Reported At:</strong> ${new Date().toLocaleString("en-GB")}</p>
+            <hr />
+            <p style="color: #666; font-size: 12px;">This welfare concern was reported via the aok safeguarding system.</p>
+          `;
+          
+          await sendAlertEmail(
+            recipientEmail,
+            `Welfare Concern Report - ${orgName}`,
+            emailBody,
+            emailBody
+          );
+          
+          console.log(`Welfare concern email sent to ${recipientEmail}`);
+        } catch (emailError) {
+          console.error("Failed to send welfare concern email:", emailError);
+          // Don't fail the request if email fails
+        }
+      }
       
       res.status(201).json(concern);
     } catch (error) {

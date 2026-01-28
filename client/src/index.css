@@ -322,3 +322,19 @@ img {
     transform: scale(1.05);
   }
 }
+
+/* Flashing red alert animation */
+@keyframes flash-alert {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}
+
+.animate-flash-alert {
+  animation: flash-alert 1s ease-in-out infinite;
+}

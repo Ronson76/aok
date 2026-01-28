@@ -692,6 +692,12 @@ export interface AdminOrganizationClientView {
   activeAlertId: string | null;
   addedAt: Date;
   bundleId: string | null;
+  clientPhone: string | null;
+  featureWellbeingAi?: boolean;
+  featureShakeToAlert?: boolean;
+  featureMoodTracking?: boolean;
+  featurePetProtection?: boolean;
+  featureDigitalWill?: boolean;
 }
 
 // Admin view of organization with client summary

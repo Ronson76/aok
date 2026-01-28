@@ -174,6 +174,7 @@ export default function OrgSafeguardingPage() {
     description: "",
     observedBehaviours: "",
     isAnonymous: false,
+    recipientEmail: "",
   });
   
   const [ruleForm, setRuleForm] = useState({
@@ -296,8 +297,9 @@ export default function OrgSafeguardingPage() {
         description: "",
         observedBehaviours: "",
         isAnonymous: false,
+        recipientEmail: "",
       });
-      toast({ title: "Concern reported", description: "The welfare concern has been logged." });
+      toast({ title: "Concern reported", description: "The welfare concern has been logged and notification sent." });
     },
     onError: (error: any) => {
       toast({ title: "Failed to report concern", description: error.message, variant: "destructive" });
@@ -1137,6 +1139,18 @@ export default function OrgSafeguardingPage() {
                 placeholder="e.g., withdrawn, not eating, anxious"
                 data-testid="input-concern-behaviours"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Send Concern To (email address)</Label>
+              <Input
+                type="email"
+                value={concernForm.recipientEmail}
+                onChange={(e) => setConcernForm({ ...concernForm, recipientEmail: e.target.value })}
+                placeholder="e.g., safeguarding@organisation.com"
+                data-testid="input-concern-recipient-email"
+              />
+              <p className="text-xs text-muted-foreground">Optional: Enter an email address to send this concern to</p>
             </div>
 
             <div className="flex items-center gap-2">
