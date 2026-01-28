@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, Plus, RotateCcw, Bell } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -900,35 +900,46 @@ export default function OrganizationDashboard() {
   const hasSeatsAvailable = activeBundles.some(b => b.seatsUsed < b.seatLimit);
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold" data-testid="text-org-dashboard-title">Organisation Dashboard</h1>
-          <p className="text-muted-foreground">Monitor your clients' safety and check-in status</p>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/org/safeguarding">
-            <Button variant="outline" data-testid="button-safeguarding-hub">
-              <Shield className="h-4 w-4 mr-2" />
-              Safeguarding Hub
-            </Button>
-          </Link>
-          <Button 
-            data-testid="button-register-client" 
-            disabled={!hasSeatsAvailable}
-            onClick={() => setShowRegisterClientDialog(true)}
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            Register Client
-          </Button>
-          <Button variant="outline" onClick={() => setShowChangePasswordDialog(true)} data-testid="button-org-change-password">
-            <KeyRound className="h-4 w-4 mr-2" />
-            Change Password
-          </Button>
+    <div className="min-h-screen bg-background">
+      {/* Header with logo and logout */}
+      <header className="sticky top-0 z-40 bg-background border-b">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-9 w-9 text-green-600" />
+            <span className="text-2xl font-bold text-green-600">aok</span>
+          </div>
           <Button variant="outline" onClick={handleLogout} data-testid="button-org-logout">
             <LogOut className="h-4 w-4 mr-2" />
             Logout
           </Button>
+        </div>
+      </header>
+      
+      <div className="container mx-auto p-4 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold" data-testid="text-org-dashboard-title">Organisation Dashboard</h1>
+            <p className="text-muted-foreground">Monitor your clients' safety and check-in status</p>
+          </div>
+          <div className="flex gap-2">
+            <Link href="/org/safeguarding">
+              <Button variant="outline" data-testid="button-safeguarding-hub">
+                <Shield className="h-4 w-4 mr-2" />
+                Safeguarding Hub
+              </Button>
+            </Link>
+            <Button 
+              data-testid="button-register-client" 
+              disabled={!hasSeatsAvailable}
+              onClick={() => setShowRegisterClientDialog(true)}
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Register Client
+            </Button>
+            <Button variant="outline" onClick={() => setShowChangePasswordDialog(true)} data-testid="button-org-change-password">
+              <KeyRound className="h-4 w-4 mr-2" />
+              Change Password
+            </Button>
           <Dialog open={showAddClientDialog} onOpenChange={setShowAddClientDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" data-testid="button-add-client" disabled={!hasSeatsAvailable}>
@@ -2914,6 +2925,7 @@ export default function OrganizationDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }
