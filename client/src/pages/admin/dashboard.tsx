@@ -676,7 +676,7 @@ export default function AdminDashboard() {
                           <div className="text-right">
                             <Badge variant="destructive" className="bg-red-500">Emergency</Badge>
                             <p className="text-xs text-muted-foreground mt-1">
-                              {format(new Date(alert.timestamp), "MMM d, h:mm a")}
+                              {format(new Date(alert.timestamp), "d MMM, HH:mm")}
                             </p>
                           </div>
                         </div>

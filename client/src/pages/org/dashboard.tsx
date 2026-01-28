@@ -1496,7 +1496,7 @@ export default function OrganizationDashboard() {
                     <p className="text-sm text-muted-foreground">Last Check-in</p>
                     <p className="font-medium">
                       {selectedClient.status.lastCheckIn 
-                        ? format(new Date(selectedClient.status.lastCheckIn), "MMM d, yyyy h:mm a")
+                        ? format(new Date(selectedClient.status.lastCheckIn), "d MMM yyyy HH:mm")
                         : "Never"
                       }
                     </p>
@@ -1505,7 +1505,7 @@ export default function OrganizationDashboard() {
                     <p className="text-sm text-muted-foreground">Next Due</p>
                     <p className="font-medium">
                       {selectedClient.status.nextCheckInDue 
-                        ? format(new Date(selectedClient.status.nextCheckInDue), "MMM d, yyyy h:mm a")
+                        ? format(new Date(selectedClient.status.nextCheckInDue), "d MMM yyyy HH:mm")
                         : "Not set"
                       }
                     </p>
@@ -1517,7 +1517,7 @@ export default function OrganizationDashboard() {
                   <div>
                     <p className="text-sm text-muted-foreground">Added</p>
                     <p className="font-medium">
-                      {format(new Date(selectedClient.addedAt), "MMM d, yyyy")}
+                      {format(new Date(selectedClient.addedAt), "d MMM yyyy")}
                     </p>
                   </div>
                 </div>
@@ -1528,7 +1528,7 @@ export default function OrganizationDashboard() {
                     <div className={`p-3 rounded-lg ${selectedClient.lastAlert.message.includes("EMERGENCY") ? "bg-destructive/10" : "bg-muted"}`}>
                       <p className="text-sm">{selectedClient.lastAlert.message}</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {format(new Date(selectedClient.lastAlert.timestamp), "MMM d, yyyy h:mm a")}
+                        {format(new Date(selectedClient.lastAlert.timestamp), "d MMM yyyy HH:mm")}
                       </p>
                     </div>
                   </div>
@@ -1850,7 +1850,7 @@ export default function OrganizationDashboard() {
                           >
                             <p className="text-sm">{alert.message}</p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              {format(new Date(alert.timestamp), "MMM d, yyyy h:mm a")}
+                              {format(new Date(alert.timestamp), "d MMM yyyy HH:mm")}
                             </p>
                           </div>
                         ))}
