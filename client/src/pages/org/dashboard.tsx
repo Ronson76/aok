@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, Plus } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
@@ -72,6 +72,11 @@ export default function OrganizationDashboard() {
   const [editNickname, setEditNickname] = useState("");
   const [editClientName, setEditClientName] = useState("");
   const [editClientPhone, setEditClientPhone] = useState("");
+  
+  // Emergency contacts state
+  const [showEmergencyContactsDialog, setShowEmergencyContactsDialog] = useState(false);
+  const [emergencyContactsClient, setEmergencyContactsClient] = useState<OrganizationClientWithDetails | null>(null);
+  const [emergencyContacts, setEmergencyContacts] = useState<{ name: string; email: string; phone: string; relationship?: string }[]>([]);
   
   // Inactivity timeout for security
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -285,6 +290,30 @@ export default function OrganizationDashboard() {
     onError: (error: any) => {
       toast({
         title: "Failed to update client",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateEmergencyContactsMutation = useMutation({
+    mutationFn: async ({ clientId, emergencyContacts }: { clientId: string; emergencyContacts: { name: string; email: string; phone: string; relationship?: string }[] }) => {
+      const response = await apiRequest("PATCH", `/api/org/clients/${clientId}/emergency-contacts`, { emergencyContacts });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      setShowEmergencyContactsDialog(false);
+      setEmergencyContactsClient(null);
+      toast({
+        title: "Emergency contacts updated",
+        description: "Emergency contacts have been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update emergency contacts",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
@@ -678,6 +707,37 @@ export default function OrganizationDashboard() {
         clientName: editClientName || undefined,
         clientPhone: editClientPhone || undefined,
       },
+    });
+  };
+
+  const handleManageEmergencyContacts = (client: OrganizationClientWithDetails) => {
+    setEmergencyContactsClient(client);
+    setEmergencyContacts(client.emergencyContacts || []);
+    setShowEmergencyContactsDialog(true);
+  };
+
+  const handleAddEmergencyContact = () => {
+    if (emergencyContacts.length >= 3) return;
+    setEmergencyContacts([...emergencyContacts, { name: "", email: "", phone: "", relationship: "" }]);
+  };
+
+  const handleRemoveEmergencyContact = (index: number) => {
+    setEmergencyContacts(emergencyContacts.filter((_, i) => i !== index));
+  };
+
+  const handleEmergencyContactChange = (index: number, field: string, value: string) => {
+    const updated = [...emergencyContacts];
+    updated[index] = { ...updated[index], [field]: value };
+    setEmergencyContacts(updated);
+  };
+
+  const handleSaveEmergencyContacts = () => {
+    if (!emergencyContactsClient) return;
+    // Filter out empty contacts
+    const validContacts = emergencyContacts.filter(c => c.name && c.email && c.phone);
+    updateEmergencyContactsMutation.mutate({
+      clientId: emergencyContactsClient.id,
+      emergencyContacts: validContacts,
     });
   };
 
@@ -1305,6 +1365,15 @@ export default function OrganizationDashboard() {
                       title="Edit client details"
                     >
                       <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleManageEmergencyContacts(client)}
+                      data-testid={`button-emergency-contacts-${client.clientId || client.id}`}
+                      title="Manage emergency contacts"
+                    >
+                      <Phone className="h-4 w-4 text-orange-600" />
                     </Button>
                     {client.client && client.clientId && (
                       <Button
@@ -2270,6 +2339,112 @@ export default function OrganizationDashboard() {
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
               ) : (
                 "Save Changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Emergency Contacts Dialog */}
+      <Dialog open={showEmergencyContactsDialog} onOpenChange={setShowEmergencyContactsDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Emergency Contacts</DialogTitle>
+            <DialogDescription>
+              Manage emergency contacts for {emergencyContactsClient?.nickname || emergencyContactsClient?.clientName || `Client #${emergencyContactsClient?.clientOrdinal}`}. 
+              You can add up to 3 contacts who will be notified in emergencies.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4 max-h-[50vh] overflow-y-auto">
+            {emergencyContacts.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground">
+                <Phone className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No emergency contacts added yet</p>
+              </div>
+            ) : (
+              emergencyContacts.map((contact, index) => (
+                <div key={index} className="p-4 border rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">Contact {index + 1}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveEmergencyContact(index)}
+                      data-testid={`button-remove-contact-${index}`}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Name *</Label>
+                      <Input
+                        placeholder="Full name"
+                        value={contact.name}
+                        onChange={(e) => handleEmergencyContactChange(index, "name", e.target.value)}
+                        data-testid={`input-contact-name-${index}`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Relationship</Label>
+                      <Input
+                        placeholder="e.g. Parent, Carer"
+                        value={contact.relationship || ""}
+                        onChange={(e) => handleEmergencyContactChange(index, "relationship", e.target.value)}
+                        data-testid={`input-contact-relationship-${index}`}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Email *</Label>
+                      <Input
+                        type="email"
+                        placeholder="email@example.com"
+                        value={contact.email}
+                        onChange={(e) => handleEmergencyContactChange(index, "email", e.target.value)}
+                        data-testid={`input-contact-email-${index}`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Phone *</Label>
+                      <Input
+                        placeholder="+44 7700 900000"
+                        value={contact.phone}
+                        onChange={(e) => handleEmergencyContactChange(index, "phone", e.target.value)}
+                        data-testid={`input-contact-phone-${index}`}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+            
+            {emergencyContacts.length < 3 && (
+              <Button
+                variant="outline"
+                onClick={handleAddEmergencyContact}
+                className="w-full"
+                data-testid="button-add-emergency-contact"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Emergency Contact
+              </Button>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEmergencyContactsDialog(false)} data-testid="button-cancel-emergency-contacts">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveEmergencyContacts}
+              disabled={updateEmergencyContactsMutation.isPending}
+              data-testid="button-save-emergency-contacts"
+            >
+              {updateEmergencyContactsMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+              ) : (
+                "Save Contacts"
               )}
             </Button>
           </DialogFooter>

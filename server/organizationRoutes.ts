@@ -275,6 +275,39 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
+  // Update client emergency contacts (up to 3)
+  const updateEmergencyContactsSchema = z.object({
+    emergencyContacts: z.array(z.object({
+      name: z.string().min(1, "Name is required"),
+      email: z.string().email("Valid email is required"),
+      phone: z.string().min(1, "Phone number is required"),
+      relationship: z.string().optional(),
+    })).max(3, "Maximum 3 emergency contacts allowed"),
+  });
+
+  app.patch("/api/org/clients/:clientId/emergency-contacts", requireOrganization, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      
+      const parsed = updateEmergencyContactsSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0].message });
+      }
+
+      // Get the org client to verify ownership
+      const orgClient = await organizationStorage.getClientById(clientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      const updated = await organizationStorage.updateClientEmergencyContacts(clientId, parsed.data.emergencyContacts);
+      res.json(updated);
+    } catch (error) {
+      console.error("[ORG] Failed to update client emergency contacts:", error);
+      res.status(500).json({ error: "Failed to update client emergency contacts" });
+    }
+  });
+
   // Get a specific client's status and details
   app.get("/api/org/clients/:clientId", requireOrganization, async (req, res) => {
     try {

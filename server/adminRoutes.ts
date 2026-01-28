@@ -596,6 +596,47 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  // Reset organisation password (super admin only)
+  const resetOrgPasswordSchema = z.object({
+    newPassword: z.string().min(8, "Password must be at least 8 characters"),
+  });
+
+  app.post("/api/admin/organizations/:organizationId/reset-password", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { organizationId } = req.params;
+      const parsed = resetOrgPasswordSchema.safeParse(req.body);
+      
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid password" });
+      }
+
+      // Get the organization
+      const org = await storage.getUserById(organizationId);
+      if (!org || org.accountType !== "organization") {
+        return res.status(404).json({ error: "Organisation not found" });
+      }
+
+      // Hash the new password
+      const passwordHash = await bcrypt.hash(parsed.data.newPassword, 10);
+      
+      // Update the password
+      await storage.updateUserPassword(organizationId, passwordHash);
+
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "update",
+        "organization",
+        organizationId,
+        `Reset password for organisation ${org.name || org.email}`
+      );
+
+      res.json({ success: true, message: "Organisation password has been reset" });
+    } catch (error) {
+      console.error("Error resetting organisation password:", error);
+      res.status(500).json({ error: "Failed to reset organisation password" });
+    }
+  });
+
   // Admin forgot password (public)
   app.post("/api/admin/auth/forgot-password", async (req, res) => {
     try {

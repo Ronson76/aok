@@ -123,6 +123,12 @@ export default function AdminDashboard() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   
+  // State for resetting organization password
+  const [showResetOrgPasswordDialog, setShowResetOrgPasswordDialog] = useState(false);
+  const [resetOrgPasswordTarget, setResetOrgPasswordTarget] = useState<AdminOrganizationView | null>(null);
+  const [resetOrgNewPassword, setResetOrgNewPassword] = useState("");
+  const [showResetOrgNewPassword, setShowResetOrgNewPassword] = useState(false);
+  
   const isSuperAdmin = admin?.role === "super_admin";
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
@@ -252,6 +258,53 @@ export default function AdminDashboard() {
       });
     },
   });
+
+  const resetOrgPasswordMutation = useMutation({
+    mutationFn: async ({ organizationId, newPassword }: { organizationId: string; newPassword: string }) => {
+      const response = await apiRequest("POST", `/api/admin/organizations/${organizationId}/reset-password`, { newPassword });
+      return response.json();
+    },
+    onSuccess: () => {
+      setShowResetOrgPasswordDialog(false);
+      setResetOrgPasswordTarget(null);
+      setResetOrgNewPassword("");
+      setShowResetOrgNewPassword(false);
+      toast({
+        title: "Password reset",
+        description: "The organisation password has been reset successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to reset password",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleResetOrgPassword = () => {
+    if (!resetOrgPasswordTarget || !resetOrgNewPassword.trim()) {
+      toast({
+        title: "Missing password",
+        description: "Please enter a new password.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (resetOrgNewPassword.length < 8) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 8 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+    resetOrgPasswordMutation.mutate({
+      organizationId: resetOrgPasswordTarget.id,
+      newPassword: resetOrgNewPassword,
+    });
+  };
   
   const handleCreateOrganization = () => {
     if (!newOrgName.trim() || !newOrgEmail.trim() || !newOrgPassword.trim()) {
@@ -669,6 +722,20 @@ export default function AdminDashboard() {
                     <CardDescription>{org.email}</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
+                    {isSuperAdmin && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setResetOrgPasswordTarget(org);
+                          setShowResetOrgPasswordDialog(true);
+                        }}
+                        data-testid={`button-reset-org-password-${org.id}`}
+                      >
+                        <KeyRound className="h-4 w-4 mr-1" />
+                        Reset Password
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
@@ -1060,6 +1127,69 @@ export default function AdminDashboard() {
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Changing...</>
                 ) : (
                   "Change Password"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Reset Organization Password Dialog */}
+        <Dialog open={showResetOrgPasswordDialog} onOpenChange={(open) => {
+          if (!open) {
+            setShowResetOrgPasswordDialog(false);
+            setResetOrgPasswordTarget(null);
+            setResetOrgNewPassword("");
+            setShowResetOrgNewPassword(false);
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reset Organisation Password</DialogTitle>
+              <DialogDescription>
+                Enter a new password for {resetOrgPasswordTarget?.name || "this organisation"}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-org-password">New Password</Label>
+                <div className="relative">
+                  <Input
+                    id="reset-org-password"
+                    type={showResetOrgNewPassword ? "text" : "password"}
+                    placeholder="Enter new password (min 8 characters)"
+                    value={resetOrgNewPassword}
+                    onChange={(e) => setResetOrgNewPassword(e.target.value)}
+                    data-testid="input-reset-org-password"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full"
+                    onClick={() => setShowResetOrgNewPassword(!showResetOrgNewPassword)}
+                    data-testid="button-toggle-reset-org-password"
+                  >
+                    {showResetOrgNewPassword ? <EyeOff className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  This will immediately change the organisation's password. They will need to use this new password to log in.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowResetOrgPasswordDialog(false)} data-testid="button-cancel-reset-org-password">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleResetOrgPassword}
+                disabled={resetOrgPasswordMutation.isPending}
+                data-testid="button-submit-reset-org-password"
+              >
+                {resetOrgPasswordMutation.isPending ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Resetting...</>
+                ) : (
+                  "Reset Password"
                 )}
               </Button>
             </DialogFooter>

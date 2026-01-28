@@ -2025,6 +2025,7 @@ export interface IOrganizationStorage {
   updateClientStatus(organizationClientId: string, status: OrgClientStatus): Promise<OrganizationClient | undefined>;
   updateClientFeatures(organizationClientId: string, features: UpdateClientFeatures): Promise<OrganizationClient | undefined>;
   updateClientDetails(organizationClientId: string, details: { nickname?: string; clientName?: string; clientPhone?: string }): Promise<OrganizationClient | undefined>;
+  updateClientEmergencyContacts(organizationClientId: string, emergencyContacts: { name: string; email: string; phone: string; relationship?: string }[]): Promise<OrganizationClient | undefined>;
   getClientFeaturesByUserId(userId: string): Promise<ClientFeatureSettings | null>;
   
   // Pending client registration (org-managed flow)
@@ -2131,6 +2132,7 @@ class OrganizationStorage implements IOrganizationStorage {
           scheduleStartTime: row.orgClient.scheduleStartTime,
           checkInIntervalHours: row.orgClient.checkInIntervalHours,
           addedAt: row.orgClient.addedAt,
+          emergencyContacts: (row.orgClient.emergencyContacts as any) || [],
           client: null,
           profile: profile || null,
           status: {
@@ -2172,6 +2174,7 @@ class OrganizationStorage implements IOrganizationStorage {
         scheduleStartTime: row.orgClient.scheduleStartTime,
         checkInIntervalHours: row.orgClient.checkInIntervalHours,
         addedAt: row.orgClient.addedAt,
+        emergencyContacts: (row.orgClient.emergencyContacts as any) || [],
         client: {
           id: row.client.id,
           name: row.client.name,
@@ -2354,6 +2357,17 @@ class OrganizationStorage implements IOrganizationStorage {
     const result = await getDb()
       .update(organizationClients)
       .set(details)
+      .where(eq(organizationClients.id, organizationClientId))
+      .returning();
+    return result[0];
+  }
+  
+  async updateClientEmergencyContacts(organizationClientId: string, emergencyContacts: { name: string; email: string; phone: string; relationship?: string }[]): Promise<OrganizationClient | undefined> {
+    // Limit to 3 contacts
+    const limitedContacts = emergencyContacts.slice(0, 3);
+    const result = await getDb()
+      .update(organizationClients)
+      .set({ emergencyContacts: limitedContacts })
       .where(eq(organizationClients.id, organizationClientId))
       .returning();
     return result[0];
@@ -2543,7 +2557,7 @@ class OrganizationStorage implements IOrganizationStorage {
       results.push({
         id: client.id,
         clientOrdinal: client.clientOrdinal,
-        referenceCode: client.referenceCode,
+        referenceCode: client.referenceCode || "",
         clientStatus: client.status,
         registrationStatus: client.registrationStatus,
         isActivated: !!client.clientId,
