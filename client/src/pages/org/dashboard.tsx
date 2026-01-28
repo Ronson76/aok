@@ -1354,76 +1354,70 @@ export default function OrganizationDashboard() {
                   </div>
                   <div className="flex items-center gap-2">
                     {getStatusBadge(client.status.status)}
-                    {client.lastAlert && client.lastAlert.message.includes("EMERGENCY") && (
-                      <Badge variant="destructive" className="ml-2">
+                    {client.hasActiveEmergency && (
+                      <Badge variant="destructive" className="animate-pulse" data-testid={`badge-emergency-${client.clientId}`}>
                         <AlertOctagon className="h-3 w-3 mr-1" />
-                        Alert
+                        SOS Active
                       </Badge>
                     )}
                     {client.clientStatus === "active" ? (
                       <Button
-                        variant="ghost"
-                        size="icon"
+                        variant="outline"
+                        size="sm"
                         onClick={() => updateClientStatusMutation.mutate({ orgClientId: client.id, status: "paused" })}
                         disabled={updateClientStatusMutation.isPending}
                         data-testid={`button-pause-client-${client.clientId}`}
-                        title="Pause monitoring"
                       >
-                        <Pause className="h-4 w-4 text-yellow-600" />
+                        Pause
                       </Button>
                     ) : client.clientStatus === "paused" ? (
                       <Button
-                        variant="ghost"
-                        size="icon"
+                        variant="outline"
+                        size="sm"
                         onClick={() => updateClientStatusMutation.mutate({ orgClientId: client.id, status: "active" })}
                         disabled={updateClientStatusMutation.isPending}
                         data-testid={`button-resume-client-${client.clientId}`}
-                        title="Resume monitoring"
                       >
-                        <Play className="h-4 w-4 text-primary" />
+                        Resume
                       </Button>
                     ) : null}
                     <Button
-                      variant="ghost"
-                      size="icon"
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleViewClientDetails(client)}
                       data-testid={`button-view-client-${client.clientId}`}
-                      title="View details"
                     >
-                      <Eye className="h-4 w-4" />
+                      View Client
                     </Button>
                     <Button
-                      variant="ghost"
-                      size="icon"
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleEditClient(client)}
                       data-testid={`button-edit-client-${client.clientId || client.id}`}
-                      title="Edit client details"
                     >
-                      <Edit2 className="h-4 w-4" />
+                      Edit
                     </Button>
                     <Button
-                      variant="ghost"
-                      size="icon"
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleManageEmergencyContacts(client)}
                       data-testid={`button-emergency-contacts-${client.clientId || client.id}`}
-                      title="Manage emergency contacts"
                     >
-                      <Phone className="h-4 w-4 text-orange-600" />
+                      Emergency Contacts
                     </Button>
                     {client.client && client.clientId && (
                       <>
                         <Button
-                          variant="ghost"
-                          size="icon"
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleResendPasswordClick(client)}
                           data-testid={`button-resend-password-${client.clientId}`}
-                          title="Resend password via SMS"
                         >
-                          <KeyRound className="h-4 w-4" />
+                          Resend SMS
                         </Button>
                         <Button
-                          variant="ghost"
-                          size="icon"
+                          variant="outline"
+                          size="sm"
                           onClick={() => {
                             setScheduleClientId(client.id);
                             setScheduleClientName(client.nickname || client.clientName || client.client?.name || "Client");
@@ -1432,9 +1426,8 @@ export default function OrganizationDashboard() {
                             setShowScheduleDialog(true);
                           }}
                           data-testid={`button-schedule-${client.clientId}`}
-                          title="Set check-in schedule"
                         >
-                          <Clock className="h-4 w-4 text-blue-500" />
+                          Adjust Check-in Time
                         </Button>
                       </>
                     )}
