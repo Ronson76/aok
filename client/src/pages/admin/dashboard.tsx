@@ -129,6 +129,13 @@ export default function AdminDashboard() {
   const [resetOrgNewPassword, setResetOrgNewPassword] = useState("");
   const [showResetOrgNewPassword, setShowResetOrgNewPassword] = useState(false);
   
+  // State for editing client schedule
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [editingScheduleClient, setEditingScheduleClient] = useState<AdminOrganizationClientView | null>(null);
+  const [scheduleStartTime, setScheduleStartTime] = useState("09:00");
+  const [scheduleIntervalHours, setScheduleIntervalHours] = useState(24);
+  const [loadingSchedule, setLoadingSchedule] = useState(false);
+  
   const isSuperAdmin = admin?.role === "super_admin";
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
@@ -220,7 +227,7 @@ export default function AdminDashboard() {
       }
       toast({
         title: "Alert deactivated",
-        description: "The emergency alert has been deactivated.",
+        description: "The emergency alert has been deactivated. Check-ins will continue as normal.",
       });
     },
     onError: (error: any) => {
@@ -231,6 +238,61 @@ export default function AdminDashboard() {
       });
     },
   });
+  
+  const updateScheduleMutation = useMutation({
+    mutationFn: async ({ organizationId, clientId, scheduleStartTime, checkInIntervalHours }: { 
+      organizationId: string; 
+      clientId: string; 
+      scheduleStartTime: string;
+      checkInIntervalHours: number;
+    }) => {
+      const response = await apiRequest("PATCH", `/api/admin/organizations/${organizationId}/clients/${clientId}/schedule`, { 
+        scheduleStartTime, 
+        checkInIntervalHours 
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      if (selectedOrg) {
+        fetchOrgClients(selectedOrg.id);
+      }
+      setShowScheduleDialog(false);
+      setEditingScheduleClient(null);
+      toast({
+        title: "Schedule updated",
+        description: "The client's check-in schedule has been updated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update schedule",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Fetch client schedule when opening edit dialog
+  const fetchClientSchedule = async (organizationId: string, clientId: string) => {
+    setLoadingSchedule(true);
+    try {
+      const response = await apiRequest("GET", `/api/admin/organizations/${organizationId}/clients/${clientId}/schedule`);
+      const data = await response.json();
+      if (data.scheduleStartTime) {
+        const time = new Date(data.scheduleStartTime).toTimeString().slice(0, 5);
+        setScheduleStartTime(time);
+      } else {
+        setScheduleStartTime("09:00");
+      }
+      setScheduleIntervalHours(data.checkInIntervalHours || 24);
+    } catch (error) {
+      console.error("Failed to fetch schedule:", error);
+      setScheduleStartTime("09:00");
+      setScheduleIntervalHours(24);
+    } finally {
+      setLoadingSchedule(false);
+    }
+  };
   
   const createOrgMutation = useMutation({
     mutationFn: async (data: { name: string; email: string; password: string }) => {
@@ -862,85 +924,87 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {admin?.role === "super_admin" && (
                         <>
                           {client.clientStatus === "active" ? (
                             <Button
-                              variant="ghost"
-                              size="icon"
+                              variant="outline"
+                              size="sm"
                               onClick={() => updateClientStatusMutation.mutate({ 
                                 organizationId: selectedOrg!.id, 
                                 clientId: client.id, 
                                 status: "paused" 
                               })}
                               disabled={updateClientStatusMutation.isPending}
-                              title="Pause monitoring"
+                              className="text-yellow-600 border-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-950"
                               data-testid={`button-pause-${client.id}`}
                             >
-                              <Pause className="h-4 w-4 text-yellow-600" />
+                              Pause
                             </Button>
                           ) : client.clientStatus === "paused" ? (
                             <Button
-                              variant="ghost"
-                              size="icon"
+                              variant="outline"
+                              size="sm"
                               onClick={() => updateClientStatusMutation.mutate({ 
                                 organizationId: selectedOrg!.id, 
                                 clientId: client.id, 
                                 status: "active" 
                               })}
                               disabled={updateClientStatusMutation.isPending}
-                              title="Resume monitoring"
+                              className="text-primary border-primary"
                               data-testid={`button-resume-${client.id}`}
                             >
-                              <Play className="h-4 w-4 text-primary" />
+                              Resume
                             </Button>
                           ) : null}
                           
                           {client.hasActiveAlert && (
                             <Button
-                              variant="ghost"
-                              size="icon"
+                              variant="outline"
+                              size="sm"
                               onClick={() => deactivateAlertMutation.mutate({ 
                                 organizationId: selectedOrg!.id, 
                                 clientId: client.id 
                               })}
                               disabled={deactivateAlertMutation.isPending}
-                              title="Deactivate emergency alert"
+                              className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
                               data-testid={`button-deactivate-alert-${client.id}`}
                             >
-                              <BellOff className="h-4 w-4 text-orange-600" />
+                              Deactivate Alert
                             </Button>
                           )}
                           
                           {client.isActivated && (
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => resetClientMutation.mutate({ 
-                                organizationId: selectedOrg!.id, 
-                                clientId: client.id 
-                              })}
-                              disabled={resetClientMutation.isPending}
-                              title="Reset client app and check-in time"
-                              data-testid={`button-reset-${client.id}`}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingScheduleClient(client);
+                                setShowScheduleDialog(true);
+                                if (selectedOrg) {
+                                  fetchClientSchedule(selectedOrg.id, client.id);
+                                }
+                              }}
+                              className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                              data-testid={`button-edit-schedule-${client.id}`}
                             >
-                              <RotateCcw className="h-4 w-4 text-blue-600" />
+                              Edit Schedule
                             </Button>
                           )}
                           
                           <Button
-                            variant="ghost"
-                            size="icon"
+                            variant="outline"
+                            size="sm"
                             onClick={() => removeClientMutation.mutate({ 
                               organizationId: selectedOrg!.id, 
                               clientId: client.id 
                             })}
                             disabled={removeClientMutation.isPending}
-                            title="Remove from organisation"
+                            className="text-destructive border-destructive hover:bg-red-50 dark:hover:bg-red-950"
                             data-testid={`button-delete-${client.id}`}
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            Remove
                           </Button>
                         </>
                       )}
@@ -1204,6 +1268,97 @@ export default function AdminDashboard() {
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Resetting...</>
                 ) : (
                   "Reset Password"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Schedule Dialog */}
+        <Dialog open={showScheduleDialog} onOpenChange={(open) => {
+          if (!open) {
+            setShowScheduleDialog(false);
+            setEditingScheduleClient(null);
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Check-in Schedule</DialogTitle>
+              <DialogDescription>
+                Update the check-in schedule for client #{editingScheduleClient?.clientOrdinal} ({editingScheduleClient?.referenceCode}).
+              </DialogDescription>
+            </DialogHeader>
+            {loadingSchedule ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="space-y-6 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-start-time">Daily Check-in Time</Label>
+                  <Input
+                    id="schedule-start-time"
+                    type="time"
+                    value={scheduleStartTime}
+                    onChange={(e) => setScheduleStartTime(e.target.value)}
+                    data-testid="input-schedule-start-time"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    The time each day when the check-in cycle begins.
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-interval">Check-in Interval (hours)</Label>
+                  <div className="flex items-center gap-4">
+                    <Input
+                      id="schedule-interval"
+                      type="number"
+                      min={1}
+                      max={48}
+                      value={scheduleIntervalHours}
+                      onChange={(e) => setScheduleIntervalHours(parseInt(e.target.value) || 24)}
+                      className="w-24"
+                      data-testid="input-schedule-interval"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {scheduleIntervalHours === 1 ? "hour" : "hours"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    How often the client needs to check in (1-48 hours).
+                  </p>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowScheduleDialog(false);
+                  setEditingScheduleClient(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (selectedOrg && editingScheduleClient) {
+                    updateScheduleMutation.mutate({
+                      organizationId: selectedOrg.id,
+                      clientId: editingScheduleClient.id,
+                      scheduleStartTime,
+                      checkInIntervalHours: scheduleIntervalHours,
+                    });
+                  }
+                }}
+                disabled={updateScheduleMutation.isPending || loadingSchedule}
+                data-testid="button-save-schedule"
+              >
+                {updateScheduleMutation.isPending ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+                ) : (
+                  "Save Schedule"
                 )}
               </Button>
             </DialogFooter>
