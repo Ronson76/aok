@@ -5,6 +5,20 @@ import twilio from 'twilio';
 import { google } from 'googleapis';
 import { Client } from '@microsoft/microsoft-graph-client';
 
+// Helper to get a display name for a user with fallbacks
+function getUserDisplayName(user: User): string {
+  if (user.name && user.name.trim()) {
+    return user.name.trim();
+  }
+  if (user.referenceId) {
+    return `Client ${user.referenceId}`;
+  }
+  if (user.email) {
+    return user.email.split('@')[0];
+  }
+  return 'aok User';
+}
+
 // Gmail integration (Replit connector)
 let gmailConnectionSettings: any;
 
@@ -499,7 +513,7 @@ export async function sendContactConfirmationEmail(
 ): Promise<{ sent: boolean; error?: string }> {
   const isOrganization = user.accountType === "organization";
   const contactName = escapeHtml(contact.name);
-  const userName = escapeHtml(user.name);
+  const userName = escapeHtml(getUserDisplayName(user));
   const referenceId = escapeHtml(user.referenceId || '');
   
   const confirmUrl = `${baseUrl}/api/contacts/confirm?token=${confirmationToken}&action=accept`;
@@ -511,7 +525,7 @@ export async function sendContactConfirmationEmail(
   const emailBody = isOrganization 
     ? `Hi ${contact.name},
 
-${user.name} would like to add you as an emergency contact for a person they are monitoring on aok.
+${userName} would like to add you as an emergency contact for a person they are monitoring on aok.
 
 Reference ID: ${user.referenceId}
 
@@ -531,11 +545,11 @@ Thank you,
 - The aok Team`
     : `Hi ${contact.name},
 
-${user.name} would like to add you as their emergency contact on aok.
+${userName} would like to add you as their emergency contact on aok.
 
-aok is a personal safety check-in app. If ${user.name} misses a check-in, you will be notified automatically via email, SMS, or phone call.
+aok is a personal safety check-in app. If ${userName} misses a check-in, you will be notified automatically via email, SMS, or phone call.
 
-This means ${user.name} trusts you to help ensure their safety.
+This means ${userName} trusts you to help ensure their safety.
 
 IMPORTANT: You must confirm within 24 hours to become an emergency contact.
 
@@ -611,8 +625,8 @@ Thank you,
     if (contact.phone && contact.phoneType !== "landline") {
       console.log(`[NOTIFICATION] Attempting SMS fallback for ${contactName}`);
       const smsBody = isOrganization
-        ? `aok: ${user.name} wants to add you as an emergency contact for Reference ${user.referenceId}. Accept: ${confirmUrl} or Decline: ${declineUrl} (Expires in 10 mins)`
-        : `aok: ${user.name} wants to add you as their emergency contact. Accept: ${confirmUrl} or Decline: ${declineUrl} (Expires in 10 mins)`;
+        ? `aok: ${userName} wants to add you as an emergency contact for Reference ${user.referenceId}. Accept: ${confirmUrl} or Decline: ${declineUrl} (Expires in 10 mins)`
+        : `aok: ${userName} wants to add you as their emergency contact. Accept: ${confirmUrl} or Decline: ${declineUrl} (Expires in 10 mins)`;
       
       const smsResult = await sendSMS(contact.phone, smsBody);
       smsSent = smsResult.success;
@@ -642,16 +656,17 @@ export async function sendContactAddedNotification(
   };
 
   const isOrganization = user.accountType === "organization";
+  const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
-    ? `${user.name} (Reference ID: ${user.referenceId})`
-    : user.name;
+    ? `${displayName} (Reference ID: ${user.referenceId})`
+    : displayName;
   const contactName = contact.name;
 
   const emailSubject = `You are now an emergency contact on aok`;
   const emailBody = isOrganization 
     ? `Hi ${contactName},
 
-Thank you for confirming! You are now an emergency contact for a person monitored by ${user.name} on aok.
+Thank you for confirming! You are now an emergency contact for a person monitored by ${displayName} on aok.
 
 Reference ID: ${user.referenceId}
 
@@ -662,17 +677,17 @@ Thank you for your support.
 - The aok Team`
     : `Hi ${contactName},
 
-Thank you for confirming! You are now an emergency contact for ${user.name} on aok.
+Thank you for confirming! You are now an emergency contact for ${displayName} on aok.
 
-You will be notified if ${user.name} misses a scheduled check-in.
+You will be notified if ${displayName} misses a scheduled check-in.
 
-Thank you for being there for ${user.name}.
+Thank you for being there for ${displayName}.
 
 - The aok Team`;
 
   const smsBody = isOrganization
     ? `You're now an emergency contact for Reference ${user.referenceId} on aok. You'll be notified if they miss a check-in.`
-    : `You're now an emergency contact for ${user.name} on aok. You'll be notified if they miss a check-in.`;
+    : `You're now an emergency contact for ${displayName} on aok. You'll be notified if they miss a check-in.`;
 
   // Send email only for contact added notification (to save cost)
   try {
@@ -692,16 +707,17 @@ export async function sendPrimaryContactPromotionNotification(
   user: User
 ): Promise<boolean> {
   const isOrganization = user.accountType === "organization";
+  const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `Reference ${user.referenceId}` 
-    : user.name;
+    : displayName;
   const contactName = contact.name;
 
   const emailSubject = `You are now the PRIMARY emergency contact on aok`;
   const emailBody = isOrganization 
     ? `Hi ${contactName},
 
-You have been promoted to PRIMARY emergency contact for a person monitored by ${user.name} on aok.
+You have been promoted to PRIMARY emergency contact for a person monitored by ${displayName} on aok.
 
 Reference ID: ${user.referenceId}
 
@@ -712,11 +728,11 @@ Thank you for your continued support.
 - The aok Team`
     : `Hi ${contactName},
 
-You have been promoted to PRIMARY emergency contact for ${user.name} on aok.
+You have been promoted to PRIMARY emergency contact for ${displayName} on aok.
 
 As the primary contact, you will receive a notification for every successful check-in, as well as any alerts if a check-in is missed.
 
-Thank you for being there for ${user.name}.
+Thank you for being there for ${displayName}.
 
 - The aok Team`;
 
@@ -735,16 +751,17 @@ export async function sendContactRemovedNotification(
   user: User
 ): Promise<boolean> {
   const isOrganization = user.accountType === "organization";
+  const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `Reference ${user.referenceId}` 
-    : user.name;
+    : displayName;
   const contactName = contact.name;
 
   const emailSubject = `You have been removed as an emergency contact on aok`;
   const emailBody = isOrganization 
     ? `Hi ${contactName},
 
-This is to inform you that you have been removed as an emergency contact for a person monitored by ${user.name} on aok.
+This is to inform you that you have been removed as an emergency contact for a person monitored by ${displayName} on aok.
 
 Reference ID: ${user.referenceId}
 
@@ -755,9 +772,9 @@ Thank you for your support.
 - The aok Team`
     : `Hi ${contactName},
 
-This is to inform you that you have been removed as an emergency contact for ${user.name} on aok.
+This is to inform you that you have been removed as an emergency contact for ${displayName} on aok.
 
-You will no longer receive any check-in notifications or alerts for ${user.name}.
+You will no longer receive any check-in notifications or alerts for ${displayName}.
 
 Thank you for being there.
 
@@ -896,12 +913,13 @@ export async function sendMissedCheckInAlert(
   additionalInfo?: string | null
 ): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number; whatsappSent: number; whatsappFailed: number }> {
   const isOrganization = user.accountType === "organization";
+  const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `Reference ID: ${user.referenceId}` 
-    : user.name;
+    : displayName;
   const subjectIdentifier = isOrganization 
     ? `Reference ${user.referenceId}` 
-    : user.name;
+    : displayName;
   
   let emailsSent = 0;
   let emailsFailed = 0;
@@ -995,9 +1013,10 @@ export async function sendSuccessfulCheckInNotification(
   user: User
 ): Promise<boolean> {
   const isOrganization = user.accountType === "organization";
+  const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `Reference ${user.referenceId}` 
-    : user.name;
+    : displayName;
   
   const now = new Date();
   const checkInTime = now.toLocaleString('en-GB', { 
@@ -1053,9 +1072,10 @@ export async function sendSchedulePreferencesNotification(
   intervalHours: number
 ): Promise<{ emailsSent: number; emailsFailed: number }> {
   const isOrganization = user.accountType === "organization";
+  const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `Reference ${user.referenceId}` 
-    : user.name;
+    : displayName;
   
   const scheduleDate = new Date(scheduleTime);
   const formattedTime = scheduleDate.toLocaleTimeString('en-US', { 
@@ -1112,12 +1132,13 @@ export async function sendEmergencyAlert(
   additionalInfo?: string | null
 ): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number; whatsappSent: number; whatsappFailed: number }> {
   const isOrganization = user.accountType === "organization";
+  const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `Reference ID: ${user.referenceId}` 
-    : user.name;
+    : displayName;
   const subjectIdentifier = isOrganization 
     ? `Reference ${user.referenceId}` 
-    : user.name;
+    : displayName;
   
   let emailsSent = 0;
   let emailsFailed = 0;
@@ -1503,9 +1524,10 @@ export async function sendVoiceAlerts(
   }
 
   const isOrganization = user.accountType === "organization";
+  const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `Reference ${user.referenceId}` 
-    : user.name;
+    : displayName;
 
   const message = alertType === 'emergency'
     ? `This is an urgent emergency alert from A O K. ${identifier} has triggered an emergency alert and needs immediate assistance. Please try to contact them immediately. If you cannot reach them, consider contacting emergency services.`
@@ -1538,9 +1560,10 @@ export async function sendLogoutNotification(
   const result = { sent: false, error: undefined as string | undefined };
 
   const isOrganization = user.accountType === "organization";
+  const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
-    ? `${user.name} (Reference ID: ${user.referenceId})`
-    : user.name;
+    ? `${displayName} (Reference ID: ${user.referenceId})`
+    : displayName;
 
   const subject = `aok Alert: ${identifier} has signed out`;
   
@@ -1584,7 +1607,7 @@ IMPORTANT: While they are signed out, you will NOT receive any alerts if they mi
 
 This means their safety check-ins are currently paused and no notifications will be sent to you or any other emergency contacts.
 
-If you are concerned about ${isOrganization ? "this user's" : `${user.name}'s`} wellbeing, please reach out to them directly.
+If you are concerned about ${isOrganization ? "this user's" : `${displayName}'s`} wellbeing, please reach out to them directly.
 
 ---
 This notification was sent because you are listed as their primary emergency contact.

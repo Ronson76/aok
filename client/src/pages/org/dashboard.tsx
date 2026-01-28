@@ -66,6 +66,13 @@ export default function OrganizationDashboard() {
   const [selectedBundleId, setSelectedBundleId] = useState<string>("");
   const [selectedClient, setSelectedClient] = useState<OrganizationClientWithDetails | null>(null);
   
+  // Edit client dialog state
+  const [showEditClientDialog, setShowEditClientDialog] = useState(false);
+  const [editingClient, setEditingClient] = useState<OrganizationClientWithDetails | null>(null);
+  const [editNickname, setEditNickname] = useState("");
+  const [editClientName, setEditClientName] = useState("");
+  const [editClientPhone, setEditClientPhone] = useState("");
+  
   // Inactivity timeout for security
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const logoutRef = useRef(logout);
@@ -245,6 +252,30 @@ export default function OrganizationDashboard() {
     onError: (error: any) => {
       toast({
         title: "Failed to remove client",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateClientDetailsMutation = useMutation({
+    mutationFn: async ({ clientId, details }: { clientId: string; details: { nickname?: string; clientName?: string; clientPhone?: string } }) => {
+      const response = await apiRequest("PATCH", `/api/org/clients/${clientId}/details`, details);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      setShowEditClientDialog(false);
+      setEditingClient(null);
+      toast({
+        title: "Client updated",
+        description: "Client details have been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update client",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
@@ -611,6 +642,26 @@ export default function OrganizationDashboard() {
       fetchClientAlerts(client.clientId);
     }
     fetchClientContacts(client.id);
+  };
+
+  const handleEditClient = (client: OrganizationClientWithDetails) => {
+    setEditingClient(client);
+    setEditNickname(client.nickname || "");
+    setEditClientName(client.clientName || client.client?.name || "");
+    setEditClientPhone(client.clientPhone || client.client?.mobileNumber || "");
+    setShowEditClientDialog(true);
+  };
+
+  const handleSaveClientDetails = () => {
+    if (!editingClient) return;
+    updateClientDetailsMutation.mutate({
+      clientId: editingClient.id,
+      details: {
+        nickname: editNickname || undefined,
+        clientName: editClientName || undefined,
+        clientPhone: editClientPhone || undefined,
+      },
+    });
   };
 
   const handleResetPasswordClick = (client: OrganizationClientWithDetails) => {
@@ -1148,6 +1199,15 @@ export default function OrganizationDashboard() {
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEditClient(client)}
+                      data-testid={`button-edit-client-${client.clientId || client.id}`}
+                      title="Edit client details"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
                     {client.client && client.clientId && (
                       <Button
                         variant="ghost"
@@ -1162,8 +1222,8 @@ export default function OrganizationDashboard() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => client.clientId && removeClientMutation.mutate(client.clientId)}
-                      disabled={removeClientMutation.isPending || !client.clientId}
+                      onClick={() => removeClientMutation.mutate(client.clientId || client.id)}
+                      disabled={removeClientMutation.isPending}
                       data-testid={`button-remove-client-${client.clientId || client.id}`}
                       title="Remove client"
                     >
@@ -2049,6 +2109,69 @@ export default function OrganizationDashboard() {
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Changing...</>
               ) : (
                 "Change Password"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Client Details Dialog */}
+      <Dialog open={showEditClientDialog} onOpenChange={setShowEditClientDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Client Details</DialogTitle>
+            <DialogDescription>
+              Update the client's nickname, name, or phone number.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="editNickname">Nickname (optional)</Label>
+              <Input
+                id="editNickname"
+                placeholder="e.g., Room 101"
+                value={editNickname}
+                onChange={(e) => setEditNickname(e.target.value)}
+                data-testid="input-edit-nickname"
+              />
+              <p className="text-xs text-muted-foreground">
+                An internal name to help you identify this client
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editClientName">Client Name</Label>
+              <Input
+                id="editClientName"
+                placeholder="Full name"
+                value={editClientName}
+                onChange={(e) => setEditClientName(e.target.value)}
+                data-testid="input-edit-client-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editClientPhone">Phone Number</Label>
+              <Input
+                id="editClientPhone"
+                placeholder="+44 7700 900000"
+                value={editClientPhone}
+                onChange={(e) => setEditClientPhone(e.target.value)}
+                data-testid="input-edit-client-phone"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditClientDialog(false)} data-testid="button-cancel-edit-client">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveClientDetails}
+              disabled={updateClientDetailsMutation.isPending}
+              data-testid="button-save-client-details"
+            >
+              {updateClientDetailsMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+              ) : (
+                "Save Changes"
               )}
             </Button>
           </DialogFooter>

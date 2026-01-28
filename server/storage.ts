@@ -2010,6 +2010,7 @@ export interface IOrganizationStorage {
   isClientOfOrganization(organizationId: string, clientId: string): Promise<boolean>;
   updateClientStatus(organizationClientId: string, status: OrgClientStatus): Promise<OrganizationClient | undefined>;
   updateClientFeatures(organizationClientId: string, features: UpdateClientFeatures): Promise<OrganizationClient | undefined>;
+  updateClientDetails(organizationClientId: string, details: { nickname?: string; clientName?: string; clientPhone?: string }): Promise<OrganizationClient | undefined>;
   getClientFeaturesByUserId(userId: string): Promise<ClientFeatureSettings | null>;
   
   // Pending client registration (org-managed flow)
@@ -2248,14 +2249,25 @@ class OrganizationStorage implements IOrganizationStorage {
 
   // Remove a client from an organization
   async removeClient(organizationId: string, clientId: string): Promise<boolean> {
-    // Get the client record first to check bundle
-    const clientRecord = await getDb()
+    // Get the client record first - try by clientId first, then by record ID
+    let clientRecord = await getDb()
       .select()
       .from(organizationClients)
       .where(and(
         eq(organizationClients.organizationId, organizationId),
         eq(organizationClients.clientId, clientId)
       ));
+    
+    // If not found by clientId, try by record ID (for unactivated clients)
+    if (clientRecord.length === 0) {
+      clientRecord = await getDb()
+        .select()
+        .from(organizationClients)
+        .where(and(
+          eq(organizationClients.organizationId, organizationId),
+          eq(organizationClients.id, clientId)
+        ));
+    }
     
     if (clientRecord.length === 0) {
       return false;
@@ -2276,12 +2288,10 @@ class OrganizationStorage implements IOrganizationStorage {
       }
     }
 
+    // Delete by the record ID we found
     const result = await getDb()
       .delete(organizationClients)
-      .where(and(
-        eq(organizationClients.organizationId, organizationId),
-        eq(organizationClients.clientId, clientId)
-      ))
+      .where(eq(organizationClients.id, clientRecord[0].id))
       .returning();
     
     return result.length > 0;
@@ -2314,6 +2324,15 @@ class OrganizationStorage implements IOrganizationStorage {
     const result = await getDb()
       .update(organizationClients)
       .set(features)
+      .where(eq(organizationClients.id, organizationClientId))
+      .returning();
+    return result[0];
+  }
+
+  async updateClientDetails(organizationClientId: string, details: { nickname?: string; clientName?: string; clientPhone?: string }): Promise<OrganizationClient | undefined> {
+    const result = await getDb()
+      .update(organizationClients)
+      .set(details)
       .where(eq(organizationClients.id, organizationClientId))
       .returning();
     return result[0];
