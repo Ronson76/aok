@@ -2022,6 +2022,13 @@ export interface IOrganizationStorage {
     referenceCode: string;
     scheduleStartTime: Date | null;
     checkInIntervalHours: number;
+    features?: {
+      featureWellbeingAi: boolean;
+      featureShakeToAlert: boolean;
+      featureMoodTracking: boolean;
+      featurePetProtection: boolean;
+      featureDigitalWill: boolean;
+    };
   }): Promise<OrganizationClient>;
   updateClientRegistrationStatus(orgClientId: string, status: OrgClientRegistrationStatus): Promise<void>;
   addPendingClientContact(orgClientId: string, contact: {
@@ -2543,9 +2550,17 @@ class OrganizationStorage implements IOrganizationStorage {
     let clientsSafe = 0;
     let clientsPending = 0;
     let clientsOverdue = 0;
+    let clientsAwaitingActivation = 0;
     let totalEmergencyAlerts = 0;
     
     for (const client of clients) {
+      // Only count activated clients (those with a linked user) in check-in status counts
+      if (!client.clientId) {
+        // Unactivated clients - don't count them as "pending" check-in status
+        clientsAwaitingActivation++;
+        continue;
+      }
+      
       if (client.status.status === "safe") clientsSafe++;
       else if (client.status.status === "pending") clientsPending++;
       else if (client.status.status === "overdue") clientsOverdue++;
@@ -2570,6 +2585,7 @@ class OrganizationStorage implements IOrganizationStorage {
       clientsSafe,
       clientsPending,
       clientsOverdue,
+      clientsAwaitingActivation,
       totalEmergencyAlerts,
       bundles,
     };
@@ -2673,6 +2689,13 @@ class OrganizationStorage implements IOrganizationStorage {
     referenceCode: string;
     scheduleStartTime: Date | null;
     checkInIntervalHours: number;
+    features?: {
+      featureWellbeingAi: boolean;
+      featureShakeToAlert: boolean;
+      featureMoodTracking: boolean;
+      featurePetProtection: boolean;
+      featureDigitalWill: boolean;
+    };
   }): Promise<OrganizationClient> {
     // Get next ordinal number
     const existingClients = await this.getClients(data.organizationId);
@@ -2691,6 +2714,11 @@ class OrganizationStorage implements IOrganizationStorage {
         clientOrdinal: nextOrdinal,
         status: "active",
         registrationStatus: "pending_sms",
+        featureWellbeingAi: data.features?.featureWellbeingAi ?? true,
+        featureShakeToAlert: data.features?.featureShakeToAlert ?? true,
+        featureMoodTracking: data.features?.featureMoodTracking ?? true,
+        featurePetProtection: data.features?.featurePetProtection ?? true,
+        featureDigitalWill: data.features?.featureDigitalWill ?? true,
       })
       .returning();
     

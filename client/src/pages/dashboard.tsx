@@ -607,6 +607,14 @@ export default function Dashboard() {
                 </div>
               )}
               
+              {/* Show exact due date and time */}
+              {status?.nextCheckInDue && (
+                <p className="text-sm text-muted-foreground" data-testid="text-due-time">
+                  {effectivelyOverdue ? "Was due: " : "Due: "}
+                  {format(new Date(status.nextCheckInDue), "EEEE d MMMM 'at' h:mm a")}
+                </p>
+              )}
+              
               {/* Check-In Button - only enabled when due or overdue */}
               <Button
                 size="lg"

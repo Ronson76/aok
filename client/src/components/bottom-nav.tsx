@@ -23,9 +23,10 @@ const organizationNavItems = [
   { path: "/app/settings", icon: Settings, label: "Settings" },
 ];
 
-// Restricted nav for org-managed clients (only home/dashboard)
+// Restricted nav for org-managed clients (home and settings)
 const orgManagedClientNavItems = [
   { path: "/app", icon: Home, label: "Home" },
+  { path: "/app/settings", icon: Settings, label: "Settings" },
 ];
 
 interface FeatureFlags {
@@ -83,8 +84,8 @@ export function BottomNav() {
   
   const isMoreActive = wellnessFeatures.some(f => location === f.path);
 
-  // Don't show More menu for organizations or org-managed clients
-  const showMoreMenu = !isOrganization && !isOrgManagedClient;
+  // Show More menu for regular users and org-managed clients, but not organizations
+  const showMoreMenu = !isOrganization;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-card-border z-50">
@@ -160,37 +161,39 @@ export function BottomNav() {
                 }
               })}
               
-              {/* Wellbeing-ai external link - only enabled if registration complete AND feature enabled */}
-              {isRegistrationComplete && features?.featureWellbeingAi !== false ? (
-                <DropdownMenuItem asChild>
-                  <a
-                    href="https://health-insight-engine.replit.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 cursor-pointer text-green-600"
-                    onClick={() => setMoreOpen(false)}
-                    data-testid="nav-wellbeing-ai"
+              {/* Wellbeing-ai external link - only shown for non-org-managed clients, enabled if registration complete AND feature enabled */}
+              {!isOrgManagedClient && (
+                isRegistrationComplete && features?.featureWellbeingAi !== false ? (
+                  <DropdownMenuItem asChild>
+                    <a
+                      href="https://health-insight-engine.replit.app"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 cursor-pointer text-green-600"
+                      onClick={() => setMoreOpen(false)}
+                      data-testid="nav-wellbeing-ai"
+                    >
+                      <div className="relative h-4 w-4 flex items-center justify-center">
+                        <div className="w-3 h-1 bg-green-600 absolute rounded-sm" />
+                        <div className="w-1 h-3 bg-green-600 absolute rounded-sm" />
+                      </div>
+                      <span>Wellbeing AI</span>
+                    </a>
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem 
+                    disabled 
+                    className="flex items-center gap-3 opacity-50"
+                    data-testid="nav-wellbeing-ai-disabled"
                   >
                     <div className="relative h-4 w-4 flex items-center justify-center">
-                      <div className="w-3 h-1 bg-green-600 absolute rounded-sm" />
-                      <div className="w-1 h-3 bg-green-600 absolute rounded-sm" />
+                      <div className="w-3 h-1 bg-muted-foreground absolute rounded-sm" />
+                      <div className="w-1 h-3 bg-muted-foreground absolute rounded-sm" />
                     </div>
                     <span>Wellbeing AI</span>
-                  </a>
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem 
-                  disabled 
-                  className="flex items-center gap-3 opacity-50"
-                  data-testid="nav-wellbeing-ai-disabled"
-                >
-                  <div className="relative h-4 w-4 flex items-center justify-center">
-                    <div className="w-3 h-1 bg-muted-foreground absolute rounded-sm" />
-                    <div className="w-1 h-3 bg-muted-foreground absolute rounded-sm" />
-                  </div>
-                  <span>Wellbeing AI</span>
-                  <Lock className="h-3 w-3 ml-auto" />
-                </DropdownMenuItem>
+                    <Lock className="h-3 w-3 ml-auto" />
+                  </DropdownMenuItem>
+                )
               )}
             </DropdownMenuContent>
           </DropdownMenu>

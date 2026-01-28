@@ -539,6 +539,13 @@ export const registerOrgClientSchema = z.object({
     relationship: z.string().optional(),
     isPrimary: z.boolean().optional(),
   })).optional(),
+  features: z.object({
+    featureWellbeingAi: z.boolean().default(true),
+    featureShakeToAlert: z.boolean().default(true),
+    featureMoodTracking: z.boolean().default(true),
+    featurePetProtection: z.boolean().default(true),
+    featureDigitalWill: z.boolean().default(true),
+  }).optional(),
 });
 
 export type InsertOrganizationClient = z.infer<typeof insertOrganizationClientSchema>;
@@ -741,6 +748,7 @@ export interface OrganizationDashboardStats {
   clientsSafe: number;
   clientsPending: number;
   clientsOverdue: number;
+  clientsAwaitingActivation: number;
   totalEmergencyAlerts: number;
   bundles: OrganizationBundle[];
 }
