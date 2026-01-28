@@ -2126,6 +2126,7 @@ export interface IOrganizationStorage {
   updateClientStatus(organizationClientId: string, status: OrgClientStatus): Promise<OrganizationClient | undefined>;
   updateClientFeatures(organizationClientId: string, features: UpdateClientFeatures): Promise<OrganizationClient | undefined>;
   updateClientDetails(organizationClientId: string, details: { nickname?: string; clientName?: string; clientPhone?: string; clientEmail?: string; alertsEnabled?: boolean }): Promise<OrganizationClient | undefined>;
+  updateClientSchedule(organizationClientId: string, scheduleStartTime: Date, checkInIntervalHours: number): Promise<OrganizationClient | undefined>;
   updateClientEmergencyContacts(organizationClientId: string, emergencyContacts: { name: string; email: string; phone: string; relationship?: string }[]): Promise<OrganizationClient | undefined>;
   getClientFeaturesByUserId(userId: string): Promise<ClientFeatureSettings | null>;
   
@@ -2458,6 +2459,18 @@ class OrganizationStorage implements IOrganizationStorage {
     const result = await getDb()
       .update(organizationClients)
       .set(details)
+      .where(eq(organizationClients.id, organizationClientId))
+      .returning();
+    return result[0];
+  }
+
+  async updateClientSchedule(organizationClientId: string, scheduleStartTime: Date, checkInIntervalHours: number): Promise<OrganizationClient | undefined> {
+    const result = await getDb()
+      .update(organizationClients)
+      .set({ 
+        scheduleStartTime,
+        checkInIntervalHours,
+      })
       .where(eq(organizationClients.id, organizationClientId))
       .returning();
     return result[0];

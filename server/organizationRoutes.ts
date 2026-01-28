@@ -494,6 +494,60 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
+  // Update client's check-in schedule (time and interval)
+  const updateScheduleSchema = z.object({
+    scheduleStartTime: z.string().min(1, "Schedule start time is required"),
+    checkInIntervalHours: z.number().min(0.08).max(48),
+  });
+
+  app.patch("/api/org/clients/:clientId/schedule", requireOrganization, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+
+      const parsed = updateScheduleSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0].message });
+      }
+
+      // Get the org client to verify ownership (clientId is the org client record ID, not the user ID)
+      const orgClient = await organizationStorage.getClientById(clientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      const { scheduleStartTime, checkInIntervalHours } = parsed.data;
+
+      // Parse the time string (HH:mm) and create a Date for today at that time
+      const [hours, minutes] = scheduleStartTime.split(':').map(Number);
+      const now = new Date();
+      const scheduleDate = new Date();
+      scheduleDate.setHours(hours, minutes, 0, 0);
+      
+      // If the schedule time has already passed today, set for tomorrow
+      if (scheduleDate <= now) {
+        scheduleDate.setDate(scheduleDate.getDate() + 1);
+      }
+
+      // Update the org client record with the new schedule using storage method
+      await organizationStorage.updateClientSchedule(clientId, scheduleDate, checkInIntervalHours);
+
+      // If the client has a linked user account, update their settings too
+      if (orgClient.clientId) {
+        await storage.updateSettings(orgClient.clientId, {
+          scheduleStartTime: scheduleDate.toISOString(),
+          intervalHours: checkInIntervalHours,
+          nextCheckInDue: scheduleDate.toISOString(),
+        });
+      }
+
+      console.log(`[ORG] Updated schedule for client ${clientId}: start ${scheduleDate.toISOString()}, interval ${checkInIntervalHours}h`);
+      res.json({ success: true, message: "Client schedule has been updated", scheduleStartTime: scheduleDate, checkInIntervalHours });
+    } catch (error) {
+      console.error("[ORG] Failed to update client schedule:", error);
+      res.status(500).json({ error: "Failed to update client schedule" });
+    }
+  });
+
   // Get client profile by organization client ID
   app.get("/api/org/clients/:orgClientId/profile", requireOrganization, async (req, res) => {
     try {
