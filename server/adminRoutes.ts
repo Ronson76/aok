@@ -465,6 +465,84 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  // Deactivate client's active emergency alert (super admin only)
+  app.post("/api/admin/organizations/:organizationId/clients/:clientId/deactivate-alert", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { organizationId, clientId } = req.params;
+      
+      // Get the org client to verify it belongs to this organization
+      const orgClient = await organizationStorage.getClientById(clientId);
+      if (!orgClient || orgClient.organizationId !== organizationId) {
+        return res.status(404).json({ error: "Client not found in this organization" });
+      }
+
+      if (!orgClient.clientId) {
+        return res.status(400).json({ error: "Client has not activated their account yet" });
+      }
+
+      // Deactivate the emergency alert
+      const deactivated = await storage.deactivateEmergencyAlertByUserId(orgClient.clientId);
+      
+      if (!deactivated) {
+        return res.status(404).json({ error: "No active emergency alert found" });
+      }
+
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "update",
+        "emergency_alert",
+        clientId,
+        `Deactivated emergency alert for client in organization ${organizationId}`
+      );
+
+      res.json({ success: true, message: "Emergency alert deactivated" });
+    } catch (error) {
+      console.error("Error deactivating alert:", error);
+      res.status(500).json({ error: "Failed to deactivate alert" });
+    }
+  });
+
+  // Reset client's app and check-in time (super admin only)
+  app.post("/api/admin/organizations/:organizationId/clients/:clientId/reset", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { organizationId, clientId } = req.params;
+      
+      // Get the org client to verify it belongs to this organization
+      const orgClient = await organizationStorage.getClientById(clientId);
+      if (!orgClient || orgClient.organizationId !== organizationId) {
+        return res.status(404).json({ error: "Client not found in this organization" });
+      }
+
+      // Only reset if the client has an activated user account
+      if (!orgClient.clientId) {
+        return res.status(400).json({ error: "Client has not activated their account yet" });
+      }
+
+      // Reset the user's check-in data by updating their settings
+      const now = new Date();
+      const intervalHours = orgClient.checkInIntervalHours || 24;
+      const nextDue = new Date(now.getTime() + intervalHours * 60 * 60 * 1000);
+      
+      await storage.updateSettings(orgClient.clientId, {
+        nextCheckInDue: nextDue,
+        streak: 0,
+      });
+
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "update",
+        "organization_client",
+        clientId,
+        `Reset client app and check-in time in organization ${organizationId}`
+      );
+
+      res.json({ success: true, message: "Client reset successfully" });
+    } catch (error) {
+      console.error("Error resetting client:", error);
+      res.status(500).json({ error: "Failed to reset client" });
+    }
+  });
+
   // ==================== USER FEATURE CONTROLS ====================
 
   // Update user feature settings

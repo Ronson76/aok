@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Users, Building2, User, CheckCircle, XCircle, Package, 
-  LogOut, ShieldCheck, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff, KeyRound, ArrowLeft
+  LogOut, ShieldCheck, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff, KeyRound, ArrowLeft, RotateCcw, AlertTriangle, BellOff
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -174,6 +174,52 @@ export default function AdminDashboard() {
     onError: (error: any) => {
       toast({
         title: "Failed to remove client",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const resetClientMutation = useMutation({
+    mutationFn: async ({ organizationId, clientId }: { organizationId: string; clientId: string }) => {
+      const response = await apiRequest("POST", `/api/admin/organizations/${organizationId}/clients/${clientId}/reset`);
+      return response.json();
+    },
+    onSuccess: () => {
+      if (selectedOrg) {
+        fetchOrgClients(selectedOrg.id);
+      }
+      toast({
+        title: "Client reset",
+        description: "The client's app and check-in time have been reset.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to reset client",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const deactivateAlertMutation = useMutation({
+    mutationFn: async ({ organizationId, clientId }: { organizationId: string; clientId: string }) => {
+      const response = await apiRequest("POST", `/api/admin/organizations/${organizationId}/clients/${clientId}/deactivate-alert`);
+      return response.json();
+    },
+    onSuccess: () => {
+      if (selectedOrg) {
+        fetchOrgClients(selectedOrg.id);
+      }
+      toast({
+        title: "Alert deactivated",
+        description: "The emergency alert has been deactivated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to deactivate alert",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
@@ -715,40 +761,27 @@ export default function AdminDashboard() {
                         {client.clientOrdinal}
                       </div>
                       <div>
-                        <div className="font-medium flex items-center gap-2">
-                          Client #{client.clientOrdinal}
+                        <div className="font-medium flex items-center gap-2 flex-wrap">
+                          <code className="px-2 py-1 bg-muted rounded text-sm font-mono">{client.referenceCode}</code>
                           {getClientStatusBadge(client.clientStatus)}
-                          {client.clientDisabled && <Badge variant="destructive">Disabled</Badge>}
-                          {client.registrationStatus !== "registered" && (
+                          {!client.isActivated && (
                             <Badge variant="outline" className="text-xs">
-                              {client.registrationStatus === "pending_sms" ? "SMS Pending" : "Awaiting Registration"}
+                              {client.registrationStatus === "pending_sms" ? "SMS Pending" : "Not Activated"}
+                            </Badge>
+                          )}
+                          {client.hasActiveAlert && (
+                            <Badge variant="destructive" className="text-xs flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              Active Alert
                             </Badge>
                           )}
                         </div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-4">
-                          {client.mobileNumber ? (
-                            <span className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {client.mobileNumber}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">No mobile</span>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1 flex items-center gap-4">
-                          <span>Added: {formatDistanceToNow(new Date(client.addedAt), { addSuffix: true })}</span>
-                          {client.alertCounts.total > 0 && (
-                            <span className="text-destructive">
-                              {client.alertCounts.total} alert{client.alertCounts.total !== 1 ? "s" : ""} 
-                              ({client.alertCounts.emergencies} emergency)
-                            </span>
-                          )}
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Added: {formatDistanceToNow(new Date(client.addedAt), { addSuffix: true })}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {client.status && getCheckInStatusBadge(client.status.status)}
-                      
                       {admin?.role === "super_admin" && (
                         <>
                           {client.clientStatus === "active" ? (
@@ -762,6 +795,7 @@ export default function AdminDashboard() {
                               })}
                               disabled={updateClientStatusMutation.isPending}
                               title="Pause monitoring"
+                              data-testid={`button-pause-${client.id}`}
                             >
                               <Pause className="h-4 w-4 text-yellow-600" />
                             </Button>
@@ -776,10 +810,43 @@ export default function AdminDashboard() {
                               })}
                               disabled={updateClientStatusMutation.isPending}
                               title="Resume monitoring"
+                              data-testid={`button-resume-${client.id}`}
                             >
                               <Play className="h-4 w-4 text-primary" />
                             </Button>
                           ) : null}
+                          
+                          {client.hasActiveAlert && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deactivateAlertMutation.mutate({ 
+                                organizationId: selectedOrg!.id, 
+                                clientId: client.id 
+                              })}
+                              disabled={deactivateAlertMutation.isPending}
+                              title="Deactivate emergency alert"
+                              data-testid={`button-deactivate-alert-${client.id}`}
+                            >
+                              <BellOff className="h-4 w-4 text-orange-600" />
+                            </Button>
+                          )}
+                          
+                          {client.isActivated && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => resetClientMutation.mutate({ 
+                                organizationId: selectedOrg!.id, 
+                                clientId: client.id 
+                              })}
+                              disabled={resetClientMutation.isPending}
+                              title="Reset client app and check-in time"
+                              data-testid={`button-reset-${client.id}`}
+                            >
+                              <RotateCcw className="h-4 w-4 text-blue-600" />
+                            </Button>
+                          )}
                           
                           <Button
                             variant="ghost"
@@ -789,7 +856,8 @@ export default function AdminDashboard() {
                               clientId: client.id 
                             })}
                             disabled={removeClientMutation.isPending}
-                            title="Remove from organization"
+                            title="Remove from organisation"
+                            data-testid={`button-delete-${client.id}`}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
