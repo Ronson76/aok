@@ -891,7 +891,7 @@ export default function OrganizationDashboard() {
             <DialogTrigger asChild>
               <Button variant="outline" data-testid="button-add-client" disabled={!hasSeatsAvailable}>
                 <UserPlus className="h-4 w-4 mr-2" />
-                Add Client
+                Add Existing
               </Button>
             </DialogTrigger>
           <DialogContent>
