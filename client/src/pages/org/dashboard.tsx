@@ -144,6 +144,7 @@ export default function OrganizationDashboard() {
   const [showRegisterClientDialog, setShowRegisterClientDialog] = useState(false);
   const [regClientName, setRegClientName] = useState("");
   const [regClientPhone, setRegClientPhone] = useState("");
+  const [regCountryCode, setRegCountryCode] = useState("+44");
   const [regClientDOB, setRegClientDOB] = useState("");
   const [regBundleId, setRegBundleId] = useState("");
   const [regScheduleStart, setRegScheduleStart] = useState("");
@@ -152,6 +153,7 @@ export default function OrganizationDashboard() {
     name: string;
     email: string;
     phone: string;
+    countryCode: string;
     phoneType: "mobile" | "landline";
     relationship: string;
     isPrimary: boolean;
@@ -196,10 +198,12 @@ export default function OrganizationDashboard() {
     name: "",
     email: "",
     phone: "",
+    countryCode: "+44",
     phoneType: "mobile" as "mobile" | "landline",
     relationship: "",
     isPrimary: false,
   });
+  const [profileCountryCode, setProfileCountryCode] = useState("+44");
 
   // Client feature settings state (all ON by default)
   const [clientFeatures, setClientFeatures] = useState({
@@ -364,9 +368,11 @@ export default function OrganizationDashboard() {
 
   const registerClientMutation = useMutation({
     mutationFn: async () => {
+      // Combine country code with phone number
+      const fullPhone = regClientPhone ? `${regCountryCode}${regClientPhone.replace(/\D/g, "")}` : "";
       const response = await apiRequest("POST", "/api/org/clients/register", {
         clientName: regClientName,
-        clientPhone: regClientPhone,
+        clientPhone: fullPhone,
         dateOfBirth: regClientDOB || undefined,
         bundleId: regBundleId || undefined,
         scheduleStartTime: regScheduleStart || undefined,
@@ -400,6 +406,7 @@ export default function OrganizationDashboard() {
   const resetRegisterForm = () => {
     setRegClientName("");
     setRegClientPhone("");
+    setRegCountryCode("+44");
     setRegClientDOB("");
     setRegBundleId("");
     setRegScheduleStart("");
@@ -419,6 +426,7 @@ export default function OrganizationDashboard() {
       name: "",
       email: "",
       phone: "",
+      countryCode: "+44",
       phoneType: "mobile",
       relationship: "",
       isPrimary: regEmergencyContacts.length === 0,
@@ -646,6 +654,7 @@ export default function OrganizationDashboard() {
       name: "",
       email: "",
       phone: "",
+      countryCode: "+44",
       phoneType: "mobile",
       relationship: "",
       isPrimary: false,
@@ -655,7 +664,13 @@ export default function OrganizationDashboard() {
 
   const addContactMutation = useMutation({
     mutationFn: async (orgClientId: string) => {
-      const response = await apiRequest("POST", `/api/org/clients/${orgClientId}/contacts`, contactFormData);
+      // Combine country code with phone number
+      const fullPhone = contactFormData.phone ? `${contactFormData.countryCode}${contactFormData.phone.replace(/\D/g, "")}` : "";
+      const payload = {
+        ...contactFormData,
+        phone: fullPhone,
+      };
+      const response = await apiRequest("POST", `/api/org/clients/${orgClientId}/contacts`, payload);
       return response.json();
     },
     onSuccess: () => {
@@ -681,7 +696,13 @@ export default function OrganizationDashboard() {
 
   const updateContactMutation = useMutation({
     mutationFn: async ({ orgClientId, contactId }: { orgClientId: string; contactId: string }) => {
-      const response = await apiRequest("PATCH", `/api/org/clients/${orgClientId}/contacts/${contactId}`, contactFormData);
+      // Combine country code with phone number
+      const fullPhone = contactFormData.phone ? `${contactFormData.countryCode}${contactFormData.phone.replace(/\D/g, "")}` : "";
+      const payload = {
+        ...contactFormData,
+        phone: fullPhone,
+      };
+      const response = await apiRequest("PATCH", `/api/org/clients/${orgClientId}/contacts/${contactId}`, payload);
       return response.json();
     },
     onSuccess: () => {
@@ -729,10 +750,31 @@ export default function OrganizationDashboard() {
   });
 
   const handleEditContact = (contact: Contact) => {
+    // Parse existing phone to extract country code
+    const existingPhone = contact.phone || "";
+    let countryCode = "+44";
+    let phoneNumber = existingPhone;
+    if (existingPhone.startsWith("+44")) {
+      countryCode = "+44";
+      phoneNumber = existingPhone.slice(3);
+    } else if (existingPhone.startsWith("+1")) {
+      countryCode = "+1";
+      phoneNumber = existingPhone.slice(2);
+    } else if (existingPhone.startsWith("+353")) {
+      countryCode = "+353";
+      phoneNumber = existingPhone.slice(4);
+    } else if (existingPhone.startsWith("+33")) {
+      countryCode = "+33";
+      phoneNumber = existingPhone.slice(3);
+    } else if (existingPhone.startsWith("+49")) {
+      countryCode = "+49";
+      phoneNumber = existingPhone.slice(3);
+    }
     setContactFormData({
       name: contact.name,
       email: contact.email,
-      phone: contact.phone || "",
+      phone: phoneNumber,
+      countryCode: countryCode,
       phoneType: contact.phoneType || "mobile",
       relationship: contact.relationship || "",
       isPrimary: contact.isPrimary || false,
@@ -992,14 +1034,43 @@ export default function OrganizationDashboard() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="regClientPhone">Mobile Number *</Label>
-                <Input
-                  id="regClientPhone"
-                  type="tel"
-                  placeholder="+44 7700 900000"
-                  value={regClientPhone}
-                  onChange={(e) => setRegClientPhone(e.target.value)}
-                  data-testid="input-reg-client-phone"
-                />
+                <div className="flex gap-2">
+                  <Select value={regCountryCode} onValueChange={setRegCountryCode}>
+                    <SelectTrigger className="w-24" data-testid="select-reg-country-code">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="+44">+44 UK</SelectItem>
+                      <SelectItem value="+1">+1 US</SelectItem>
+                      <SelectItem value="+353">+353 IE</SelectItem>
+                      <SelectItem value="+33">+33 FR</SelectItem>
+                      <SelectItem value="+49">+49 DE</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="flex-1 relative">
+                    <Input
+                      id="regClientPhone"
+                      type="tel"
+                      placeholder="7700 900000"
+                      value={regClientPhone}
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/[^\d\s]/g, "");
+                        if (value.startsWith("0")) value = value.slice(1);
+                        setRegClientPhone(value);
+                      }}
+                      className={regClientPhone && !isValidUKPhone(regClientPhone) ? "border-yellow-500" : ""}
+                      data-testid="input-reg-client-phone"
+                    />
+                    {regClientPhone && !isValidUKPhone(regClientPhone) && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {regClientPhone && !isValidUKPhone(regClientPhone) && (
+                  <p className="text-xs text-yellow-600">UK mobile numbers should be 10 digits</p>
+                )}
               </div>
             </div>
             
@@ -1117,14 +1188,38 @@ export default function OrganizationDashboard() {
                         data-testid={`input-contact-email-${index}`}
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        placeholder="Phone"
-                        type="tel"
-                        value={contact.phone}
-                        onChange={(e) => updateEmergencyContact(index, 'phone', e.target.value)}
-                        data-testid={`input-contact-phone-${index}`}
-                      />
+                    <div className="grid grid-cols-3 gap-2">
+                      <Select value={contact.countryCode || "+44"} onValueChange={(v) => updateEmergencyContact(index, 'countryCode', v)}>
+                        <SelectTrigger className="w-full" data-testid={`select-contact-country-${index}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="+44">+44 UK</SelectItem>
+                          <SelectItem value="+1">+1 US</SelectItem>
+                          <SelectItem value="+353">+353 IE</SelectItem>
+                          <SelectItem value="+33">+33 FR</SelectItem>
+                          <SelectItem value="+49">+49 DE</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="relative">
+                        <Input
+                          placeholder="Phone"
+                          type="tel"
+                          value={contact.phone}
+                          onChange={(e) => {
+                            let value = e.target.value.replace(/[^\d\s]/g, "");
+                            if (value.startsWith("0")) value = value.slice(1);
+                            updateEmergencyContact(index, 'phone', value);
+                          }}
+                          className={contact.phone && !isValidUKPhone(contact.phone) ? "border-yellow-500" : ""}
+                          data-testid={`input-contact-phone-${index}`}
+                        />
+                        {contact.phone && !isValidUKPhone(contact.phone) && (
+                          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                          </div>
+                        )}
+                      </div>
                       <Select 
                         value={contact.phoneType} 
                         onValueChange={(v) => updateEmergencyContact(index, 'phoneType', v)}
@@ -1617,9 +1712,25 @@ export default function OrganizationDashboard() {
                   </h4>
                   {!editingProfile && (
                     <Button variant="outline" size="sm" onClick={() => {
+                      // Parse country code from existing phone
+                      const existingPhone = selectedClient.clientPhone || "";
+                      let code = "+44";
+                      let phoneNum = existingPhone;
+                      if (existingPhone.startsWith("+44")) {
+                        code = "+44"; phoneNum = existingPhone.slice(3);
+                      } else if (existingPhone.startsWith("+1")) {
+                        code = "+1"; phoneNum = existingPhone.slice(2);
+                      } else if (existingPhone.startsWith("+353")) {
+                        code = "+353"; phoneNum = existingPhone.slice(4);
+                      } else if (existingPhone.startsWith("+33")) {
+                        code = "+33"; phoneNum = existingPhone.slice(3);
+                      } else if (existingPhone.startsWith("+49")) {
+                        code = "+49"; phoneNum = existingPhone.slice(3);
+                      }
+                      setProfileCountryCode(code);
                       setProfileData({
                         ...(selectedClient.profile || {}),
-                        phone: selectedClient.clientPhone || "",
+                        phone: phoneNum,
                         email: selectedClient.clientEmail || "",
                       });
                       setEditingProfile(true);
@@ -1637,16 +1748,45 @@ export default function OrganizationDashboard() {
                         <Phone className="h-4 w-4" />
                         Contact Information
                       </Label>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-3">
                         <div className="space-y-1">
                           <Label className="text-xs text-muted-foreground">Phone Number</Label>
-                          <Input
-                            type="tel"
-                            placeholder="Mobile or landline"
-                            value={profileData.phone ?? ""}
-                            onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                            data-testid="input-client-phone"
-                          />
+                          <div className="flex gap-2">
+                            <Select value={profileCountryCode} onValueChange={setProfileCountryCode}>
+                              <SelectTrigger className="w-24" data-testid="select-profile-country-code">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="+44">+44 UK</SelectItem>
+                                <SelectItem value="+1">+1 US</SelectItem>
+                                <SelectItem value="+353">+353 IE</SelectItem>
+                                <SelectItem value="+33">+33 FR</SelectItem>
+                                <SelectItem value="+49">+49 DE</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <div className="flex-1 relative">
+                              <Input
+                                type="tel"
+                                placeholder="7700 900000"
+                                value={profileData.phone ?? ""}
+                                onChange={(e) => {
+                                  let value = e.target.value.replace(/[^\d\s]/g, "");
+                                  if (value.startsWith("0")) value = value.slice(1);
+                                  setProfileData({ ...profileData, phone: value });
+                                }}
+                                className={profileData.phone && !isValidUKPhone(profileData.phone) ? "border-yellow-500" : ""}
+                                data-testid="input-client-phone"
+                              />
+                              {profileData.phone && !isValidUKPhone(profileData.phone) && (
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {profileData.phone && !isValidUKPhone(profileData.phone) && (
+                            <p className="text-xs text-yellow-600">UK mobile numbers should be 10 digits</p>
+                          )}
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs text-muted-foreground">Email Address</Label>
@@ -1753,9 +1893,25 @@ export default function OrganizationDashboard() {
                         variant="outline"
                         onClick={() => {
                           setEditingProfile(false);
+                          // Parse country code from existing phone
+                          const existingPhone = selectedClient.clientPhone || "";
+                          let code = "+44";
+                          let phoneNum = existingPhone;
+                          if (existingPhone.startsWith("+44")) {
+                            code = "+44"; phoneNum = existingPhone.slice(3);
+                          } else if (existingPhone.startsWith("+1")) {
+                            code = "+1"; phoneNum = existingPhone.slice(2);
+                          } else if (existingPhone.startsWith("+353")) {
+                            code = "+353"; phoneNum = existingPhone.slice(4);
+                          } else if (existingPhone.startsWith("+33")) {
+                            code = "+33"; phoneNum = existingPhone.slice(3);
+                          } else if (existingPhone.startsWith("+49")) {
+                            code = "+49"; phoneNum = existingPhone.slice(3);
+                          }
+                          setProfileCountryCode(code);
                           setProfileData({
                             ...(selectedClient.profile || {}),
-                            phone: selectedClient.clientPhone || "",
+                            phone: phoneNum,
                             email: selectedClient.clientEmail || "",
                           });
                         }}
@@ -1766,13 +1922,15 @@ export default function OrganizationDashboard() {
                         onClick={() => {
                           const { phone, email, ...profile } = profileData;
                           updateProfileMutation.mutate({ orgClientId: selectedClient.id, profile });
-                          const phoneChanged = phone !== (selectedClient.clientPhone || "");
+                          // Combine country code with phone number
+                          const fullPhone = phone ? `${profileCountryCode}${phone.replace(/\D/g, "")}` : "";
+                          const phoneChanged = fullPhone !== (selectedClient.clientPhone || "");
                           const emailChanged = email !== (selectedClient.clientEmail || "");
                           if (phoneChanged || emailChanged) {
                             updateClientDetailsMutation.mutate({
                               clientId: selectedClient.id,
                               details: {
-                                clientPhone: phone,
+                                clientPhone: fullPhone,
                                 clientEmail: email,
                               }
                             });
@@ -2348,20 +2506,41 @@ export default function OrganizationDashboard() {
                 data-testid="input-contact-email"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="contact-phone">Phone</Label>
-                <Input
-                  id="contact-phone"
-                  type="tel"
-                  value={contactFormData.phone}
-                  onChange={(e) => setContactFormData({ ...contactFormData, phone: e.target.value })}
-                  placeholder="+44..."
-                  data-testid="input-contact-phone"
-                />
-              </div>
-              <div>
-                <Label htmlFor="contact-phone-type">Phone Type</Label>
+            <div className="space-y-2">
+              <Label htmlFor="contact-phone">Phone</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <Select value={contactFormData.countryCode || "+44"} onValueChange={(v) => setContactFormData({ ...contactFormData, countryCode: v })}>
+                  <SelectTrigger data-testid="select-contact-country-code">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="+44">+44 UK</SelectItem>
+                    <SelectItem value="+1">+1 US</SelectItem>
+                    <SelectItem value="+353">+353 IE</SelectItem>
+                    <SelectItem value="+33">+33 FR</SelectItem>
+                    <SelectItem value="+49">+49 DE</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="relative">
+                  <Input
+                    id="contact-phone"
+                    type="tel"
+                    value={contactFormData.phone}
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/[^\d\s]/g, "");
+                      if (value.startsWith("0")) value = value.slice(1);
+                      setContactFormData({ ...contactFormData, phone: value });
+                    }}
+                    placeholder="7700 900000"
+                    className={contactFormData.phone && !isValidUKPhone(contactFormData.phone) ? "border-yellow-500" : ""}
+                    data-testid="input-contact-phone"
+                  />
+                  {contactFormData.phone && !isValidUKPhone(contactFormData.phone) && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                    </div>
+                  )}
+                </div>
                 <Select
                   value={contactFormData.phoneType}
                   onValueChange={(value: "mobile" | "landline") => setContactFormData({ ...contactFormData, phoneType: value })}
@@ -2375,6 +2554,9 @@ export default function OrganizationDashboard() {
                   </SelectContent>
                 </Select>
               </div>
+              {contactFormData.phone && !isValidUKPhone(contactFormData.phone) && (
+                <p className="text-xs text-yellow-600">UK mobile numbers should be 10 digits</p>
+              )}
             </div>
             <div>
               <Label htmlFor="contact-relationship">Relationship</Label>
