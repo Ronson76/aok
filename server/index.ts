@@ -9,6 +9,13 @@ import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
 
 const app = express();
+
+// Trust proxy for production (Replit's reverse proxy)
+// This is required for secure cookies to work correctly
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
+
 const httpServer = createServer(app);
 
 declare module "http" {
