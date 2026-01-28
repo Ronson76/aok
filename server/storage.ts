@@ -2125,7 +2125,7 @@ export interface IOrganizationStorage {
   isClientOfOrganization(organizationId: string, clientId: string): Promise<boolean>;
   updateClientStatus(organizationClientId: string, status: OrgClientStatus): Promise<OrganizationClient | undefined>;
   updateClientFeatures(organizationClientId: string, features: UpdateClientFeatures): Promise<OrganizationClient | undefined>;
-  updateClientDetails(organizationClientId: string, details: { nickname?: string; clientName?: string; clientPhone?: string }): Promise<OrganizationClient | undefined>;
+  updateClientDetails(organizationClientId: string, details: { nickname?: string; clientName?: string; clientPhone?: string; clientEmail?: string; alertsEnabled?: boolean }): Promise<OrganizationClient | undefined>;
   updateClientEmergencyContacts(organizationClientId: string, emergencyContacts: { name: string; email: string; phone: string; relationship?: string }[]): Promise<OrganizationClient | undefined>;
   getClientFeaturesByUserId(userId: string): Promise<ClientFeatureSettings | null>;
   
@@ -2454,7 +2454,7 @@ class OrganizationStorage implements IOrganizationStorage {
     return result[0];
   }
 
-  async updateClientDetails(organizationClientId: string, details: { nickname?: string; clientName?: string; clientPhone?: string }): Promise<OrganizationClient | undefined> {
+  async updateClientDetails(organizationClientId: string, details: { nickname?: string; clientName?: string; clientPhone?: string; clientEmail?: string; alertsEnabled?: boolean }): Promise<OrganizationClient | undefined> {
     const result = await getDb()
       .update(organizationClients)
       .set(details)
