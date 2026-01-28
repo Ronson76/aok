@@ -47,6 +47,7 @@ import OrganizationClientLogin from "@/pages/org/client-login";
 import OrganizationStaffLogin from "@/pages/org/staff-login";
 import OrgForgotPassword from "@/pages/org/forgot-password";
 import OrgResetPassword from "@/pages/org/reset-password";
+import OrgSafeguarding from "@/pages/org/safeguarding";
 import Activate from "@/pages/activate";
 import Pricing from "@/pages/pricing";
 import Onboarding from "@/pages/onboarding";
@@ -192,6 +193,7 @@ function AppRoutes() {
       <Route path="/app" component={() => <ProtectedRoute component={isOrganization ? OrganizationDashboard : Dashboard} />} />
       <Route path="/app/org" component={() => <ProtectedRoute component={OrganizationDashboard} />} />
       <Route path="/org/dashboard" component={() => <ProtectedRoute component={OrganizationDashboard} />} />
+      <Route path="/org/safeguarding" component={() => <ProtectedRoute component={OrgSafeguarding} />} />
       <Route path="/app/contacts" component={() => <ProtectedRoute component={Contacts} />} />
       <Route path="/app/history" component={() => <ProtectedRoute component={History} />} />
       <Route path="/app/settings" component={() => <ProtectedRoute component={Settings} allowPaymentBlocked={true} />} />

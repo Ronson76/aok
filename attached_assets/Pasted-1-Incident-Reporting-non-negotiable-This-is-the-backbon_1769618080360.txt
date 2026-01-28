@@ -1,0 +1,199 @@
+1. Incident Reporting (non-negotiable)
+
+This is the backbone.
+
+Must include:
+
+One-tap incident report (user or staff)
+
+Incident type selector
+(abuse, neglect, self-harm risk, medical issue, harassment, lone-worker danger, missing person concern)
+
+Free-text description
+
+Time & date auto-logged
+
+Location capture (GPS or last known)
+
+Optional photo / voice note / attachment
+
+Severity level (low / medium / high / immediate danger)
+
+Why it matters:
+Safeguarding policy requires recording concerns even if unproven.
+
+2. Missed Check-In Escalation Reports
+
+This is AOK’s USP if done properly.
+
+Mechanism:
+
+Scheduled check-ins (user or organisation-set)
+
+Failure to respond triggers:
+
+Push notification reminder
+
+Escalation report generated
+
+Alerts sent to nominated contacts / staff
+
+System logs the entire timeline
+
+Report output:
+
+Missed check-in time
+
+Escalation steps taken
+
+Who was notified and when
+
+Resolution status
+
+Why it matters:
+This shows proactive safeguarding, not reactive panic buttons.
+
+3. Welfare Concern Reporting (Third-Party)
+
+Critical and often missed by competitors.
+
+Allows:
+
+Staff, carers, or trusted contacts to raise concerns about someone else
+
+“Something doesn’t feel right” option
+
+Pattern-based concerns (withdrawal, behaviour change)
+
+Logged as:
+
+Welfare concern (non-emergency)
+
+Linked to individual profile
+
+Timestamped and auditable
+
+Why it matters:
+Most safeguarding starts with gut instinct, not emergencies.
+
+4. Automated Risk & Pattern Reports
+
+This is where you look serious.
+
+System-generated reports:
+
+Repeated missed check-ins
+
+Increased alert frequency
+
+Reduced engagement / inactivity
+
+Repeated low-level incidents
+
+Outputs:
+
+Risk trend indicator (green / amber / red)
+
+Recommendation: review / contact / escalate
+
+Exportable report for safeguarding leads
+
+Why it matters:
+Safeguarding frameworks require early intervention evidence.
+
+5. Emergency Alert & Response Log
+
+For legal protection.
+
+Every emergency creates a record of:
+
+Trigger method (button, shake, auto-detection)
+
+Exact time
+
+Who was alerted
+
+Delivery confirmation (SMS sent, call answered)
+
+Resolution notes
+
+Why it matters:
+If something goes wrong, this log protects the organisation.
+
+6. Safeguarding Case File (per individual)
+
+This is gold for councils.
+
+Each user has:
+
+Incident history
+
+Welfare concerns
+
+Escalations
+
+Notes from safeguarding leads
+
+Status: open / monitoring / closed
+
+Exportable as PDF or CSV
+
+Why it matters:
+This aligns with Care Act 2014, Working Together to Safeguard Children, and internal audits.
+
+7. Audit Trail & Data Integrity
+
+Non-optional.
+
+Must include:
+
+Immutable timestamps
+
+Who created / viewed / edited reports
+
+Version history
+
+Role-based access
+
+Why it matters:
+Without this, procurement will kill the app instantly.
+
+8. Mandatory Escalation Thresholds
+
+Stops human failure.
+
+Rules like:
+
+X missed check-ins = automatic escalation
+
+High-risk category = safeguarding lead notified
+
+Repeat incidents = management review
+
+Why it matters:
+Safeguarding cannot rely on someone “remembering”.
+
+9. Anonymous & Confidential Reporting (Optional but powerful)
+
+Especially for staff and young people.
+
+Anonymous welfare concern submissions
+
+Identity protected but logged
+
+Safeguarding lead only access
+
+Why it matters:
+Whistleblowing and youth safeguarding policies love this.
+
+10. Reporting Outputs Organisations Expect
+
+If AOK can’t export these, it’s dead on arrival.
+
+Incident summary reports
+
+Monthly safeguarding activity reports
+
+Individual case timelines
+
+Compliance evidence for inspections (CQC, Ofsted, internal audit)
