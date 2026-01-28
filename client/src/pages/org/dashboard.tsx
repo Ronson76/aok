@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, Plus, RotateCcw } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, Plus, RotateCcw, Bell } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -180,7 +180,7 @@ export default function OrganizationDashboard() {
   
   // Profile editing state
   const [editingProfile, setEditingProfile] = useState(false);
-  const [profileData, setProfileData] = useState<Partial<OrganizationClientProfile>>({});
+  const [profileData, setProfileData] = useState<Partial<OrganizationClientProfile> & { phone?: string; email?: string }>({});
   
   // Alert view state
   const [clientAlerts, setClientAlerts] = useState<{ alerts: AlertLog[]; counts: { total: number; emails: number; calls: number; emergencies: number } } | null>(null);
@@ -292,7 +292,7 @@ export default function OrganizationDashboard() {
   });
 
   const updateClientDetailsMutation = useMutation({
-    mutationFn: async ({ clientId, details }: { clientId: string; details: { nickname?: string; clientName?: string; clientPhone?: string } }) => {
+    mutationFn: async ({ clientId, details }: { clientId: string; details: { nickname?: string; clientName?: string; clientPhone?: string; clientEmail?: string; alertsEnabled?: boolean } }) => {
       const response = await apiRequest("PATCH", `/api/org/clients/${clientId}/details`, details);
       return response.json();
     },
@@ -1572,7 +1572,14 @@ export default function OrganizationDashboard() {
                     Personal Information
                   </h4>
                   {!editingProfile && (
-                    <Button variant="outline" size="sm" onClick={() => setEditingProfile(true)} data-testid="button-edit-profile">
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setProfileData({
+                        ...(selectedClient.profile || {}),
+                        phone: selectedClient.clientPhone || "",
+                        email: selectedClient.clientEmail || "",
+                      });
+                      setEditingProfile(true);
+                    }} data-testid="button-edit-profile">
                       <Edit2 className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
@@ -1581,6 +1588,35 @@ export default function OrganizationDashboard() {
                 
                 {editingProfile ? (
                   <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Phone className="h-4 w-4" />
+                        Contact Information
+                      </Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Phone Number</Label>
+                          <Input
+                            type="tel"
+                            placeholder="Mobile or landline"
+                            value={profileData.phone ?? ""}
+                            onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                            data-testid="input-client-phone"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Email Address</Label>
+                          <Input
+                            type="email"
+                            placeholder="Email address"
+                            value={profileData.email ?? ""}
+                            onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                            data-testid="input-client-email"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Date of Birth</Label>
@@ -1673,17 +1709,35 @@ export default function OrganizationDashboard() {
                         variant="outline"
                         onClick={() => {
                           setEditingProfile(false);
-                          setProfileData(selectedClient.profile || {});
+                          setProfileData({
+                            ...(selectedClient.profile || {}),
+                            phone: selectedClient.clientPhone || "",
+                            email: selectedClient.clientEmail || "",
+                          });
                         }}
                       >
                         Cancel
                       </Button>
                       <Button
-                        onClick={() => updateProfileMutation.mutate({ orgClientId: selectedClient.id, profile: profileData })}
-                        disabled={updateProfileMutation.isPending}
+                        onClick={() => {
+                          const { phone, email, ...profile } = profileData;
+                          updateProfileMutation.mutate({ orgClientId: selectedClient.id, profile });
+                          const phoneChanged = phone !== (selectedClient.clientPhone || "");
+                          const emailChanged = email !== (selectedClient.clientEmail || "");
+                          if (phoneChanged || emailChanged) {
+                            updateClientDetailsMutation.mutate({
+                              clientId: selectedClient.id,
+                              details: {
+                                clientPhone: phone,
+                                clientEmail: email,
+                              }
+                            });
+                          }
+                        }}
+                        disabled={updateProfileMutation.isPending || updateClientDetailsMutation.isPending}
                         data-testid="button-save-profile"
                       >
-                        {updateProfileMutation.isPending ? (
+                        {updateProfileMutation.isPending || updateClientDetailsMutation.isPending ? (
                           <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Saving...</>
                         ) : (
                           "Save Profile"
@@ -1693,6 +1747,19 @@ export default function OrganizationDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    {(selectedClient.clientPhone || selectedClient.clientEmail) && (
+                      <div>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          Contact Information
+                        </p>
+                        <div className="font-medium space-y-1">
+                          {selectedClient.clientPhone && <p>{selectedClient.clientPhone}</p>}
+                          {selectedClient.clientEmail && <p>{selectedClient.clientEmail}</p>}
+                        </div>
+                      </div>
+                    )}
+                    
                     {selectedClient.profile ? (
                       <>
                         {selectedClient.profile.dateOfBirth && (
@@ -1844,6 +1911,31 @@ export default function OrganizationDashboard() {
               </TabsContent>
               
               <TabsContent value="alerts" className="space-y-4 mt-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-full bg-primary/10 p-2">
+                      <Bell className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Alerts Enabled</p>
+                      <p className="text-sm text-muted-foreground">
+                        Send notifications when this client misses check-ins
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={selectedClient.alertsEnabled !== false}
+                    onCheckedChange={(checked) => {
+                      updateClientDetailsMutation.mutate({
+                        clientId: selectedClient.id,
+                        details: { alertsEnabled: checked }
+                      });
+                    }}
+                    disabled={updateClientDetailsMutation.isPending}
+                    data-testid="switch-alerts-enabled"
+                  />
+                </div>
+                
                 {loadingAlerts ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
