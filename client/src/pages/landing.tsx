@@ -1081,6 +1081,16 @@ export default function Landing() {
               </Link>
             </div>
           </div>
+          <div className="flex justify-center mt-8">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              data-testid="button-back-to-top"
+            >
+              Back to Top
+            </Button>
+          </div>
         </div>
       </footer>
     </div>
