@@ -12,10 +12,10 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Users, Building2, User, CheckCircle, XCircle, Package, 
-  LogOut, ShieldCheck, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff, KeyRound, ArrowLeft, RotateCcw, AlertTriangle, BellOff
+  LogOut, ShieldCheck, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff, KeyRound, ArrowLeft, RotateCcw, AlertTriangle, BellOff, Search
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import type { DashboardStats, AdminOrganizationView, AdminOrganizationClientView, OrgClientStatus } from "@shared/schema";
 
 const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
@@ -106,6 +106,8 @@ export default function AdminDashboard() {
   const [selectedOrg, setSelectedOrg] = useState<AdminOrganizationView | null>(null);
   const [orgClients, setOrgClients] = useState<AdminOrganizationClientView[]>([]);
   const [loadingClients, setLoadingClients] = useState(false);
+  const [orgClientSearchRef, setOrgClientSearchRef] = useState("");
+  const [orgClientSearchPhone, setOrgClientSearchPhone] = useState("");
   
   // State for creating organization
   const [showCreateOrgDialog, setShowCreateOrgDialog] = useState(false);
@@ -135,6 +137,34 @@ export default function AdminDashboard() {
   const [scheduleStartTime, setScheduleStartTime] = useState("09:00");
   const [scheduleIntervalHours, setScheduleIntervalHours] = useState(24);
   const [loadingSchedule, setLoadingSchedule] = useState(false);
+  
+  // Filter and sort org clients based on search
+  const filteredOrgClients = useMemo(() => {
+    let result = [...orgClients];
+    
+    // Sort by reference number (clientOrdinal) ascending
+    result.sort((a, b) => (a.clientOrdinal || 0) - (b.clientOrdinal || 0));
+    
+    // Filter by reference number
+    if (orgClientSearchRef.trim()) {
+      result = result.filter(client => {
+        const ordinal = String(client.clientOrdinal || "");
+        const refCode = client.referenceCode || "";
+        return ordinal.includes(orgClientSearchRef.trim()) || refCode.toLowerCase().includes(orgClientSearchRef.toLowerCase());
+      });
+    }
+    
+    // Filter by phone
+    if (orgClientSearchPhone.trim()) {
+      const phoneLower = orgClientSearchPhone.toLowerCase().replace(/\s/g, "");
+      result = result.filter(client => {
+        const phone = (client.clientPhone || "").toLowerCase().replace(/\s/g, "");
+        return phone.includes(phoneLower);
+      });
+    }
+    
+    return result;
+  }, [orgClients, orgClientSearchRef, orgClientSearchPhone]);
   
   const isSuperAdmin = admin?.role === "super_admin";
 
@@ -870,17 +900,43 @@ export default function AdminDashboard() {
         )}
         
         {/* Organization Clients Dialog */}
-        <Dialog open={!!selectedOrg} onOpenChange={() => { setSelectedOrg(null); setOrgClients([]); }}>
+        <Dialog open={!!selectedOrg} onOpenChange={() => { setSelectedOrg(null); setOrgClients([]); setOrgClientSearchRef(""); setOrgClientSearchPhone(""); }}>
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
-                {selectedOrg?.name} - Clients ({orgClients.length})
+                {selectedOrg?.name} - Clients ({filteredOrgClients.length} of {orgClients.length})
               </DialogTitle>
               <DialogDescription>
-                Privacy-protected view. Only client number and mobile are visible.
+                Privacy-protected view. Clients listed by reference number.
               </DialogDescription>
             </DialogHeader>
+            
+            {/* Search Fields */}
+            {orgClients.length > 0 && (
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by ref #..."
+                    value={orgClientSearchRef}
+                    onChange={(e) => setOrgClientSearchRef(e.target.value)}
+                    className="pl-9"
+                    data-testid="input-search-org-client-ref"
+                  />
+                </div>
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by phone..."
+                    value={orgClientSearchPhone}
+                    onChange={(e) => setOrgClientSearchPhone(e.target.value)}
+                    className="pl-9"
+                    data-testid="input-search-org-client-phone"
+                  />
+                </div>
+              </div>
+            )}
             
             {loadingClients ? (
               <div className="flex items-center justify-center py-8">
@@ -889,11 +945,24 @@ export default function AdminDashboard() {
             ) : orgClients.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No clients in this organization</p>
+                <p>No clients in this organisation</p>
+              </div>
+            ) : filteredOrgClients.length === 0 ? (
+              <div className="text-center py-8">
+                <Search className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <p className="text-muted-foreground">No clients match your search</p>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => { setOrgClientSearchRef(""); setOrgClientSearchPhone(""); }}
+                >
+                  Clear search
+                </Button>
               </div>
             ) : (
               <div className="space-y-3">
-                {orgClients.map((client) => (
+                {filteredOrgClients.map((client) => (
                   <div
                     key={client.id}
                     className={`flex items-center justify-between p-4 border rounded-lg ${client.clientStatus !== "active" ? "opacity-60" : ""}`}
