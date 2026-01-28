@@ -106,6 +106,7 @@ export default function Landing() {
       monthlyPrice: MONTHLY_PRICE,
       yearlyPrice: YEARLY_PRICE,
       features: [
+        { text: "Shake to Alert - instant emergency help", icon: Zap },
         { text: "Flexible check-in timer (5 mins to 48 hours)", icon: Clock },
         { text: "Up to 5 emergency contacts", icon: Users },
         { text: "Email, SMS & voice call alerts", icon: Bell },
@@ -362,6 +363,21 @@ export default function Landing() {
                 <h3 className="text-lg font-semibold mb-2">Multi-Channel Alerts</h3>
                 <p className="text-muted-foreground text-sm">
                   Your contacts receive alerts via email, SMS text messages, and automated phone calls.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-0 shadow-lg ring-2 ring-primary/20">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="rounded-full bg-red-500/10 p-3 w-fit">
+                    <Zap className="h-6 w-6 text-red-500" />
+                  </div>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary border-0">Featured</Badge>
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Shake to Alert</h3>
+                <p className="text-muted-foreground text-sm">
+                  In danger? Just shake your phone to instantly trigger an emergency alert. No need to unlock or find the app - help is just a shake away.
                 </p>
               </CardContent>
             </Card>
