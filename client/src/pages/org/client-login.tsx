@@ -12,30 +12,20 @@ import { ShieldCheck, Loader2, Building2, ArrowLeft } from "lucide-react";
 export default function OrganizationClientLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [email, setEmail] = useState("");
   const [referenceCode, setReferenceCode] = useState("");
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/auth/org-client-login", { email, referenceCode });
+      const response = await apiRequest("POST", "/api/activate", { referenceCode });
       return response.json();
     },
-    onSuccess: async (data) => {
-      if (data.accountType !== "organization") {
-        toast({
-          title: "Access Denied",
-          description: "This login is for organisations only. Please use the main sign in page.",
-          variant: "destructive",
-        });
-        await apiRequest("POST", "/api/auth/logout");
-        return;
-      }
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast({
         title: "Welcome back",
-        description: "You've successfully signed in to your organisation account.",
+        description: "You've successfully signed in.",
       });
-      setLocation("/org/dashboard");
+      setLocation("/dashboard");
     },
     onError: (error: any) => {
       toast({
@@ -79,23 +69,11 @@ export default function OrganizationClientLogin() {
             </div>
             <CardTitle className="text-2xl">Client Login</CardTitle>
             <CardDescription>
-              Sign in using your email and reference code
+              Sign in using your reference code
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="org@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  data-testid="input-org-email"
-                />
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="referenceCode">Reference Code</Label>
                 <Input
