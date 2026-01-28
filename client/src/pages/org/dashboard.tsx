@@ -562,22 +562,51 @@ export default function OrganizationDashboard() {
       const response = await apiRequest("PUT", `/api/org/clients/${orgClientId}/profile`, profile);
       return response.json();
     },
-    onSuccess: () => {
+  });
+  
+  // Combined handler for saving profile (profile + phone/email)
+  const [savingProfile, setSavingProfile] = useState(false);
+  
+  const handleSaveFullProfile = async () => {
+    if (!selectedClient) return;
+    
+    setSavingProfile(true);
+    try {
+      const { phone, email, ...profile } = profileData;
+      
+      // First save the profile data
+      await updateProfileMutation.mutateAsync({ orgClientId: selectedClient.id, profile });
+      
+      // Then save the phone/email if changed
+      const fullPhone = phone ? `${profileCountryCode}${phone.replace(/\D/g, "")}` : "";
+      const phoneChanged = fullPhone !== (selectedClient.clientPhone || "");
+      const emailChanged = email !== (selectedClient.clientEmail || "");
+      
+      if (phoneChanged || emailChanged) {
+        await apiRequest("PATCH", `/api/org/clients/${selectedClient.id}/details`, {
+          clientPhone: fullPhone,
+          clientEmail: email,
+        });
+      }
+      
+      // Invalidate queries and show success
       queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
       setEditingProfile(false);
       toast({
         title: "Profile saved",
         description: "Client profile has been updated.",
       });
-    },
-    onError: (error: any) => {
+    } catch (error: any) {
       toast({
         title: "Failed to save profile",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
-    },
-  });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   const fetchClientAlerts = async (clientId: string) => {
     setLoadingAlerts(true);
@@ -1930,27 +1959,11 @@ export default function OrganizationDashboard() {
                         Cancel
                       </Button>
                       <Button
-                        onClick={() => {
-                          const { phone, email, ...profile } = profileData;
-                          updateProfileMutation.mutate({ orgClientId: selectedClient.id, profile });
-                          // Combine country code with phone number
-                          const fullPhone = phone ? `${profileCountryCode}${phone.replace(/\D/g, "")}` : "";
-                          const phoneChanged = fullPhone !== (selectedClient.clientPhone || "");
-                          const emailChanged = email !== (selectedClient.clientEmail || "");
-                          if (phoneChanged || emailChanged) {
-                            updateClientDetailsMutation.mutate({
-                              clientId: selectedClient.id,
-                              details: {
-                                clientPhone: fullPhone,
-                                clientEmail: email,
-                              }
-                            });
-                          }
-                        }}
-                        disabled={updateProfileMutation.isPending || updateClientDetailsMutation.isPending}
+                        onClick={handleSaveFullProfile}
+                        disabled={savingProfile}
                         data-testid="button-save-profile"
                       >
-                        {updateProfileMutation.isPending || updateClientDetailsMutation.isPending ? (
+                        {savingProfile ? (
                           <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Saving...</>
                         ) : (
                           "Save Profile"

@@ -7,17 +7,13 @@ export default function OrgLoginSelect() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-center relative">
+          <Link href="/" className="absolute left-4 hover:opacity-80 transition-opacity" data-testid="link-back">
             <ArrowLeft className="h-5 w-5 text-green-600" />
+          </Link>
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
             <ShieldCheck className="h-9 w-9 text-green-600" />
             <span className="text-2xl font-bold text-green-600">aok</span>
-          </Link>
-          <Link href="/">
-            <Button variant="ghost" size="sm" data-testid="button-back-home">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
-            </Button>
           </Link>
         </div>
       </header>
@@ -25,10 +21,6 @@ export default function OrgLoginSelect() {
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center mb-8">
-            <Link href="/" className="flex flex-col items-center justify-center mb-4" data-testid="link-logo-home">
-              <ShieldCheck className="h-12 w-12 text-green-600" />
-              <span className="text-2xl font-bold text-green-600">aok</span>
-            </Link>
             <h1 className="text-2xl font-bold mb-2">Organisation Portal</h1>
             <p className="text-muted-foreground">Choose how you'd like to sign in</p>
           </div>
