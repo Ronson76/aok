@@ -232,8 +232,8 @@ class DatabaseStorage implements IStorage {
     // Hash the token for storage (we only store the hash)
     const tokenHash = createHash("sha256").update(rawToken).digest("hex");
 
-    // Token expires in 1 hour
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    // Token expires in 24 hours
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     await getDb().insert(passwordResetTokens).values({
       userId,
@@ -1566,7 +1566,7 @@ class AdminStorage implements IAdminStorage {
 
     const rawToken = randomBytes(32).toString("hex");
     const tokenHash = createHash("sha256").update(rawToken).digest("hex");
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     await getDb().insert(adminPasswordResetTokens).values({
       adminId,

@@ -1263,7 +1263,7 @@ You requested to reset your aok ${typeLabel} password. Click the link below to s
 
 ${resetUrl}
 
-This link will expire in 1 hour.
+This link will expire in 24 hours.
 
 If you didn't request this, you can safely ignore this email.
 
@@ -1300,7 +1300,7 @@ If you didn't request this, you can safely ignore this email.
   <p style="color: #6b7280; font-size: 14px;">Or copy and paste this link into your browser:</p>
   <p style="word-break: break-all; color: #22c55e;"><a href="${resetUrl}" style="color: #22c55e;">${resetUrl}</a></p>
   
-  <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">This link will expire in 1 hour.</p>
+  <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">This link will expire in 24 hours.</p>
   
   <p style="color: #6b7280; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>
   
