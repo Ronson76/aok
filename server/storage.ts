@@ -1846,13 +1846,39 @@ class AdminStorage implements IAdminStorage {
       .orderBy(desc(alertLogs.timestamp))
       .limit(10);
 
-    const recentEmergencyAlerts: EmergencyAlertInfo[] = recentEmergencyData.map(r => ({
-      id: r.id,
-      userId: r.userId,
-      userName: r.userName || "Unknown",
-      userEmail: r.userEmail || "Unknown",
-      timestamp: r.timestamp,
-      contactsNotified: r.contactsNotified,
+    // Enhance emergency alerts with org client info
+    const recentEmergencyAlerts = await Promise.all(recentEmergencyData.map(async (r) => {
+      // Check if this user is an organization client
+      const orgClientRecord = await db.select({
+        referenceCode: organizationClients.referenceCode,
+        organizationId: organizationClients.organizationId,
+      })
+        .from(organizationClients)
+        .where(eq(organizationClients.clientId, r.userId))
+        .limit(1);
+      
+      let orgClientReferenceCode: string | null = null;
+      let organizationName: string | null = null;
+      
+      if (orgClientRecord.length > 0 && orgClientRecord[0].organizationId) {
+        orgClientReferenceCode = orgClientRecord[0].referenceCode;
+        const orgUser = await db.select({ name: users.name })
+          .from(users)
+          .where(eq(users.id, orgClientRecord[0].organizationId))
+          .limit(1);
+        organizationName = orgUser[0]?.name || null;
+      }
+      
+      return {
+        id: r.id,
+        userId: r.userId,
+        userName: r.userName || "Unknown",
+        userEmail: r.userEmail || "Unknown",
+        timestamp: r.timestamp,
+        contactsNotified: r.contactsNotified,
+        orgClientReferenceCode,
+        organizationName,
+      };
     }));
 
     return {
