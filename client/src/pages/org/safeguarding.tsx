@@ -160,7 +160,7 @@ export default function OrgSafeguardingPage() {
   
   const [incidentForm, setIncidentForm] = useState({
     clientId: "",
-    incidentType: "safety",
+    incidentType: "other",
     severity: "medium",
     description: "",
     location: "",
@@ -235,16 +235,18 @@ export default function OrgSafeguardingPage() {
     mutationFn: async (data: typeof incidentForm) => {
       const response = await apiRequest("POST", "/api/org/safeguarding/incidents", {
         ...data,
-        clientId: data.clientId || undefined,
+        clientId: data.clientId && data.clientId !== "__none__" ? data.clientId : undefined,
       });
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/welfare-concerns"] });
       setShowIncidentDialog(false);
       setIncidentForm({
         clientId: "",
-        incidentType: "safety",
+        incidentType: "other",
         severity: "medium",
         description: "",
         location: "",
@@ -264,7 +266,9 @@ export default function OrgSafeguardingPage() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/welfare-concerns"] });
       setSelectedIncidentId(null);
       setResolutionText("");
       toast({ title: "Incident resolved" });
@@ -276,13 +280,15 @@ export default function OrgSafeguardingPage() {
       const behaviours = data.observedBehaviours ? data.observedBehaviours.split(",").map(b => b.trim()) : undefined;
       const response = await apiRequest("POST", "/api/org/safeguarding/welfare-concerns", {
         ...data,
-        clientId: data.clientId || undefined,
+        clientId: data.clientId && data.clientId !== "__none__" ? data.clientId : undefined,
         observedBehaviours: behaviours,
       });
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/welfare-concerns"] });
       setShowConcernDialog(false);
       setConcernForm({
         clientId: "",
@@ -304,7 +310,9 @@ export default function OrgSafeguardingPage() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/welfare-concerns"] });
       setSelectedConcernId(null);
       setResolutionText("");
       toast({ title: "Concern resolved" });
@@ -953,12 +961,13 @@ export default function OrgSafeguardingPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="safety">Safety</SelectItem>
-                    <SelectItem value="medical">Medical</SelectItem>
-                    <SelectItem value="behavioural">Behavioural</SelectItem>
-                    <SelectItem value="environmental">Environmental</SelectItem>
                     <SelectItem value="abuse">Abuse</SelectItem>
                     <SelectItem value="neglect">Neglect</SelectItem>
+                    <SelectItem value="self_harm_risk">Self-Harm Risk</SelectItem>
+                    <SelectItem value="medical_issue">Medical Issue</SelectItem>
+                    <SelectItem value="harassment">Harassment</SelectItem>
+                    <SelectItem value="lone_worker_danger">Lone Worker Danger</SelectItem>
+                    <SelectItem value="missing_person_concern">Missing Person Concern</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
@@ -976,7 +985,7 @@ export default function OrgSafeguardingPage() {
                     <SelectItem value="low">Low</SelectItem>
                     <SelectItem value="medium">Medium</SelectItem>
                     <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="critical">Critical</SelectItem>
+                    <SelectItem value="immediate_danger">Immediate Danger</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -992,7 +1001,7 @@ export default function OrgSafeguardingPage() {
                   <SelectValue placeholder="Select client..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No specific client</SelectItem>
+                  <SelectItem value="__none__">No specific client</SelectItem>
                   {clients?.map((client) => (
                     <SelectItem key={client.id} value={client.clientId}>
                       {client.nickname || client.client?.name || client.client?.email || "Unknown"}
@@ -1099,7 +1108,7 @@ export default function OrgSafeguardingPage() {
                   <SelectValue placeholder="Select client..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No specific client</SelectItem>
+                  <SelectItem value="__none__">No specific client</SelectItem>
                   {clients?.map((client) => (
                     <SelectItem key={client.id} value={client.clientId}>
                       {client.nickname || client.client?.name || client.client?.email || "Unknown"}

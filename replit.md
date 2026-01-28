@@ -92,6 +92,13 @@ Preferred communication style: Simple, everyday language.
 - **Feature Toggle Propagation**: Org dashboard feature restrictions now apply to client apps via merged feature flags in `/api/auth/me` endpoint (AND logic - features only enabled if both org allows AND user has enabled)
 - **Shake to SOS Default**: Enabled by default for all users (can be disabled in user settings)
 - **Check-in Timing Fix**: Next check-in now calculates based on scheduleStartTime + intervalHours instead of last check-in time (e.g., scheduled 10am daily, check in at 2pm, next due is still 10am next day)
+- **Safeguarding Hub**: Comprehensive safeguarding system for organisations at `/org/safeguarding` with:
+  - **Incident Reporting**: Log safety/safeguarding incidents with types (abuse, neglect, self-harm risk, medical issue, harassment, lone worker danger, missing person concern), severity levels, and what3words location
+  - **Welfare Concerns**: Third-party reporting with anonymous option, observed behaviours tracking
+  - **Case Files**: Individual client safeguarding histories with case notes, risk levels (red/amber/green), and status tracking
+  - **Escalation Rules**: Automated triggers based on missed check-ins, SOS alerts, or incident counts
+  - **Audit Trail**: Complete logging of all safeguarding actions for compliance
+  - **Risk Reports**: Automated risk indicators with review workflow
 
 ### Build Tools
 - Vite
