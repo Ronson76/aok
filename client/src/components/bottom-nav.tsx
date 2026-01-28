@@ -23,10 +23,9 @@ const organizationNavItems = [
   { path: "/app/settings", icon: Settings, label: "Settings" },
 ];
 
-// Restricted nav for org-managed clients (home and settings)
+// Restricted nav for org-managed clients (home only, no settings)
 const orgManagedClientNavItems = [
   { path: "/app", icon: Home, label: "Home" },
-  { path: "/app/settings", icon: Settings, label: "Settings" },
 ];
 
 interface FeatureFlags {
