@@ -238,6 +238,36 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
+  // Update client basic details (nickname, name, phone)
+  const updateClientDetailsSchema = z.object({
+    nickname: z.string().optional(),
+    clientName: z.string().optional(),
+    clientPhone: z.string().optional(),
+  });
+
+  app.patch("/api/org/clients/:clientId/details", requireOrganization, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      
+      const parsed = updateClientDetailsSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0].message });
+      }
+
+      // Get the org client to verify ownership
+      const orgClient = await organizationStorage.getClientById(clientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      const updated = await organizationStorage.updateClientDetails(clientId, parsed.data);
+      res.json(updated);
+    } catch (error) {
+      console.error("[ORG] Failed to update client details:", error);
+      res.status(500).json({ error: "Failed to update client details" });
+    }
+  });
+
   // Get a specific client's status and details
   app.get("/api/org/clients/:clientId", requireOrganization, async (req, res) => {
     try {
