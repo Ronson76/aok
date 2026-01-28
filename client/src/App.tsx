@@ -568,7 +568,8 @@ function AdminRoutes() {
 
 function Router() {
   const [location, setLocation] = useLocation();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const isOrganization = user?.accountType === "organization";
 
   useEffect(() => {
     if (location === "/" && !isLoading && isAuthenticated) {
@@ -673,6 +674,11 @@ function Router() {
 
   // Org pages have their own layout/header, don't use AppLayout
   if (location.startsWith("/org/dashboard") || location.startsWith("/org/safeguarding")) {
+    return <AppRoutes />;
+  }
+
+  // Organization users on /app also skip AppLayout (they have their own header)
+  if (isOrganization && location.startsWith("/app")) {
     return <AppRoutes />;
   }
 
