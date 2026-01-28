@@ -2,7 +2,7 @@ import { Express, Request, Response } from "express";
 import { organizationStorage, storage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
+import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema } from "@shared/schema";
 import { sendAppInviteSMS, sendPasswordResetEmail } from "./notifications";
 
 // Generate a unique 6-character reference code
@@ -737,6 +737,467 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("Organisation change password error:", error);
       res.status(500).json({ error: "Failed to change password" });
+    }
+  });
+
+  // ==================== SAFEGUARDING ROUTES ====================
+
+  // Get all incidents
+  app.get("/api/org/safeguarding/incidents", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const incidents = await storage.getIncidents(orgId);
+      res.json(incidents);
+    } catch (error) {
+      console.error("Error fetching incidents:", error);
+      res.status(500).json({ error: "Failed to fetch incidents" });
+    }
+  });
+
+  // Create incident
+  app.post("/api/org/safeguarding/incidents", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      
+      // Validate request body
+      const parseResult = insertIncidentSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid incident data", details: parseResult.error.errors });
+      }
+      
+      const incident = await storage.createIncident(orgId, parseResult.data);
+      
+      // Create audit entry
+      await storage.createAuditEntry(orgId, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "create",
+        entityType: "incident",
+        entityId: incident.id,
+        newData: incident,
+      });
+      
+      res.status(201).json(incident);
+    } catch (error) {
+      console.error("Error creating incident:", error);
+      res.status(500).json({ error: "Failed to create incident" });
+    }
+  });
+
+  // Resolve incident
+  app.patch("/api/org/safeguarding/incidents/:id/resolve", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const { resolution } = req.body;
+      const incident = await storage.resolveIncident(orgId, req.params.id, resolution, orgId);
+      
+      if (!incident) {
+        return res.status(404).json({ error: "Incident not found" });
+      }
+      
+      await storage.createAuditEntry(orgId, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "update",
+        entityType: "incident",
+        entityId: incident.id,
+        newData: { status: "closed", resolution },
+      });
+      
+      res.json(incident);
+    } catch (error) {
+      console.error("Error resolving incident:", error);
+      res.status(500).json({ error: "Failed to resolve incident" });
+    }
+  });
+
+  // Get all welfare concerns
+  app.get("/api/org/safeguarding/welfare-concerns", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const concerns = await storage.getWelfareConcerns(orgId);
+      res.json(concerns);
+    } catch (error) {
+      console.error("Error fetching welfare concerns:", error);
+      res.status(500).json({ error: "Failed to fetch welfare concerns" });
+    }
+  });
+
+  // Create welfare concern
+  app.post("/api/org/safeguarding/welfare-concerns", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      
+      // Validate request body
+      const parseResult = insertWelfareConcernSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid welfare concern data", details: parseResult.error.errors });
+      }
+      
+      const concern = await storage.createWelfareConcern(orgId, parseResult.data);
+      
+      await storage.createAuditEntry(orgId, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "create",
+        entityType: "welfare_concern",
+        entityId: concern.id,
+        newData: concern,
+      });
+      
+      res.status(201).json(concern);
+    } catch (error) {
+      console.error("Error creating welfare concern:", error);
+      res.status(500).json({ error: "Failed to create welfare concern" });
+    }
+  });
+
+  // Resolve welfare concern
+  app.patch("/api/org/safeguarding/welfare-concerns/:id/resolve", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const { notes } = req.body;
+      const concern = await storage.resolveWelfareConcern(orgId, req.params.id, notes, orgId);
+      
+      if (!concern) {
+        return res.status(404).json({ error: "Welfare concern not found" });
+      }
+      
+      await storage.createAuditEntry(orgId, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "update",
+        entityType: "welfare_concern",
+        entityId: concern.id,
+        newData: { status: "closed", notes },
+      });
+      
+      res.json(concern);
+    } catch (error) {
+      console.error("Error resolving welfare concern:", error);
+      res.status(500).json({ error: "Failed to resolve welfare concern" });
+    }
+  });
+
+  // Get all case files
+  app.get("/api/org/safeguarding/case-files", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const caseFiles = await storage.getCaseFiles(orgId);
+      res.json(caseFiles);
+    } catch (error) {
+      console.error("Error fetching case files:", error);
+      res.status(500).json({ error: "Failed to fetch case files" });
+    }
+  });
+
+  // Get case file by ID
+  app.get("/api/org/safeguarding/case-files/:id", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const caseFile = await storage.getCaseFile(orgId, req.params.id);
+      
+      if (!caseFile) {
+        return res.status(404).json({ error: "Case file not found" });
+      }
+      
+      res.json(caseFile);
+    } catch (error) {
+      console.error("Error fetching case file:", error);
+      res.status(500).json({ error: "Failed to fetch case file" });
+    }
+  });
+
+  // Create case file for a client
+  app.post("/api/org/safeguarding/case-files", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const { clientId } = req.body;
+      
+      // Check if case file already exists for this client
+      const existing = await storage.getCaseFileByClient(orgId, clientId);
+      if (existing) {
+        return res.json(existing);
+      }
+      
+      const caseFile = await storage.createCaseFile(orgId, clientId);
+      
+      await storage.createAuditEntry(orgId, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "create",
+        entityType: "case_file",
+        entityId: caseFile.id,
+        newData: caseFile,
+      });
+      
+      res.status(201).json(caseFile);
+    } catch (error) {
+      console.error("Error creating case file:", error);
+      res.status(500).json({ error: "Failed to create case file" });
+    }
+  });
+
+  // Update case file
+  app.patch("/api/org/safeguarding/case-files/:id", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const caseFile = await storage.updateCaseFile(orgId, req.params.id, req.body);
+      
+      if (!caseFile) {
+        return res.status(404).json({ error: "Case file not found" });
+      }
+      
+      await storage.createAuditEntry(orgId, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "update",
+        entityType: "case_file",
+        entityId: caseFile.id,
+        newData: req.body,
+      });
+      
+      res.json(caseFile);
+    } catch (error) {
+      console.error("Error updating case file:", error);
+      res.status(500).json({ error: "Failed to update case file" });
+    }
+  });
+
+  // Get case notes for a case file
+  app.get("/api/org/safeguarding/case-files/:id/notes", requireOrganization, async (req, res) => {
+    try {
+      const notes = await storage.getCaseNotes(req.params.id);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching case notes:", error);
+      res.status(500).json({ error: "Failed to fetch case notes" });
+    }
+  });
+
+  // Add case note
+  app.post("/api/org/safeguarding/case-files/:id/notes", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      
+      // Validate request body
+      const parseResult = insertCaseNoteSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid case note data", details: parseResult.error.errors });
+      }
+      
+      const note = await storage.createCaseNote(req.params.id, orgId, parseResult.data);
+      
+      await storage.createAuditEntry(orgId, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "create",
+        entityType: "case_note",
+        entityId: note.id,
+      });
+      
+      res.status(201).json(note);
+    } catch (error) {
+      console.error("Error creating case note:", error);
+      res.status(500).json({ error: "Failed to create case note" });
+    }
+  });
+
+  // Get escalation rules
+  app.get("/api/org/safeguarding/escalation-rules", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const rules = await storage.getEscalationRules(orgId);
+      res.json(rules);
+    } catch (error) {
+      console.error("Error fetching escalation rules:", error);
+      res.status(500).json({ error: "Failed to fetch escalation rules" });
+    }
+  });
+
+  // Create escalation rule
+  app.post("/api/org/safeguarding/escalation-rules", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      
+      // Validate request body
+      const parseResult = insertEscalationRuleSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid escalation rule data", details: parseResult.error.errors });
+      }
+      
+      const rule = await storage.createEscalationRule(orgId, parseResult.data);
+      
+      await storage.createAuditEntry(orgId, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "create",
+        entityType: "escalation_rule",
+        entityId: rule.id,
+        newData: rule,
+      });
+      
+      res.status(201).json(rule);
+    } catch (error) {
+      console.error("Error creating escalation rule:", error);
+      res.status(500).json({ error: "Failed to create escalation rule" });
+    }
+  });
+
+  // Update escalation rule
+  app.patch("/api/org/safeguarding/escalation-rules/:id", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const rule = await storage.updateEscalationRule(orgId, req.params.id, req.body);
+      
+      if (!rule) {
+        return res.status(404).json({ error: "Escalation rule not found" });
+      }
+      
+      await storage.createAuditEntry(orgId, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "update",
+        entityType: "escalation_rule",
+        entityId: rule.id,
+        newData: req.body,
+      });
+      
+      res.json(rule);
+    } catch (error) {
+      console.error("Error updating escalation rule:", error);
+      res.status(500).json({ error: "Failed to update escalation rule" });
+    }
+  });
+
+  // Delete escalation rule
+  app.delete("/api/org/safeguarding/escalation-rules/:id", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const deleted = await storage.deleteEscalationRule(orgId, req.params.id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Escalation rule not found" });
+      }
+      
+      await storage.createAuditEntry(orgId, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "delete",
+        entityType: "escalation_rule",
+        entityId: req.params.id,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting escalation rule:", error);
+      res.status(500).json({ error: "Failed to delete escalation rule" });
+    }
+  });
+
+  // Get missed check-in escalations
+  app.get("/api/org/safeguarding/missed-checkin-escalations", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const escalations = await storage.getMissedCheckInEscalations(orgId);
+      res.json(escalations);
+    } catch (error) {
+      console.error("Error fetching missed check-in escalations:", error);
+      res.status(500).json({ error: "Failed to fetch missed check-in escalations" });
+    }
+  });
+
+  // Get audit trail
+  app.get("/api/org/safeguarding/audit-trail", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const limit = parseInt(req.query.limit as string) || 100;
+      const trail = await storage.getAuditTrail(orgId, limit);
+      res.json(trail);
+    } catch (error) {
+      console.error("Error fetching audit trail:", error);
+      res.status(500).json({ error: "Failed to fetch audit trail" });
+    }
+  });
+
+  // Get risk reports
+  app.get("/api/org/safeguarding/risk-reports", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const reports = await storage.getRiskReports(orgId);
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching risk reports:", error);
+      res.status(500).json({ error: "Failed to fetch risk reports" });
+    }
+  });
+
+  // Review risk report
+  app.patch("/api/org/safeguarding/risk-reports/:id/review", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const { notes } = req.body;
+      const report = await storage.reviewRiskReport(orgId, req.params.id, orgId, notes);
+      
+      if (!report) {
+        return res.status(404).json({ error: "Risk report not found" });
+      }
+      
+      await storage.createAuditEntry(orgId, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "update",
+        entityType: "risk_report",
+        entityId: report.id,
+        newData: { reviewed: true, notes },
+      });
+      
+      res.json(report);
+    } catch (error) {
+      console.error("Error reviewing risk report:", error);
+      res.status(500).json({ error: "Failed to review risk report" });
+    }
+  });
+
+  // Get safeguarding summary/stats
+  app.get("/api/org/safeguarding/summary", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      
+      const [incidents, concerns, caseFiles, escalations, riskReports] = await Promise.all([
+        storage.getIncidents(orgId),
+        storage.getWelfareConcerns(orgId),
+        storage.getCaseFiles(orgId),
+        storage.getMissedCheckInEscalations(orgId),
+        storage.getRiskReports(orgId),
+      ]);
+      
+      const openIncidents = incidents.filter(i => i.status === "open").length;
+      const openConcerns = concerns.filter(c => c.status === "open").length;
+      const openCases = caseFiles.filter(c => c.status === "open" || c.status === "monitoring").length;
+      const pendingEscalations = escalations.filter(e => e.status === "pending").length;
+      const unreviewedReports = riskReports.filter(r => !r.reviewedAt).length;
+      
+      const highRiskCases = caseFiles.filter(c => c.riskLevel === "red").length;
+      const amberRiskCases = caseFiles.filter(c => c.riskLevel === "amber").length;
+      
+      res.json({
+        totalIncidents: incidents.length,
+        openIncidents,
+        totalConcerns: concerns.length,
+        openConcerns,
+        totalCaseFiles: caseFiles.length,
+        openCases,
+        pendingEscalations,
+        unreviewedReports,
+        highRiskCases,
+        amberRiskCases,
+        recentIncidents: incidents.slice(0, 5),
+        recentConcerns: concerns.slice(0, 5),
+      });
+    } catch (error) {
+      console.error("Error fetching safeguarding summary:", error);
+      res.status(500).json({ error: "Failed to fetch safeguarding summary" });
     }
   });
 }

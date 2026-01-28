@@ -875,3 +875,229 @@ export const updateDigitalDocumentSchema = z.object({
 });
 
 export type UpdateDigitalDocument = z.infer<typeof updateDigitalDocumentSchema>;
+
+// ==================== SAFEGUARDING & INCIDENT REPORTING ====================
+
+// Incident types
+export const incidentTypes = [
+  "abuse", 
+  "neglect", 
+  "self_harm_risk", 
+  "medical_issue", 
+  "harassment", 
+  "lone_worker_danger", 
+  "missing_person_concern",
+  "other"
+] as const;
+export type IncidentType = typeof incidentTypes[number];
+
+// Severity levels
+export const severityLevels = ["low", "medium", "high", "immediate_danger"] as const;
+export type SeverityLevel = typeof severityLevels[number];
+
+// Case status
+export const caseStatuses = ["open", "monitoring", "closed"] as const;
+export type CaseStatus = typeof caseStatuses[number];
+
+// Risk levels
+export const riskLevels = ["green", "amber", "red"] as const;
+export type RiskLevel = typeof riskLevels[number];
+
+// Incidents table - for incident reporting
+export const incidents = pgTable("incidents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  clientId: varchar("client_id").references(() => organizationClients.id, { onDelete: "set null" }),
+  reportedById: varchar("reported_by_id"), // Staff member who reported
+  reportedByName: text("reported_by_name"), // Name for anonymous reports
+  incidentType: text("incident_type").notNull().$type<IncidentType>(),
+  severity: text("severity").notNull().$type<SeverityLevel>(),
+  description: text("description").notNull(),
+  location: text("location"), // GPS or what3words
+  locationLat: text("location_lat"),
+  locationLng: text("location_lng"),
+  what3words: text("what3words"),
+  attachments: jsonb("attachments").$type<{ type: string; url: string; name: string }[]>(),
+  isAnonymous: boolean("is_anonymous").notNull().default(false),
+  status: text("status").notNull().default("open").$type<CaseStatus>(),
+  resolution: text("resolution"),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedById: varchar("resolved_by_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertIncidentSchema = createInsertSchema(incidents).omit({
+  id: true,
+  organizationId: true,
+  createdAt: true,
+  updatedAt: true,
+  resolvedAt: true,
+  resolvedById: true,
+}).extend({
+  incidentType: z.enum(incidentTypes),
+  severity: z.enum(severityLevels),
+  description: z.string().min(1, "Description is required"),
+});
+
+export type InsertIncident = z.infer<typeof insertIncidentSchema>;
+export type Incident = typeof incidents.$inferSelect;
+
+// Welfare concerns table - for third-party concerns
+export const welfareConcerns = pgTable("welfare_concerns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  clientId: varchar("client_id").references(() => organizationClients.id, { onDelete: "set null" }),
+  reportedById: varchar("reported_by_id"),
+  reportedByName: text("reported_by_name"),
+  concernType: text("concern_type").notNull(), // "welfare_concern", "pattern_based", "gut_instinct"
+  description: text("description").notNull(),
+  observedBehaviours: text("observed_behaviours"), // withdrawal, behaviour change, etc.
+  isAnonymous: boolean("is_anonymous").notNull().default(false),
+  status: text("status").notNull().default("open").$type<CaseStatus>(),
+  followUpNotes: text("follow_up_notes"),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedById: varchar("resolved_by_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertWelfareConcernSchema = createInsertSchema(welfareConcerns).omit({
+  id: true,
+  organizationId: true,
+  createdAt: true,
+  updatedAt: true,
+  resolvedAt: true,
+  resolvedById: true,
+}).extend({
+  description: z.string().min(1, "Description is required"),
+});
+
+export type InsertWelfareConcern = z.infer<typeof insertWelfareConcernSchema>;
+export type WelfareConcern = typeof welfareConcerns.$inferSelect;
+
+// Case files table - comprehensive safeguarding record per individual
+export const caseFiles = pgTable("case_files", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  clientId: varchar("client_id").notNull().references(() => organizationClients.id, { onDelete: "cascade" }),
+  status: text("status").notNull().default("open").$type<CaseStatus>(),
+  riskLevel: text("risk_level").notNull().default("green").$type<RiskLevel>(),
+  safeguardingLeadId: varchar("safeguarding_lead_id"),
+  summary: text("summary"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  closedAt: timestamp("closed_at"),
+  closedById: varchar("closed_by_id"),
+  closureReason: text("closure_reason"),
+});
+
+export type CaseFile = typeof caseFiles.$inferSelect;
+
+// Case notes table - notes attached to case files
+export const caseNotes = pgTable("case_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  caseFileId: varchar("case_file_id").notNull().references(() => caseFiles.id, { onDelete: "cascade" }),
+  authorId: varchar("author_id").notNull(),
+  authorName: text("author_name").notNull(),
+  content: text("content").notNull(),
+  isConfidential: boolean("is_confidential").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertCaseNoteSchema = createInsertSchema(caseNotes).omit({
+  id: true,
+  caseFileId: true,
+  authorId: true,
+  createdAt: true,
+}).extend({
+  content: z.string().min(1, "Note content is required"),
+  authorName: z.string().min(1, "Author name is required"),
+});
+
+export type InsertCaseNote = z.infer<typeof insertCaseNoteSchema>;
+export type CaseNote = typeof caseNotes.$inferSelect;
+
+// Escalation rules table - automatic escalation thresholds
+export const escalationRules = pgTable("escalation_rules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  triggerType: text("trigger_type").notNull(), // "missed_checkins", "high_risk_incident", "repeat_incidents"
+  threshold: integer("threshold").notNull(), // e.g., 3 missed check-ins
+  timeWindowHours: integer("time_window_hours"), // within X hours
+  action: text("action").notNull(), // "notify_safeguarding_lead", "escalate_management", "auto_alert"
+  notifyEmails: text("notify_emails").array(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertEscalationRuleSchema = createInsertSchema(escalationRules).omit({
+  id: true,
+  organizationId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1, "Rule name is required"),
+  threshold: z.number().min(1),
+});
+
+export type InsertEscalationRule = z.infer<typeof insertEscalationRuleSchema>;
+export type EscalationRule = typeof escalationRules.$inferSelect;
+
+// Missed check-in escalations table - tracks escalation timeline
+export const missedCheckInEscalations = pgTable("missed_checkin_escalations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  clientId: varchar("client_id").notNull().references(() => organizationClients.id, { onDelete: "cascade" }),
+  checkInId: varchar("check_in_id"),
+  missedAt: timestamp("missed_at").notNull(),
+  escalationSteps: jsonb("escalation_steps").$type<{ step: string; timestamp: string; notified: string[]; status: string }[]>(),
+  status: text("status").notNull().default("pending"), // "pending", "acknowledged", "resolved"
+  acknowledgedById: varchar("acknowledged_by_id"),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  resolution: text("resolution"),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type MissedCheckInEscalation = typeof missedCheckInEscalations.$inferSelect;
+
+// Audit trail table - immutable log of all actions
+export const auditTrail = pgTable("audit_trail", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id"),
+  userEmail: text("user_email"),
+  userRole: text("user_role"),
+  action: text("action").notNull(), // "create", "read", "update", "delete", "export"
+  entityType: text("entity_type").notNull(), // "incident", "welfare_concern", "case_file", "escalation_rule"
+  entityId: varchar("entity_id"),
+  previousData: jsonb("previous_data"),
+  newData: jsonb("new_data"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type AuditTrailEntry = typeof auditTrail.$inferSelect;
+
+// Risk reports table - automated pattern detection
+export const riskReports = pgTable("risk_reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  clientId: varchar("client_id").references(() => organizationClients.id, { onDelete: "set null" }),
+  reportType: text("report_type").notNull(), // "missed_checkins", "increased_alerts", "inactivity", "repeat_incidents"
+  riskLevel: text("risk_level").notNull().$type<RiskLevel>(),
+  summary: text("summary").notNull(),
+  dataPoints: jsonb("data_points"), // evidence used to generate the report
+  recommendation: text("recommendation"), // "review", "contact", "escalate"
+  reviewedById: varchar("reviewed_by_id"),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type RiskReport = typeof riskReports.$inferSelect;

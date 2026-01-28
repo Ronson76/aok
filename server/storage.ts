@@ -2,13 +2,17 @@ import {
   contacts, checkIns, settings, alertLogs, users, sessions, passwordResetTokens, pushSubscriptions,
   adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs, organizationClients, organizationClientProfiles,
   pendingClientContacts, activeEmergencyAlerts, moodEntries, pets, digitalDocuments, globalFeatureFlags, adminPasswordResetTokens,
+  incidents, welfareConcerns, caseFiles, caseNotes, escalationRules, missedCheckInEscalations, auditTrail, riskReports,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
   AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo,
   OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData, OrgClientStatus,
   OrgClientRegistrationStatus, UpdateClientFeatures, ClientFeatureSettings, featureKeys, UpdateUserFeatures,
   OrganizationClientProfile, UpdateOrganizationClientProfile, AdminOrganizationClientView, AdminOrganizationView,
   PushSubscription, InsertPushSubscription, ActiveEmergencyAlert,
-  MoodEntry, InsertMoodEntry, Pet, InsertPet, UpdatePet, DigitalDocument, InsertDigitalDocument, UpdateDigitalDocument
+  MoodEntry, InsertMoodEntry, Pet, InsertPet, UpdatePet, DigitalDocument, InsertDigitalDocument, UpdateDigitalDocument,
+  Incident, InsertIncident, WelfareConcern, InsertWelfareConcern, CaseFile, CaseNote, InsertCaseNote,
+  EscalationRule, InsertEscalationRule, MissedCheckInEscalation, AuditTrailEntry, RiskReport,
+  CaseStatus, RiskLevel
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql } from "drizzle-orm";
@@ -141,6 +145,54 @@ export interface IStorage {
 
   // User feature controls
   updateUserFeatures(userId: string, features: UpdateUserFeatures): Promise<User | undefined>;
+
+  // Safeguarding - Incidents
+  getIncidents(organizationId: string): Promise<Incident[]>;
+  getIncident(organizationId: string, id: string): Promise<Incident | undefined>;
+  createIncident(organizationId: string, data: InsertIncident): Promise<Incident>;
+  updateIncident(organizationId: string, id: string, updates: Partial<InsertIncident>): Promise<Incident | undefined>;
+  resolveIncident(organizationId: string, id: string, resolution: string, resolvedById: string): Promise<Incident | undefined>;
+
+  // Safeguarding - Welfare Concerns
+  getWelfareConcerns(organizationId: string): Promise<WelfareConcern[]>;
+  getWelfareConcern(organizationId: string, id: string): Promise<WelfareConcern | undefined>;
+  createWelfareConcern(organizationId: string, data: InsertWelfareConcern): Promise<WelfareConcern>;
+  updateWelfareConcern(organizationId: string, id: string, updates: Partial<InsertWelfareConcern>): Promise<WelfareConcern | undefined>;
+  resolveWelfareConcern(organizationId: string, id: string, notes: string, resolvedById: string): Promise<WelfareConcern | undefined>;
+
+  // Safeguarding - Case Files
+  getCaseFiles(organizationId: string): Promise<CaseFile[]>;
+  getCaseFile(organizationId: string, id: string): Promise<CaseFile | undefined>;
+  getCaseFileByClient(organizationId: string, clientId: string): Promise<CaseFile | undefined>;
+  createCaseFile(organizationId: string, clientId: string): Promise<CaseFile>;
+  updateCaseFile(organizationId: string, id: string, updates: { status?: string; riskLevel?: string; summary?: string }): Promise<CaseFile | undefined>;
+  closeCaseFile(organizationId: string, id: string, reason: string, closedById: string): Promise<CaseFile | undefined>;
+
+  // Safeguarding - Case Notes
+  getCaseNotes(caseFileId: string): Promise<CaseNote[]>;
+  createCaseNote(caseFileId: string, authorId: string, data: InsertCaseNote): Promise<CaseNote>;
+
+  // Safeguarding - Escalation Rules
+  getEscalationRules(organizationId: string): Promise<EscalationRule[]>;
+  getEscalationRule(organizationId: string, id: string): Promise<EscalationRule | undefined>;
+  createEscalationRule(organizationId: string, data: InsertEscalationRule): Promise<EscalationRule>;
+  updateEscalationRule(organizationId: string, id: string, updates: Partial<InsertEscalationRule>): Promise<EscalationRule | undefined>;
+  deleteEscalationRule(organizationId: string, id: string): Promise<boolean>;
+
+  // Safeguarding - Missed Check-in Escalations
+  getMissedCheckInEscalations(organizationId: string): Promise<MissedCheckInEscalation[]>;
+  createMissedCheckInEscalation(organizationId: string, clientId: string, missedAt: Date): Promise<MissedCheckInEscalation>;
+  updateMissedCheckInEscalation(organizationId: string, id: string, updates: { status?: string; resolution?: string; acknowledgedById?: string }): Promise<MissedCheckInEscalation | undefined>;
+
+  // Safeguarding - Audit Trail
+  getAuditTrail(organizationId: string, limit?: number): Promise<AuditTrailEntry[]>;
+  createAuditEntry(organizationId: string, data: { userId?: string; userEmail?: string; userRole?: string; action: string; entityType: string; entityId?: string; previousData?: any; newData?: any; ipAddress?: string; userAgent?: string }): Promise<AuditTrailEntry>;
+
+  // Safeguarding - Risk Reports
+  getRiskReports(organizationId: string): Promise<RiskReport[]>;
+  getRiskReport(organizationId: string, id: string): Promise<RiskReport | undefined>;
+  createRiskReport(organizationId: string, data: { clientId?: string; reportType: string; riskLevel: string; summary: string; dataPoints?: any; recommendation?: string }): Promise<RiskReport>;
+  reviewRiskReport(organizationId: string, id: string, reviewedById: string, notes: string): Promise<RiskReport | undefined>;
 }
 
 class DatabaseStorage implements IStorage {
@@ -1220,6 +1272,337 @@ class DatabaseStorage implements IStorage {
       .update(users)
       .set(features)
       .where(eq(users.id, userId))
+      .returning();
+    return result[0];
+  }
+
+  // ==================== SAFEGUARDING - INCIDENTS ====================
+
+  async getIncidents(organizationId: string): Promise<Incident[]> {
+    return await getDb()
+      .select()
+      .from(incidents)
+      .where(eq(incidents.organizationId, organizationId))
+      .orderBy(desc(incidents.createdAt));
+  }
+
+  async getIncident(organizationId: string, id: string): Promise<Incident | undefined> {
+    const result = await getDb()
+      .select()
+      .from(incidents)
+      .where(and(eq(incidents.id, id), eq(incidents.organizationId, organizationId)));
+    return result[0];
+  }
+
+  async createIncident(organizationId: string, data: InsertIncident): Promise<Incident> {
+    const result = await getDb()
+      .insert(incidents)
+      .values({
+        organizationId,
+        clientId: data.clientId,
+        reportedById: data.reportedById,
+        reportedByName: data.reportedByName,
+        incidentType: data.incidentType,
+        severity: data.severity,
+        description: data.description,
+        location: data.location,
+        locationLat: data.locationLat,
+        locationLng: data.locationLng,
+        what3words: data.what3words,
+        isAnonymous: data.isAnonymous ?? false,
+        status: (data.status || "open") as CaseStatus,
+        resolution: data.resolution,
+      })
+      .returning();
+    return result[0];
+  }
+
+  async updateIncident(organizationId: string, id: string, updates: Partial<InsertIncident>): Promise<Incident | undefined> {
+    const updateData: any = { ...updates, updatedAt: new Date() };
+    if (updates.status) {
+      updateData.status = updates.status as CaseStatus;
+    }
+    const result = await getDb()
+      .update(incidents)
+      .set(updateData)
+      .where(and(eq(incidents.id, id), eq(incidents.organizationId, organizationId)))
+      .returning();
+    return result[0];
+  }
+
+  async resolveIncident(organizationId: string, id: string, resolution: string, resolvedById: string): Promise<Incident | undefined> {
+    const result = await getDb()
+      .update(incidents)
+      .set({ status: "closed" as CaseStatus, resolution, resolvedAt: new Date(), resolvedById, updatedAt: new Date() })
+      .where(and(eq(incidents.id, id), eq(incidents.organizationId, organizationId)))
+      .returning();
+    return result[0];
+  }
+
+  // ==================== SAFEGUARDING - WELFARE CONCERNS ====================
+
+  async getWelfareConcerns(organizationId: string): Promise<WelfareConcern[]> {
+    return await getDb()
+      .select()
+      .from(welfareConcerns)
+      .where(eq(welfareConcerns.organizationId, organizationId))
+      .orderBy(desc(welfareConcerns.createdAt));
+  }
+
+  async getWelfareConcern(organizationId: string, id: string): Promise<WelfareConcern | undefined> {
+    const result = await getDb()
+      .select()
+      .from(welfareConcerns)
+      .where(and(eq(welfareConcerns.id, id), eq(welfareConcerns.organizationId, organizationId)));
+    return result[0];
+  }
+
+  async createWelfareConcern(organizationId: string, data: InsertWelfareConcern): Promise<WelfareConcern> {
+    const result = await getDb()
+      .insert(welfareConcerns)
+      .values({
+        organizationId,
+        clientId: data.clientId,
+        reportedById: data.reportedById,
+        reportedByName: data.reportedByName,
+        concernType: data.concernType,
+        description: data.description,
+        observedBehaviours: data.observedBehaviours,
+        isAnonymous: data.isAnonymous ?? false,
+        status: (data.status || "open") as CaseStatus,
+        followUpNotes: data.followUpNotes,
+      })
+      .returning();
+    return result[0];
+  }
+
+  async updateWelfareConcern(organizationId: string, id: string, updates: Partial<InsertWelfareConcern>): Promise<WelfareConcern | undefined> {
+    const updateData: any = { ...updates, updatedAt: new Date() };
+    if (updates.status) {
+      updateData.status = updates.status as CaseStatus;
+    }
+    const result = await getDb()
+      .update(welfareConcerns)
+      .set(updateData)
+      .where(and(eq(welfareConcerns.id, id), eq(welfareConcerns.organizationId, organizationId)))
+      .returning();
+    return result[0];
+  }
+
+  async resolveWelfareConcern(organizationId: string, id: string, notes: string, resolvedById: string): Promise<WelfareConcern | undefined> {
+    const result = await getDb()
+      .update(welfareConcerns)
+      .set({ status: "closed" as CaseStatus, followUpNotes: notes, resolvedAt: new Date(), resolvedById, updatedAt: new Date() })
+      .where(and(eq(welfareConcerns.id, id), eq(welfareConcerns.organizationId, organizationId)))
+      .returning();
+    return result[0];
+  }
+
+  // ==================== SAFEGUARDING - CASE FILES ====================
+
+  async getCaseFiles(organizationId: string): Promise<CaseFile[]> {
+    return await getDb()
+      .select()
+      .from(caseFiles)
+      .where(eq(caseFiles.organizationId, organizationId))
+      .orderBy(desc(caseFiles.createdAt));
+  }
+
+  async getCaseFile(organizationId: string, id: string): Promise<CaseFile | undefined> {
+    const result = await getDb()
+      .select()
+      .from(caseFiles)
+      .where(and(eq(caseFiles.id, id), eq(caseFiles.organizationId, organizationId)));
+    return result[0];
+  }
+
+  async getCaseFileByClient(organizationId: string, clientId: string): Promise<CaseFile | undefined> {
+    const result = await getDb()
+      .select()
+      .from(caseFiles)
+      .where(and(eq(caseFiles.clientId, clientId), eq(caseFiles.organizationId, organizationId)));
+    return result[0];
+  }
+
+  async createCaseFile(organizationId: string, clientId: string): Promise<CaseFile> {
+    const result = await getDb()
+      .insert(caseFiles)
+      .values({ organizationId, clientId })
+      .returning();
+    return result[0];
+  }
+
+  async updateCaseFile(organizationId: string, id: string, updates: { status?: string; riskLevel?: string; summary?: string }): Promise<CaseFile | undefined> {
+    const updateData: any = { updatedAt: new Date() };
+    if (updates.status) updateData.status = updates.status as CaseStatus;
+    if (updates.riskLevel) updateData.riskLevel = updates.riskLevel as RiskLevel;
+    if (updates.summary) updateData.summary = updates.summary;
+    const result = await getDb()
+      .update(caseFiles)
+      .set(updateData)
+      .where(and(eq(caseFiles.id, id), eq(caseFiles.organizationId, organizationId)))
+      .returning();
+    return result[0];
+  }
+
+  async closeCaseFile(organizationId: string, id: string, reason: string, closedById: string): Promise<CaseFile | undefined> {
+    const result = await getDb()
+      .update(caseFiles)
+      .set({ status: "closed" as CaseStatus, closureReason: reason, closedAt: new Date(), closedById, updatedAt: new Date() })
+      .where(and(eq(caseFiles.id, id), eq(caseFiles.organizationId, organizationId)))
+      .returning();
+    return result[0];
+  }
+
+  // ==================== SAFEGUARDING - CASE NOTES ====================
+
+  async getCaseNotes(caseFileId: string): Promise<CaseNote[]> {
+    return await getDb()
+      .select()
+      .from(caseNotes)
+      .where(eq(caseNotes.caseFileId, caseFileId))
+      .orderBy(desc(caseNotes.createdAt));
+  }
+
+  async createCaseNote(caseFileId: string, authorId: string, data: InsertCaseNote): Promise<CaseNote> {
+    const result = await getDb()
+      .insert(caseNotes)
+      .values({ ...data, caseFileId, authorId })
+      .returning();
+    return result[0];
+  }
+
+  // ==================== SAFEGUARDING - ESCALATION RULES ====================
+
+  async getEscalationRules(organizationId: string): Promise<EscalationRule[]> {
+    return await getDb()
+      .select()
+      .from(escalationRules)
+      .where(eq(escalationRules.organizationId, organizationId))
+      .orderBy(desc(escalationRules.createdAt));
+  }
+
+  async getEscalationRule(organizationId: string, id: string): Promise<EscalationRule | undefined> {
+    const result = await getDb()
+      .select()
+      .from(escalationRules)
+      .where(and(eq(escalationRules.id, id), eq(escalationRules.organizationId, organizationId)));
+    return result[0];
+  }
+
+  async createEscalationRule(organizationId: string, data: InsertEscalationRule): Promise<EscalationRule> {
+    const result = await getDb()
+      .insert(escalationRules)
+      .values({ ...data, organizationId })
+      .returning();
+    return result[0];
+  }
+
+  async updateEscalationRule(organizationId: string, id: string, updates: Partial<InsertEscalationRule>): Promise<EscalationRule | undefined> {
+    const result = await getDb()
+      .update(escalationRules)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(escalationRules.id, id), eq(escalationRules.organizationId, organizationId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteEscalationRule(organizationId: string, id: string): Promise<boolean> {
+    const result = await getDb()
+      .delete(escalationRules)
+      .where(and(eq(escalationRules.id, id), eq(escalationRules.organizationId, organizationId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  // ==================== SAFEGUARDING - MISSED CHECK-IN ESCALATIONS ====================
+
+  async getMissedCheckInEscalations(organizationId: string): Promise<MissedCheckInEscalation[]> {
+    return await getDb()
+      .select()
+      .from(missedCheckInEscalations)
+      .where(eq(missedCheckInEscalations.organizationId, organizationId))
+      .orderBy(desc(missedCheckInEscalations.createdAt));
+  }
+
+  async createMissedCheckInEscalation(organizationId: string, clientId: string, missedAt: Date): Promise<MissedCheckInEscalation> {
+    const result = await getDb()
+      .insert(missedCheckInEscalations)
+      .values({ organizationId, clientId, missedAt })
+      .returning();
+    return result[0];
+  }
+
+  async updateMissedCheckInEscalation(organizationId: string, id: string, updates: { status?: string; resolution?: string; acknowledgedById?: string }): Promise<MissedCheckInEscalation | undefined> {
+    const updateData: any = { ...updates };
+    if (updates.acknowledgedById) {
+      updateData.acknowledgedAt = new Date();
+    }
+    if (updates.status === "resolved") {
+      updateData.resolvedAt = new Date();
+    }
+    const result = await getDb()
+      .update(missedCheckInEscalations)
+      .set(updateData)
+      .where(and(eq(missedCheckInEscalations.id, id), eq(missedCheckInEscalations.organizationId, organizationId)))
+      .returning();
+    return result[0];
+  }
+
+  // ==================== SAFEGUARDING - AUDIT TRAIL ====================
+
+  async getAuditTrail(organizationId: string, limit: number = 100): Promise<AuditTrailEntry[]> {
+    return await getDb()
+      .select()
+      .from(auditTrail)
+      .where(eq(auditTrail.organizationId, organizationId))
+      .orderBy(desc(auditTrail.createdAt))
+      .limit(limit);
+  }
+
+  async createAuditEntry(organizationId: string, data: { userId?: string; userEmail?: string; userRole?: string; action: string; entityType: string; entityId?: string; previousData?: any; newData?: any; ipAddress?: string; userAgent?: string }): Promise<AuditTrailEntry> {
+    const result = await getDb()
+      .insert(auditTrail)
+      .values({ ...data, organizationId })
+      .returning();
+    return result[0];
+  }
+
+  // ==================== SAFEGUARDING - RISK REPORTS ====================
+
+  async getRiskReports(organizationId: string): Promise<RiskReport[]> {
+    return await getDb()
+      .select()
+      .from(riskReports)
+      .where(eq(riskReports.organizationId, organizationId))
+      .orderBy(desc(riskReports.createdAt));
+  }
+
+  async getRiskReport(organizationId: string, id: string): Promise<RiskReport | undefined> {
+    const result = await getDb()
+      .select()
+      .from(riskReports)
+      .where(and(eq(riskReports.id, id), eq(riskReports.organizationId, organizationId)));
+    return result[0];
+  }
+
+  async createRiskReport(organizationId: string, data: { clientId?: string; reportType: string; riskLevel: string; summary: string; dataPoints?: any; recommendation?: string }): Promise<RiskReport> {
+    const result = await getDb()
+      .insert(riskReports)
+      .values({ 
+        ...data, 
+        organizationId,
+        riskLevel: data.riskLevel as RiskLevel
+      })
+      .returning();
+    return result[0];
+  }
+
+  async reviewRiskReport(organizationId: string, id: string, reviewedById: string, notes: string): Promise<RiskReport | undefined> {
+    const result = await getDb()
+      .update(riskReports)
+      .set({ reviewedById, reviewedAt: new Date(), reviewNotes: notes })
+      .where(and(eq(riskReports.id, id), eq(riskReports.organizationId, organizationId)))
       .returning();
     return result[0];
   }
