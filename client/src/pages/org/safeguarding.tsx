@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Shield, ArrowLeft, AlertTriangle, FileWarning, Folder, Scale, Clock, ChevronDown, ChevronRight, Plus, Eye, Check, X, Search, Filter, AlertCircle, FileText, Users, Activity, TrendingUp, Loader2, MessageSquare } from "lucide-react";
+import { Shield, ArrowLeft, AlertTriangle, FileWarning, Folder, Scale, Clock, ChevronDown, ChevronRight, Plus, Eye, Check, X, Search, Filter, AlertCircle, FileText, Users, Activity, TrendingUp, Loader2, MessageSquare, Download } from "lucide-react";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -416,6 +418,117 @@ export default function OrgSafeguardingPage() {
     return client?.nickname || client?.client?.name || client?.client?.email || "Unknown Client";
   };
 
+  // PDF Generation Functions
+  const downloadIncidentsPDF = () => {
+    if (!incidents || incidents.length === 0) return;
+    
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.text("Safeguarding Incidents Report", pageWidth / 2, 20, { align: "center" });
+    doc.setFontSize(10);
+    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth / 2, 28, { align: "center" });
+    
+    // Table data
+    const tableData = incidents.map(incident => [
+      format(new Date(incident.createdAt), "dd/MM/yyyy HH:mm"),
+      incident.incidentType.replace(/_/g, " "),
+      incident.severity,
+      incident.status,
+      incident.description.substring(0, 100) + (incident.description.length > 100 ? "..." : ""),
+      getClientName(incident.clientId),
+      incident.what3words || "-",
+      incident.resolution || "-"
+    ]);
+    
+    (doc as any).autoTable({
+      startY: 35,
+      head: [["Date", "Type", "Severity", "Status", "Description", "Client", "Location", "Resolution"]],
+      body: tableData,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+      columnStyles: {
+        4: { cellWidth: 40 },
+        7: { cellWidth: 30 }
+      }
+    });
+    
+    doc.save(`safeguarding-incidents-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+  };
+
+  const downloadConcernsPDF = () => {
+    if (!concerns || concerns.length === 0) return;
+    
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.text("Welfare Concerns Report", pageWidth / 2, 20, { align: "center" });
+    doc.setFontSize(10);
+    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth / 2, 28, { align: "center" });
+    
+    // Table data
+    const tableData = concerns.map(concern => [
+      format(new Date(concern.createdAt), "dd/MM/yyyy HH:mm"),
+      concern.concernType || "General",
+      concern.status,
+      concern.description.substring(0, 100) + (concern.description.length > 100 ? "..." : ""),
+      getClientName(concern.clientId),
+      concern.isAnonymous ? "Yes" : "No",
+      concern.followUpNotes || "-"
+    ]);
+    
+    (doc as any).autoTable({
+      startY: 35,
+      head: [["Date", "Type", "Status", "Description", "Client", "Anonymous", "Follow-up Notes"]],
+      body: tableData,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+      columnStyles: {
+        3: { cellWidth: 45 },
+        6: { cellWidth: 35 }
+      }
+    });
+    
+    doc.save(`welfare-concerns-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+  };
+
+  const downloadAuditTrailPDF = () => {
+    if (!auditTrail || auditTrail.length === 0) return;
+    
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.text("Safeguarding Audit Trail", pageWidth / 2, 20, { align: "center" });
+    doc.setFontSize(10);
+    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth / 2, 28, { align: "center" });
+    
+    // Table data
+    const tableData = auditTrail.map(entry => [
+      format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm"),
+      entry.action,
+      entry.entityType.replace(/_/g, " "),
+      entry.userEmail,
+      entry.userRole,
+      entry.ipAddress || "-"
+    ]);
+    
+    (doc as any).autoTable({
+      startY: 35,
+      head: [["Date/Time", "Action", "Entity Type", "User Email", "User Role", "IP Address"]],
+      body: tableData,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [41, 128, 185], textColor: 255 }
+    });
+    
+    doc.save(`audit-trail-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
@@ -584,10 +697,18 @@ export default function OrgSafeguardingPage() {
               <CardHeader>
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle>All Incidents</CardTitle>
-                  <Button onClick={() => setShowIncidentDialog(true)} data-testid="button-new-incident">
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Incident
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {incidents && incidents.length > 0 && (
+                      <Button variant="outline" onClick={downloadIncidentsPDF} data-testid="button-download-incidents-pdf">
+                        <Download className="h-4 w-4 mr-2" />
+                        Download PDF
+                      </Button>
+                    )}
+                    <Button onClick={() => setShowIncidentDialog(true)} data-testid="button-new-incident">
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Incident
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -666,10 +787,18 @@ export default function OrgSafeguardingPage() {
               <CardHeader>
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle>Welfare Concerns</CardTitle>
-                  <Button onClick={() => setShowConcernDialog(true)} data-testid="button-new-concern">
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Concern
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {concerns && concerns.length > 0 && (
+                      <Button variant="outline" onClick={downloadConcernsPDF} data-testid="button-download-concerns-pdf">
+                        <Download className="h-4 w-4 mr-2" />
+                        Download PDF
+                      </Button>
+                    )}
+                    <Button onClick={() => setShowConcernDialog(true)} data-testid="button-new-concern">
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Concern
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -913,8 +1042,18 @@ export default function OrgSafeguardingPage() {
           <TabsContent value="audit" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Audit Trail</CardTitle>
-                <CardDescription>Complete log of safeguarding actions</CardDescription>
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <CardTitle>Audit Trail</CardTitle>
+                    <CardDescription>Complete log of safeguarding actions</CardDescription>
+                  </div>
+                  {auditTrail && auditTrail.length > 0 && (
+                    <Button variant="outline" onClick={downloadAuditTrailPDF} data-testid="button-download-audit-pdf">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download PDF
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {auditTrail && auditTrail.length > 0 ? (
