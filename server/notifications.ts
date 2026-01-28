@@ -1695,6 +1695,20 @@ Enter this code when you open the app to get started.`;
   return await sendSMS(phoneNumber, message);
 }
 
+// Send reference code reminder SMS to org-managed client
+export async function sendReferenceCodeSMS(
+  phoneNumber: string,
+  referenceCode: string,
+  organizationName: string
+): Promise<{ success: boolean; error?: string }> {
+  const message = `Hi from ${organizationName}. Your aok reference code is: ${referenceCode}
+
+Use this code to log back into the aok app. If you have any issues, please contact your organisation.`;
+
+  console.log(`[SMS REFERENCE] Sending reference code to ${phoneNumber}: ${referenceCode}`);
+  return await sendSMS(phoneNumber, message);
+}
+
 /**
  * Send confirmation reminder SMS to contact approaching expiry
  */

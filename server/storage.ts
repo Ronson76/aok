@@ -2019,6 +2019,7 @@ export interface IOrganizationStorage {
   getClientsWithDetails(organizationId: string): Promise<OrganizationClientWithDetails[]>;
   getClientById(organizationClientId: string): Promise<OrganizationClient | undefined>;
   getClientByReferenceCode(referenceCode: string): Promise<OrganizationClient | undefined>;
+  getOrganizationClientByClientId(organizationId: string, clientId: string): Promise<OrganizationClient | undefined>;
   addClient(organizationId: string, clientId: string, bundleId?: string, nickname?: string): Promise<OrganizationClient>;
   removeClient(organizationId: string, clientId: string): Promise<boolean>;
   isClientOfOrganization(organizationId: string, clientId: string): Promise<boolean>;
@@ -2713,6 +2714,18 @@ class OrganizationStorage implements IOrganizationStorage {
       .select()
       .from(organizationClients)
       .where(eq(organizationClients.referenceCode, referenceCode));
+    return result[0];
+  }
+
+  // Get organization client by user's clientId
+  async getOrganizationClientByClientId(organizationId: string, clientId: string): Promise<OrganizationClient | undefined> {
+    const result = await getDb()
+      .select()
+      .from(organizationClients)
+      .where(and(
+        eq(organizationClients.organizationId, organizationId),
+        eq(organizationClients.clientId, clientId)
+      ));
     return result[0];
   }
 

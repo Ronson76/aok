@@ -3,7 +3,7 @@ import { organizationStorage, storage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema } from "@shared/schema";
-import { sendAppInviteSMS, sendPasswordResetEmail } from "./notifications";
+import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS } from "./notifications";
 
 // Generate a unique 6-character reference code
 function generateReferenceCode(): string {
@@ -406,6 +406,56 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("[ORG] Failed to reset client password:", error);
       res.status(500).json({ error: "Failed to reset client password" });
+    }
+  });
+
+  // Send reference code SMS to client (for login recovery)
+  app.post("/api/org/clients/:clientId/send-reference-code", requireOrganization, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+
+      // Verify the client belongs to this organization
+      const isClient = await organizationStorage.isClientOfOrganization(req.userId!, clientId);
+      if (!isClient) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      // Get the org client record to get the reference code
+      const orgClient = await organizationStorage.getOrganizationClientByClientId(req.userId!, clientId);
+      if (!orgClient) {
+        return res.status(404).json({ error: "Client record not found" });
+      }
+
+      if (!orgClient.referenceCode) {
+        return res.status(400).json({ error: "Client does not have a reference code" });
+      }
+
+      // Get the client's phone number
+      const clientUser = await storage.getUserById(clientId);
+      if (!clientUser || !clientUser.mobile) {
+        return res.status(400).json({ error: "Client does not have a mobile number registered" });
+      }
+
+      // Get organization name
+      const orgUser = await storage.getUserById(req.userId!);
+      const orgName = orgUser?.name || "aok";
+
+      // Send the SMS
+      const result = await sendReferenceCodeSMS(
+        clientUser.mobile,
+        orgClient.referenceCode,
+        orgName
+      );
+
+      if (!result.success) {
+        console.error("[ORG] Failed to send reference code SMS:", result.error);
+        return res.status(500).json({ error: "Failed to send SMS. Please try again." });
+      }
+
+      res.json({ success: true, message: "Reference code sent via SMS" });
+    } catch (error) {
+      console.error("[ORG] Failed to send reference code SMS:", error);
+      res.status(500).json({ error: "Failed to send reference code SMS" });
     }
   });
 
