@@ -256,6 +256,13 @@ export default function OrganizationDashboard() {
     
     let result = [...clients];
     
+    // Default sort: alphabetically by name
+    result.sort((a, b) => {
+      const aName = (a.nickname || a.clientName || a.client?.name || "").toLowerCase();
+      const bName = (b.nickname || b.clientName || b.client?.name || "").toLowerCase();
+      return aName.localeCompare(bName);
+    });
+    
     // Filter by name (nickname or client name)
     if (searchName.trim()) {
       const nameLower = searchName.toLowerCase();
