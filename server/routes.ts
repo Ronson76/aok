@@ -96,11 +96,13 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const sessionId = req.cookies?.session;
   
   if (!sessionId) {
+    console.log("[AUTH] No session cookie found. Cookies:", JSON.stringify(req.cookies));
     return res.status(401).json({ error: "Not authenticated" });
   }
 
   const session = await storage.getSession(sessionId);
   if (!session) {
+    console.log("[AUTH] Session not found in DB for id:", sessionId);
     return res.status(401).json({ error: "Invalid or expired session" });
   }
 
@@ -577,16 +579,20 @@ export async function registerRoutes(
 
       // Create session
       const session = await storage.createSession(user.id);
+      console.log("[ORG LOGIN] Session created:", session.id, "for user:", user.id);
 
       // Set cookie
+      const isProduction = process.env.NODE_ENV === "production";
+      console.log("[ORG LOGIN] Setting cookie, secure:", isProduction, "NODE_ENV:", process.env.NODE_ENV);
       res.cookie("session", session.id, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isProduction,
         sameSite: "lax",
         maxAge: 14 * 24 * 60 * 60 * 1000,
       });
 
       const { passwordHash, ...userProfile } = user;
+      console.log("[ORG LOGIN] Login successful for:", user.email);
       res.json(userProfile);
     } catch (error) {
       console.error("Org login error:", error);
