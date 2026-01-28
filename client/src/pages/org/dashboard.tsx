@@ -164,12 +164,9 @@ export default function OrganizationDashboard() {
     featureDigitalWill: true,
   });
   
-  const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
-  const [resetPasswordClientId, setResetPasswordClientId] = useState<string | null>(null);
-  const [resetPasswordClientName, setResetPasswordClientName] = useState<string>("");
-  const [newClientPassword, setNewClientPassword] = useState("");
-  const [confirmClientPassword, setConfirmClientPassword] = useState("");
-  const [orgPassword, setOrgPassword] = useState("");
+  const [showResendPasswordDialog, setShowResendPasswordDialog] = useState(false);
+  const [resendPasswordClientId, setResendPasswordClientId] = useState<string | null>(null);
+  const [resendPasswordClientName, setResendPasswordClientName] = useState<string>("");
   
   // Change own password dialog state
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
@@ -393,29 +390,23 @@ export default function OrganizationDashboard() {
     setRegEmergencyContacts(regEmergencyContacts.filter((_, i) => i !== index));
   };
 
-  const resetClientPasswordMutation = useMutation({
-    mutationFn: async ({ clientId, newPassword, orgPassword }: { clientId: string; newPassword: string; orgPassword: string }) => {
-      const response = await apiRequest("POST", `/api/org/clients/${clientId}/reset-password`, {
-        newPassword,
-        orgPassword,
-      });
+  const resendPasswordMutation = useMutation({
+    mutationFn: async ({ clientId }: { clientId: string }) => {
+      const response = await apiRequest("POST", `/api/org/clients/${clientId}/send-reference-code`);
       return response.json();
     },
     onSuccess: () => {
-      setShowResetPasswordDialog(false);
-      setResetPasswordClientId(null);
-      setResetPasswordClientName("");
-      setNewClientPassword("");
-      setConfirmClientPassword("");
-      setOrgPassword("");
+      setShowResendPasswordDialog(false);
+      setResendPasswordClientId(null);
+      setResendPasswordClientName("");
       toast({
-        title: "Password reset",
-        description: "The client's password has been successfully reset.",
+        title: "Reference code sent",
+        description: "The client will receive an SMS with their reference code.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to reset password",
+        title: "Failed to send reference code",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
@@ -741,43 +732,17 @@ export default function OrganizationDashboard() {
     });
   };
 
-  const handleResetPasswordClick = (client: OrganizationClientWithDetails) => {
+  const handleResendPasswordClick = (client: OrganizationClientWithDetails) => {
     if (!client.clientId || !client.client) return;
-    setResetPasswordClientId(client.clientId);
-    setResetPasswordClientName(client.nickname || client.client.name);
-    setShowResetPasswordDialog(true);
+    setResendPasswordClientId(client.clientId);
+    setResendPasswordClientName(client.nickname || client.client.name);
+    setShowResendPasswordDialog(true);
   };
 
-  const handleResetPasswordSubmit = () => {
-    if (!newClientPassword || newClientPassword.length < 8) {
-      toast({
-        title: "Invalid password",
-        description: "Password must be at least 8 characters.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (newClientPassword !== confirmClientPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please make sure both passwords match.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!orgPassword) {
-      toast({
-        title: "Organisation password required",
-        description: "Please enter your organisation password to confirm.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (resetPasswordClientId) {
-      resetClientPasswordMutation.mutate({
-        clientId: resetPasswordClientId,
-        newPassword: newClientPassword,
-        orgPassword,
+  const handleResendPasswordSubmit = () => {
+    if (resendPasswordClientId) {
+      resendPasswordMutation.mutate({
+        clientId: resendPasswordClientId,
       });
     }
   };
@@ -1379,9 +1344,9 @@ export default function OrganizationDashboard() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleResetPasswordClick(client)}
-                        data-testid={`button-reset-password-${client.clientId}`}
-                        title="Reset password"
+                        onClick={() => handleResendPasswordClick(client)}
+                        data-testid={`button-resend-password-${client.clientId}`}
+                        title="Resend password via SMS"
                       >
                         <KeyRound className="h-4 w-4" />
                       </Button>
@@ -1976,93 +1941,50 @@ export default function OrganizationDashboard() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showResetPasswordDialog} onOpenChange={(open) => {
+      <Dialog open={showResendPasswordDialog} onOpenChange={(open) => {
         if (!open) {
-          setShowResetPasswordDialog(false);
-          setResetPasswordClientId(null);
-          setResetPasswordClientName("");
-          setNewClientPassword("");
-          setConfirmClientPassword("");
-          setOrgPassword("");
+          setShowResendPasswordDialog(false);
+          setResendPasswordClientId(null);
+          setResendPasswordClientName("");
         }
       }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <KeyRound className="h-5 w-5" />
-              Reset Client Password
+              Resend Password
             </DialogTitle>
             <DialogDescription>
-              Set a new password for {resetPasswordClientName}. The client will be signed out of all devices.
+              Send an SMS to {resendPasswordClientName} with their reference code so they can log back in.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
-              <Input
-                id="new-password"
-                type="password"
-                placeholder="Enter new password (min 8 characters)"
-                value={newClientPassword}
-                onChange={(e) => setNewClientPassword(e.target.value)}
-                autoComplete="off"
-                data-testid="input-new-client-password"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                placeholder="Confirm new password"
-                value={confirmClientPassword}
-                onChange={(e) => setConfirmClientPassword(e.target.value)}
-                autoComplete="off"
-                data-testid="input-confirm-client-password"
-              />
-            </div>
-            <div className="space-y-2 pt-4 border-t">
-              <Label htmlFor="org-password">Your Organisation Password</Label>
-              <Input
-                id="org-password"
-                type="password"
-                placeholder="Enter your password to confirm"
-                value={orgPassword}
-                onChange={(e) => setOrgPassword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleResetPasswordSubmit();
-                }}
-                autoComplete="off"
-                data-testid="input-org-password"
-              />
-              <p className="text-xs text-muted-foreground">
-                Your password is required to authorise this change.
-              </p>
-            </div>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              This will send a text message to the client's registered mobile number with their unique reference code. 
+              They can use this code to log back into the aok app if they've been logged out.
+            </p>
           </div>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => {
-                setShowResetPasswordDialog(false);
-                setResetPasswordClientId(null);
-                setResetPasswordClientName("");
-                setNewClientPassword("");
-                setConfirmClientPassword("");
-                setOrgPassword("");
+                setShowResendPasswordDialog(false);
+                setResendPasswordClientId(null);
+                setResendPasswordClientName("");
               }}
+              data-testid="button-cancel-resend-password"
             >
               Cancel
             </Button>
             <Button
-              onClick={handleResetPasswordSubmit}
-              disabled={resetClientPasswordMutation.isPending}
-              data-testid="button-confirm-reset-password"
+              onClick={handleResendPasswordSubmit}
+              disabled={resendPasswordMutation.isPending}
+              data-testid="button-confirm-resend-password"
             >
-              {resetClientPasswordMutation.isPending ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Resetting...</>
+              {resendPasswordMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending...</>
               ) : (
-                "Reset Password"
+                "Send SMS"
               )}
             </Button>
           </DialogFooter>
