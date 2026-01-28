@@ -430,9 +430,8 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(400).json({ error: "Client does not have a reference code" });
       }
 
-      // Get the client's phone number
-      const clientUser = await storage.getUserById(clientId);
-      if (!clientUser || !clientUser.mobile) {
+      // Get the client's phone number from the organization client record
+      if (!orgClient.clientPhone) {
         return res.status(400).json({ error: "Client does not have a mobile number registered" });
       }
 
@@ -442,7 +441,7 @@ export function registerOrganizationRoutes(app: Express) {
 
       // Send the SMS
       const result = await sendReferenceCodeSMS(
-        clientUser.mobile,
+        orgClient.clientPhone,
         orgClient.referenceCode,
         orgName
       );
