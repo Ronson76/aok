@@ -116,6 +116,7 @@ export interface IStorage {
   updateEmergencyAlertLocation(alertId: string, latitude: string, longitude: string): Promise<void>;
   updateEmergencyAlertDispatchTime(alertId: string): Promise<void>;
   deactivateEmergencyAlert(alertId: string): Promise<void>;
+  deactivateEmergencyAlertByUserId(userId: string): Promise<boolean>;
   getOverdueActiveAlerts(): Promise<ActiveEmergencyAlert[]>;
 
   // Terms and conditions
@@ -1078,6 +1079,19 @@ class DatabaseStorage implements IStorage {
       .update(activeEmergencyAlerts)
       .set({ isActive: false, deactivatedAt: new Date() })
       .where(eq(activeEmergencyAlerts.id, alertId));
+  }
+  
+  async deactivateEmergencyAlertByUserId(userId: string): Promise<boolean> {
+    const result = await getDb()
+      .update(activeEmergencyAlerts)
+      .set({ isActive: false, deactivatedAt: new Date() })
+      .where(and(
+        eq(activeEmergencyAlerts.userId, userId),
+        eq(activeEmergencyAlerts.isActive, true)
+      ))
+      .returning({ id: activeEmergencyAlerts.id });
+    
+    return result.length > 0;
   }
 
   async getOverdueActiveAlerts(): Promise<ActiveEmergencyAlert[]> {
@@ -2495,40 +2509,48 @@ class OrganizationStorage implements IOrganizationStorage {
     return results;
   }
 
-  // Get organization clients for admin view (privacy-limited - only ordinal, phone, status)
+  // Get organization clients for admin view (GDPR-compliant - only reference code, no personal details)
   async getOrganizationClientsForAdmin(organizationId: string): Promise<AdminOrganizationClientView[]> {
     const clients = await getDb()
-      .select({
-        orgClient: organizationClients,
-        client: users,
-      })
+      .select()
       .from(organizationClients)
-      .leftJoin(users, eq(organizationClients.clientId, users.id))
       .where(eq(organizationClients.organizationId, organizationId))
       .orderBy(organizationClients.clientOrdinal);
     
     const results: AdminOrganizationClientView[] = [];
     
-    for (const row of clients) {
-      // Get phone from org client record (privacy-safe) or user's mobile if linked
-      const mobileNumber = row.orgClient.clientPhone || row.client?.mobileNumber || null;
+    for (const client of clients) {
+      // Check for active emergency alert if client is activated
+      let hasActiveAlert = false;
+      let activeAlertId: string | null = null;
       
-      // Get status only if client is linked to a user
-      const status = row.client ? await this.getClientStatus(row.client.id) : null;
-      const alertCounts = row.client 
-        ? await this.getClientAlertCounts(row.client.id)
-        : { total: 0, emails: 0, calls: 0, emergencies: 0 };
+      if (client.clientId) {
+        const activeAlert = await getDb()
+          .select({ id: activeEmergencyAlerts.id })
+          .from(activeEmergencyAlerts)
+          .where(and(
+            eq(activeEmergencyAlerts.userId, client.clientId),
+            eq(activeEmergencyAlerts.isActive, true)
+          ))
+          .limit(1);
+        
+        if (activeAlert.length > 0) {
+          hasActiveAlert = true;
+          activeAlertId = activeAlert[0].id;
+        }
+      }
       
       results.push({
-        id: row.orgClient.id,
-        clientOrdinal: row.orgClient.clientOrdinal,
-        clientStatus: row.orgClient.status,
-        mobileNumber,
-        clientDisabled: row.client?.disabled || false,
-        registrationStatus: row.orgClient.registrationStatus,
-        addedAt: row.orgClient.addedAt,
-        status,
-        alertCounts,
+        id: client.id,
+        clientOrdinal: client.clientOrdinal,
+        referenceCode: client.referenceCode,
+        clientStatus: client.status,
+        registrationStatus: client.registrationStatus,
+        isActivated: !!client.clientId,
+        hasActiveAlert,
+        activeAlertId,
+        addedAt: client.addedAt,
+        bundleId: client.bundleId,
       });
     }
     

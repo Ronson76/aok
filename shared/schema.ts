@@ -663,22 +663,18 @@ export interface OrganizationClientWithDetails {
   };
 }
 
-// Admin view of organization client (privacy-limited - no personal details)
+// Admin view of organization client (GDPR-compliant - only reference code, no personal details)
 export interface AdminOrganizationClientView {
   id: string;
   clientOrdinal: number;
+  referenceCode: string;
   clientStatus: OrgClientStatus;
-  mobileNumber: string | null;
-  clientDisabled: boolean;
   registrationStatus: OrgClientRegistrationStatus;
+  isActivated: boolean;
+  hasActiveAlert: boolean;
+  activeAlertId: string | null;
   addedAt: Date;
-  status: StatusData | null;
-  alertCounts: {
-    total: number;
-    emails: number;
-    calls: number;
-    emergencies: number;
-  };
+  bundleId: string | null;
 }
 
 // Admin view of organization with client summary
