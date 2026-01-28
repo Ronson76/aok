@@ -25,7 +25,7 @@ export default function OrganizationClientLogin() {
         title: "Welcome back",
         description: "You've successfully signed in.",
       });
-      setLocation("/dashboard");
+      setLocation("/app");
     },
     onError: (error: any) => {
       toast({
