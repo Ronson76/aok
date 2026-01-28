@@ -123,7 +123,7 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
       }
 
-      const { clientName, clientPhone, dateOfBirth, bundleId, scheduleStartTime, checkInIntervalHours, emergencyContacts } = parsed.data;
+      const { clientName, clientPhone, dateOfBirth, bundleId, scheduleStartTime, checkInIntervalHours, emergencyContacts, features } = parsed.data;
 
       // Get the organization details
       const org = await storage.getUserById(req.userId!);
@@ -152,6 +152,13 @@ export function registerOrganizationRoutes(app: Express) {
         referenceCode,
         scheduleStartTime: scheduleStartTime ? parseScheduleTime(scheduleStartTime) : null,
         checkInIntervalHours: checkInIntervalHours || 24,
+        features: features || {
+          featureWellbeingAi: true,
+          featureShakeToAlert: true,
+          featureMoodTracking: true,
+          featurePetProtection: true,
+          featureDigitalWill: true,
+        },
       });
 
       // Create the client profile with date of birth

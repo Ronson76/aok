@@ -150,6 +150,15 @@ export default function OrganizationDashboard() {
     isPrimary: boolean;
   }>>([]);
   
+  // Feature toggles for new client registration (all ON by default)
+  const [regFeatures, setRegFeatures] = useState({
+    featureWellbeingAi: true,
+    featureShakeToAlert: true,
+    featureMoodTracking: true,
+    featurePetProtection: true,
+    featureDigitalWill: true,
+  });
+  
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [resetPasswordClientId, setResetPasswordClientId] = useState<string | null>(null);
   const [resetPasswordClientName, setResetPasswordClientName] = useState<string>("");
@@ -292,6 +301,7 @@ export default function OrganizationDashboard() {
         scheduleStartTime: regScheduleStart || undefined,
         checkInIntervalHours: regIntervalHours,
         emergencyContacts: regEmergencyContacts.length > 0 ? regEmergencyContacts : undefined,
+        features: regFeatures,
       });
       return response.json();
     },
@@ -324,6 +334,13 @@ export default function OrganizationDashboard() {
     setRegScheduleStart("");
     setRegIntervalHours(24);
     setRegEmergencyContacts([]);
+    setRegFeatures({
+      featureWellbeingAi: true,
+      featureShakeToAlert: true,
+      featureMoodTracking: true,
+      featurePetProtection: true,
+      featureDigitalWill: true,
+    });
   };
 
   const addEmergencyContact = () => {
@@ -1007,6 +1024,74 @@ export default function OrganizationDashboard() {
                 </Card>
               ))}
             </div>
+            
+            {/* Feature Toggles */}
+            <div className="space-y-3 pt-4 border-t">
+              <Label className="text-base font-semibold">Features</Label>
+              <p className="text-xs text-muted-foreground">Choose which features this client can access</p>
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm">Wellness Tracking</span>
+                  </div>
+                  <Switch
+                    checked={regFeatures.featureMoodTracking}
+                    onCheckedChange={(checked) => setRegFeatures({...regFeatures, featureMoodTracking: checked})}
+                    data-testid="switch-reg-feature-mood"
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <PawPrint className="h-4 w-4 text-rose-500" />
+                    <span className="text-sm">Pet Protection</span>
+                  </div>
+                  <Switch
+                    checked={regFeatures.featurePetProtection}
+                    onCheckedChange={(checked) => setRegFeatures({...regFeatures, featurePetProtection: checked})}
+                    data-testid="switch-reg-feature-pet"
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Scroll className="h-4 w-4 text-slate-500" />
+                    <span className="text-sm">Digital Will</span>
+                  </div>
+                  <Switch
+                    checked={regFeatures.featureDigitalWill}
+                    onCheckedChange={(checked) => setRegFeatures({...regFeatures, featureDigitalWill: checked})}
+                    data-testid="switch-reg-feature-will"
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ExternalLink className="h-4 w-4 text-emerald-500" />
+                    <span className="text-sm">Wellbeing AI</span>
+                  </div>
+                  <Switch
+                    checked={regFeatures.featureWellbeingAi}
+                    onCheckedChange={(checked) => setRegFeatures({...regFeatures, featureWellbeingAi: checked})}
+                    data-testid="switch-reg-feature-ai"
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="h-4 w-4 text-purple-500" />
+                    <span className="text-sm">Shake to Alert</span>
+                  </div>
+                  <Switch
+                    checked={regFeatures.featureShakeToAlert}
+                    onCheckedChange={(checked) => setRegFeatures({...regFeatures, featureShakeToAlert: checked})}
+                    data-testid="switch-reg-feature-shake"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRegisterClientDialog(false)}>
@@ -1054,12 +1139,12 @@ export default function OrganizationDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            <CardTitle className="text-sm font-medium">Due Soon</CardTitle>
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-500" data-testid="text-clients-pending">{stats?.clientsPending || 0}</div>
-            <p className="text-xs text-muted-foreground">Awaiting check-in</p>
+            <p className="text-xs text-muted-foreground">Check-in due soon</p>
           </CardContent>
         </Card>
 
@@ -1073,6 +1158,19 @@ export default function OrganizationDashboard() {
             <p className="text-xs text-muted-foreground">Missed check-in</p>
           </CardContent>
         </Card>
+        
+        {(stats?.clientsAwaitingActivation || 0) > 0 && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Not Activated</CardTitle>
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-muted-foreground" data-testid="text-clients-awaiting">{stats?.clientsAwaitingActivation || 0}</div>
+              <p className="text-xs text-muted-foreground">Awaiting SMS activation</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {stats?.totalEmergencyAlerts && stats.totalEmergencyAlerts > 0 && (
