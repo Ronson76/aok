@@ -548,6 +548,36 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
+  // Deactivate client's active emergency alert
+  app.post("/api/org/clients/:clientId/deactivate-alert", requireOrganization, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      
+      // Get the org client to verify ownership
+      const orgClient = await organizationStorage.getClientById(clientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      if (!orgClient.clientId) {
+        return res.status(400).json({ error: "Client has not activated their account yet" });
+      }
+
+      // Deactivate the emergency alert
+      const deactivated = await storage.deactivateEmergencyAlertByUserId(orgClient.clientId);
+      
+      if (!deactivated) {
+        return res.status(404).json({ error: "No active emergency alert found" });
+      }
+
+      console.log(`[ORG] Deactivated emergency alert for client ${clientId}`);
+      res.json({ success: true, message: "Emergency alert deactivated" });
+    } catch (error) {
+      console.error("[ORG] Failed to deactivate alert:", error);
+      res.status(500).json({ error: "Failed to deactivate alert" });
+    }
+  });
+
   // Get client profile by organization client ID
   app.get("/api/org/clients/:orgClientId/profile", requireOrganization, async (req, res) => {
     try {
