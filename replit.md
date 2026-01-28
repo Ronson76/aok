@@ -99,6 +99,16 @@ Preferred communication style: Simple, everyday language.
   - **Escalation Rules**: Automated triggers based on missed check-ins, SOS alerts, or incident counts
   - **Audit Trail**: Complete logging of all safeguarding actions for compliance
   - **Risk Reports**: Automated risk indicators with review workflow
+- **Admin Client Management**: Super admins can fully manage organisation clients with:
+  - List all clients per organisation with search by ref # or code
+  - Flashing red alert icon for active emergencies
+  - Deactivate emergency alerts
+  - Reset client check-in state
+  - Edit check-in schedule (start time and interval)
+  - Toggle feature preferences (Wellbeing AI, Shake to Alert, Mood Tracking, Pet Protection, Digital Will)
+  - Pause/Resume client monitoring
+  - Remove clients
+  - Send reference number reminder via SMS
 
 ### Build Tools
 - Vite

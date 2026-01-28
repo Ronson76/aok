@@ -981,7 +981,7 @@ export default function AdminDashboard() {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by ref #..."
+                    placeholder="Search by ref # or code..."
                     value={orgClientSearchRef}
                     onChange={(e) => setOrgClientSearchRef(e.target.value)}
                     className="pl-9"
@@ -1124,21 +1124,37 @@ export default function AdminDashboard() {
                           )}
                           
                           {client.isActivated && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setEditingScheduleClient(client);
-                                setShowScheduleDialog(true);
-                                if (selectedOrg) {
-                                  fetchClientSchedule(selectedOrg.id, client.id);
-                                }
-                              }}
-                              className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
-                              data-testid={`button-edit-schedule-${client.id}`}
-                            >
-                              Edit Schedule
-                            </Button>
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingScheduleClient(client);
+                                  setShowScheduleDialog(true);
+                                  if (selectedOrg) {
+                                    fetchClientSchedule(selectedOrg.id, client.id);
+                                  }
+                                }}
+                                className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                                data-testid={`button-edit-schedule-${client.id}`}
+                              >
+                                Edit Schedule
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => resetClientMutation.mutate({ 
+                                  organizationId: selectedOrg!.id, 
+                                  clientId: client.id 
+                                })}
+                                disabled={resetClientMutation.isPending}
+                                className="text-cyan-600 border-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-950"
+                                data-testid={`button-reset-${client.id}`}
+                              >
+                                {resetClientMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-1" />}
+                                Reset
+                              </Button>
+                            </>
                           )}
                           
                           <Button
