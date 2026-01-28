@@ -502,6 +502,84 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  // Get client schedule (super admin only)
+  app.get("/api/admin/organizations/:organizationId/clients/:clientId/schedule", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { organizationId, clientId } = req.params;
+      
+      // Get the org client to verify it belongs to this organization
+      const orgClient = await organizationStorage.getClientById(clientId);
+      if (!orgClient || orgClient.organizationId !== organizationId) {
+        return res.status(404).json({ error: "Client not found in this organization" });
+      }
+
+      res.json({
+        scheduleStartTime: orgClient.scheduleStartTime,
+        checkInIntervalHours: orgClient.checkInIntervalHours || 24,
+      });
+    } catch (error) {
+      console.error("Error fetching client schedule:", error);
+      res.status(500).json({ error: "Failed to fetch client schedule" });
+    }
+  });
+
+  // Update client schedule (super admin only)
+  app.patch("/api/admin/organizations/:organizationId/clients/:clientId/schedule", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { organizationId, clientId } = req.params;
+      const { scheduleStartTime, checkInIntervalHours } = req.body;
+      
+      // Get the org client to verify it belongs to this organization
+      const orgClient = await organizationStorage.getClientById(clientId);
+      if (!orgClient || orgClient.organizationId !== organizationId) {
+        return res.status(404).json({ error: "Client not found in this organization" });
+      }
+
+      // Validate interval
+      const interval = parseInt(checkInIntervalHours);
+      if (isNaN(interval) || interval < 1 || interval > 48) {
+        return res.status(400).json({ error: "Check-in interval must be between 1 and 48 hours" });
+      }
+
+      // Parse the schedule start time
+      let startTime: Date;
+      if (scheduleStartTime) {
+        const [hours, minutes] = scheduleStartTime.split(':').map(Number);
+        startTime = new Date();
+        startTime.setHours(hours, minutes, 0, 0);
+      } else {
+        startTime = new Date();
+        startTime.setHours(9, 0, 0, 0);
+      }
+
+      // Update the schedule on the org client record
+      const updated = await organizationStorage.updateClientSchedule(clientId, startTime, interval);
+
+      // If the client has an activated user account, update their settings too
+      if (orgClient.clientId) {
+        const nextDue = new Date(startTime.getTime() + interval * 60 * 60 * 1000);
+        await storage.updateSettings(orgClient.clientId, {
+          intervalHours: interval,
+          scheduleStartTime: startTime.toISOString(),
+          nextCheckInDue: nextDue.toISOString(),
+        });
+      }
+
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "update",
+        "client_schedule",
+        clientId,
+        `Updated schedule for client in organization ${organizationId}: interval=${interval}h, start=${scheduleStartTime}`
+      );
+
+      res.json({ success: true, schedule: updated });
+    } catch (error) {
+      console.error("Error updating client schedule:", error);
+      res.status(500).json({ error: "Failed to update client schedule" });
+    }
+  });
+
   // Reset client's app and check-in time (super admin only)
   app.post("/api/admin/organizations/:organizationId/clients/:clientId/reset", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
     try {
@@ -524,8 +602,7 @@ export function registerAdminRoutes(app: Express) {
       const nextDue = new Date(now.getTime() + intervalHours * 60 * 60 * 1000);
       
       await storage.updateSettings(orgClient.clientId, {
-        nextCheckInDue: nextDue,
-        streak: 0,
+        nextCheckInDue: nextDue.toISOString(),
       });
 
       await adminStorage.createAuditLog(
