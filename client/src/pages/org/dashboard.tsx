@@ -10,14 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, Search } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import type { OrganizationDashboardStats, OrganizationClientWithDetails, OrganizationBundle, OrganizationClientProfile, AlertLog, OrgClientStatus, Contact } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from "wouter";
 
@@ -185,6 +185,11 @@ export default function OrganizationDashboard() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState<Partial<OrganizationClientProfile> & { phone?: string; email?: string }>({});
   
+  // Client search state
+  const [searchName, setSearchName] = useState("");
+  const [searchEmail, setSearchEmail] = useState("");
+  const [searchRef, setSearchRef] = useState("");
+  
   // Alert view state
   const [clientAlerts, setClientAlerts] = useState<{ alerts: AlertLog[]; counts: { total: number; emails: number; calls: number; emergencies: number } } | null>(null);
   const [loadingAlerts, setLoadingAlerts] = useState(false);
@@ -244,6 +249,57 @@ export default function OrganizationDashboard() {
   const { data: clients, isLoading: clientsLoading } = useQuery<OrganizationClientWithDetails[]>({
     queryKey: ["/api/org/clients"],
   });
+
+  // Filter and sort clients based on search terms
+  const filteredClients = useMemo(() => {
+    if (!clients) return [];
+    
+    let result = [...clients];
+    
+    // Filter by name (nickname or client name)
+    if (searchName.trim()) {
+      const nameLower = searchName.toLowerCase();
+      result = result.filter(client => {
+        const displayName = client.nickname || client.clientName || client.client?.name || "";
+        return displayName.toLowerCase().includes(nameLower);
+      });
+      // Sort by match relevance - names starting with search term first
+      result.sort((a, b) => {
+        const aName = (a.nickname || a.clientName || a.client?.name || "").toLowerCase();
+        const bName = (b.nickname || b.clientName || b.client?.name || "").toLowerCase();
+        const aStarts = aName.startsWith(nameLower) ? 0 : 1;
+        const bStarts = bName.startsWith(nameLower) ? 0 : 1;
+        return aStarts - bStarts;
+      });
+    }
+    
+    // Filter by email
+    if (searchEmail.trim()) {
+      const emailLower = searchEmail.toLowerCase();
+      result = result.filter(client => {
+        const email = client.client?.email || "";
+        return email.toLowerCase().includes(emailLower);
+      });
+      // Sort by match relevance
+      result.sort((a, b) => {
+        const aEmail = (a.client?.email || "").toLowerCase();
+        const bEmail = (b.client?.email || "").toLowerCase();
+        const aStarts = aEmail.startsWith(emailLower) ? 0 : 1;
+        const bStarts = bEmail.startsWith(emailLower) ? 0 : 1;
+        return aStarts - bStarts;
+      });
+    }
+    
+    // Filter by reference number (clientOrdinal)
+    if (searchRef.trim()) {
+      result = result.filter(client => {
+        const ordinal = String(client.clientOrdinal || "");
+        return ordinal.includes(searchRef.trim());
+      });
+    }
+    
+    return result;
+  }, [clients, searchName, searchEmail, searchRef]);
 
   const addClientMutation = useMutation({
     mutationFn: async () => {
@@ -1448,9 +1504,51 @@ export default function OrganizationDashboard() {
       )}
 
       <Card>
-        <CardHeader>
-          <CardTitle>Your Clients</CardTitle>
-          <CardDescription>Monitor the check-in status of all your clients</CardDescription>
+        <CardHeader className="space-y-4">
+          <div>
+            <CardTitle>Your Clients</CardTitle>
+            <CardDescription>
+              {clients && clients.length > 0 
+                ? `${filteredClients.length} of ${clients.length} clients`
+                : "Monitor the check-in status of all your clients"}
+            </CardDescription>
+          </div>
+          
+          {/* Search Fields */}
+          {clients && clients.length > 0 && (
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name..."
+                  value={searchName}
+                  onChange={(e) => setSearchName(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-client-name"
+                />
+              </div>
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by email..."
+                  value={searchEmail}
+                  onChange={(e) => setSearchEmail(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-client-email"
+                />
+              </div>
+              <div className="sm:w-32 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Ref #..."
+                  value={searchRef}
+                  onChange={(e) => setSearchRef(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-client-ref"
+                />
+              </div>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {!clients || clients.length === 0 ? (
@@ -1459,9 +1557,22 @@ export default function OrganizationDashboard() {
               <p>No clients yet</p>
               <p className="text-sm">Add clients to start monitoring their safety</p>
             </div>
+          ) : filteredClients.length === 0 ? (
+            <div className="text-center py-8">
+              <Search className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <p className="text-muted-foreground">No clients match your search</p>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="mt-2"
+                onClick={() => { setSearchName(""); setSearchEmail(""); setSearchRef(""); }}
+              >
+                Clear search
+              </Button>
+            </div>
           ) : (
             <div className="space-y-4">
-              {clients.map((client) => (
+              {filteredClients.map((client) => (
                 <div 
                   key={client.id} 
                   className={`flex items-center justify-between p-4 border rounded-lg hover-elevate ${client.clientStatus !== "active" ? "opacity-60" : ""}`}
