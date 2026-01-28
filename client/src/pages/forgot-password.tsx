@@ -58,7 +58,7 @@ export default function ForgotPassword() {
             </div>
             <CardTitle className="text-2xl">Check Your Email</CardTitle>
             <CardDescription>
-              We've sent a password reset link to your email address. Please check your inbox and follow the instructions.
+              We've sent a password reset link to your email address. Please check your inbox and follow the instructions. The email can take up to 10 minutes to arrive.
             </CardDescription>
           </CardHeader>
           <CardContent>
