@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, Plus, RotateCcw } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import type { OrganizationDashboardStats, OrganizationClientWithDetails, OrganizationBundle, OrganizationClientProfile, AlertLog, OrgClientStatus, Contact } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
@@ -209,6 +210,27 @@ export default function OrganizationDashboard() {
   });
   const [loadingFeatures, setLoadingFeatures] = useState(false);
   const [savingFeatures, setSavingFeatures] = useState(false);
+
+  // Schedule dialog state
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [scheduleClientId, setScheduleClientId] = useState<string | null>(null);
+  const [scheduleClientName, setScheduleClientName] = useState("");
+  const [scheduleStartTime, setScheduleStartTime] = useState("10:00");
+  const [scheduleIntervalHours, setScheduleIntervalHours] = useState(24);
+
+  // Interval slider values (5 mins to 48 hours)
+  const INTERVAL_VALUES = [0.08, 0.25, 0.5, 1, 2, 3, 4, 6, 8, 12, 24, 36, 48];
+  const hoursToIndex = (hours: number) => {
+    const idx = INTERVAL_VALUES.findIndex(v => v >= hours);
+    return idx >= 0 ? idx : INTERVAL_VALUES.length - 1;
+  };
+  const formatInterval = (hours: number) => {
+    if (hours < 1) {
+      const mins = Math.round(hours * 60);
+      return `${mins} min${mins !== 1 ? 's' : ''}`;
+    }
+    return `${hours} hour${hours !== 1 ? 's' : ''}`;
+  };
 
   const { data: stats, isLoading: statsLoading } = useQuery<OrganizationDashboardStats>({
     queryKey: ["/api/org/dashboard"],
@@ -413,21 +435,26 @@ export default function OrganizationDashboard() {
     },
   });
 
-  const resetSchedulerMutation = useMutation({
-    mutationFn: async ({ clientId }: { clientId: string }) => {
-      const response = await apiRequest("POST", `/api/org/clients/${clientId}/reset-scheduler`);
+  const updateScheduleMutation = useMutation({
+    mutationFn: async ({ clientId, scheduleStartTime, checkInIntervalHours }: { clientId: string; scheduleStartTime: string; checkInIntervalHours: number }) => {
+      const response = await apiRequest("PATCH", `/api/org/clients/${clientId}/schedule`, {
+        scheduleStartTime,
+        checkInIntervalHours,
+      });
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      setShowScheduleDialog(false);
+      setScheduleClientId(null);
       toast({
-        title: "Scheduler reset",
-        description: "The client's check-in timer has been reset.",
+        title: "Schedule updated",
+        description: "The client's check-in schedule has been updated.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to reset scheduler",
+        title: "Failed to update schedule",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
@@ -1375,12 +1402,17 @@ export default function OrganizationDashboard() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => resetSchedulerMutation.mutate({ clientId: client.clientId! })}
-                          disabled={resetSchedulerMutation.isPending}
-                          data-testid={`button-reset-scheduler-${client.clientId}`}
-                          title="Reset check-in timer"
+                          onClick={() => {
+                            setScheduleClientId(client.id);
+                            setScheduleClientName(client.nickname || client.clientName || client.client?.name || "Client");
+                            setScheduleStartTime(client.scheduleStartTime ? new Date(client.scheduleStartTime).toTimeString().slice(0, 5) : "10:00");
+                            setScheduleIntervalHours(client.checkInIntervalHours || 24);
+                            setShowScheduleDialog(true);
+                          }}
+                          data-testid={`button-schedule-${client.clientId}`}
+                          title="Set check-in schedule"
                         >
-                          <RotateCcw className="h-4 w-4 text-blue-500" />
+                          <Clock className="h-4 w-4 text-blue-500" />
                         </Button>
                       </>
                     )}
@@ -2018,6 +2050,103 @@ export default function OrganizationDashboard() {
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending...</>
               ) : (
                 "Send SMS"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Schedule Dialog */}
+      <Dialog open={showScheduleDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowScheduleDialog(false);
+          setScheduleClientId(null);
+          setScheduleClientName("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Check-In Schedule
+            </DialogTitle>
+            <DialogDescription>
+              Set the check-in schedule for {scheduleClientName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="schedule-start-time" className="font-medium">
+                  Schedule Start Time
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Set the time of day their check-in schedule starts from.
+                </p>
+              </div>
+              <Input
+                id="schedule-start-time"
+                type="time"
+                value={scheduleStartTime}
+                onChange={(e) => setScheduleStartTime(e.target.value)}
+                data-testid="input-schedule-start-time"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <Label className="font-medium">Check-In Interval</Label>
+                <p className="text-xs text-muted-foreground">
+                  How long between check-ins before an alert is sent?
+                </p>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">5 mins</span>
+                <span className="text-lg font-semibold text-primary">
+                  {formatInterval(scheduleIntervalHours)}
+                </span>
+                <span className="text-sm text-muted-foreground">48 hours</span>
+              </div>
+              <Slider
+                value={[hoursToIndex(scheduleIntervalHours)]}
+                onValueChange={(value) => setScheduleIntervalHours(INTERVAL_VALUES[value[0]])}
+                min={0}
+                max={INTERVAL_VALUES.length - 1}
+                step={1}
+                className="w-full"
+                data-testid="slider-schedule-interval"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowScheduleDialog(false);
+                setScheduleClientId(null);
+                setScheduleClientName("");
+              }}
+              data-testid="button-cancel-schedule"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (scheduleClientId) {
+                  updateScheduleMutation.mutate({
+                    clientId: scheduleClientId,
+                    scheduleStartTime,
+                    checkInIntervalHours: scheduleIntervalHours,
+                  });
+                }
+              }}
+              disabled={updateScheduleMutation.isPending}
+              data-testid="button-save-schedule"
+            >
+              {updateScheduleMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+              ) : (
+                "Save Schedule"
               )}
             </Button>
           </DialogFooter>
