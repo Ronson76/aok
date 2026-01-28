@@ -271,8 +271,7 @@ export default function Landing() {
                 <span className="text-primary">Stay Connected.</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-lg mx-auto md:mx-0">
-                The personal safety check-in app that alerts your emergency contacts 
-                via email, SMS, and phone calls if something happens to you - with unlimited access to our AI-powered health assistant.
+                A safeguarding and risk mitigation platform for individuals and organisations, alerting contacts via email, SMS, and phone calls in an emergency - with unlimited access to our AI-powered health assistant.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                 <Link href="/onboarding">
