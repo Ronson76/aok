@@ -444,7 +444,7 @@ export function registerAdminRoutes(app: Express) {
         return res.status(404).json({ error: "Client not found in this organization" });
       }
 
-      const success = await organizationStorage.removeClient(organizationId, orgClient.clientId);
+      const success = await organizationStorage.removeClient(organizationId, orgClient.clientId || clientId);
       
       if (!success) {
         return res.status(404).json({ error: "Failed to remove client" });
