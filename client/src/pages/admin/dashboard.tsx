@@ -154,8 +154,12 @@ export default function AdminDashboard() {
   const filteredOrgClients = useMemo(() => {
     let result = [...orgClients];
     
-    // Sort by reference number (clientOrdinal) ascending
-    result.sort((a, b) => (a.clientOrdinal || 0) - (b.clientOrdinal || 0));
+    // Sort alphabetically by reference code
+    result.sort((a, b) => {
+      const aRef = (a.referenceCode || "").toLowerCase();
+      const bRef = (b.referenceCode || "").toLowerCase();
+      return aRef.localeCompare(bRef);
+    });
     
     // Filter by reference number
     if (orgClientSearchRef.trim()) {
@@ -879,7 +883,7 @@ export default function AdminDashboard() {
           </div>
         ) : organizations && organizations.length > 0 ? (
           <div className="space-y-4">
-            {organizations.map((org) => (
+            {[...organizations].sort((a, b) => (a.name || "").localeCompare(b.name || "")).map((org) => (
               <Card key={org.id} className={org.disabled ? "opacity-60" : ""}>
                 <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
                   <div>

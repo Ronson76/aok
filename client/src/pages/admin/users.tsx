@@ -72,6 +72,13 @@ export default function AdminUsers() {
     
     let result = [...users];
     
+    // Default sort: alphabetically by name
+    result.sort((a, b) => {
+      const aName = (a.name || "").toLowerCase();
+      const bName = (b.name || "").toLowerCase();
+      return aName.localeCompare(bName);
+    });
+    
     // Filter by name
     if (searchName.trim()) {
       const nameLower = searchName.toLowerCase();
