@@ -490,6 +490,14 @@ export type BundleUsage = typeof bundleUsage.$inferSelect;
 export const orgClientRegistrationStatuses = ["pending_sms", "pending_registration", "registered"] as const;
 export type OrgClientRegistrationStatus = typeof orgClientRegistrationStatuses[number];
 
+// Emergency contact type for org-managed clients
+export interface OrgClientEmergencyContact {
+  name: string;
+  email: string;
+  phone: string;
+  relationship?: string;
+}
+
 export const organizationClients = pgTable("organization_clients", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -505,6 +513,8 @@ export const organizationClients = pgTable("organization_clients", {
   scheduleStartTime: timestamp("schedule_start_time"),
   checkInIntervalHours: integer("check_in_interval_hours").default(24),
   addedAt: timestamp("added_at").notNull().defaultNow(),
+  // Emergency contacts for org-managed clients (up to 3, stored as JSON)
+  emergencyContacts: jsonb("emergency_contacts").$type<OrgClientEmergencyContact[]>().default([]),
   // Feature controls - organizations can enable/disable features for each client (all ON by default)
   featureWellbeingAi: boolean("feature_wellbeing_ai").notNull().default(true),
   featureShakeToAlert: boolean("feature_shake_to_alert").notNull().default(true),
@@ -640,6 +650,7 @@ export interface OrganizationClientWithDetails {
   scheduleStartTime?: Date | null;
   checkInIntervalHours?: number | null;
   addedAt: Date;
+  emergencyContacts: OrgClientEmergencyContact[];
   client: {
     id: string;
     name: string;
