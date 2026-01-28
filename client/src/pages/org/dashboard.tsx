@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, Search } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -1637,10 +1637,23 @@ export default function OrganizationDashboard() {
                   <div className="flex items-center gap-2">
                     {getStatusBadge(client.status.status)}
                     {client.hasActiveEmergency && (
-                      <Badge variant="destructive" className="animate-pulse" data-testid={`badge-emergency-${client.clientId}`}>
-                        <AlertOctagon className="h-3 w-3 mr-1" />
-                        SOS Active
-                      </Badge>
+                      <>
+                        <Badge variant="destructive" className="animate-pulse" data-testid={`badge-emergency-${client.clientId}`}>
+                          <AlertOctagon className="h-3 w-3 mr-1" />
+                          SOS Active
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deactivateAlertMutation.mutate(client.clientId || client.id)}
+                          disabled={deactivateAlertMutation.isPending}
+                          className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+                          data-testid={`button-deactivate-alert-${client.clientId}`}
+                        >
+                          {deactivateAlertMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellOff className="h-4 w-4 mr-1" />}
+                          Deactivate Alert
+                        </Button>
+                      </>
                     )}
                     {client.clientStatus === "active" ? (
                       <Button
