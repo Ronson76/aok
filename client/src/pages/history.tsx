@@ -109,7 +109,7 @@ function DayRow({ day, defaultOpen = false }: { day: DayData, defaultOpen?: bool
           <CardContent className="py-3 flex items-center gap-3">
             <div className="text-left min-w-[80px]">
               <p className="font-medium text-sm">{day.label}</p>
-              <p className="text-xs text-muted-foreground">{format(day.date, "MMM d")}</p>
+              <p className="text-xs text-muted-foreground">{format(day.date, "d MMM")}</p>
             </div>
             
             <div className="flex-1 flex items-center gap-3">
