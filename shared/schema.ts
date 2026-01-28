@@ -650,6 +650,9 @@ export interface OrganizationClientWithDetails {
   referenceCode?: string | null;
   clientName?: string | null;
   clientPhone?: string | null;
+  clientEmail?: string | null;
+  alertsEnabled?: boolean;
+  hasActiveEmergency?: boolean;
   scheduleStartTime?: Date | null;
   checkInIntervalHours?: number | null;
   addedAt: Date;

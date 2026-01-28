@@ -2231,6 +2231,9 @@ class OrganizationStorage implements IOrganizationStorage {
           referenceCode: row.orgClient.referenceCode,
           clientName: row.orgClient.clientName,
           clientPhone: row.orgClient.clientPhone,
+          clientEmail: row.orgClient.clientEmail,
+          alertsEnabled: row.orgClient.alertsEnabled ?? true,
+          hasActiveEmergency: false,
           scheduleStartTime: row.orgClient.scheduleStartTime,
           checkInIntervalHours: row.orgClient.checkInIntervalHours,
           addedAt: row.orgClient.addedAt,
@@ -2263,6 +2266,17 @@ class OrganizationStorage implements IOrganizationStorage {
       const lastAlert = alertLogs.length > 0 ? alertLogs[0] : null;
       const alertCounts = await this.getClientAlertCounts(row.client.id);
       
+      // Check for active emergency alert
+      const activeEmergency = await getDb()
+        .select({ id: activeEmergencyAlerts.id })
+        .from(activeEmergencyAlerts)
+        .where(
+          and(
+            eq(activeEmergencyAlerts.userId, row.client.id),
+            eq(activeEmergencyAlerts.isActive, true)
+          )
+        );
+      
       results.push({
         id: row.orgClient.id,
         clientId: row.orgClient.clientId,
@@ -2273,6 +2287,9 @@ class OrganizationStorage implements IOrganizationStorage {
         referenceCode: row.orgClient.referenceCode,
         clientName: row.orgClient.clientName,
         clientPhone: row.orgClient.clientPhone,
+        clientEmail: row.orgClient.clientEmail,
+        alertsEnabled: row.orgClient.alertsEnabled ?? true,
+        hasActiveEmergency: activeEmergency.length > 0,
         scheduleStartTime: row.orgClient.scheduleStartTime,
         checkInIntervalHours: row.orgClient.checkInIntervalHours,
         addedAt: row.orgClient.addedAt,

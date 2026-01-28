@@ -339,6 +339,28 @@ export default function OrganizationDashboard() {
     },
   });
 
+  const deactivateAlertMutation = useMutation({
+    mutationFn: async (clientId: string) => {
+      const response = await apiRequest("POST", `/api/org/clients/${clientId}/deactivate-alert`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      toast({
+        title: "Emergency alert deactivated",
+        description: "The client's emergency alert has been deactivated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to deactivate alert",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const registerClientMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/org/clients/register", {
@@ -1935,6 +1957,34 @@ export default function OrganizationDashboard() {
                     data-testid="switch-alerts-enabled"
                   />
                 </div>
+                
+                {selectedClient.hasActiveEmergency && (
+                  <div className="flex items-center justify-between p-4 border border-destructive rounded-lg bg-destructive/10">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-full bg-destructive/20 p-2">
+                        <AlertOctagon className="h-5 w-5 text-destructive" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-destructive">Active Emergency Alert</p>
+                        <p className="text-sm text-muted-foreground">
+                          This client has an active SOS alert
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      onClick={() => deactivateAlertMutation.mutate(selectedClient.id)}
+                      disabled={deactivateAlertMutation.isPending}
+                      data-testid="button-deactivate-alert"
+                    >
+                      {deactivateAlertMutation.isPending ? (
+                        <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Deactivating...</>
+                      ) : (
+                        "Deactivate Alert"
+                      )}
+                    </Button>
+                  </div>
+                )}
                 
                 {loadingAlerts ? (
                   <div className="flex items-center justify-center py-8">
