@@ -28,18 +28,22 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
-  Users, LogOut, Shield, ShieldCheck, Trash2, ArrowLeft, Building2, User, Ban, CheckCircle, Plus, Loader2, Eye, EyeOff, Settings2
+  Users, LogOut, Shield, ShieldCheck, Trash2, ArrowLeft, Building2, User, Ban, CheckCircle, Plus, Loader2, Eye, EyeOff, Settings2, Search
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest } from "@/lib/queryClient";
 import type { UserProfile, UserFeatureSettings } from "@shared/schema";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 export default function AdminUsers() {
   const { admin, logout } = useAdmin();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Search state
+  const [searchName, setSearchName] = useState("");
+  const [searchEmail, setSearchEmail] = useState("");
   
   const [showCreateOrgDialog, setShowCreateOrgDialog] = useState(false);
   const [orgName, setOrgName] = useState("");
@@ -61,6 +65,43 @@ export default function AdminUsers() {
   const { data: users, isLoading } = useQuery<UserProfile[]>({
     queryKey: ["/api/admin/users"],
   });
+
+  // Filter and sort users based on search terms
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    
+    let result = [...users];
+    
+    // Filter by name
+    if (searchName.trim()) {
+      const nameLower = searchName.toLowerCase();
+      result = result.filter(user => 
+        user.name?.toLowerCase().includes(nameLower)
+      );
+      // Sort by match relevance - names starting with search term first
+      result.sort((a, b) => {
+        const aStarts = a.name?.toLowerCase().startsWith(nameLower) ? 0 : 1;
+        const bStarts = b.name?.toLowerCase().startsWith(nameLower) ? 0 : 1;
+        return aStarts - bStarts;
+      });
+    }
+    
+    // Filter by email
+    if (searchEmail.trim()) {
+      const emailLower = searchEmail.toLowerCase();
+      result = result.filter(user => 
+        user.email?.toLowerCase().includes(emailLower)
+      );
+      // Sort by match relevance - emails starting with search term first
+      result.sort((a, b) => {
+        const aStarts = a.email?.toLowerCase().startsWith(emailLower) ? 0 : 1;
+        const bStarts = b.email?.toLowerCase().startsWith(emailLower) ? 0 : 1;
+        return aStarts - bStarts;
+      });
+    }
+    
+    return result;
+  }, [users, searchName, searchEmail]);
 
   const deleteMutation = useMutation({
     mutationFn: async (userId: string) => {
@@ -251,22 +292,48 @@ export default function AdminUsers() {
         </div>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                All Users
-              </CardTitle>
-              <CardDescription>
-                {users?.length || 0} registered users
-              </CardDescription>
+          <CardHeader className="space-y-4">
+            <div className="flex flex-row items-center justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  All Users
+                </CardTitle>
+                <CardDescription>
+                  {filteredUsers.length} of {users?.length || 0} registered users
+                </CardDescription>
+              </div>
+              {isSuperAdmin && (
+                <Button onClick={() => setShowCreateOrgDialog(true)} data-testid="button-create-org">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Organisation
+                </Button>
+              )}
             </div>
-            {isSuperAdmin && (
-              <Button onClick={() => setShowCreateOrgDialog(true)} data-testid="button-create-org">
-                <Plus className="w-4 h-4 mr-2" />
-                Create Organisation
-              </Button>
-            )}
+            
+            {/* Search Fields */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name..."
+                  value={searchName}
+                  onChange={(e) => setSearchName(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-name"
+                />
+              </div>
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by email..."
+                  value={searchEmail}
+                  onChange={(e) => setSearchEmail(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-email"
+                />
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -281,9 +348,9 @@ export default function AdminUsers() {
                   </div>
                 ))}
               </div>
-            ) : users && users.length > 0 ? (
+            ) : filteredUsers.length > 0 ? (
               <div className="space-y-3">
-                {users.map((user) => (
+                {filteredUsers.map((user) => (
                   <div 
                     key={user.id} 
                     className="flex items-center justify-between p-4 border rounded-lg hover-elevate"
@@ -380,6 +447,19 @@ export default function AdminUsers() {
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : (searchName || searchEmail) ? (
+              <div className="text-center py-8">
+                <Search className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <p className="text-muted-foreground">No users match your search</p>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => { setSearchName(""); setSearchEmail(""); }}
+                >
+                  Clear search
+                </Button>
               </div>
             ) : (
               <p className="text-muted-foreground text-center py-8">No users found</p>
