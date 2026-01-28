@@ -73,6 +73,7 @@ export default function OrganizationDashboard() {
   const [editNickname, setEditNickname] = useState("");
   const [editClientName, setEditClientName] = useState("");
   const [editClientPhone, setEditClientPhone] = useState("");
+  const [editCountryCode, setEditCountryCode] = useState("+44");
   
   // Emergency contacts state
   const [showEmergencyContactsDialog, setShowEmergencyContactsDialog] = useState(false);
@@ -755,18 +756,46 @@ export default function OrganizationDashboard() {
     setEditingClient(client);
     setEditNickname(client.nickname || "");
     setEditClientName(client.clientName || client.client?.name || "");
-    setEditClientPhone(client.clientPhone || client.client?.mobileNumber || "");
+    
+    // Parse existing phone number to extract country code and local number
+    const existingPhone = client.clientPhone || client.client?.mobileNumber || "";
+    if (existingPhone.startsWith("+44")) {
+      setEditCountryCode("+44");
+      setEditClientPhone(existingPhone.slice(3));
+    } else if (existingPhone.startsWith("0044")) {
+      setEditCountryCode("+44");
+      setEditClientPhone(existingPhone.slice(4));
+    } else if (existingPhone.startsWith("44")) {
+      setEditCountryCode("+44");
+      setEditClientPhone(existingPhone.slice(2));
+    } else if (existingPhone.startsWith("0")) {
+      setEditCountryCode("+44");
+      setEditClientPhone(existingPhone.slice(1)); // Remove leading zero
+    } else {
+      setEditCountryCode("+44");
+      setEditClientPhone(existingPhone);
+    }
     setShowEditClientDialog(true);
+  };
+
+  // Validate UK phone number (should be 10 digits after country code)
+  const isValidUKPhone = (phone: string) => {
+    const digitsOnly = phone.replace(/\D/g, "");
+    return digitsOnly.length === 10;
   };
 
   const handleSaveClientDetails = () => {
     if (!editingClient) return;
+    
+    // Combine country code with phone number
+    const fullPhone = editClientPhone ? `${editCountryCode}${editClientPhone.replace(/\D/g, "")}` : undefined;
+    
     updateClientDetailsMutation.mutate({
       clientId: editingClient.id,
       details: {
         nickname: editNickname || undefined,
         clientName: editClientName || undefined,
-        clientPhone: editClientPhone || undefined,
+        clientPhone: fullPhone,
       },
     });
   };
@@ -862,7 +891,7 @@ export default function OrganizationDashboard() {
             <DialogTrigger asChild>
               <Button variant="outline" data-testid="button-add-client" disabled={!hasSeatsAvailable}>
                 <UserPlus className="h-4 w-4 mr-2" />
-                Add Existing
+                Add Client
               </Button>
             </DialogTrigger>
           <DialogContent>
@@ -2536,13 +2565,47 @@ export default function OrganizationDashboard() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="editClientPhone">Phone Number</Label>
-              <Input
-                id="editClientPhone"
-                placeholder="+44 7700 900000"
-                value={editClientPhone}
-                onChange={(e) => setEditClientPhone(e.target.value)}
-                data-testid="input-edit-client-phone"
-              />
+              <div className="flex gap-2">
+                <Select value={editCountryCode} onValueChange={setEditCountryCode}>
+                  <SelectTrigger className="w-24" data-testid="select-country-code">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="+44">+44 UK</SelectItem>
+                    <SelectItem value="+1">+1 US</SelectItem>
+                    <SelectItem value="+353">+353 IE</SelectItem>
+                    <SelectItem value="+33">+33 FR</SelectItem>
+                    <SelectItem value="+49">+49 DE</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="flex-1 relative">
+                  <Input
+                    id="editClientPhone"
+                    placeholder="7700 900000"
+                    value={editClientPhone}
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/[^\d\s]/g, "");
+                      // Auto-remove leading zero
+                      if (value.startsWith("0")) {
+                        value = value.slice(1);
+                      }
+                      setEditClientPhone(value);
+                    }}
+                    className={editClientPhone && !isValidUKPhone(editClientPhone) ? "border-yellow-500" : ""}
+                    data-testid="input-edit-client-phone"
+                  />
+                  {editClientPhone && !isValidUKPhone(editClientPhone) && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                    </div>
+                  )}
+                </div>
+              </div>
+              {editClientPhone && !isValidUKPhone(editClientPhone) && (
+                <p className="text-xs text-yellow-600">
+                  UK mobile numbers should be 10 digits (e.g., 7700 900000)
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
