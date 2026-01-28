@@ -671,6 +671,11 @@ function Router() {
     );
   }
 
+  // Org pages have their own layout/header, don't use AppLayout
+  if (location.startsWith("/org/dashboard") || location.startsWith("/org/safeguarding")) {
+    return <AppRoutes />;
+  }
+
   return <AppLayout />;
 }
 
