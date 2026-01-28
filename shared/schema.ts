@@ -509,7 +509,10 @@ export const organizationClients = pgTable("organization_clients", {
   registrationStatus: text("registration_status").notNull().$type<OrgClientRegistrationStatus>().default("pending_sms"),
   referenceCode: varchar("reference_code", { length: 8 }).unique(),
   clientPhone: text("client_phone"),
+  clientEmail: text("client_email"),
   clientName: text("client_name"),
+  // Alerts toggle - organisations can turn alerts on/off for each client
+  alertsEnabled: boolean("alerts_enabled").notNull().default(true),
   scheduleStartTime: timestamp("schedule_start_time"),
   checkInIntervalHours: integer("check_in_interval_hours").default(24),
   addedAt: timestamp("added_at").notNull().defaultNow(),

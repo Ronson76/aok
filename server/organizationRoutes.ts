@@ -250,6 +250,8 @@ export function registerOrganizationRoutes(app: Express) {
     nickname: z.string().optional(),
     clientName: z.string().optional(),
     clientPhone: z.string().optional(),
+    clientEmail: z.string().email().optional().or(z.literal("")),
+    alertsEnabled: z.boolean().optional(),
   });
 
   app.patch("/api/org/clients/:clientId/details", requireOrganization, async (req, res) => {
