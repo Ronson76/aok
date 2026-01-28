@@ -667,15 +667,22 @@ export default function AdminDashboard() {
                     <p className="text-muted-foreground text-center py-4">No emergency alerts</p>
                   ) : (
                     <div className="space-y-3">
-                      {stats.recentEmergencyAlerts.slice(0, 5).map((alert) => (
+                      {stats.recentEmergencyAlerts.slice(0, 5).map((alert: any) => (
                         <div 
                           key={alert.id} 
                           className="flex items-start justify-between p-3 rounded-lg bg-red-500/10 border border-red-500/20"
                           data-testid={`emergency-alert-${alert.id}`}
                         >
                           <div className="space-y-1">
-                            <p className="font-medium">{alert.userName}</p>
+                            <p className="font-medium">
+                              {alert.orgClientReferenceCode ? alert.orgClientReferenceCode : alert.userName}
+                            </p>
                             <p className="text-sm text-muted-foreground">{alert.userEmail}</p>
+                            {alert.organizationName && (
+                              <p className="text-xs text-muted-foreground italic">
+                                Client of {alert.organizationName}
+                              </p>
+                            )}
                             <p className="text-xs text-muted-foreground">
                               Notified: {alert.contactsNotified.join(", ")}
                             </p>
