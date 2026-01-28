@@ -110,6 +110,17 @@ Preferred communication style: Simple, everyday language.
   - Remove clients
   - Send reference number reminder via SMS
 
+### Future: Real-time Push Notifications
+When native apps are deployed, client-side changes from admin/org should trigger real-time push notifications:
+- Emergency alert deactivated → Notify client their alert was cancelled
+- Check-in schedule updated → Notify client of new schedule
+- Feature preferences changed → Refresh client app features
+- Client paused/resumed → Notify client of status change
+- Password reset sent → Deep link to password reset
+- Settings synced → Silent push to refresh app state
+
+Infrastructure already in place: Push scheduler (30s intervals), Service Worker, Web Push integration.
+
 ### Build Tools
 - Vite
 - esbuild
