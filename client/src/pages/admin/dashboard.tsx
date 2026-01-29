@@ -646,6 +646,11 @@ export default function AdminDashboard() {
                   <div className="text-2xl font-bold" data-testid="stat-total-users">
                     {stats.totalUsers}
                   </div>
+                  <Link href="/admin/users-report">
+                    <Button variant="link" size="sm" className="px-0 mt-2" data-testid="button-view-all-total-users">
+                      View All
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
 
@@ -658,6 +663,11 @@ export default function AdminDashboard() {
                   <div className="text-2xl font-bold" data-testid="stat-organizations">
                     {stats.totalOrganizations}
                   </div>
+                  <Link href="/admin/organisations-report">
+                    <Button variant="link" size="sm" className="px-0 mt-2" data-testid="button-view-all-organisations">
+                      View All
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
 
@@ -670,6 +680,11 @@ export default function AdminDashboard() {
                   <div className="text-2xl font-bold" data-testid="stat-individuals">
                     {stats.totalIndividuals}
                   </div>
+                  <Link href="/admin/users-report">
+                    <Button variant="link" size="sm" className="px-0 mt-2" data-testid="button-view-all-individuals">
+                      View All
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
 
@@ -682,6 +697,11 @@ export default function AdminDashboard() {
                   <div className="text-2xl font-bold" data-testid="stat-checkins">
                     {stats.totalCheckIns}
                   </div>
+                  <Link href="/admin/checkins-report">
+                    <Button variant="link" size="sm" className="px-0 mt-2" data-testid="button-view-all-checkins">
+                      View All
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
 
@@ -711,6 +731,11 @@ export default function AdminDashboard() {
                   <div className="text-2xl font-bold" data-testid="stat-bundles">
                     {stats.activeBundles}
                   </div>
+                  <Link href="/admin/bundles">
+                    <Button variant="link" size="sm" className="px-0 mt-2" data-testid="button-view-all-bundles">
+                      View All
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
 
@@ -723,6 +748,11 @@ export default function AdminDashboard() {
                   <div className="text-2xl font-bold" data-testid="stat-seats-allocated">
                     {stats.totalSeatsAllocated}
                   </div>
+                  <Link href="/admin/bundles">
+                    <Button variant="link" size="sm" className="px-0 mt-2" data-testid="button-view-all-seats-allocated">
+                      View All
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
 
@@ -735,6 +765,11 @@ export default function AdminDashboard() {
                   <div className="text-2xl font-bold" data-testid="stat-seats-used">
                     {stats.totalSeatsUsed}
                   </div>
+                  <Link href="/admin/bundles">
+                    <Button variant="link" size="sm" className="px-0 mt-2" data-testid="button-view-all-seats-used">
+                      View All
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
 
@@ -747,6 +782,11 @@ export default function AdminDashboard() {
                   <div className="text-2xl font-bold text-red-500" data-testid="stat-emergency-alerts">
                     {stats.totalEmergencyAlerts}
                   </div>
+                  <Link href="/admin/emergency-alerts-report">
+                    <Button variant="link" size="sm" className="px-0 mt-2" data-testid="button-view-all-emergency-alerts">
+                      View All
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             </div>
