@@ -15,7 +15,7 @@ import {
   CaseStatus, RiskLevel
 } from "@shared/schema";
 import { ensureDb } from "./db";
-import { eq, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray } from "drizzle-orm";
+import { eq, ne, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray } from "drizzle-orm";
 import { randomUUID, randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
 import { sendMissedCheckInAlert, sendVoiceAlerts, sendPushNotification } from "./notifications";
@@ -1781,7 +1781,7 @@ class AdminStorage implements IAdminStorage {
 
     // Get recent users (last 10) with org client info if applicable - exclude organisations
     const recentUsersData = await db.select().from(users)
-      .where(eq(users.isOrganization, false))
+      .where(ne(users.accountType, "organization"))
       .orderBy(desc(users.createdAt))
       .limit(10);
     
@@ -1941,7 +1941,7 @@ class AdminStorage implements IAdminStorage {
     const db = getDb();
     // Filter out organisations - only return actual users
     const allUsers = await db.select().from(users)
-      .where(eq(users.isOrganization, false))
+      .where(ne(users.accountType, "organization"))
       .orderBy(desc(users.createdAt));
     
     const usersWithOrgInfo = await Promise.all(allUsers.map(async (u) => {
