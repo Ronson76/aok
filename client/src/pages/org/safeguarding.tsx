@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Shield, ArrowLeft, AlertTriangle, FileWarning, Folder, Scale, Clock, ChevronDown, ChevronRight, Plus, Eye, Check, X, Search, Filter, AlertCircle, FileText, Users, Activity, TrendingUp, Loader2, MessageSquare, Download } from "lucide-react";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -511,7 +511,7 @@ export default function OrgSafeguardingPage() {
       incident.resolution || "-"
     ]);
     
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 45,
       head: [["Date", "Type", "Severity", "Status", "Description", "Client", "Location", "Resolution"]],
       body: tableData,
@@ -580,7 +580,7 @@ export default function OrgSafeguardingPage() {
       concern.followUpNotes || "-"
     ]);
     
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 45,
       head: [["Date", "Type", "Status", "Description", "Client", "Anonymous", "Follow-up Notes"]],
       body: tableData,
@@ -648,7 +648,7 @@ export default function OrgSafeguardingPage() {
       entry.ipAddress || "-"
     ]);
     
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 45,
       head: [["Date/Time", "Action", "Entity Type", "User Email", "User Role", "IP Address"]],
       body: tableData,
