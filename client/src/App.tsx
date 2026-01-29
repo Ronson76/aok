@@ -52,6 +52,8 @@ import OrganizationStaffLogin from "@/pages/org/staff-login";
 import OrgForgotPassword from "@/pages/org/forgot-password";
 import OrgResetPassword from "@/pages/org/reset-password";
 import OrgSafeguarding from "@/pages/org/safeguarding";
+import OrgMissedCheckInsReport from "@/pages/org/missed-checkins-report";
+import OrgEmergencyAlertsReport from "@/pages/org/emergency-alerts-report";
 import Activate from "@/pages/activate";
 import Pricing from "@/pages/pricing";
 import Onboarding from "@/pages/onboarding";
@@ -198,6 +200,8 @@ function AppRoutes() {
       <Route path="/app/org" component={() => <ProtectedRoute component={OrganizationDashboard} />} />
       <Route path="/org/dashboard" component={() => <ProtectedRoute component={OrganizationDashboard} />} />
       <Route path="/org/safeguarding" component={() => <ProtectedRoute component={OrgSafeguarding} />} />
+      <Route path="/org/missed-checkins" component={() => <ProtectedRoute component={OrgMissedCheckInsReport} />} />
+      <Route path="/org/emergency-alerts" component={() => <ProtectedRoute component={OrgEmergencyAlertsReport} />} />
       <Route path="/app/contacts" component={() => <ProtectedRoute component={Contacts} />} />
       <Route path="/app/history" component={() => <ProtectedRoute component={History} />} />
       <Route path="/app/settings" component={() => <ProtectedRoute component={Settings} allowPaymentBlocked={true} />} />
@@ -682,7 +686,7 @@ function Router() {
   }
 
   // Org pages have their own layout/header, don't use AppLayout
-  if (location.startsWith("/org/dashboard") || location.startsWith("/org/safeguarding")) {
+  if (location.startsWith("/org/dashboard") || location.startsWith("/org/safeguarding") || location.startsWith("/org/missed-checkins") || location.startsWith("/org/emergency-alerts")) {
     return <AppRoutes />;
   }
 

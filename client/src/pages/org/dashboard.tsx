@@ -1478,6 +1478,11 @@ export default function OrganizationDashboard() {
           <CardContent>
             <div className="text-2xl font-bold text-destructive" data-testid="text-clients-overdue">{stats?.clientsOverdue || 0}</div>
             <p className="text-xs text-muted-foreground">Missed check-in</p>
+            <Link href="/org/missed-checkins">
+              <Button variant="link" size="sm" className="px-0 h-auto text-xs" data-testid="link-view-missed-checkins">
+                View All
+              </Button>
+            </Link>
           </CardContent>
         </Card>
         
@@ -1495,20 +1500,23 @@ export default function OrganizationDashboard() {
         )}
       </div>
 
-      {stats?.totalEmergencyAlerts && stats.totalEmergencyAlerts > 0 && (
-        <Card className="border-destructive/50 bg-destructive/5">
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <AlertOctagon className="h-5 w-5 text-destructive" />
-            <CardTitle className="text-sm font-medium text-destructive">Emergency Alerts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive" data-testid="text-emergency-alerts">
-              {stats.totalEmergencyAlerts}
-            </div>
-            <p className="text-xs text-muted-foreground">Total emergency alerts from your clients</p>
-          </CardContent>
-        </Card>
-      )}
+      <Card className={stats?.totalEmergencyAlerts && stats.totalEmergencyAlerts > 0 ? "border-destructive/50 bg-destructive/5" : ""}>
+        <CardHeader className="flex flex-row items-center gap-2 pb-2">
+          <AlertOctagon className={`h-5 w-5 ${stats?.totalEmergencyAlerts && stats.totalEmergencyAlerts > 0 ? "text-destructive" : "text-muted-foreground"}`} />
+          <CardTitle className={`text-sm font-medium ${stats?.totalEmergencyAlerts && stats.totalEmergencyAlerts > 0 ? "text-destructive" : ""}`}>Emergency Alerts</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className={`text-2xl font-bold ${stats?.totalEmergencyAlerts && stats.totalEmergencyAlerts > 0 ? "text-destructive" : "text-muted-foreground"}`} data-testid="text-emergency-alerts">
+            {stats?.totalEmergencyAlerts || 0}
+          </div>
+          <p className="text-xs text-muted-foreground">Total emergency alerts from your clients</p>
+          <Link href="/org/emergency-alerts">
+            <Button variant="link" size="sm" className="px-0 h-auto text-xs" data-testid="link-view-emergency-alerts">
+              View All
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="space-y-4">
