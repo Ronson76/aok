@@ -158,6 +158,17 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  // Get all missed check-ins (for reports)
+  app.get("/api/admin/missed-checkins", adminAuthMiddleware, async (req, res) => {
+    try {
+      const missedCheckIns = await adminStorage.getAllMissedCheckIns();
+      res.json(missedCheckIns);
+    } catch (error) {
+      console.error("Error fetching missed check-ins:", error);
+      res.status(500).json({ error: "Failed to fetch missed check-ins" });
+    }
+  });
+
   // Get all registrations (for reports)
   app.get("/api/admin/registrations", adminAuthMiddleware, async (req, res) => {
     try {
