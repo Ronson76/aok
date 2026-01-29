@@ -1490,4 +1490,28 @@ export function registerOrganizationRoutes(app: Express) {
       res.status(500).json({ error: "Failed to fetch safeguarding summary" });
     }
   });
+
+  // Get missed check-ins for organization's clients
+  app.get("/api/org/missed-checkins", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const missedCheckIns = await organizationStorage.getOrganizationMissedCheckIns(orgId);
+      res.json(missedCheckIns);
+    } catch (error) {
+      console.error("Error fetching missed check-ins:", error);
+      res.status(500).json({ error: "Failed to fetch missed check-ins" });
+    }
+  });
+
+  // Get emergency alerts for organization's clients
+  app.get("/api/org/emergency-alerts", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const alerts = await organizationStorage.getOrganizationEmergencyAlerts(orgId);
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error fetching emergency alerts:", error);
+      res.status(500).json({ error: "Failed to fetch emergency alerts" });
+    }
+  });
 }
