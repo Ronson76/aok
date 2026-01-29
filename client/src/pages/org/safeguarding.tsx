@@ -853,12 +853,15 @@ export default function OrgSafeguardingPage() {
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle>All Incidents</CardTitle>
                   <div className="flex items-center gap-2">
-                    {incidents && incidents.length > 0 && (
-                      <Button variant="outline" onClick={() => openPdfDialog("incidents")} data-testid="button-download-incidents-pdf">
-                        <Download className="h-4 w-4 mr-2" />
-                        Download PDF
-                      </Button>
-                    )}
+                    <Button 
+                      variant="outline" 
+                      onClick={() => openPdfDialog("incidents")} 
+                      disabled={!incidents || incidents.length === 0}
+                      data-testid="button-download-incidents-pdf"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download PDF
+                    </Button>
                     <Button onClick={() => setShowIncidentDialog(true)} data-testid="button-new-incident">
                       <Plus className="h-4 w-4 mr-2" />
                       New Incident
@@ -943,12 +946,15 @@ export default function OrgSafeguardingPage() {
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle>Welfare Concerns</CardTitle>
                   <div className="flex items-center gap-2">
-                    {concerns && concerns.length > 0 && (
-                      <Button variant="outline" onClick={() => openPdfDialog("concerns")} data-testid="button-download-concerns-pdf">
-                        <Download className="h-4 w-4 mr-2" />
-                        Download PDF
-                      </Button>
-                    )}
+                    <Button 
+                      variant="outline" 
+                      onClick={() => openPdfDialog("concerns")} 
+                      disabled={!concerns || concerns.length === 0}
+                      data-testid="button-download-concerns-pdf"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download PDF
+                    </Button>
                     <Button onClick={() => setShowConcernDialog(true)} data-testid="button-new-concern">
                       <Plus className="h-4 w-4 mr-2" />
                       New Concern
@@ -1202,12 +1208,15 @@ export default function OrgSafeguardingPage() {
                     <CardTitle>Audit Trail</CardTitle>
                     <CardDescription>Complete log of safeguarding actions</CardDescription>
                   </div>
-                  {auditTrail && auditTrail.length > 0 && (
-                    <Button variant="outline" onClick={() => openPdfDialog("audit")} data-testid="button-download-audit-pdf">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download PDF
-                    </Button>
-                  )}
+                  <Button 
+                    variant="outline" 
+                    onClick={() => openPdfDialog("audit")} 
+                    disabled={!auditTrail || auditTrail.length === 0}
+                    data-testid="button-download-audit-pdf"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
