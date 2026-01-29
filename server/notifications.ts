@@ -518,6 +518,7 @@ export async function sendContactConfirmationEmail(
   
   const confirmUrl = `${baseUrl}/api/contacts/confirm?token=${confirmationToken}&action=accept`;
   const declineUrl = `${baseUrl}/api/contacts/confirm?token=${confirmationToken}&action=decline`;
+  const confirmPageUrl = `${baseUrl}/confirm-contact?token=${confirmationToken}`;
   
   const emailSubject = `Please confirm: Emergency contact request from aok`;
   
@@ -625,8 +626,8 @@ Thank you,
     if (contact.phone && contact.phoneType !== "landline") {
       console.log(`[NOTIFICATION] Attempting SMS fallback for ${contactName}`);
       const smsBody = isOrganization
-        ? `aok: ${userName} wants to add you as an emergency contact for Reference ${user.referenceId}. Accept: ${confirmUrl} or Decline: ${declineUrl} (Expires in 10 mins)`
-        : `aok: ${userName} wants to add you as their emergency contact. Accept: ${confirmUrl} or Decline: ${declineUrl} (Expires in 10 mins)`;
+        ? `aok: ${userName} wants to add you as an emergency contact (Ref: ${user.referenceId}). Tap to respond: ${confirmPageUrl}`
+        : `aok: ${userName} wants to add you as their emergency contact. Tap to respond: ${confirmPageUrl}`;
       
       const smsResult = await sendSMS(contact.phone, smsBody);
       smsSent = smsResult.success;

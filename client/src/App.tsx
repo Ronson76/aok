@@ -59,6 +59,7 @@ import Pricing from "@/pages/pricing";
 import Onboarding from "@/pages/onboarding";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
+import ConfirmContact from "@/pages/confirm-contact";
 import { TermsModal } from "@/components/terms-modal";
 
 function PaymentBlockedScreen() {
@@ -659,6 +660,10 @@ function Router() {
 
   if (location === "/privacy") {
     return <Privacy />;
+  }
+
+  if (location.startsWith("/confirm-contact")) {
+    return <ConfirmContact />;
   }
 
   if (location === "/admin/login") {
