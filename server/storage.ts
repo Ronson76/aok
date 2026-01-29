@@ -1778,8 +1778,11 @@ class AdminStorage implements IAdminStorage {
     const totalSeatsAllocated = seatsResult[0]?.totalSeats || 0;
     const totalSeatsUsed = seatsResult[0]?.usedSeats || 0;
 
-    // Get recent users (last 10) with org client info if applicable
-    const recentUsersData = await db.select().from(users).orderBy(desc(users.createdAt)).limit(10);
+    // Get recent users (last 10) with org client info if applicable - exclude organisations
+    const recentUsersData = await db.select().from(users)
+      .where(eq(users.isOrganization, false))
+      .orderBy(desc(users.createdAt))
+      .limit(10);
     
     // For each user, check if they're an org client and get their reference code and org name
     const recentUsersWithOrgInfo = await Promise.all(recentUsersData.map(async (u) => {
