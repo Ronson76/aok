@@ -1644,6 +1644,9 @@ export interface IAdminStorage {
   
   // User management
   getAllUsers(): Promise<UserProfile[]>;
+  getAllUsersWithOrgInfo(): Promise<any[]>;
+  getAllEmergencyAlerts(): Promise<any[]>;
+  getAllRegistrations(): Promise<{ date: string; count: number; users: any[] }[]>;
   deleteUser(userId: string): Promise<boolean>;
   setUserDisabled(userId: string, disabled: boolean): Promise<UserProfile | undefined>;
   
@@ -1928,6 +1931,143 @@ class AdminStorage implements IAdminStorage {
       const { passwordHash, ...profile } = u;
       return profile;
     });
+  }
+
+  async getAllUsersWithOrgInfo(): Promise<any[]> {
+    const db = getDb();
+    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+    
+    const usersWithOrgInfo = await Promise.all(allUsers.map(async (u) => {
+      const { passwordHash, ...profile } = u;
+      
+      // Check if this user is an organization client
+      const orgClientRecord = await db.select({
+        referenceCode: organizationClients.referenceCode,
+        organizationId: organizationClients.organizationId,
+      })
+        .from(organizationClients)
+        .where(eq(organizationClients.clientId, u.id))
+        .limit(1);
+      
+      if (orgClientRecord.length > 0 && orgClientRecord[0].organizationId) {
+        const orgUser = await db.select({ name: users.name })
+          .from(users)
+          .where(eq(users.id, orgClientRecord[0].organizationId))
+          .limit(1);
+        
+        return {
+          ...profile,
+          orgClientReferenceCode: orgClientRecord[0].referenceCode,
+          organizationName: orgUser[0]?.name || null,
+        };
+      }
+      
+      return { ...profile, orgClientReferenceCode: null, organizationName: null };
+    }));
+    
+    return usersWithOrgInfo;
+  }
+
+  async getAllEmergencyAlerts(): Promise<any[]> {
+    const db = getDb();
+    
+    const emergencyData = await db.select({
+      id: alertLogs.id,
+      userId: alertLogs.userId,
+      timestamp: alertLogs.timestamp,
+      contactsNotified: alertLogs.contactsNotified,
+      message: alertLogs.message,
+      userName: users.name,
+      userEmail: users.email,
+    })
+      .from(alertLogs)
+      .leftJoin(users, eq(alertLogs.userId, users.id))
+      .where(sql`${alertLogs.message} LIKE '%EMERGENCY%'`)
+      .orderBy(desc(alertLogs.timestamp));
+
+    // Enhance with org client info
+    const alertsWithOrgInfo = await Promise.all(emergencyData.map(async (r) => {
+      const orgClientRecord = await db.select({
+        referenceCode: organizationClients.referenceCode,
+        organizationId: organizationClients.organizationId,
+      })
+        .from(organizationClients)
+        .where(eq(organizationClients.clientId, r.userId))
+        .limit(1);
+      
+      let orgClientReferenceCode: string | null = null;
+      let organizationName: string | null = null;
+      
+      if (orgClientRecord.length > 0 && orgClientRecord[0].organizationId) {
+        orgClientReferenceCode = orgClientRecord[0].referenceCode;
+        const orgUser = await db.select({ name: users.name })
+          .from(users)
+          .where(eq(users.id, orgClientRecord[0].organizationId))
+          .limit(1);
+        organizationName = orgUser[0]?.name || null;
+      }
+      
+      return {
+        id: r.id,
+        userId: r.userId,
+        userName: r.userName || "Unknown",
+        userEmail: r.userEmail || "Unknown",
+        timestamp: r.timestamp,
+        contactsNotified: r.contactsNotified,
+        orgClientReferenceCode,
+        organizationName,
+      };
+    }));
+
+    return alertsWithOrgInfo;
+  }
+
+  async getAllRegistrations(): Promise<{ date: string; count: number; users: any[] }[]> {
+    const db = getDb();
+    
+    // Get all users grouped by registration date
+    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+    
+    // Group by date
+    const dateMap: Record<string, any[]> = {};
+    
+    for (const u of allUsers) {
+      const { passwordHash, ...profile } = u;
+      const dateStr = u.createdAt ? new Date(u.createdAt).toISOString().split('T')[0] : 'unknown';
+      
+      if (!dateMap[dateStr]) {
+        dateMap[dateStr] = [];
+      }
+      
+      // Check if this user is an organization client
+      const orgClientRecord = await db.select({
+        referenceCode: organizationClients.referenceCode,
+        organizationId: organizationClients.organizationId,
+      })
+        .from(organizationClients)
+        .where(eq(organizationClients.clientId, u.id))
+        .limit(1);
+      
+      let enrichedUser = { ...profile, orgClientReferenceCode: null as string | null, organizationName: null as string | null };
+      
+      if (orgClientRecord.length > 0 && orgClientRecord[0].organizationId) {
+        enrichedUser.orgClientReferenceCode = orgClientRecord[0].referenceCode;
+        const orgUser = await db.select({ name: users.name })
+          .from(users)
+          .where(eq(users.id, orgClientRecord[0].organizationId))
+          .limit(1);
+        enrichedUser.organizationName = orgUser[0]?.name || null;
+      }
+      
+      dateMap[dateStr].push(enrichedUser);
+    }
+    
+    // Convert to array and sort by date descending
+    const result = Object.entries(dateMap)
+      .map(([date, users]) => ({ date, count: users.length, users }))
+      .sort((a, b) => b.date.localeCompare(a.date));
+    
+    return result;
   }
 
   async deleteUser(userId: string): Promise<boolean> {

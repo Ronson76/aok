@@ -480,12 +480,24 @@ export default function OrgSafeguardingPage() {
     const pageWidth = doc.internal.pageSize.getWidth();
     const { label } = getDateRange();
     
-    // Header
-    doc.setFontSize(20);
-    doc.text("Safeguarding Incidents Report", pageWidth / 2, 20, { align: "center" });
+    // Branded header
+    doc.setFillColor(34, 197, 94);
+    doc.rect(0, 0, pageWidth, 35, "F");
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
+    doc.text("aok", 14, 20);
+    
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text("Safeguarding Incidents Report", 14, 28);
+    
     doc.setFontSize(10);
-    doc.text(`Period: ${label}`, pageWidth / 2, 28, { align: "center" });
-    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth / 2, 34, { align: "center" });
+    doc.text(`Period: ${label}`, pageWidth - 14, 20, { align: "right" });
+    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth - 14, 28, { align: "right" });
+    
+    doc.setTextColor(0, 0, 0);
     
     // Table data
     const tableData = filteredIncidents.map(incident => [
@@ -500,18 +512,28 @@ export default function OrgSafeguardingPage() {
     ]);
     
     (doc as any).autoTable({
-      startY: 42,
+      startY: 45,
       head: [["Date", "Type", "Severity", "Status", "Description", "Client", "Location", "Resolution"]],
       body: tableData,
       styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+      headStyles: { fillColor: [34, 197, 94], textColor: 255 },
       columnStyles: {
         4: { cellWidth: 40 },
         7: { cellWidth: 30 }
       }
     });
     
-    doc.save(`safeguarding-incidents-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    // Footer
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128);
+      doc.setFont("helvetica", "normal");
+      doc.text(`aok - Keeping you safe | Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+    }
+    
+    doc.save(`aok-safeguarding-incidents-${format(new Date(), "yyyy-MM-dd")}.pdf`);
     setShowPdfDialog(false);
   };
 
@@ -528,12 +550,24 @@ export default function OrgSafeguardingPage() {
     const pageWidth = doc.internal.pageSize.getWidth();
     const { label } = getDateRange();
     
-    // Header
-    doc.setFontSize(20);
-    doc.text("Welfare Concerns Report", pageWidth / 2, 20, { align: "center" });
+    // Branded header
+    doc.setFillColor(34, 197, 94);
+    doc.rect(0, 0, pageWidth, 35, "F");
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
+    doc.text("aok", 14, 20);
+    
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text("Welfare Concerns Report", 14, 28);
+    
     doc.setFontSize(10);
-    doc.text(`Period: ${label}`, pageWidth / 2, 28, { align: "center" });
-    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth / 2, 34, { align: "center" });
+    doc.text(`Period: ${label}`, pageWidth - 14, 20, { align: "right" });
+    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth - 14, 28, { align: "right" });
+    
+    doc.setTextColor(0, 0, 0);
     
     // Table data
     const tableData = filteredConcerns.map(concern => [
@@ -547,18 +581,28 @@ export default function OrgSafeguardingPage() {
     ]);
     
     (doc as any).autoTable({
-      startY: 42,
+      startY: 45,
       head: [["Date", "Type", "Status", "Description", "Client", "Anonymous", "Follow-up Notes"]],
       body: tableData,
       styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+      headStyles: { fillColor: [34, 197, 94], textColor: 255 },
       columnStyles: {
         3: { cellWidth: 45 },
         6: { cellWidth: 35 }
       }
     });
     
-    doc.save(`welfare-concerns-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    // Footer
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128);
+      doc.setFont("helvetica", "normal");
+      doc.text(`aok - Keeping you safe | Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+    }
+    
+    doc.save(`aok-welfare-concerns-${format(new Date(), "yyyy-MM-dd")}.pdf`);
     setShowPdfDialog(false);
   };
 
@@ -575,12 +619,24 @@ export default function OrgSafeguardingPage() {
     const pageWidth = doc.internal.pageSize.getWidth();
     const { label } = getDateRange();
     
-    // Header
-    doc.setFontSize(20);
-    doc.text("Safeguarding Audit Trail", pageWidth / 2, 20, { align: "center" });
+    // Branded header
+    doc.setFillColor(34, 197, 94);
+    doc.rect(0, 0, pageWidth, 35, "F");
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
+    doc.text("aok", 14, 20);
+    
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text("Safeguarding Audit Trail", 14, 28);
+    
     doc.setFontSize(10);
-    doc.text(`Period: ${label}`, pageWidth / 2, 28, { align: "center" });
-    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth / 2, 34, { align: "center" });
+    doc.text(`Period: ${label}`, pageWidth - 14, 20, { align: "right" });
+    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth - 14, 28, { align: "right" });
+    
+    doc.setTextColor(0, 0, 0);
     
     // Table data
     const tableData = filteredAudit.map(entry => [
@@ -593,14 +649,24 @@ export default function OrgSafeguardingPage() {
     ]);
     
     (doc as any).autoTable({
-      startY: 42,
+      startY: 45,
       head: [["Date/Time", "Action", "Entity Type", "User Email", "User Role", "IP Address"]],
       body: tableData,
       styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [41, 128, 185], textColor: 255 }
+      headStyles: { fillColor: [34, 197, 94], textColor: 255 }
     });
     
-    doc.save(`audit-trail-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    // Footer
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128);
+      doc.setFont("helvetica", "normal");
+      doc.text(`aok - Keeping you safe | Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+    }
+    
+    doc.save(`aok-audit-trail-${format(new Date(), "yyyy-MM-dd")}.pdf`);
     setShowPdfDialog(false);
   };
 

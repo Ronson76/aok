@@ -41,6 +41,9 @@ import AdminUsers from "@/pages/admin/users";
 import AdminBundles from "@/pages/admin/bundles";
 import AdminForgotPassword from "@/pages/admin/forgot-password";
 import AdminResetPassword from "@/pages/admin/reset-password";
+import AdminUsersReport from "@/pages/admin/users-report";
+import AdminRegistrationsReport from "@/pages/admin/registrations-report";
+import AdminEmergencyAlertsReport from "@/pages/admin/emergency-alerts-report";
 import OrganizationDashboard from "@/pages/org/dashboard";
 import OrgLoginSelect from "@/pages/org/login-select";
 import OrganizationClientLogin from "@/pages/org/client-login";
@@ -560,6 +563,9 @@ function AdminRoutes() {
     <Switch>
       <Route path="/admin" component={() => <AdminProtectedRoute component={AdminDashboard} />} />
       <Route path="/admin/users" component={() => <AdminProtectedRoute component={AdminUsers} />} />
+      <Route path="/admin/users-report" component={() => <AdminProtectedRoute component={AdminUsersReport} />} />
+      <Route path="/admin/registrations-report" component={() => <AdminProtectedRoute component={AdminRegistrationsReport} />} />
+      <Route path="/admin/emergency-alerts-report" component={() => <AdminProtectedRoute component={AdminEmergencyAlertsReport} />} />
       <Route path="/admin/bundles" component={() => <AdminProtectedRoute component={AdminBundles} />} />
       <Route component={NotFound} />
     </Switch>
