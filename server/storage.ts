@@ -1646,6 +1646,7 @@ export interface IAdminStorage {
   getAllUsers(): Promise<UserProfile[]>;
   getAllUsersWithOrgInfo(): Promise<any[]>;
   getAllEmergencyAlerts(): Promise<any[]>;
+  getAllMissedCheckIns(): Promise<any[]>;
   getAllRegistrations(): Promise<{ date: string; count: number; users: any[] }[]>;
   deleteUser(userId: string): Promise<boolean>;
   setUserDisabled(userId: string, disabled: boolean): Promise<UserProfile | undefined>;
@@ -2026,6 +2027,58 @@ class AdminStorage implements IAdminStorage {
     }));
 
     return alertsWithOrgInfo;
+  }
+
+  async getAllMissedCheckIns(): Promise<any[]> {
+    const db = getDb();
+    
+    // Get all missed check-ins with user info
+    const missedData = await db.select({
+      id: checkIns.id,
+      userId: checkIns.userId,
+      timestamp: checkIns.timestamp,
+      userName: users.name,
+      userEmail: users.email,
+    })
+      .from(checkIns)
+      .leftJoin(users, eq(checkIns.userId, users.id))
+      .where(eq(checkIns.status, "missed"))
+      .orderBy(desc(checkIns.timestamp));
+
+    // Add org client info
+    const missedWithOrgInfo = await Promise.all(missedData.map(async (r) => {
+      const orgClientRecord = await db.select({
+        referenceCode: organizationClients.referenceCode,
+        organizationId: organizationClients.organizationId,
+      })
+        .from(organizationClients)
+        .where(eq(organizationClients.clientId, r.userId))
+        .limit(1);
+      
+      let orgClientReferenceCode: string | null = null;
+      let organizationName: string | null = null;
+      
+      if (orgClientRecord.length > 0 && orgClientRecord[0].organizationId) {
+        orgClientReferenceCode = orgClientRecord[0].referenceCode;
+        const orgUser = await db.select({ name: users.name })
+          .from(users)
+          .where(eq(users.id, orgClientRecord[0].organizationId))
+          .limit(1);
+        organizationName = orgUser[0]?.name || null;
+      }
+      
+      return {
+        id: r.id,
+        userId: r.userId,
+        userName: r.userName || "Unknown",
+        userEmail: r.userEmail || "Unknown",
+        timestamp: r.timestamp,
+        orgClientReferenceCode,
+        organizationName,
+      };
+    }));
+
+    return missedWithOrgInfo;
   }
 
   async getAllRegistrations(): Promise<{ date: string; count: number; users: any[] }[]> {

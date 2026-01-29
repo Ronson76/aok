@@ -694,6 +694,11 @@ export default function AdminDashboard() {
                   <div className="text-2xl font-bold text-destructive" data-testid="stat-missed">
                     {stats.totalMissedCheckIns}
                   </div>
+                  <Link href="/admin/missed-checkins-report">
+                    <Button variant="link" size="sm" className="px-0 mt-2" data-testid="button-view-all-missed-checkins">
+                      View All
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
 
