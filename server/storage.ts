@@ -1647,8 +1647,6 @@ export interface IAdminStorage {
   getAllUsersWithOrgInfo(): Promise<any[]>;
   getAllEmergencyAlerts(): Promise<any[]>;
   getAllMissedCheckIns(): Promise<any[]>;
-  getAllCheckIns(): Promise<any[]>;
-  getAllOrganisations(): Promise<any[]>;
   getAllRegistrations(): Promise<{ date: string; count: number; users: any[] }[]>;
   deleteUser(userId: string): Promise<boolean>;
   setUserDisabled(userId: string, disabled: boolean): Promise<UserProfile | undefined>;
@@ -2081,93 +2079,6 @@ class AdminStorage implements IAdminStorage {
     }));
 
     return missedWithOrgInfo;
-  }
-
-  async getAllCheckIns(): Promise<any[]> {
-    const db = getDb();
-    
-    // Get all check-ins with user info
-    const checkInsData = await db.select({
-      id: checkIns.id,
-      userId: checkIns.userId,
-      timestamp: checkIns.timestamp,
-      status: checkIns.status,
-      userName: users.name,
-      userEmail: users.email,
-    })
-      .from(checkIns)
-      .leftJoin(users, eq(checkIns.userId, users.id))
-      .orderBy(desc(checkIns.timestamp))
-      .limit(1000);
-
-    // Add org client info
-    const checkInsWithOrgInfo = await Promise.all(checkInsData.map(async (r) => {
-      const orgClientRecord = await db.select({
-        referenceCode: organizationClients.referenceCode,
-        organizationId: organizationClients.organizationId,
-      })
-        .from(organizationClients)
-        .where(eq(organizationClients.clientId, r.userId))
-        .limit(1);
-      
-      let orgClientReferenceCode: string | null = null;
-      let organizationName: string | null = null;
-      
-      if (orgClientRecord.length > 0 && orgClientRecord[0].organizationId) {
-        orgClientReferenceCode = orgClientRecord[0].referenceCode;
-        const orgUser = await db.select({ name: users.name })
-          .from(users)
-          .where(eq(users.id, orgClientRecord[0].organizationId))
-          .limit(1);
-        organizationName = orgUser[0]?.name || null;
-      }
-      
-      return {
-        id: r.id,
-        userId: r.userId,
-        userName: r.userName || "Unknown",
-        userEmail: r.userEmail || "Unknown",
-        timestamp: r.timestamp,
-        status: r.status,
-        orgClientReferenceCode,
-        organizationName,
-      };
-    }));
-
-    return checkInsWithOrgInfo;
-  }
-
-  async getAllOrganisations(): Promise<any[]> {
-    const db = getDb();
-    
-    // Get all organisations (users with isOrganization = true)
-    const orgsData = await db.select()
-      .from(users)
-      .where(eq(users.isOrganization, true))
-      .orderBy(desc(users.createdAt));
-
-    // Get bundle and client counts for each org
-    const orgsWithCounts = await Promise.all(orgsData.map(async (org) => {
-      const { passwordHash, ...profile } = org;
-      
-      // Count bundles
-      const bundleCount = await db.select({ count: count() })
-        .from(organizationBundles)
-        .where(eq(organizationBundles.organizationId, org.id));
-      
-      // Count clients
-      const clientCount = await db.select({ count: count() })
-        .from(organizationClients)
-        .where(eq(organizationClients.organizationId, org.id));
-      
-      return {
-        ...profile,
-        bundleCount: bundleCount[0]?.count || 0,
-        clientCount: clientCount[0]?.count || 0,
-      };
-    }));
-
-    return orgsWithCounts;
   }
 
   async getAllRegistrations(): Promise<{ date: string; count: number; users: any[] }[]> {

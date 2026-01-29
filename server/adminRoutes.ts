@@ -169,28 +169,6 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
-  // Get all check-ins (for reports)
-  app.get("/api/admin/checkins", adminAuthMiddleware, async (req, res) => {
-    try {
-      const checkIns = await adminStorage.getAllCheckIns();
-      res.json(checkIns);
-    } catch (error) {
-      console.error("Error fetching check-ins:", error);
-      res.status(500).json({ error: "Failed to fetch check-ins" });
-    }
-  });
-
-  // Get all organisations (for reports)
-  app.get("/api/admin/organisations", adminAuthMiddleware, async (req, res) => {
-    try {
-      const organisations = await adminStorage.getAllOrganisations();
-      res.json(organisations);
-    } catch (error) {
-      console.error("Error fetching organisations:", error);
-      res.status(500).json({ error: "Failed to fetch organisations" });
-    }
-  });
-
   // Get all registrations (for reports)
   app.get("/api/admin/registrations", adminAuthMiddleware, async (req, res) => {
     try {
