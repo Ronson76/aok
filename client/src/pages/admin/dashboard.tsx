@@ -768,11 +768,6 @@ export default function AdminDashboard() {
                               {user.orgClientReferenceCode ? user.orgClientReferenceCode : user.name}
                             </p>
                             <p className="text-sm text-muted-foreground">{user.email}</p>
-                            {user.organizationName && (
-                              <p className="text-xs text-muted-foreground italic">
-                                Client of {user.organizationName}
-                              </p>
-                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge variant={user.accountType === "organization" ? "default" : user.organizationName ? "outline" : "secondary"}>
@@ -892,7 +887,11 @@ export default function AdminDashboard() {
                       {org.name}
                       {org.disabled && <Badge variant="destructive">Disabled</Badge>}
                     </CardTitle>
-                    <CardDescription>{org.email}</CardDescription>
+                    <CardDescription className="flex items-center gap-2">
+                      <span>{org.email}</span>
+                      <span className="text-muted-foreground">•</span>
+                      <span>Created {org.createdAt ? format(new Date(org.createdAt), "dd/MM/yyyy") : "N/A"}</span>
+                    </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     {isSuperAdmin && (
