@@ -15,7 +15,7 @@ import {
   CaseStatus, RiskLevel
 } from "@shared/schema";
 import { ensureDb } from "./db";
-import { eq, ne, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray } from "drizzle-orm";
+import { eq, ne, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray, inArray } from "drizzle-orm";
 import { randomUUID, randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
 import { sendMissedCheckInAlert, sendVoiceAlerts, sendPushNotification } from "./notifications";
@@ -2383,6 +2383,23 @@ export interface IOrganizationStorage {
   // Admin views
   getOrganizationsWithClientSummary(): Promise<AdminOrganizationView[]>;
   getOrganizationClientsForAdmin(organizationId: string): Promise<AdminOrganizationClientView[]>;
+  
+  // Reports
+  getOrganizationMissedCheckIns(organizationId: string): Promise<{
+    id: string;
+    clientName: string;
+    referenceCode: string | null;
+    timestamp: string;
+  }[]>;
+  getOrganizationEmergencyAlerts(organizationId: string): Promise<{
+    id: string;
+    clientName: string;
+    referenceCode: string | null;
+    timestamp: string;
+    location: string | null;
+    what3words: string | null;
+    status: string;
+  }[]>;
 }
 
 class OrganizationStorage implements IOrganizationStorage {
@@ -3206,6 +3223,101 @@ class OrganizationStorage implements IOrganizationStorage {
         .returning();
       return result[0];
     }
+  }
+
+  // Get missed check-ins for organization's clients
+  async getOrganizationMissedCheckIns(organizationId: string): Promise<{
+    id: string;
+    clientName: string;
+    referenceCode: string | null;
+    timestamp: string;
+  }[]> {
+    const db = getDb();
+    
+    // Get all client IDs for this organization
+    const orgClients = await db
+      .select({
+        clientId: organizationClients.clientId,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+      })
+      .from(organizationClients)
+      .where(eq(organizationClients.organizationId, organizationId));
+    
+    const clientIds = orgClients.filter(c => c.clientId).map(c => c.clientId!);
+    if (clientIds.length === 0) return [];
+    
+    // Get missed check-ins for these clients
+    const missedData = await db
+      .select({
+        id: checkIns.id,
+        userId: checkIns.userId,
+        timestamp: checkIns.timestamp,
+      })
+      .from(checkIns)
+      .where(and(
+        eq(checkIns.status, "missed"),
+        inArray(checkIns.userId, clientIds)
+      ))
+      .orderBy(desc(checkIns.timestamp));
+    
+    // Map to include client names
+    return missedData.map(m => {
+      const client = orgClients.find(c => c.clientId === m.userId);
+      return {
+        id: m.id,
+        clientName: client?.clientName || "Unknown",
+        referenceCode: client?.referenceCode || null,
+        timestamp: m.timestamp?.toISOString() || new Date().toISOString(),
+      };
+    });
+  }
+
+  // Get emergency alerts for organization's clients
+  async getOrganizationEmergencyAlerts(organizationId: string): Promise<{
+    id: string;
+    clientName: string;
+    referenceCode: string | null;
+    timestamp: string;
+    location: string | null;
+    what3words: string | null;
+    status: string;
+  }[]> {
+    const db = getDb();
+    
+    // Get all client IDs for this organization
+    const orgClients = await db
+      .select({
+        clientId: organizationClients.clientId,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+      })
+      .from(organizationClients)
+      .where(eq(organizationClients.organizationId, organizationId));
+    
+    const clientIds = orgClients.filter(c => c.clientId).map(c => c.clientId!);
+    if (clientIds.length === 0) return [];
+    
+    // Get emergency alerts for these clients
+    const alerts = await db
+      .select()
+      .from(activeEmergencyAlerts)
+      .where(inArray(activeEmergencyAlerts.userId, clientIds))
+      .orderBy(desc(activeEmergencyAlerts.createdAt));
+    
+    // Map to include client names
+    return alerts.map(a => {
+      const client = orgClients.find(c => c.clientId === a.userId);
+      return {
+        id: a.id,
+        clientName: client?.clientName || "Unknown",
+        referenceCode: client?.referenceCode || null,
+        timestamp: a.createdAt?.toISOString() || new Date().toISOString(),
+        location: a.latitude && a.longitude ? `${a.latitude}, ${a.longitude}` : null,
+        what3words: a.what3words || null,
+        status: a.isActive ? "active" : "resolved",
+      };
+    });
   }
 }
 
