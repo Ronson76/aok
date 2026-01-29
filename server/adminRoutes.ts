@@ -847,16 +847,7 @@ export function registerAdminRoutes(app: Express) {
         const rawToken = await adminStorage.createAdminPasswordResetToken(admin.id);
         
         // Use production domain directly when in production, otherwise use request headers
-        let baseUrl: string;
-        
-        if (process.env.REPL_SLUG || process.env.REPLIT_DEPLOYMENT) {
-          // We're on Replit - use production domain
-          baseUrl = 'https://aok.care';
-        } else {
-          // Development environment
-          const host = req.get('host') || 'localhost:5000';
-          baseUrl = `http://${host}`;
-        }
+        const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
         
         const resetUrl = `${baseUrl}/admin/reset-password?token=${rawToken}`;
         

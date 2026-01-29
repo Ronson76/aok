@@ -193,11 +193,12 @@ export async function registerRoutes(
       }
 
       console.log("[STRIPE CHECKOUT] Creating checkout session...");
+      const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
       const session = await stripeService.createSubscriptionCheckoutSession(
         null,
         priceId,
-        successUrl || `${req.protocol}://${req.get('host')}/checkout/success`,
-        cancelUrl || `${req.protocol}://${req.get('host')}/checkout/cancel`,
+        successUrl || `${appUrl}/checkout/success`,
+        cancelUrl || `${appUrl}/checkout/cancel`,
         email,
         trialDays
       );
@@ -832,16 +833,7 @@ export async function registerRoutes(
         const rawToken = await storage.createPasswordResetToken(user.id);
         
         // Use production domain directly when in production, otherwise use request headers
-        let baseUrl: string;
-        
-        if (process.env.REPL_SLUG || process.env.REPLIT_DEPLOYMENT) {
-          // We're on Replit - use production domain
-          baseUrl = 'https://aok.care';
-        } else {
-          // Development environment
-          const host = req.get('host') || 'localhost:5000';
-          baseUrl = `http://${host}`;
-        }
+        const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
         
         const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
         
@@ -1087,7 +1079,7 @@ export async function registerRoutes(
       // Send confirmation email to the new contact (they must confirm before becoming active)
       const user = await storage.getUserById(req.userId!);
       if (user) {
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
         console.log("[ROUTES] Sending confirmation email to:", contact.email, "baseUrl:", baseUrl);
         // Fire and forget - don't block the response
         sendContactConfirmationEmail(contact, user, confirmationToken, baseUrl).then(result => {
