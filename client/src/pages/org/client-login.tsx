@@ -89,7 +89,7 @@ export default function OrganizationClientLogin() {
                   data-testid="input-org-reference"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Enter the 6-character code sent to the client
+                  Enter the 6-digit code sent to you
                 </p>
               </div>
             </CardContent>
