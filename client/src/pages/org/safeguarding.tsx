@@ -196,6 +196,13 @@ export default function OrgSafeguardingPage() {
   const [resolutionText, setResolutionText] = useState("");
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [selectedConcernId, setSelectedConcernId] = useState<string | null>(null);
+  
+  // PDF download state
+  const [showPdfDialog, setShowPdfDialog] = useState(false);
+  const [pdfType, setPdfType] = useState<"incidents" | "concerns" | "audit" | null>(null);
+  const [pdfDateRange, setPdfDateRange] = useState<"all" | "month" | "year" | "custom">("all");
+  const [pdfCustomStartDate, setPdfCustomStartDate] = useState("");
+  const [pdfCustomEndDate, setPdfCustomEndDate] = useState("");
 
   const { data: summary, isLoading: summaryLoading } = useQuery<SafeguardingSummary>({
     queryKey: ["/api/org/safeguarding/summary"],
@@ -418,21 +425,70 @@ export default function OrgSafeguardingPage() {
     return client?.nickname || client?.client?.name || client?.client?.email || "Unknown Client";
   };
 
+  // Date filtering helper
+  const getDateRange = (): { start: Date | null; end: Date | null; label: string } => {
+    const now = new Date();
+    switch (pdfDateRange) {
+      case "month":
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        return { start: monthStart, end: now, label: `${format(monthStart, "dd/MM/yyyy")} - ${format(now, "dd/MM/yyyy")}` };
+      case "year":
+        const yearStart = new Date(now.getFullYear(), 0, 1);
+        return { start: yearStart, end: now, label: `${format(yearStart, "dd/MM/yyyy")} - ${format(now, "dd/MM/yyyy")}` };
+      case "custom":
+        const start = pdfCustomStartDate ? new Date(pdfCustomStartDate) : null;
+        const end = pdfCustomEndDate ? new Date(pdfCustomEndDate) : null;
+        if (start && end) {
+          return { start, end, label: `${format(start, "dd/MM/yyyy")} - ${format(end, "dd/MM/yyyy")}` };
+        }
+        return { start: null, end: null, label: "All Time" };
+      default:
+        return { start: null, end: null, label: "All Time" };
+    }
+  };
+
+  const filterByDateRange = <T extends { createdAt: string }>(items: T[]): T[] => {
+    const { start, end } = getDateRange();
+    if (!start || !end) return items;
+    
+    return items.filter(item => {
+      const itemDate = new Date(item.createdAt);
+      return itemDate >= start && itemDate <= end;
+    });
+  };
+
+  // Open PDF dialog
+  const openPdfDialog = (type: "incidents" | "concerns" | "audit") => {
+    setPdfType(type);
+    setPdfDateRange("all");
+    setPdfCustomStartDate("");
+    setPdfCustomEndDate("");
+    setShowPdfDialog(true);
+  };
+
   // PDF Generation Functions
   const downloadIncidentsPDF = () => {
     if (!incidents || incidents.length === 0) return;
     
+    const filteredIncidents = filterByDateRange(incidents);
+    if (filteredIncidents.length === 0) {
+      toast({ title: "No data", description: "No incidents found for the selected date range.", variant: "destructive" });
+      return;
+    }
+    
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const { label } = getDateRange();
     
     // Header
     doc.setFontSize(20);
     doc.text("Safeguarding Incidents Report", pageWidth / 2, 20, { align: "center" });
     doc.setFontSize(10);
-    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth / 2, 28, { align: "center" });
+    doc.text(`Period: ${label}`, pageWidth / 2, 28, { align: "center" });
+    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth / 2, 34, { align: "center" });
     
     // Table data
-    const tableData = incidents.map(incident => [
+    const tableData = filteredIncidents.map(incident => [
       format(new Date(incident.createdAt), "dd/MM/yyyy HH:mm"),
       incident.incidentType.replace(/_/g, " "),
       incident.severity,
@@ -444,7 +500,7 @@ export default function OrgSafeguardingPage() {
     ]);
     
     (doc as any).autoTable({
-      startY: 35,
+      startY: 42,
       head: [["Date", "Type", "Severity", "Status", "Description", "Client", "Location", "Resolution"]],
       body: tableData,
       styles: { fontSize: 8, cellPadding: 2 },
@@ -456,22 +512,31 @@ export default function OrgSafeguardingPage() {
     });
     
     doc.save(`safeguarding-incidents-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    setShowPdfDialog(false);
   };
 
   const downloadConcernsPDF = () => {
     if (!concerns || concerns.length === 0) return;
     
+    const filteredConcerns = filterByDateRange(concerns);
+    if (filteredConcerns.length === 0) {
+      toast({ title: "No data", description: "No concerns found for the selected date range.", variant: "destructive" });
+      return;
+    }
+    
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const { label } = getDateRange();
     
     // Header
     doc.setFontSize(20);
     doc.text("Welfare Concerns Report", pageWidth / 2, 20, { align: "center" });
     doc.setFontSize(10);
-    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth / 2, 28, { align: "center" });
+    doc.text(`Period: ${label}`, pageWidth / 2, 28, { align: "center" });
+    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth / 2, 34, { align: "center" });
     
     // Table data
-    const tableData = concerns.map(concern => [
+    const tableData = filteredConcerns.map(concern => [
       format(new Date(concern.createdAt), "dd/MM/yyyy HH:mm"),
       concern.concernType || "General",
       concern.status,
@@ -482,7 +547,7 @@ export default function OrgSafeguardingPage() {
     ]);
     
     (doc as any).autoTable({
-      startY: 35,
+      startY: 42,
       head: [["Date", "Type", "Status", "Description", "Client", "Anonymous", "Follow-up Notes"]],
       body: tableData,
       styles: { fontSize: 8, cellPadding: 2 },
@@ -494,22 +559,31 @@ export default function OrgSafeguardingPage() {
     });
     
     doc.save(`welfare-concerns-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    setShowPdfDialog(false);
   };
 
   const downloadAuditTrailPDF = () => {
     if (!auditTrail || auditTrail.length === 0) return;
     
+    const filteredAudit = filterByDateRange(auditTrail);
+    if (filteredAudit.length === 0) {
+      toast({ title: "No data", description: "No audit entries found for the selected date range.", variant: "destructive" });
+      return;
+    }
+    
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const { label } = getDateRange();
     
     // Header
     doc.setFontSize(20);
     doc.text("Safeguarding Audit Trail", pageWidth / 2, 20, { align: "center" });
     doc.setFontSize(10);
-    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth / 2, 28, { align: "center" });
+    doc.text(`Period: ${label}`, pageWidth / 2, 28, { align: "center" });
+    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth / 2, 34, { align: "center" });
     
     // Table data
-    const tableData = auditTrail.map(entry => [
+    const tableData = filteredAudit.map(entry => [
       format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm"),
       entry.action,
       entry.entityType.replace(/_/g, " "),
@@ -519,7 +593,7 @@ export default function OrgSafeguardingPage() {
     ]);
     
     (doc as any).autoTable({
-      startY: 35,
+      startY: 42,
       head: [["Date/Time", "Action", "Entity Type", "User Email", "User Role", "IP Address"]],
       body: tableData,
       styles: { fontSize: 8, cellPadding: 2 },
@@ -527,6 +601,21 @@ export default function OrgSafeguardingPage() {
     });
     
     doc.save(`audit-trail-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    setShowPdfDialog(false);
+  };
+
+  const handlePdfDownload = () => {
+    switch (pdfType) {
+      case "incidents":
+        downloadIncidentsPDF();
+        break;
+      case "concerns":
+        downloadConcernsPDF();
+        break;
+      case "audit":
+        downloadAuditTrailPDF();
+        break;
+    }
   };
 
   return (
@@ -699,7 +788,7 @@ export default function OrgSafeguardingPage() {
                   <CardTitle>All Incidents</CardTitle>
                   <div className="flex items-center gap-2">
                     {incidents && incidents.length > 0 && (
-                      <Button variant="outline" onClick={downloadIncidentsPDF} data-testid="button-download-incidents-pdf">
+                      <Button variant="outline" onClick={() => openPdfDialog("incidents")} data-testid="button-download-incidents-pdf">
                         <Download className="h-4 w-4 mr-2" />
                         Download PDF
                       </Button>
@@ -789,7 +878,7 @@ export default function OrgSafeguardingPage() {
                   <CardTitle>Welfare Concerns</CardTitle>
                   <div className="flex items-center gap-2">
                     {concerns && concerns.length > 0 && (
-                      <Button variant="outline" onClick={downloadConcernsPDF} data-testid="button-download-concerns-pdf">
+                      <Button variant="outline" onClick={() => openPdfDialog("concerns")} data-testid="button-download-concerns-pdf">
                         <Download className="h-4 w-4 mr-2" />
                         Download PDF
                       </Button>
@@ -1048,7 +1137,7 @@ export default function OrgSafeguardingPage() {
                     <CardDescription>Complete log of safeguarding actions</CardDescription>
                   </div>
                   {auditTrail && auditTrail.length > 0 && (
-                    <Button variant="outline" onClick={downloadAuditTrailPDF} data-testid="button-download-audit-pdf">
+                    <Button variant="outline" onClick={() => openPdfDialog("audit")} data-testid="button-download-audit-pdf">
                       <Download className="h-4 w-4 mr-2" />
                       Download PDF
                     </Button>
@@ -1489,6 +1578,79 @@ export default function OrgSafeguardingPage() {
               ) : (
                 "Add Note"
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PDF Date Range Dialog */}
+      <Dialog open={showPdfDialog} onOpenChange={setShowPdfDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Download className="h-5 w-5" />
+              Download {pdfType === "incidents" ? "Incidents" : pdfType === "concerns" ? "Concerns" : "Audit Trail"} Report
+            </DialogTitle>
+            <DialogDescription>
+              Select a date range for the PDF report
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-3">
+              <Label>Date Range</Label>
+              <Select value={pdfDateRange} onValueChange={(v: "all" | "month" | "year" | "custom") => setPdfDateRange(v)}>
+                <SelectTrigger data-testid="select-pdf-date-range">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                  <SelectItem value="year">This Year</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {pdfDateRange === "custom" && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Input
+                    type="date"
+                    value={pdfCustomStartDate}
+                    onChange={(e) => setPdfCustomStartDate(e.target.value)}
+                    data-testid="input-pdf-start-date"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <Input
+                    type="date"
+                    value={pdfCustomEndDate}
+                    onChange={(e) => setPdfCustomEndDate(e.target.value)}
+                    data-testid="input-pdf-end-date"
+                  />
+                </div>
+              </div>
+            )}
+
+            {pdfDateRange !== "all" && pdfDateRange !== "custom" && (
+              <p className="text-sm text-muted-foreground">
+                Period: {getDateRange().label}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPdfDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handlePdfDownload}
+              disabled={pdfDateRange === "custom" && (!pdfCustomStartDate || !pdfCustomEndDate)}
+              data-testid="button-generate-pdf"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Generate PDF
             </Button>
           </DialogFooter>
         </DialogContent>
