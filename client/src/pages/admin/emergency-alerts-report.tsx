@@ -97,8 +97,8 @@ export default function AdminEmergencyAlertsReport() {
     const pageWidth = doc.internal.pageSize.getWidth();
     const { label } = getDateRange();
     
-    // Branded header with red for emergency
-    doc.setFillColor(220, 38, 38);
+    // Branded header with aok green
+    doc.setFillColor(34, 197, 94);
     doc.rect(0, 0, pageWidth, 35, "F");
     
     doc.setTextColor(255, 255, 255);
@@ -128,7 +128,7 @@ export default function AdminEmergencyAlertsReport() {
       head: [["Date/Time", "User/Reference", "Email", "Contacts Notified"]],
       body: tableData,
       styles: { fontSize: 9, cellPadding: 3 },
-      headStyles: { fillColor: [220, 38, 38], textColor: 255 },
+      headStyles: { fillColor: [34, 197, 94], textColor: 255 },
       columnStyles: {
         3: { cellWidth: 60 }
       }
