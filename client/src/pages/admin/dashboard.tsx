@@ -747,6 +747,11 @@ export default function AdminDashboard() {
                   <div className="text-2xl font-bold text-red-500" data-testid="stat-emergency-alerts">
                     {stats.totalEmergencyAlerts}
                   </div>
+                  <Link href="/admin/emergency-alerts-report">
+                    <Button variant="link" size="sm" className="px-0 mt-2" data-testid="button-view-all-emergency-alerts">
+                      View All
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             </div>
