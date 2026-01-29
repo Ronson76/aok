@@ -748,9 +748,16 @@ export default function AdminDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <Card>
-                <CardHeader>
-                  <CardTitle>Recent Users</CardTitle>
-                  <CardDescription>Latest registered users</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between gap-2">
+                  <div>
+                    <CardTitle>Recent Users</CardTitle>
+                    <CardDescription>Latest registered users</CardDescription>
+                  </div>
+                  <Link href="/admin/users-report">
+                    <Button variant="outline" size="sm" data-testid="button-view-all-users">
+                      View All
+                    </Button>
+                  </Link>
                 </CardHeader>
                 <CardContent>
                   {stats.recentUsers.length === 0 ? (
@@ -785,9 +792,16 @@ export default function AdminDashboard() {
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Daily Registrations</CardTitle>
-                  <CardDescription>Last 30 days</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between gap-2">
+                  <div>
+                    <CardTitle>Daily Registrations</CardTitle>
+                    <CardDescription>Last 30 days</CardDescription>
+                  </div>
+                  <Link href="/admin/registrations-report">
+                    <Button variant="outline" size="sm" data-testid="button-view-all-registrations">
+                      View All
+                    </Button>
+                  </Link>
                 </CardHeader>
                 <CardContent>
                   {stats.dailyRegistrations.length === 0 ? (
@@ -809,12 +823,19 @@ export default function AdminDashboard() {
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertOctagon className="w-5 h-5 text-red-500" />
-                    Recent Emergency Alerts
-                  </CardTitle>
-                  <CardDescription>Users who triggered emergency alerts</CardDescription>
+                <CardHeader className="flex flex-row items-start justify-between gap-2">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertOctagon className="w-5 h-5 text-red-500" />
+                      Recent Emergency Alerts
+                    </CardTitle>
+                    <CardDescription>Users who triggered emergency alerts</CardDescription>
+                  </div>
+                  <Link href="/admin/emergency-alerts-report">
+                    <Button variant="outline" size="sm" data-testid="button-view-all-alerts">
+                      View All
+                    </Button>
+                  </Link>
                 </CardHeader>
                 <CardContent>
                   {stats.recentEmergencyAlerts.length === 0 ? (

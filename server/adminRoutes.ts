@@ -125,7 +125,7 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
-  // Get all users
+  // Get all users (basic)
   app.get("/api/admin/users", adminAuthMiddleware, async (req, res) => {
     try {
       const users = await adminStorage.getAllUsers();
@@ -133,6 +133,39 @@ export function registerAdminRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Get all users with organization info (for reports)
+  app.get("/api/admin/users/all", adminAuthMiddleware, async (req, res) => {
+    try {
+      const users = await adminStorage.getAllUsersWithOrgInfo();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Get all emergency alerts (for reports)
+  app.get("/api/admin/emergency-alerts", adminAuthMiddleware, async (req, res) => {
+    try {
+      const alerts = await adminStorage.getAllEmergencyAlerts();
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error fetching emergency alerts:", error);
+      res.status(500).json({ error: "Failed to fetch emergency alerts" });
+    }
+  });
+
+  // Get all registrations (for reports)
+  app.get("/api/admin/registrations", adminAuthMiddleware, async (req, res) => {
+    try {
+      const registrations = await adminStorage.getAllRegistrations();
+      res.json(registrations);
+    } catch (error) {
+      console.error("Error fetching registrations:", error);
+      res.status(500).json({ error: "Failed to fetch registrations" });
     }
   });
 
