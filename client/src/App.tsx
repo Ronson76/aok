@@ -561,12 +561,13 @@ function AppLayout() {
 function AdminRoutes() {
   return (
     <Switch>
-      <Route path="/admin" component={() => <AdminProtectedRoute component={AdminDashboard} />} />
-      <Route path="/admin/users" component={() => <AdminProtectedRoute component={AdminUsers} />} />
       <Route path="/admin/users-report" component={() => <AdminProtectedRoute component={AdminUsersReport} />} />
       <Route path="/admin/registrations-report" component={() => <AdminProtectedRoute component={AdminRegistrationsReport} />} />
       <Route path="/admin/emergency-alerts-report" component={() => <AdminProtectedRoute component={AdminEmergencyAlertsReport} />} />
+      <Route path="/admin/users" component={() => <AdminProtectedRoute component={AdminUsers} />} />
       <Route path="/admin/bundles" component={() => <AdminProtectedRoute component={AdminBundles} />} />
+      <Route path="/admin/dashboard" component={() => <AdminProtectedRoute component={AdminDashboard} />} />
+      <Route path="/admin" component={() => <AdminProtectedRoute component={AdminDashboard} />} />
       <Route component={NotFound} />
     </Switch>
   );

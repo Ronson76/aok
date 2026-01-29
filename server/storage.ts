@@ -1935,7 +1935,10 @@ class AdminStorage implements IAdminStorage {
 
   async getAllUsersWithOrgInfo(): Promise<any[]> {
     const db = getDb();
-    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+    // Filter out organisations - only return actual users
+    const allUsers = await db.select().from(users)
+      .where(eq(users.isOrganization, false))
+      .orderBy(desc(users.createdAt));
     
     const usersWithOrgInfo = await Promise.all(allUsers.map(async (u) => {
       const { passwordHash, ...profile } = u;
