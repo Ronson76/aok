@@ -1271,16 +1271,15 @@ If you cannot reach them, consider contacting local emergency services.
   return { emailsSent, emailsFailed, smsSent, smsFailed, whatsappSent, whatsappFailed };
 }
 
-export async function sendEmergencyDeactivationAlert(
+// Sent when client requests emergency end - asks contacts to confirm they've spoken to client
+// ALERTS CONTINUE until a contact confirms
+export async function sendEmergencyConfirmationRequest(
   contacts: Contact[],
   user: User,
   gpsLocation?: { latitude: number; longitude: number },
-  confirmationLinks?: Map<string, string> // email -> confirmation URL
+  confirmationLinks?: Map<string, string>
 ): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number }> {
   const displayName = getUserDisplayName(user);
-  const identifier = user.accountType === "organization" 
-    ? `Reference ID: ${user.referenceId}` 
-    : displayName;
   
   let emailsSent = 0;
   let emailsFailed = 0;
@@ -1293,13 +1292,16 @@ export async function sendEmergencyDeactivationAlert(
   }
   
   const now = new Date();
-  const deactivationTime = now.toLocaleString('en-GB', { 
+  const requestTime = now.toLocaleString('en-GB', { 
     dateStyle: 'full', 
     timeStyle: 'long' 
   });
   
   for (const contact of contacts) {
-    const emailSubject = `ALL CLEAR: ${displayName} has confirmed they are safe`;
+    const confirmationUrl = confirmationLinks?.get(contact.email);
+    if (!confirmationUrl) continue;
+    
+    const emailSubject = `URGENT: ${displayName} has requested to end their emergency - confirmation needed`;
     
     let locationInfo = "";
     let smsLocationInfo = "";
@@ -1307,41 +1309,150 @@ export async function sendEmergencyDeactivationAlert(
     if (gpsLocation) {
       if (what3wordsAddress) {
         const w3wUrl = `https://what3words.com/${what3wordsAddress}`;
-        locationInfo = `
-CURRENT LOCATION:
-what3words: ///${what3wordsAddress}
-View on map: ${w3wUrl}
-`;
+        locationInfo = `<p style="margin: 0;"><strong>Last known location:</strong></p>
+        <p style="margin: 5px 0;"><a href="${w3wUrl}" style="color: #22c55e; font-weight: bold;">///&zwj;${what3wordsAddress}</a></p>`;
         smsLocationInfo = `Location: ///${what3wordsAddress}`;
       } else {
         const mapsUrl = `https://www.google.com/maps?q=${gpsLocation.latitude},${gpsLocation.longitude}`;
-        locationInfo = `
-CURRENT LOCATION:
-Coordinates: ${gpsLocation.latitude.toFixed(6)}, ${gpsLocation.longitude.toFixed(6)}
-View on map: ${mapsUrl}
-`;
+        locationInfo = `<p style="margin: 0;"><strong>Last known location:</strong></p>
+        <p style="margin: 5px 0;"><a href="${mapsUrl}" style="color: #22c55e;">View on map</a></p>`;
         smsLocationInfo = `Map: ${mapsUrl}`;
       }
     }
     
-    const confirmationUrl = confirmationLinks?.get(contact.email);
-    const needsConfirmation = !!confirmationUrl;
+    const emailBody = `*** CONFIRMATION REQUIRED ***
+
+${displayName} has requested to end their emergency alert.
+
+IMPORTANT: Emergency alerts are STILL ACTIVE until you confirm.
+
+Request time: ${requestTime}
+${gpsLocation ? `Location: ${what3wordsAddress ? `///${what3wordsAddress}` : `${gpsLocation.latitude.toFixed(6)}, ${gpsLocation.longitude.toFixed(6)}`}` : ''}
+
+To stop the emergency alerts, you must:
+1. Speak directly to ${displayName}
+2. Confirm they have asked for the emergency to end
+3. Click the confirmation link below
+
+Confirm here: ${confirmationUrl}
+
+If you cannot reach ${displayName}, DO NOT confirm. Emergency alerts will continue.
+
+- The aok Team`;
+
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="text-align: center; margin-bottom: 30px;">
+    <div style="display: inline-flex; align-items: center; gap: 8px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <span style="font-size: 28px; font-weight: bold; color: #22c55e;">aok</span>
+    </div>
+  </div>
+  
+  <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;">
+    <h1 style="margin: 0; font-size: 24px;">CONFIRMATION REQUIRED</h1>
+    <p style="margin: 10px 0 0 0; font-size: 16px;">${displayName} has requested to end their emergency</p>
+  </div>
+  
+  <div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+    <p style="margin: 0; color: #92400e; font-weight: bold;">Emergency alerts are STILL ACTIVE until you confirm.</p>
+  </div>
+  
+  <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+    <p style="margin: 0 0 10px 0;"><strong>Request time:</strong> ${requestTime}</p>
+    ${locationInfo}
+  </div>
+  
+  <div style="background: #f0fdf4; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+    <h3 style="margin: 0 0 12px 0; color: #166534;">Before confirming, you must:</h3>
+    <ul style="margin: 0; padding-left: 20px; color: #166534;">
+      <li style="margin-bottom: 8px;">Speak directly to ${displayName}</li>
+      <li style="margin-bottom: 8px;">Confirm they have asked for the emergency to end</li>
+      <li>Understand this will stop all further alerts</li>
+    </ul>
+  </div>
+  
+  <div style="text-align: center; margin-bottom: 20px;">
+    <a href="${confirmationUrl}" style="display: inline-block; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; padding: 18px 36px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">
+      Confirm I have spoken to ${displayName}
+    </a>
+  </div>
+  
+  <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+    <p style="margin: 0; color: #991b1b; font-size: 14px;"><strong>If you cannot reach ${displayName}, DO NOT confirm.</strong> Emergency alerts will continue until confirmed.</p>
+  </div>
+  
+  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; text-align: center;">
+    <p>This notification was sent by aok - Personal Safety Check-In</p>
+  </div>
+</body>
+</html>`;
+
+    // Send email
+    if (contact.email) {
+      try {
+        await sendEmail(contact.email, emailSubject, emailBody, emailHtml);
+        emailsSent++;
+        console.log(`[CONFIRM-REQUEST] Email sent to ${contact.email}`);
+      } catch (error: any) {
+        emailsFailed++;
+        console.error(`[CONFIRM-REQUEST] Failed to send email to ${contact.email}:`, error?.message || error);
+      }
+    }
     
-    const emailBody = `*** EMERGENCY ALERT DEACTIVATED ***
+    // Send SMS
+    if (contact.phone) {
+      const smsMessage = `aok URGENT: ${displayName} requests emergency end. ALERTS CONTINUE until you confirm. Speak to them first, then confirm: ${confirmationUrl} ${smsLocationInfo}`.trim();
+      const smsResult = await sendSMS(contact.phone, smsMessage);
+      if (smsResult.success) {
+        smsSent++;
+        console.log(`[CONFIRM-REQUEST] SMS sent to ${contact.phone}`);
+      } else {
+        smsFailed++;
+        console.error(`[CONFIRM-REQUEST] Failed to send SMS to ${contact.phone}:`, smsResult.error);
+      }
+    }
+  }
 
-Good news! ${identifier} has deactivated their emergency alert.
+  console.log(`[CONFIRM-REQUEST] Notifications sent - Emails: ${emailsSent}/${emailsSent + emailsFailed}, SMS: ${smsSent}/${smsSent + smsFailed}`);
+  return { emailsSent, emailsFailed, smsSent, smsFailed };
+}
 
-The emergency alert was deactivated at: ${deactivationTime}
-${locationInfo}
-${needsConfirmation ? `
-IMPORTANT: Please confirm you have spoken to ${displayName} and verified they are safe.
+// Sent to ALL contacts AFTER a contact confirms - final notification
+export async function sendEmergencyEndedNotification(
+  contacts: Contact[],
+  user: User,
+  confirmedByName: string,
+  confirmationTime: Date
+): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number }> {
+  const displayName = getUserDisplayName(user);
+  
+  let emailsSent = 0;
+  let emailsFailed = 0;
+  let smsSent = 0;
+  let smsFailed = 0;
+  
+  const endTime = confirmationTime.toLocaleString('en-GB', { 
+    dateStyle: 'full', 
+    timeStyle: 'long' 
+  });
+  
+  for (const contact of contacts) {
+    const emailSubject = `Emergency ended for ${displayName}`;
+    
+    const emailBody = `Emergency ended at ${endTime} following confirmation by a trusted contact.
 
-Click the link below to confirm:
-${confirmationUrl}
-
-This confirmation is required to complete the safety check.
-` : 'No further action is required.'}
-Thank you for being there when it mattered.
+No further action is required.
 
 - The aok Team`;
 
@@ -1364,33 +1475,16 @@ Thank you for being there when it mattered.
   </div>
   
   <div style="background: linear-gradient(135deg, #22c55e, #16a34a); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;">
-    <h1 style="margin: 0; font-size: 24px;">EMERGENCY ALERT DEACTIVATED</h1>
-    <p style="margin: 10px 0 0 0; font-size: 16px;">${displayName} has deactivated their emergency alert</p>
+    <h1 style="margin: 0; font-size: 24px;">Emergency Ended</h1>
+    <p style="margin: 10px 0 0 0; font-size: 16px;">for ${displayName}</p>
   </div>
   
-  <div style="background: #f0fdf4; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-    <p style="margin: 0 0 10px 0;"><strong>Alert deactivated at:</strong> ${deactivationTime}</p>
-    ${gpsLocation ? `
-    <p style="margin: 0;"><strong>Last known location:</strong></p>
-    ${what3wordsAddress ? `
-    <p style="margin: 5px 0;"><a href="https://what3words.com/${what3wordsAddress}" style="color: #22c55e; font-weight: bold;">///&zwj;${what3wordsAddress}</a></p>
-    ` : `
-    <p style="margin: 5px 0;"><a href="https://www.google.com/maps?q=${gpsLocation.latitude},${gpsLocation.longitude}" style="color: #22c55e;">View on map</a></p>
-    `}
-    ` : ''}
+  <div style="background: #f0fdf4; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
+    <p style="margin: 0; font-size: 16px;">Emergency ended at <strong>${endTime}</strong></p>
+    <p style="margin: 10px 0 0 0; color: #166534;">following confirmation by a trusted contact.</p>
   </div>
   
-  ${needsConfirmation ? `
-  <div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
-    <h2 style="margin: 0 0 10px 0; color: #b45309; font-size: 18px;">Action Required</h2>
-    <p style="margin: 0 0 15px 0; color: #92400e;">Please confirm you have spoken to ${displayName} and verified they are safe.</p>
-    <a href="${confirmationUrl}" style="display: inline-block; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">
-      Confirm ${displayName} is Safe
-    </a>
-  </div>
-  ` : `
-  <p style="color: #666;">No further action is required. Thank you for being there when it mattered.</p>
-  `}
+  <p style="color: #666; text-align: center;">No further action is required.</p>
   
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; text-align: center;">
     <p>This notification was sent by aok - Personal Safety Check-In</p>
@@ -1403,30 +1497,28 @@ Thank you for being there when it mattered.
       try {
         await sendEmail(contact.email, emailSubject, emailBody, emailHtml);
         emailsSent++;
-        console.log(`[DEACTIVATION] Email sent to ${contact.email}`);
+        console.log(`[EMERGENCY-ENDED] Email sent to ${contact.email}`);
       } catch (error: any) {
         emailsFailed++;
-        console.error(`[DEACTIVATION] Failed to send email to ${contact.email}:`, error?.message || error);
+        console.error(`[EMERGENCY-ENDED] Failed to send email to ${contact.email}:`, error?.message || error);
       }
     }
     
     // Send SMS
     if (contact.phone) {
-      const smsMessage = needsConfirmation
-        ? `aok Alert: ${displayName} has deactivated their emergency. ${smsLocationInfo} Please confirm you've spoken to them and they're safe: ${confirmationUrl}`.trim()
-        : `ALL CLEAR: ${displayName} has confirmed they are safe. Emergency alert deactivated at ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}. ${smsLocationInfo}`.trim();
+      const smsMessage = `aok: Emergency ended for ${displayName} at ${confirmationTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} following confirmation by a trusted contact.`;
       const smsResult = await sendSMS(contact.phone, smsMessage);
       if (smsResult.success) {
         smsSent++;
-        console.log(`[DEACTIVATION] SMS sent to ${contact.phone}`);
+        console.log(`[EMERGENCY-ENDED] SMS sent to ${contact.phone}`);
       } else {
         smsFailed++;
-        console.error(`[DEACTIVATION] Failed to send SMS to ${contact.phone}:`, smsResult.error);
+        console.error(`[EMERGENCY-ENDED] Failed to send SMS to ${contact.phone}:`, smsResult.error);
       }
     }
   }
 
-  console.log(`[DEACTIVATION] Notifications sent - Emails: ${emailsSent}/${emailsSent + emailsFailed}, SMS: ${smsSent}/${smsSent + smsFailed}`);
+  console.log(`[EMERGENCY-ENDED] Notifications sent - Emails: ${emailsSent}/${emailsSent + emailsFailed}, SMS: ${smsSent}/${smsSent + smsFailed}`);
   return { emailsSent, emailsFailed, smsSent, smsFailed };
 }
 

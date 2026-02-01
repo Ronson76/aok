@@ -325,6 +325,8 @@ export const deactivationConfirmations = pgTable("deactivation_confirmations", {
   lastKnownWhat3Words: text("last_known_what3words"),
   sentAt: timestamp("sent_at").notNull().defaultNow(),
   confirmedAt: timestamp("confirmed_at"),
+  confirmedByIp: text("confirmed_by_ip"),
+  confirmedByUserAgent: text("confirmed_by_user_agent"),
   expiresAt: timestamp("expires_at").notNull(),
 });
 

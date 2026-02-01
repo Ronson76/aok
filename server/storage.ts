@@ -126,7 +126,7 @@ export interface IStorage {
   // Deactivation confirmations
   createDeactivationConfirmation(userId: string, alertId: string, contactEmail: string, contactName: string, latitude: string | null, longitude: string | null, what3words: string | null): Promise<{ id: string; token: string }>;
   getDeactivationConfirmationByToken(token: string): Promise<any | undefined>;
-  confirmDeactivation(token: string): Promise<boolean>;
+  confirmDeactivation(token: string, auditInfo?: { confirmedAt: Date; confirmedByIp: string; confirmedByUserAgent: string }): Promise<boolean>;
 
   // Terms and conditions
   acceptTerms(userId: string): Promise<void>;
@@ -1178,10 +1178,19 @@ class DatabaseStorage implements IStorage {
     };
   }
 
-  async confirmDeactivation(token: string): Promise<boolean> {
+  async confirmDeactivation(token: string, auditInfo?: { confirmedAt: Date; confirmedByIp: string; confirmedByUserAgent: string }): Promise<boolean> {
+    const updateData: any = { 
+      confirmedAt: auditInfo?.confirmedAt || new Date()
+    };
+    
+    if (auditInfo) {
+      updateData.confirmedByIp = auditInfo.confirmedByIp;
+      updateData.confirmedByUserAgent = auditInfo.confirmedByUserAgent;
+    }
+    
     const result = await getDb()
       .update(deactivationConfirmations)
-      .set({ confirmedAt: new Date() })
+      .set(updateData)
       .where(and(
         eq(deactivationConfirmations.confirmationToken, token),
         isNull(deactivationConfirmations.confirmedAt),
