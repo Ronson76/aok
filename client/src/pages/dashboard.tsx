@@ -261,6 +261,13 @@ export default function Dashboard() {
   const [showDeactivatePassword, setShowDeactivatePassword] = useState(false);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
+  // Hold-to-deactivate state
+  const [holdProgress, setHoldProgress] = useState(0);
+  const [isHolding, setIsHolding] = useState(false);
+  const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const holdStartTimeRef = useRef<number | null>(null);
+  const HOLD_DURATION_MS = 10000; // 10 seconds
+  
 
   // Check if user is org-managed (activated via reference code)
   const isOrgManagedClient = !!user?.referenceId;
@@ -506,7 +513,7 @@ export default function Dashboard() {
     emergencyMutation.mutate(cachedLocation || undefined);
   };
   
-  // Handle deactivation
+  // Handle deactivation (password method)
   const handleDeactivate = () => {
     if (!deactivatePassword.trim()) {
       toast({
@@ -518,6 +525,93 @@ export default function Dashboard() {
     }
     deactivateMutation.mutate(deactivatePassword);
   };
+  
+  // Hold-to-deactivate mutation (10 second hold method)
+  const holdDeactivateMutation = useMutation({
+    mutationFn: async () => {
+      // Get current location for the deactivation notification
+      let location: { latitude: number; longitude: number } | undefined;
+      if ("geolocation" in navigator) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              timeout: 5000,
+              enableHighAccuracy: true,
+              maximumAge: 60000
+            });
+          });
+          location = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+        } catch (e) {
+          console.log('[Deactivate] Could not get location:', e);
+        }
+      }
+      const response = await apiRequest("POST", "/api/emergency/deactivate-hold", { location });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/emergency/status"] });
+      toast({
+        title: "Emergency Alert Deactivated",
+        description: "Your contacts have been notified that you are safe.",
+      });
+    },
+    onError: (error: any) => {
+      const message = error?.message || "Failed to deactivate";
+      toast({
+        title: "Deactivation failed",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Hold button handlers
+  const startHold = () => {
+    setIsHolding(true);
+    holdStartTimeRef.current = Date.now();
+    setHoldProgress(0);
+    
+    holdIntervalRef.current = setInterval(() => {
+      if (holdStartTimeRef.current) {
+        const elapsed = Date.now() - holdStartTimeRef.current;
+        const progress = Math.min(elapsed / HOLD_DURATION_MS, 1);
+        setHoldProgress(progress);
+        
+        if (progress >= 1) {
+          // Hold complete - trigger deactivation
+          endHold(true);
+        }
+      }
+    }, 50); // Update every 50ms for smooth progress
+  };
+  
+  const endHold = (completed: boolean = false) => {
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
+    holdStartTimeRef.current = null;
+    setIsHolding(false);
+    
+    if (completed) {
+      holdDeactivateMutation.mutate();
+    }
+    
+    // Reset progress after a short delay for visual feedback
+    setTimeout(() => setHoldProgress(0), 300);
+  };
+  
+  // Cleanup hold interval on unmount
+  useEffect(() => {
+    return () => {
+      if (holdIntervalRef.current) {
+        clearInterval(holdIntervalRef.current);
+      }
+    };
+  }, []);
   
   // Location heartbeat during Red Alert Mode - send location updates
   useEffect(() => {
@@ -673,26 +767,62 @@ export default function Dashboard() {
               <div className="text-center space-y-4">
                 <div className="flex items-center justify-center gap-2 text-destructive animate-pulse">
                   <AlertOctagon className="h-8 w-8" />
-                  <span className="text-xl font-bold">RED ALERT ACTIVE</span>
+                  <span className="text-xl font-bold">EMERGENCY ALERT ACTIVE</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Your location is being shared with your emergency contacts every 5 minutes.
+                  Your emergency contacts have been notified via email, SMS and phone call.
                 </p>
                 {redAlertStatus?.activatedAt && (
                   <p className="text-xs text-muted-foreground">
                     Started: {format(new Date(redAlertStatus.activatedAt), "dd/MM/yyyy HH:mm")}
                   </p>
                 )}
+                
+                {/* Greyed out emergency button */}
                 <Button
-                  variant="outline"
+                  variant="destructive"
                   size="lg"
-                  className="w-full py-4 font-semibold border-2"
-                  onClick={() => setShowDeactivateDialog(true)}
-                  data-testid="button-deactivate-alert"
+                  className="w-full py-6 text-lg font-semibold opacity-50 cursor-not-allowed"
+                  disabled
+                  data-testid="button-emergency-disabled"
                 >
-                  <Lock className="h-5 w-5 mr-2" />
-                  Deactivate Alert
+                  <AlertOctagon className="h-6 w-6 mr-2" />
+                  Emergency Alert Active
                 </Button>
+                
+                {/* Hold to deactivate button */}
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full py-6 font-semibold border-2 relative overflow-hidden"
+                    onMouseDown={startHold}
+                    onMouseUp={() => endHold(false)}
+                    onMouseLeave={() => isHolding && endHold(false)}
+                    onTouchStart={startHold}
+                    onTouchEnd={() => endHold(false)}
+                    disabled={holdDeactivateMutation.isPending}
+                    data-testid="button-deactivate-hold"
+                  >
+                    {/* Progress bar background */}
+                    <div 
+                      className="absolute inset-0 bg-green-500/30 transition-all duration-75"
+                      style={{ width: `${holdProgress * 100}%` }}
+                    />
+                    <span className="relative z-10 flex items-center justify-center">
+                      {holdDeactivateMutation.isPending ? (
+                        <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Deactivating...</>
+                      ) : isHolding ? (
+                        <><Lock className="h-5 w-5 mr-2" /> {Math.ceil((1 - holdProgress) * 10)}s - Keep Holding</>
+                      ) : (
+                        <><Lock className="h-5 w-5 mr-2" /> Hold 10s to Deactivate</>
+                      )}
+                    </span>
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Hold the button for 10 seconds to confirm you are safe
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -710,7 +840,7 @@ export default function Dashboard() {
                 Emergency Alert
               </Button>
               <p className="text-xs text-center text-muted-foreground mt-2">
-                Sends immediate alert to all emergency contacts
+                Sends immediate alert via email, SMS and phone call
               </p>
             </CardContent>
           </Card>
@@ -756,7 +886,7 @@ export default function Dashboard() {
                 Emergency Alert
               </DialogTitle>
               <DialogDescription>
-                This will immediately notify all your emergency contacts via email and phone call. 
+                This will immediately notify all your emergency contacts via email, SMS and phone call. 
                 {gettingLocation && " Getting your location..."}
                 {cachedLocation && " Your location will be shared."}
               </DialogDescription>
@@ -968,26 +1098,62 @@ export default function Dashboard() {
             <div className="text-center space-y-4">
               <div className="flex items-center justify-center gap-2 text-destructive animate-pulse">
                 <AlertOctagon className="h-8 w-8" />
-                <span className="text-xl font-bold">RED ALERT ACTIVE</span>
+                <span className="text-xl font-bold">EMERGENCY ALERT ACTIVE</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Your location is being shared with your emergency contacts every 5 minutes.
+                Your emergency contacts have been notified via email, SMS and phone call.
               </p>
               {redAlertStatus?.activatedAt && (
                 <p className="text-xs text-muted-foreground">
                   Started: {format(new Date(redAlertStatus.activatedAt), "dd/MM/yyyy HH:mm")}
                 </p>
               )}
+              
+              {/* Greyed out emergency button */}
               <Button
-                variant="outline"
+                variant="destructive"
                 size="lg"
-                className="w-full max-w-xs py-4 font-semibold border-2"
-                onClick={() => setShowDeactivateDialog(true)}
-                data-testid="button-deactivate-alert"
+                className="w-full max-w-xs py-6 text-lg font-semibold opacity-50 cursor-not-allowed"
+                disabled
+                data-testid="button-emergency-disabled"
               >
-                <Lock className="h-5 w-5 mr-2" />
-                Deactivate Alert
+                <AlertOctagon className="h-6 w-6 mr-2" />
+                Emergency Alert Active
               </Button>
+              
+              {/* Hold to deactivate button */}
+              <div className="relative w-full max-w-xs mx-auto">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full py-6 font-semibold border-2 relative overflow-hidden"
+                  onMouseDown={startHold}
+                  onMouseUp={() => endHold(false)}
+                  onMouseLeave={() => isHolding && endHold(false)}
+                  onTouchStart={startHold}
+                  onTouchEnd={() => endHold(false)}
+                  disabled={holdDeactivateMutation.isPending}
+                  data-testid="button-deactivate-hold"
+                >
+                  {/* Progress bar background */}
+                  <div 
+                    className="absolute inset-0 bg-green-500/30 transition-all duration-75"
+                    style={{ width: `${holdProgress * 100}%` }}
+                  />
+                  <span className="relative z-10 flex items-center justify-center">
+                    {holdDeactivateMutation.isPending ? (
+                      <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Deactivating...</>
+                    ) : isHolding ? (
+                      <><Lock className="h-5 w-5 mr-2" /> {Math.ceil((1 - holdProgress) * 10)}s - Keep Holding</>
+                    ) : (
+                      <><Lock className="h-5 w-5 mr-2" /> Hold 10s to Deactivate</>
+                    )}
+                  </span>
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Hold the button for 10 seconds to confirm you are safe
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -1000,8 +1166,8 @@ export default function Dashboard() {
                 <h3 className="font-semibold">Emergency Alert</h3>
                 <p className="text-sm text-muted-foreground">
                   {isRedAlertEnabled 
-                    ? "Notify contacts and share your location every 5 minutes"
-                    : "Immediately notify all your contacts if you need help"
+                    ? "Notify contacts via email, SMS and phone call every 5 minutes"
+                    : "Immediately notify all your contacts via email, SMS and phone call"
                   }
                 </p>
               </div>
@@ -1042,7 +1208,7 @@ export default function Dashboard() {
               Send Emergency Alert?
             </DialogTitle>
             <DialogDescription>
-              This will immediately send an urgent alert to ALL your emergency contacts. 
+              This will immediately send an urgent alert to ALL your emergency contacts via email, SMS and phone call. 
               They will be notified that you need immediate help and your last known location will be shared.
             </DialogDescription>
           </DialogHeader>
