@@ -1104,6 +1104,39 @@ export default function AdminDashboard() {
                             </span>
                           )}
                         </div>
+                        {/* Emergency Alert Details */}
+                        {client.hasActiveAlert && client.alertActivatedAt && (
+                          <div className="mt-2 p-2 bg-destructive/10 border border-destructive/30 rounded text-xs space-y-1">
+                            <div className="font-medium text-destructive">
+                              Alert activated: {new Date(client.alertActivatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} at {new Date(client.alertActivatedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                            {client.alertWhat3Words ? (
+                              <div>
+                                <a 
+                                  href={`https://what3words.com/${client.alertWhat3Words}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-destructive underline font-medium"
+                                >
+                                  ///{client.alertWhat3Words}
+                                </a>
+                              </div>
+                            ) : client.alertLatitude && client.alertLongitude ? (
+                              <div>
+                                <a 
+                                  href={`https://www.google.com/maps?q=${client.alertLatitude},${client.alertLongitude}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-destructive underline"
+                                >
+                                  View on map
+                                </a>
+                              </div>
+                            ) : (
+                              <div className="text-muted-foreground">Location unavailable</div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">

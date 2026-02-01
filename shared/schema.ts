@@ -653,6 +653,10 @@ export interface OrganizationClientWithDetails {
   clientEmail?: string | null;
   alertsEnabled?: boolean;
   hasActiveEmergency?: boolean;
+  emergencyAlertActivatedAt?: string | null;
+  emergencyAlertLatitude?: string | null;
+  emergencyAlertLongitude?: string | null;
+  emergencyAlertWhat3Words?: string | null;
   scheduleStartTime?: Date | null;
   checkInIntervalHours?: number | null;
   addedAt: Date;
@@ -690,6 +694,10 @@ export interface AdminOrganizationClientView {
   isActivated: boolean;
   hasActiveAlert: boolean;
   activeAlertId: string | null;
+  alertActivatedAt: string | null;
+  alertLatitude: string | null;
+  alertLongitude: string | null;
+  alertWhat3Words: string | null;
   addedAt: Date;
   bundleId: string | null;
   clientPhone: string | null;
