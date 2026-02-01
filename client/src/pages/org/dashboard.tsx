@@ -1479,7 +1479,7 @@ export default function OrganizationDashboard() {
             <div className="text-2xl font-bold text-destructive" data-testid="text-clients-overdue">{stats?.clientsOverdue || 0}</div>
             <p className="text-xs text-muted-foreground">Missed check-in</p>
             <Link href="/org/missed-checkins">
-              <Button variant="link" size="sm" className="px-0 h-auto text-xs" data-testid="link-view-missed-checkins">
+              <Button variant="ghost" size="sm" className="px-0 h-auto text-xs underline" data-testid="link-view-missed-checkins">
                 View All
               </Button>
             </Link>
@@ -1511,7 +1511,7 @@ export default function OrganizationDashboard() {
           </div>
           <p className="text-xs text-muted-foreground">Total emergency alerts from your clients</p>
           <Link href="/org/emergency-alerts">
-            <Button variant="link" size="sm" className="px-0 h-auto text-xs" data-testid="link-view-emergency-alerts">
+            <Button variant="ghost" size="sm" className="px-0 h-auto text-xs underline" data-testid="link-view-emergency-alerts">
               View All
             </Button>
           </Link>
