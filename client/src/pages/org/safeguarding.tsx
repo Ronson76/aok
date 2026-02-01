@@ -1046,70 +1046,132 @@ export default function OrgSafeguardingPage() {
                     <Loader2 className="h-6 w-6 animate-spin" />
                   </div>
                 ) : incidents && incidents.length > 0 ? (
-                  <div className="space-y-3">
-                    {incidents.map((incident) => (
-                      <div key={incident.id} className={`p-4 rounded-lg border space-y-2 ${incident.isEmergencyAlert ? "border-destructive/50 bg-destructive/5" : ""}`}>
-                        <div className="flex items-start justify-between gap-2 flex-wrap">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {getSeverityBadge(incident.severity)}
-                            <span className="font-medium">{formatIncidentType(incident.incidentType)}</span>
-                            {getStatusBadge(incident.status)}
-                            {incident.isEmergencyAlert && (
-                              <Badge variant="destructive" className="text-xs">SOS</Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(incident.createdAt), "dd/MM/yyyy HH:mm")}
-                          </p>
-                        </div>
-                        <p className="text-sm">{incident.description}</p>
-                        {incident.isEmergencyAlert && incident.clientName && (
-                          <p className="text-sm text-muted-foreground">Client: {incident.clientName}{incident.referenceCode ? ` (${incident.referenceCode})` : ""}</p>
-                        )}
-                        {!incident.isEmergencyAlert && incident.clientId && (
-                          <p className="text-sm text-muted-foreground">Client: {getClientName(incident.clientId)}</p>
-                        )}
-                        {incident.what3words && (
-                          <p className="text-sm text-muted-foreground">Location: ///{incident.what3words}</p>
-                        )}
-                        {incident.status === "open" && (
-                          <div className="flex items-center gap-2 pt-2">
-                            {selectedIncidentId === incident.id ? (
-                              <div className="flex items-center gap-2 flex-1">
-                                <Input
-                                  placeholder="Resolution notes..."
-                                  value={resolutionText}
-                                  onChange={(e) => setResolutionText(e.target.value)}
-                                  className="flex-1"
-                                />
-                                <Button
-                                  size="sm"
-                                  onClick={() => resolveIncidentMutation.mutate({ id: incident.id, resolution: resolutionText })}
-                                  disabled={!resolutionText || resolveIncidentMutation.isPending}
-                                >
-                                  <Check className="h-4 w-4" />
-                                </Button>
-                                <Button size="sm" variant="ghost" onClick={() => setSelectedIncidentId(null)}>
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <Button size="sm" variant="outline" onClick={() => setSelectedIncidentId(incident.id)}>
-                                Resolve
-                              </Button>
-                            )}
-                          </div>
-                        )}
-                        {incident.resolution && (
-                          <div className="pt-2 border-t mt-2">
-                            <p className="text-sm text-muted-foreground">
-                              <strong>Resolution:</strong> {incident.resolution}
-                            </p>
-                          </div>
-                        )}
+                  (() => {
+                    // Group incidents by client name
+                    const groupedIncidents = incidents.reduce((acc, incident) => {
+                      const clientKey = incident.clientName || (incident.clientId ? getClientName(incident.clientId) : "Unknown Client");
+                      if (!acc[clientKey]) {
+                        acc[clientKey] = [];
+                      }
+                      acc[clientKey].push(incident);
+                      return acc;
+                    }, {} as Record<string, Incident[]>);
+                    
+                    const toggleClient = (clientName: string) => {
+                      setExpandedClients(prev => {
+                        const next = new Set(prev);
+                        if (next.has(clientName)) {
+                          next.delete(clientName);
+                        } else {
+                          next.add(clientName);
+                        }
+                        return next;
+                      });
+                    };
+                    
+                    return (
+                      <div className="space-y-3">
+                        {Object.entries(groupedIncidents).map(([clientName, clientIncidents]) => {
+                          const isExpanded = expandedClients.has(clientName);
+                          const hasEmergency = clientIncidents.some(i => i.isEmergencyAlert);
+                          const openCount = clientIncidents.filter(i => i.status === "open").length;
+                          const highestSeverity = clientIncidents.reduce((max, i) => {
+                            const severities = ["low", "medium", "high", "critical"];
+                            return severities.indexOf(i.severity) > severities.indexOf(max) ? i.severity : max;
+                          }, "low");
+                          
+                          return (
+                            <div key={clientName} className={`rounded-lg border ${hasEmergency ? "border-destructive/50" : ""}`}>
+                              <button
+                                onClick={() => toggleClient(clientName)}
+                                className="w-full flex items-center justify-between p-4 hover-elevate rounded-lg text-left"
+                                data-testid={`btn-expand-incidents-${clientName.replace(/\s+/g, '-').toLowerCase()}`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {isExpanded ? (
+                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                  )}
+                                  <span className="font-medium">{clientName}</span>
+                                  {hasEmergency && (
+                                    <Badge variant="destructive" className="text-xs">SOS</Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {getSeverityBadge(highestSeverity)}
+                                  {openCount > 0 && (
+                                    <Badge variant="outline" className="text-xs">{openCount} open</Badge>
+                                  )}
+                                  <Badge variant="secondary" className="text-xs">{clientIncidents.length} total</Badge>
+                                </div>
+                              </button>
+                              {isExpanded && (
+                                <div className="border-t px-4 pb-4 space-y-3">
+                                  {clientIncidents.map((incident) => (
+                                    <div key={incident.id} className={`p-3 mt-3 rounded-lg space-y-2 ${incident.isEmergencyAlert ? "bg-destructive/5 border border-destructive/30" : "bg-muted/30"}`}>
+                                      <div className="flex items-start justify-between gap-2 flex-wrap">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          {getSeverityBadge(incident.severity)}
+                                          <span className="font-medium">{formatIncidentType(incident.incidentType)}</span>
+                                          {getStatusBadge(incident.status)}
+                                          {incident.isEmergencyAlert && (
+                                            <Badge variant="destructive" className="text-xs">SOS</Badge>
+                                          )}
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">
+                                          {format(new Date(incident.createdAt), "dd/MM/yyyy HH:mm")}
+                                        </p>
+                                      </div>
+                                      <p className="text-sm">{incident.description}</p>
+                                      {incident.what3words && (
+                                        <p className="text-sm text-muted-foreground">Location: ///{incident.what3words}</p>
+                                      )}
+                                      {incident.status === "open" && !incident.isEmergencyAlert && (
+                                        <div className="flex items-center gap-2 pt-2">
+                                          {selectedIncidentId === incident.id ? (
+                                            <div className="flex items-center gap-2 flex-1">
+                                              <Input
+                                                placeholder="Resolution notes..."
+                                                value={resolutionText}
+                                                onChange={(e) => setResolutionText(e.target.value)}
+                                                className="flex-1"
+                                              />
+                                              <Button
+                                                size="sm"
+                                                onClick={() => resolveIncidentMutation.mutate({ id: incident.id, resolution: resolutionText })}
+                                                disabled={!resolutionText || resolveIncidentMutation.isPending}
+                                              >
+                                                <Check className="h-4 w-4" />
+                                              </Button>
+                                              <Button size="sm" variant="ghost" onClick={() => setSelectedIncidentId(null)}>
+                                                <X className="h-4 w-4" />
+                                              </Button>
+                                            </div>
+                                          ) : (
+                                            <Button size="sm" variant="outline" onClick={() => setSelectedIncidentId(incident.id)}>
+                                              Resolve
+                                            </Button>
+                                          )}
+                                        </div>
+                                      )}
+                                      {incident.resolution && (
+                                        <div className="pt-2 border-t mt-2">
+                                          <p className="text-sm text-muted-foreground">
+                                            <strong>Resolution:</strong> {incident.resolution}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })()
                 ) : (
                   <p className="text-center text-muted-foreground py-8">No incidents reported yet</p>
                 )}
