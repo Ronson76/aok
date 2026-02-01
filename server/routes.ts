@@ -228,11 +228,10 @@ function renderSafetyConfirmationForm(token: string, userName: string, contactNa
       accent-color: #22c55e;
       cursor: pointer;
     }
-    .checkbox-item label {
+    .checkbox-item span {
       color: #1e293b;
       font-size: 15px;
       line-height: 1.5;
-      cursor: pointer;
     }
     .submit-btn {
       width: 100%;
@@ -289,20 +288,20 @@ function renderSafetyConfirmationForm(token: string, userName: string, contactNa
       <input type="hidden" name="token" value="${token}">
       
       <div class="checkbox-group">
-        <div class="checkbox-item" onclick="document.getElementById('spoken').click()">
+        <label class="checkbox-item" for="spoken">
           <input type="checkbox" id="spoken" name="spoken" required>
-          <label for="spoken">I have spoken directly to ${userName}</label>
-        </div>
+          <span>I have spoken directly to ${userName}</span>
+        </label>
         
-        <div class="checkbox-item" onclick="document.getElementById('safe').click()">
+        <label class="checkbox-item" for="safe">
           <input type="checkbox" id="safe" name="safe" required>
-          <label for="safe">They told me they are safe and requested the emergency to end</label>
-        </div>
+          <span>They told me they are safe and requested the emergency to end</span>
+        </label>
         
-        <div class="checkbox-item" onclick="document.getElementById('understand').click()">
+        <label class="checkbox-item" for="understand">
           <input type="checkbox" id="understand" name="understand" required>
-          <label for="understand">I understand this will stop all further emergency alerts</label>
-        </div>
+          <span>I understand this will stop all further emergency alerts</span>
+        </label>
       </div>
       
       <p id="errorMsg" class="error">Please tick all boxes to confirm</p>
