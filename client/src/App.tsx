@@ -226,6 +226,7 @@ function AppLayout() {
   const appUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const shareUrl = "https://aok.care";
   const showMenu = ['/', '/login', '/app'].includes(location);
+  const isOrgManagedClient = !!user?.referenceId;
 
   const handleShareLink = async () => {
     const shareText = "Stay safe with aok - a personal safety check-in app that alerts your emergency contacts if something happens to you.";
@@ -438,35 +439,39 @@ function AppLayout() {
                 )}
               </div>
             </Link>
-            <div className="h-8 w-px bg-muted-foreground/30" />
-            {user?.termsAcceptedAt ? (
-              <a 
-                href="https://health-insight-engine.replit.app" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex flex-col items-center"
-                data-testid="link-health-insight"
-              >
-                <div className="relative h-6 w-6 flex items-center justify-center">
-                  <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
-                  <div className="w-1.5 h-5 bg-green-600 absolute rounded-sm" />
-                  <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
-                </div>
-                <span className="text-[10px] font-medium text-green-600 mt-0.5">Wellbeing AI</span>
-              </a>
-            ) : (
-              <div 
-                className="flex flex-col items-center cursor-not-allowed"
-                title="Complete registration to access"
-                data-testid="link-health-insight-disabled"
-              >
-                <div className="relative h-6 w-6 flex items-center justify-center">
-                  <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
-                  <div className="w-1.5 h-5 bg-green-600 absolute rounded-sm" />
-                  <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
-                </div>
-                <span className="text-[10px] font-medium text-green-600 mt-0.5">Wellbeing AI</span>
-              </div>
+            {!isOrgManagedClient && (
+              <>
+                <div className="h-8 w-px bg-muted-foreground/30" />
+                {user?.termsAcceptedAt ? (
+                  <a 
+                    href="https://health-insight-engine.replit.app" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center"
+                    data-testid="link-health-insight"
+                  >
+                    <div className="relative h-6 w-6 flex items-center justify-center">
+                      <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
+                      <div className="w-1.5 h-5 bg-green-600 absolute rounded-sm" />
+                      <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
+                    </div>
+                    <span className="text-[10px] font-medium text-green-600 mt-0.5">Wellbeing AI</span>
+                  </a>
+                ) : (
+                  <div 
+                    className="flex flex-col items-center cursor-not-allowed"
+                    title="Complete registration to access"
+                    data-testid="link-health-insight-disabled"
+                  >
+                    <div className="relative h-6 w-6 flex items-center justify-center">
+                      <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
+                      <div className="w-1.5 h-5 bg-green-600 absolute rounded-sm" />
+                      <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
+                    </div>
+                    <span className="text-[10px] font-medium text-green-600 mt-0.5">Wellbeing AI</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
           {/* Menu positioned absolutely on the right */}
