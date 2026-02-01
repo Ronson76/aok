@@ -1692,9 +1692,9 @@ export async function registerRoutes(
       // Deactivate the alert
       await storage.deactivateEmergencyAlert(activeAlert.id);
       
-      // Get all confirmed contacts to notify them
+      // Get ALL contacts to notify them (emergency notifications go to all contacts, not just confirmed)
       const contacts = await storage.getContacts(userId);
-      const confirmedContacts = contacts.filter(c => c.confirmedAt !== null);
+      const contactsWithEmail = contacts.filter(c => c.email && c.email.trim() !== '');
       
       // Create confirmation records for each contact and generate links
       const baseUrl = process.env.APP_URL || 
@@ -1703,7 +1703,7 @@ export async function registerRoutes(
           : 'http://localhost:5000');
       
       const confirmationLinks = new Map<string, string>();
-      for (const contact of confirmedContacts) {
+      for (const contact of contactsWithEmail) {
         const { token } = await storage.createDeactivationConfirmation(
           userId,
           activeAlert.id,
@@ -1716,15 +1716,19 @@ export async function registerRoutes(
         confirmationLinks.set(contact.email, `${baseUrl}/api/confirm-safety?token=${token}`);
       }
       
-      // Send deactivation notifications to all contacts with confirmation links
-      if (confirmedContacts.length > 0) {
+      // Send deactivation notifications to ALL contacts with confirmation links
+      // (Emergency notifications bypass confirmation requirement for safety reasons)
+      if (contactsWithEmail.length > 0) {
         const { sendEmergencyDeactivationAlert } = await import("./notifications");
         await sendEmergencyDeactivationAlert(
-          confirmedContacts,
+          contactsWithEmail,
           user,
           location ? { latitude: location.latitude, longitude: location.longitude } : undefined,
           confirmationLinks
         );
+        console.log(`[EMERGENCY] Deactivation notifications sent to ${contactsWithEmail.length} contacts`);
+      } else {
+        console.log(`[EMERGENCY] No contacts with email addresses to notify about deactivation`);
       }
       
       // Log the deactivation with location info

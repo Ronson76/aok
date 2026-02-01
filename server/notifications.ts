@@ -1400,13 +1400,13 @@ Thank you for being there when it mattered.
 
     // Send email
     if (contact.email) {
-      const emailResult = await sendEmail(contact.email, emailSubject, emailBody, emailHtml);
-      if (emailResult.success) {
+      try {
+        await sendEmail(contact.email, emailSubject, emailBody, emailHtml);
         emailsSent++;
         console.log(`[DEACTIVATION] Email sent to ${contact.email}`);
-      } else {
+      } catch (error: any) {
         emailsFailed++;
-        console.error(`[DEACTIVATION] Failed to send email to ${contact.email}:`, emailResult.error);
+        console.error(`[DEACTIVATION] Failed to send email to ${contact.email}:`, error?.message || error);
       }
     }
     
