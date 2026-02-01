@@ -83,8 +83,12 @@ export function BottomNav() {
   
   const isMoreActive = wellnessFeatures.some(f => location === f.path);
 
-  // Show More menu for regular users and org-managed clients, but not organizations
-  const showMoreMenu = !isOrganization;
+  // Check if any wellness features are enabled
+  const hasAnyWellnessFeatures = wellnessFeatures.some(f => f.enabled) || 
+    (!isOrgManagedClient && features?.featureWellbeingAi !== false);
+
+  // Show More menu for regular users always, for org-managed clients only if they have wellness features enabled
+  const showMoreMenu = !isOrganization && (!isOrgManagedClient || hasAnyWellnessFeatures);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-card-border z-50">
