@@ -790,12 +790,12 @@ export default function Dashboard() {
                   Emergency Alert Active
                 </Button>
                 
-                {/* Hold to deactivate button */}
+                {/* Hold to deactivate button - GREEN when active */}
                 <div className="relative">
                   <Button
-                    variant="outline"
+                    variant="default"
                     size="lg"
-                    className="w-full py-6 font-semibold border-2 relative overflow-hidden"
+                    className="w-full py-6 font-semibold border-2 border-green-600 bg-green-600 hover:bg-green-700 text-white relative overflow-hidden"
                     onMouseDown={startHold}
                     onMouseUp={() => endHold(false)}
                     onMouseLeave={() => isHolding && endHold(false)}
@@ -806,7 +806,7 @@ export default function Dashboard() {
                   >
                     {/* Progress bar background */}
                     <div 
-                      className="absolute inset-0 bg-green-500/30 transition-all duration-75"
+                      className="absolute inset-0 bg-green-400/50 transition-all duration-75"
                       style={{ width: `${holdProgress * 100}%` }}
                     />
                     <span className="relative z-10 flex items-center justify-center">
@@ -1141,12 +1141,12 @@ export default function Dashboard() {
                 Emergency Alert Active
               </Button>
               
-              {/* Hold to deactivate button */}
+              {/* Hold to deactivate button - GREEN when active */}
               <div className="relative w-full max-w-xs mx-auto">
                 <Button
-                  variant="outline"
+                  variant="default"
                   size="lg"
-                  className="w-full py-6 font-semibold border-2 relative overflow-hidden"
+                  className="w-full py-6 font-semibold border-2 border-green-600 bg-green-600 hover:bg-green-700 text-white relative overflow-hidden"
                   onMouseDown={startHold}
                   onMouseUp={() => endHold(false)}
                   onMouseLeave={() => isHolding && endHold(false)}
@@ -1157,7 +1157,7 @@ export default function Dashboard() {
                 >
                   {/* Progress bar background */}
                   <div 
-                    className="absolute inset-0 bg-green-500/30 transition-all duration-75"
+                    className="absolute inset-0 bg-green-400/50 transition-all duration-75"
                     style={{ width: `${holdProgress * 100}%` }}
                   />
                   <span className="relative z-10 flex items-center justify-center">
