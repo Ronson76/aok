@@ -51,4 +51,4 @@ VAPID_PRIVATE_KEY = "GrzjTQqk6ispv_pgiUZScEmU-XE9F9qfa5f665gaJzE"
 SENDGRID_FROM_EMAIL = "noreply@aok.care"
 
 [userenv.production]
-APP_URL = "https://aok.care"
+APP_URL = "https://check-mate--ronnieghuman.replit.app"
