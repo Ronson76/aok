@@ -1391,18 +1391,6 @@ export default function OrganizationDashboard() {
                 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <ExternalLink className="h-4 w-4 text-emerald-500" />
-                    <span className="text-sm">Wellbeing AI</span>
-                  </div>
-                  <Switch
-                    checked={regFeatures.featureWellbeingAi}
-                    onCheckedChange={(checked) => setRegFeatures({...regFeatures, featureWellbeingAi: checked})}
-                    data-testid="switch-reg-feature-ai"
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
                     <Smartphone className="h-4 w-4 text-purple-500" />
                     <span className="text-sm">Shake to Alert</span>
                   </div>
@@ -1625,9 +1613,6 @@ export default function OrganizationDashboard() {
                         )}
                         {client.features && (
                           <div className="flex items-center gap-1" title="Enabled features">
-                            {client.features.featureWellbeingAi && (
-                              <span title="Wellbeing AI"><ExternalLink className="h-3 w-3 text-emerald-500" /></span>
-                            )}
                             {client.features.featureMoodTracking && (
                               <span title="Mood Tracking"><TrendingUp className="h-3 w-3 text-blue-500" /></span>
                             )}
@@ -2394,24 +2379,6 @@ export default function OrganizationDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-full bg-emerald-500/10 p-2">
-                          <ExternalLink className="h-5 w-5 text-emerald-500" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Wellbeing AI</p>
-                          <p className="text-sm text-muted-foreground">Access to Health Insight AI for healthcare advice</p>
-                        </div>
-                      </div>
-                      <Switch
-                        checked={clientFeatures.featureWellbeingAi}
-                        onCheckedChange={(checked) => updateClientFeature(selectedClient.id, "featureWellbeingAi", checked)}
-                        disabled={savingFeatures}
-                        data-testid="switch-feature-wellbeing-ai"
-                      />
-                    </div>
-
                     <div className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="rounded-full bg-red-500/10 p-2">
