@@ -149,6 +149,24 @@ interface OrganizationClient {
   };
 }
 
+interface DeactivationConfirmation {
+  id: string;
+  clientName: string;
+  clientEmail: string;
+  referenceCode: string | null;
+  contactName: string;
+  contactEmail: string;
+  alertId: string;
+  lastKnownLatitude: string | null;
+  lastKnownLongitude: string | null;
+  lastKnownWhat3Words: string | null;
+  sentAt: string;
+  confirmedAt: string | null;
+  confirmedByIp: string | null;
+  confirmedByUserAgent: string | null;
+  expiresAt: string;
+}
+
 export default function OrgSafeguardingPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
@@ -199,7 +217,7 @@ export default function OrgSafeguardingPage() {
   
   // PDF download state
   const [showPdfDialog, setShowPdfDialog] = useState(false);
-  const [pdfType, setPdfType] = useState<"incidents" | "concerns" | "audit" | null>(null);
+  const [pdfType, setPdfType] = useState<"incidents" | "concerns" | "audit" | "confirmations" | null>(null);
   const [pdfDateRange, setPdfDateRange] = useState<"all" | "month" | "year" | "custom">("all");
   const [pdfCustomStartDate, setPdfCustomStartDate] = useState("");
   const [pdfCustomEndDate, setPdfCustomEndDate] = useState("");
@@ -234,6 +252,10 @@ export default function OrgSafeguardingPage() {
 
   const { data: clients } = useQuery<OrganizationClient[]>({
     queryKey: ["/api/org/clients"],
+  });
+
+  const { data: deactivationConfirmations, isLoading: confirmationsLoading } = useQuery<DeactivationConfirmation[]>({
+    queryKey: ["/api/org/safeguarding/deactivation-confirmations"],
   });
 
   const { data: caseNotes } = useQuery<CaseNote[]>({
@@ -458,7 +480,7 @@ export default function OrgSafeguardingPage() {
   };
 
   // Open PDF dialog
-  const openPdfDialog = (type: "incidents" | "concerns" | "audit") => {
+  const openPdfDialog = (type: "incidents" | "concerns" | "audit" | "confirmations") => {
     setPdfType(type);
     setPdfDateRange("all");
     setPdfCustomStartDate("");
@@ -670,6 +692,72 @@ export default function OrgSafeguardingPage() {
     setShowPdfDialog(false);
   };
 
+  const downloadConfirmationsPDF = () => {
+    if (!deactivationConfirmations || deactivationConfirmations.length === 0) return;
+    
+    const filteredConfirmations = filterByDateRange(deactivationConfirmations.map(c => ({ ...c, createdAt: c.sentAt })));
+    if (filteredConfirmations.length === 0) {
+      toast({ title: "No data", description: "No confirmations found for the selected date range.", variant: "destructive" });
+      return;
+    }
+    
+    const doc = new jsPDF({ orientation: "landscape" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const { label } = getDateRange();
+    
+    // Branded header
+    doc.setFillColor(34, 197, 94);
+    doc.rect(0, 0, pageWidth, 35, "F");
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
+    doc.text("aok", 14, 20);
+    
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text("Emergency Deactivation Confirmations Report", 14, 28);
+    
+    doc.setFontSize(10);
+    doc.text(`Period: ${label}`, pageWidth - 14, 20, { align: "right" });
+    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth - 14, 28, { align: "right" });
+    
+    doc.setTextColor(0, 0, 0);
+    
+    // Table data
+    const tableData = filteredConfirmations.map(conf => [
+      (conf as any).clientName || "Unknown",
+      (conf as any).referenceCode || "-",
+      (conf as any).contactName,
+      (conf as any).contactEmail,
+      format(new Date((conf as any).sentAt), "dd/MM/yyyy HH:mm"),
+      (conf as any).confirmedAt ? format(new Date((conf as any).confirmedAt), "dd/MM/yyyy HH:mm") : "Pending",
+      (conf as any).lastKnownWhat3Words ? `///${(conf as any).lastKnownWhat3Words}` : "-",
+      (conf as any).confirmedByIp || "-"
+    ]);
+    
+    autoTable(doc, {
+      startY: 45,
+      head: [["Client", "Ref #", "Contact Name", "Contact Email", "Sent", "Confirmed", "Location (w3w)", "Confirmed IP"]],
+      body: tableData,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [34, 197, 94], textColor: 255 }
+    });
+    
+    // Footer
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128);
+      doc.setFont("helvetica", "normal");
+      doc.text(`aok - Keeping you safe | Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+    }
+    
+    doc.save(`aok-emergency-confirmations-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    setShowPdfDialog(false);
+  };
+
   const handlePdfDownload = () => {
     switch (pdfType) {
       case "incidents":
@@ -680,6 +768,9 @@ export default function OrgSafeguardingPage() {
         break;
       case "audit":
         downloadAuditTrailPDF();
+        break;
+      case "confirmations":
+        downloadConfirmationsPDF();
         break;
     }
   };
@@ -719,13 +810,14 @@ export default function OrgSafeguardingPage() {
 
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
             <TabsTrigger value="incidents" data-testid="tab-incidents">Incidents</TabsTrigger>
             <TabsTrigger value="concerns" data-testid="tab-concerns">Concerns</TabsTrigger>
             <TabsTrigger value="cases" data-testid="tab-cases">Case Files</TabsTrigger>
-            <TabsTrigger value="rules" data-testid="tab-rules">Escalation Rules</TabsTrigger>
-            <TabsTrigger value="audit" data-testid="tab-audit">Audit Trail</TabsTrigger>
+            <TabsTrigger value="rules" data-testid="tab-rules">Rules</TabsTrigger>
+            <TabsTrigger value="confirmations" data-testid="tab-confirmations">Confirmations</TabsTrigger>
+            <TabsTrigger value="audit" data-testid="tab-audit">Audit</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -1241,6 +1333,119 @@ export default function OrgSafeguardingPage() {
                   </div>
                 ) : (
                   <p className="text-center text-muted-foreground py-8">No audit entries yet</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="confirmations" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Shield className="h-5 w-5" />
+                      Emergency Deactivation Confirmations
+                    </CardTitle>
+                    <CardDescription>
+                      Audit trail of emergency alert deactivations confirmed by trusted contacts
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => openPdfDialog("confirmations")} 
+                    disabled={!deactivationConfirmations || deactivationConfirmations.length === 0}
+                    data-testid="button-download-confirmations-pdf"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {confirmationsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : deactivationConfirmations && deactivationConfirmations.length > 0 ? (
+                  <div className="space-y-3">
+                    {deactivationConfirmations.map((conf) => (
+                      <div key={conf.id} className="p-4 rounded-lg border space-y-3">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{conf.clientName}</span>
+                              {conf.referenceCode && (
+                                <Badge variant="outline" className="text-xs">{conf.referenceCode}</Badge>
+                              )}
+                              {conf.confirmedAt ? (
+                                <Badge className="bg-green-500 hover:bg-green-600 text-xs">Confirmed</Badge>
+                              ) : new Date(conf.expiresAt) < new Date() ? (
+                                <Badge variant="destructive" className="text-xs">Expired</Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-xs">Pending</Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{conf.clientEmail}</p>
+                          </div>
+                          <div className="text-right text-xs text-muted-foreground">
+                            <p>Sent: {format(new Date(conf.sentAt), "dd/MM/yyyy HH:mm")}</p>
+                            {conf.confirmedAt && (
+                              <p className="text-green-600 dark:text-green-400">
+                                Confirmed: {format(new Date(conf.confirmedAt), "dd/MM/yyyy HH:mm")}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Trusted Contact</p>
+                            <p className="font-medium">{conf.contactName}</p>
+                            <p className="text-muted-foreground">{conf.contactEmail}</p>
+                          </div>
+                          {conf.lastKnownWhat3Words && (
+                            <div>
+                              <p className="text-muted-foreground">Location (what3words)</p>
+                              <a 
+                                href={`https://what3words.com/${conf.lastKnownWhat3Words}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-primary hover:underline"
+                              >
+                                ///{conf.lastKnownWhat3Words}
+                              </a>
+                              {conf.lastKnownLatitude && conf.lastKnownLongitude && (
+                                <p className="text-xs text-muted-foreground">
+                                  {conf.lastKnownLatitude}, {conf.lastKnownLongitude}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {conf.confirmedAt && (
+                          <div className="pt-2 border-t space-y-1">
+                            <p className="text-xs font-medium text-muted-foreground">Confirmation Audit Trail</p>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <span className="text-muted-foreground">IP Address: </span>
+                                <span className="font-mono">{conf.confirmedByIp || "Unknown"}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Device: </span>
+                                <span className="truncate" title={conf.confirmedByUserAgent || undefined}>
+                                  {conf.confirmedByUserAgent ? conf.confirmedByUserAgent.substring(0, 50) + (conf.confirmedByUserAgent.length > 50 ? "..." : "") : "Unknown"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No emergency confirmations recorded</p>
                 )}
               </CardContent>
             </Card>
