@@ -976,8 +976,33 @@ export function registerOrganizationRoutes(app: Express) {
   app.get("/api/org/safeguarding/incidents", requireOrganization, async (req, res) => {
     try {
       const orgId = (req.user as any).id;
-      const incidents = await storage.getIncidents(orgId);
-      res.json(incidents);
+      const [incidents, emergencyAlerts] = await Promise.all([
+        storage.getIncidents(orgId),
+        organizationStorage.getOrganizationEmergencyAlerts(orgId),
+      ]);
+      
+      // Convert emergency alerts to incident format
+      const emergencyIncidents = emergencyAlerts.map(alert => ({
+        id: `emergency-${alert.id}`,
+        incidentType: "emergency_alert",
+        severity: alert.status === "active" ? "critical" : "high",
+        description: `Emergency alert triggered${alert.what3words ? ` at ///${alert.what3words}` : ""}`,
+        createdAt: alert.timestamp,
+        status: alert.status === "active" ? "open" : "closed",
+        clientId: null,
+        clientName: alert.clientName,
+        referenceCode: alert.referenceCode,
+        what3words: alert.what3words,
+        isEmergencyAlert: true,
+      }));
+      
+      // Combine and sort by date
+      const allIncidents = [
+        ...incidents.map(i => ({ ...i, isEmergencyAlert: false })),
+        ...emergencyIncidents,
+      ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      res.json(allIncidents);
     } catch (error) {
       console.error("Error fetching incidents:", error);
       res.status(500).json({ error: "Failed to fetch incidents" });
@@ -1445,12 +1470,13 @@ export function registerOrganizationRoutes(app: Express) {
     try {
       const orgId = (req.user as any).id;
       
-      const [incidents, concerns, caseFiles, escalations, riskReports] = await Promise.all([
+      const [incidents, concerns, caseFiles, escalations, riskReports, emergencyAlerts] = await Promise.all([
         storage.getIncidents(orgId),
         storage.getWelfareConcerns(orgId),
         storage.getCaseFiles(orgId),
         storage.getMissedCheckInEscalations(orgId),
         storage.getRiskReports(orgId),
+        organizationStorage.getOrganizationEmergencyAlerts(orgId),
       ]);
       
       const openIncidents = incidents.filter(i => i.status === "open").length;
@@ -1462,9 +1488,30 @@ export function registerOrganizationRoutes(app: Express) {
       const highRiskCases = caseFiles.filter(c => c.riskLevel === "red").length;
       const amberRiskCases = caseFiles.filter(c => c.riskLevel === "amber").length;
       
+      // Convert emergency alerts to incident format and merge with incidents
+      const emergencyIncidents = emergencyAlerts.map(alert => ({
+        id: `emergency-${alert.id}`,
+        incidentType: "emergency_alert",
+        severity: alert.status === "active" ? "critical" : "high",
+        description: `Emergency alert triggered${alert.what3words ? ` at ///${alert.what3words}` : ""}`,
+        createdAt: alert.timestamp,
+        status: alert.status === "active" ? "open" : "closed",
+        clientId: null,
+        clientName: alert.clientName,
+        referenceCode: alert.referenceCode,
+        what3words: alert.what3words,
+        isEmergencyAlert: true,
+      }));
+      
+      // Combine and sort all incidents by date
+      const allIncidents = [
+        ...incidents.map(i => ({ ...i, isEmergencyAlert: false })),
+        ...emergencyIncidents,
+      ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
       res.json({
-        totalIncidents: incidents.length,
-        openIncidents,
+        totalIncidents: incidents.length + emergencyAlerts.length,
+        openIncidents: openIncidents + emergencyAlerts.filter(a => a.status === "active").length,
         totalConcerns: concerns.length,
         openConcerns,
         totalCaseFiles: caseFiles.length,
@@ -1473,7 +1520,7 @@ export function registerOrganizationRoutes(app: Express) {
         unreviewedReports,
         highRiskCases,
         amberRiskCases,
-        recentIncidents: incidents.slice(0, 5),
+        recentIncidents: allIncidents.slice(0, 5),
         recentConcerns: concerns.slice(0, 5),
       });
     } catch (error) {
