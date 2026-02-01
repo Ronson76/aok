@@ -615,20 +615,25 @@ export default function Dashboard() {
                 </p>
               )}
               
-              {/* Check-In Button - always enabled */}
+              {/* Check-In Button - only enabled when due or overdue */}
               <Button
                 size="lg"
                 className="w-full px-8 py-6 text-lg font-semibold"
                 onClick={() => checkInMutation.mutate()}
-                disabled={checkInMutation.isPending}
+                disabled={checkInMutation.isPending || !effectivelyOverdue}
                 data-testid="button-check-in"
               >
                 {checkInMutation.isPending ? (
                   <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Checking In...</>
-                ) : (
+                ) : effectivelyOverdue ? (
                   <>
                     <CheckCircle className="h-5 w-5 mr-2" />
                     I'm OK
+                  </>
+                ) : (
+                  <>
+                    <Clock className="h-5 w-5 mr-2" />
+                    Not Due Yet
                   </>
                 )}
               </Button>
@@ -884,15 +889,17 @@ export default function Dashboard() {
               size="lg"
               className="w-full max-w-xs px-8 py-6 text-lg font-semibold"
               onClick={() => checkInMutation.mutate()}
-              disabled={checkInMutation.isPending}
+              disabled={checkInMutation.isPending || !effectivelyOverdue}
               data-testid="button-check-in"
             >
               {checkInMutation.isPending ? (
                 <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              ) : (
+              ) : effectivelyOverdue ? (
                 <CheckCircle className="h-5 w-5 mr-2" />
+              ) : (
+                <Clock className="h-5 w-5 mr-2" />
               )}
-              I'm OK
+              {effectivelyOverdue ? "Check In Now" : "Not Due Yet"}
             </Button>
           )}
         </CardContent>
