@@ -45,6 +45,10 @@ export const users = pgTable("users", {
   featureWellness: boolean("feature_wellness").notNull().default(true),
   featurePetProtection: boolean("feature_pet_protection").notNull().default(true),
   featureDigitalWill: boolean("feature_digital_will").notNull().default(true),
+  // Last known location (updated on check-in if provided)
+  latitude: text("latitude"),
+  longitude: text("longitude"),
+  lastLocationUpdatedAt: timestamp("last_location_updated_at"),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ 
@@ -285,6 +289,7 @@ export const activeEmergencyAlerts = pgTable("active_emergency_alerts", {
   lastDispatchAt: timestamp("last_dispatch_at").notNull().defaultNow(),
   latitude: text("latitude"),
   longitude: text("longitude"),
+  what3words: text("what3words"),
   isActive: boolean("is_active").notNull().default(true),
   deactivatedAt: timestamp("deactivated_at"),
 });
@@ -306,6 +311,24 @@ export const deactivateEmergencyAlertSchema = z.object({
 });
 
 export type DeactivateEmergencyAlertInput = z.infer<typeof deactivateEmergencyAlertSchema>;
+
+// Deactivation confirmations - tracks when contacts confirm they've spoken to the client
+export const deactivationConfirmations = pgTable("deactivation_confirmations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  contactEmail: text("contact_email").notNull(),
+  contactName: text("contact_name").notNull(),
+  alertId: varchar("alert_id").notNull(),
+  confirmationToken: text("confirmation_token").notNull().unique(),
+  lastKnownLatitude: text("last_known_latitude"),
+  lastKnownLongitude: text("last_known_longitude"),
+  lastKnownWhat3Words: text("last_known_what3words"),
+  sentAt: timestamp("sent_at").notNull().defaultNow(),
+  confirmedAt: timestamp("confirmed_at"),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
+export type DeactivationConfirmation = typeof deactivationConfirmations.$inferSelect;
 
 // Login schema
 export const loginSchema = z.object({

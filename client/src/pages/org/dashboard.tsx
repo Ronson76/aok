@@ -1667,7 +1667,7 @@ export default function OrganizationDashboard() {
                             data-testid={`button-deactivate-alert-${client.clientId}`}
                           >
                             {deactivateAlertMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellOff className="h-4 w-4 mr-1" />}
-                            Deactivate Alert
+                            Request Emergency End
                           </Button>
                         </div>
                         {/* Alert details - time and location */}
@@ -2349,9 +2349,9 @@ export default function OrganizationDashboard() {
                         data-testid="button-deactivate-alert"
                       >
                         {deactivateAlertMutation.isPending ? (
-                          <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Deactivating...</>
+                          <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Requesting...</>
                         ) : (
-                          "Deactivate Alert"
+                          "Request Emergency End"
                         )}
                       </Button>
                     </div>
