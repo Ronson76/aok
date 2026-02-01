@@ -811,17 +811,17 @@ export default function Dashboard() {
                     />
                     <span className="relative z-10 flex items-center justify-center">
                       {holdDeactivateMutation.isPending ? (
-                        <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Deactivating...</>
+                        <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Ending Emergency...</>
                       ) : isHolding ? (
                         <><Lock className="h-5 w-5 mr-2" /> {Math.ceil((1 - holdProgress) * 10)}s - Keep Holding</>
                       ) : (
-                        <><Lock className="h-5 w-5 mr-2" /> Hold 10s to Deactivate</>
+                        <><Lock className="h-5 w-5 mr-2" /> Request Emergency End</>
                       )}
                     </span>
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Hold the button for 10 seconds to confirm you are safe
+                  Hold for 10 seconds to request your contacts confirm you are safe
                 </p>
               </div>
             </CardContent>
@@ -1142,17 +1142,17 @@ export default function Dashboard() {
                   />
                   <span className="relative z-10 flex items-center justify-center">
                     {holdDeactivateMutation.isPending ? (
-                      <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Deactivating...</>
+                      <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Ending Emergency...</>
                     ) : isHolding ? (
                       <><Lock className="h-5 w-5 mr-2" /> {Math.ceil((1 - holdProgress) * 10)}s - Keep Holding</>
                     ) : (
-                      <><Lock className="h-5 w-5 mr-2" /> Hold 10s to Deactivate</>
+                      <><Lock className="h-5 w-5 mr-2" /> Request Emergency End</>
                     )}
                   </span>
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Hold the button for 10 seconds to confirm you are safe
+                Hold for 10 seconds to request your contacts confirm you are safe
               </p>
             </div>
           </CardContent>
