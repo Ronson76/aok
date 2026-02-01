@@ -1476,6 +1476,55 @@ export async function registerRoutes(
     }
   });
 
+  // Deactivate emergency alert via 10-second hold (no password required)
+  app.post("/api/emergency/deactivate-hold", async (req, res) => {
+    try {
+      const userId = req.userId!;
+      
+      const activeAlert = await storage.getActiveEmergencyAlert(userId);
+      if (!activeAlert) {
+        return res.status(400).json({ error: "No active emergency alert" });
+      }
+
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Get location from request body (sent from client)
+      const { location } = req.body;
+
+      // Deactivate the alert
+      await storage.deactivateEmergencyAlert(activeAlert.id);
+      
+      // Get all confirmed contacts to notify them
+      const contacts = await storage.getContacts(userId);
+      const confirmedContacts = contacts.filter(c => c.isConfirmed);
+      
+      // Send deactivation notifications to all contacts
+      if (confirmedContacts.length > 0) {
+        const { sendEmergencyDeactivationAlert } = await import("./notifications");
+        await sendEmergencyDeactivationAlert(
+          confirmedContacts,
+          user,
+          location ? { latitude: location.latitude, longitude: location.longitude } : undefined
+        );
+      }
+      
+      // Log the deactivation with location info
+      let logMessage = `Emergency alert deactivated by user via 10-second hold - confirmed safe`;
+      if (location) {
+        logMessage += ` (Location: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)})`;
+      }
+      await storage.createAlertLog(userId, [], logMessage);
+
+      res.json({ success: true, message: "Emergency alert deactivated. Contacts have been notified." });
+    } catch (error) {
+      console.error('[EMERGENCY] Failed to deactivate alert via hold:', error);
+      res.status(500).json({ error: "Failed to deactivate alert" });
+    }
+  });
+
   // Settings
   app.get("/api/settings", async (req, res) => {
     try {

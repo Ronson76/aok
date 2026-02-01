@@ -1652,23 +1652,43 @@ export default function OrganizationDashboard() {
                   <div className="flex items-center gap-2">
                     {getStatusBadge(client.status.status)}
                     {client.hasActiveEmergency && (
-                      <>
-                        <Badge variant="destructive" className="animate-pulse" data-testid={`badge-emergency-${client.clientId}`}>
-                          <AlertOctagon className="h-3 w-3 mr-1" />
-                          SOS Active
-                        </Badge>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => deactivateAlertMutation.mutate(client.clientId || client.id)}
-                          disabled={deactivateAlertMutation.isPending}
-                          className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
-                          data-testid={`button-deactivate-alert-${client.clientId}`}
-                        >
-                          {deactivateAlertMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellOff className="h-4 w-4 mr-1" />}
-                          Deactivate Alert
-                        </Button>
-                      </>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="destructive" className="animate-pulse" data-testid={`badge-emergency-${client.clientId}`}>
+                            <AlertOctagon className="h-3 w-3 mr-1" />
+                            SOS Active
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deactivateAlertMutation.mutate(client.clientId || client.id)}
+                            disabled={deactivateAlertMutation.isPending}
+                            className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+                            data-testid={`button-deactivate-alert-${client.clientId}`}
+                          >
+                            {deactivateAlertMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellOff className="h-4 w-4 mr-1" />}
+                            Deactivate Alert
+                          </Button>
+                        </div>
+                        {/* Alert details - time and location */}
+                        <div className="text-xs text-destructive">
+                          {client.emergencyAlertActivatedAt && (
+                            <span>
+                              {new Date(client.emergencyAlertActivatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} {new Date(client.emergencyAlertActivatedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                          {client.emergencyAlertWhat3Words && (
+                            <a 
+                              href={`https://what3words.com/${client.emergencyAlertWhat3Words}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ml-2 underline font-medium"
+                            >
+                              ///{client.emergencyAlertWhat3Words}
+                            </a>
+                          )}
+                        </div>
+                      </div>
                     )}
                     {client.clientStatus === "active" ? (
                       <Button
@@ -2309,30 +2329,68 @@ export default function OrganizationDashboard() {
                 </div>
                 
                 {selectedClient.hasActiveEmergency && (
-                  <div className="flex items-center justify-between p-4 border border-destructive rounded-lg bg-destructive/10">
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-full bg-destructive/20 p-2">
-                        <AlertOctagon className="h-5 w-5 text-destructive" />
+                  <div className="p-4 border border-destructive rounded-lg bg-destructive/10 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-full bg-destructive/20 p-2">
+                          <AlertOctagon className="h-5 w-5 text-destructive" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-destructive">Active Emergency Alert</p>
+                          <p className="text-sm text-muted-foreground">
+                            This client has an active SOS alert
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-destructive">Active Emergency Alert</p>
-                        <p className="text-sm text-muted-foreground">
-                          This client has an active SOS alert
-                        </p>
-                      </div>
+                      <Button
+                        variant="destructive"
+                        onClick={() => deactivateAlertMutation.mutate(selectedClient.id)}
+                        disabled={deactivateAlertMutation.isPending}
+                        data-testid="button-deactivate-alert"
+                      >
+                        {deactivateAlertMutation.isPending ? (
+                          <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Deactivating...</>
+                        ) : (
+                          "Deactivate Alert"
+                        )}
+                      </Button>
                     </div>
-                    <Button
-                      variant="destructive"
-                      onClick={() => deactivateAlertMutation.mutate(selectedClient.id)}
-                      disabled={deactivateAlertMutation.isPending}
-                      data-testid="button-deactivate-alert"
-                    >
-                      {deactivateAlertMutation.isPending ? (
-                        <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Deactivating...</>
-                      ) : (
-                        "Deactivate Alert"
+                    {/* Emergency Alert Details */}
+                    <div className="bg-white dark:bg-background rounded p-3 text-sm space-y-2">
+                      {selectedClient.emergencyAlertActivatedAt && (
+                        <div>
+                          <span className="font-medium text-destructive">Alert activated: </span>
+                          {new Date(selectedClient.emergencyAlertActivatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} at {new Date(selectedClient.emergencyAlertActivatedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
                       )}
-                    </Button>
+                      {selectedClient.emergencyAlertWhat3Words ? (
+                        <div>
+                          <span className="font-medium text-destructive">Location: </span>
+                          <a 
+                            href={`https://what3words.com/${selectedClient.emergencyAlertWhat3Words}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-destructive underline font-medium"
+                          >
+                            ///{selectedClient.emergencyAlertWhat3Words}
+                          </a>
+                        </div>
+                      ) : selectedClient.emergencyAlertLatitude && selectedClient.emergencyAlertLongitude ? (
+                        <div>
+                          <span className="font-medium text-destructive">Location: </span>
+                          <a 
+                            href={`https://www.google.com/maps?q=${selectedClient.emergencyAlertLatitude},${selectedClient.emergencyAlertLongitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-destructive underline"
+                          >
+                            View on map
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground">Location unavailable</div>
+                      )}
+                    </div>
                   </div>
                 )}
                 

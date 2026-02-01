@@ -1271,6 +1271,143 @@ If you cannot reach them, consider contacting local emergency services.
   return { emailsSent, emailsFailed, smsSent, smsFailed, whatsappSent, whatsappFailed };
 }
 
+export async function sendEmergencyDeactivationAlert(
+  contacts: Contact[],
+  user: User,
+  gpsLocation?: { latitude: number; longitude: number }
+): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number }> {
+  const displayName = getUserDisplayName(user);
+  const identifier = user.accountType === "organization" 
+    ? `Reference ID: ${user.referenceId}` 
+    : displayName;
+  
+  let emailsSent = 0;
+  let emailsFailed = 0;
+  let smsSent = 0;
+  let smsFailed = 0;
+  
+  let what3wordsAddress: string | null = null;
+  if (gpsLocation) {
+    what3wordsAddress = await getWhat3WordsAddress(gpsLocation.latitude, gpsLocation.longitude);
+  }
+  
+  const now = new Date();
+  const deactivationTime = now.toLocaleString('en-GB', { 
+    dateStyle: 'full', 
+    timeStyle: 'long' 
+  });
+  
+  for (const contact of contacts) {
+    const emailSubject = `ALL CLEAR: ${displayName} has confirmed they are safe`;
+    
+    let locationInfo = "";
+    let smsLocationInfo = "";
+    
+    if (gpsLocation) {
+      if (what3wordsAddress) {
+        const w3wUrl = `https://what3words.com/${what3wordsAddress}`;
+        locationInfo = `
+CURRENT LOCATION:
+what3words: ///${what3wordsAddress}
+View on map: ${w3wUrl}
+`;
+        smsLocationInfo = `Location: ///${what3wordsAddress}`;
+      } else {
+        const mapsUrl = `https://www.google.com/maps?q=${gpsLocation.latitude},${gpsLocation.longitude}`;
+        locationInfo = `
+CURRENT LOCATION:
+Coordinates: ${gpsLocation.latitude.toFixed(6)}, ${gpsLocation.longitude.toFixed(6)}
+View on map: ${mapsUrl}
+`;
+        smsLocationInfo = `Map: ${mapsUrl}`;
+      }
+    }
+    
+    const emailBody = `*** EMERGENCY ALERT DEACTIVATED ***
+
+Good news! ${identifier} has confirmed they are safe.
+
+The emergency alert has been deactivated at: ${deactivationTime}
+${locationInfo}
+No further action is required.
+
+Thank you for being there when it mattered.
+
+- The aok Team`;
+
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="text-align: center; margin-bottom: 30px;">
+    <div style="display: inline-flex; align-items: center; gap: 8px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        <polyline points="9 12 12 15 15 10"></polyline>
+      </svg>
+      <span style="font-size: 28px; font-weight: bold; color: #22c55e;">aok</span>
+    </div>
+  </div>
+  
+  <div style="background: linear-gradient(135deg, #22c55e, #16a34a); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;">
+    <h1 style="margin: 0; font-size: 24px;">ALL CLEAR</h1>
+    <p style="margin: 10px 0 0 0; font-size: 16px;">${displayName} has confirmed they are safe</p>
+  </div>
+  
+  <div style="background: #f0fdf4; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+    <p style="margin: 0 0 10px 0;"><strong>Alert deactivated at:</strong> ${deactivationTime}</p>
+    ${gpsLocation ? `
+    <p style="margin: 0;"><strong>Location confirmed:</strong></p>
+    ${what3wordsAddress ? `
+    <p style="margin: 5px 0;"><a href="https://what3words.com/${what3wordsAddress}" style="color: #22c55e; font-weight: bold;">///&zwj;${what3wordsAddress}</a></p>
+    ` : `
+    <p style="margin: 5px 0;"><a href="https://www.google.com/maps?q=${gpsLocation.latitude},${gpsLocation.longitude}" style="color: #22c55e;">View on map</a></p>
+    `}
+    ` : ''}
+  </div>
+  
+  <p style="color: #666;">No further action is required. Thank you for being there when it mattered.</p>
+  
+  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; text-align: center;">
+    <p>This notification was sent by aok - Personal Safety Check-In</p>
+  </div>
+</body>
+</html>`;
+
+    // Send email
+    if (contact.email) {
+      const emailResult = await sendEmail(contact.email, emailSubject, emailBody, emailHtml);
+      if (emailResult.success) {
+        emailsSent++;
+        console.log(`[DEACTIVATION] Email sent to ${contact.email}`);
+      } else {
+        emailsFailed++;
+        console.error(`[DEACTIVATION] Failed to send email to ${contact.email}:`, emailResult.error);
+      }
+    }
+    
+    // Send SMS
+    if (contact.phone) {
+      const smsMessage = `ALL CLEAR: ${displayName} has confirmed they are safe. Emergency alert deactivated at ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}. ${smsLocationInfo}`.trim();
+      const smsResult = await sendSMS(contact.phone, smsMessage);
+      if (smsResult.success) {
+        smsSent++;
+        console.log(`[DEACTIVATION] SMS sent to ${contact.phone}`);
+      } else {
+        smsFailed++;
+        console.error(`[DEACTIVATION] Failed to send SMS to ${contact.phone}:`, smsResult.error);
+      }
+    }
+  }
+
+  console.log(`[DEACTIVATION] Notifications sent - Emails: ${emailsSent}/${emailsSent + emailsFailed}, SMS: ${smsSent}/${smsSent + smsFailed}`);
+  return { emailsSent, emailsFailed, smsSent, smsFailed };
+}
+
 export async function sendPasswordResetEmail(
   email: string,
   resetUrl: string,

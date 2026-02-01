@@ -2482,9 +2482,14 @@ class OrganizationStorage implements IOrganizationStorage {
       const lastAlert = alertLogs.length > 0 ? alertLogs[0] : null;
       const alertCounts = await this.getClientAlertCounts(row.client.id);
       
-      // Check for active emergency alert
+      // Check for active emergency alert with full details
       const activeEmergency = await getDb()
-        .select({ id: activeEmergencyAlerts.id })
+        .select({
+          id: activeEmergencyAlerts.id,
+          activatedAt: activeEmergencyAlerts.activatedAt,
+          latitude: activeEmergencyAlerts.latitude,
+          longitude: activeEmergencyAlerts.longitude,
+        })
         .from(activeEmergencyAlerts)
         .where(
           and(
@@ -2492,6 +2497,26 @@ class OrganizationStorage implements IOrganizationStorage {
             eq(activeEmergencyAlerts.isActive, true)
           )
         );
+      
+      let emergencyAlertWhat3Words: string | null = null;
+      if (activeEmergency.length > 0 && activeEmergency[0].latitude && activeEmergency[0].longitude) {
+        try {
+          const apiKey = process.env.WHAT3WORDS_API_KEY;
+          if (apiKey) {
+            const response = await fetch(
+              `https://api.what3words.com/v3/convert-to-3wa?coordinates=${activeEmergency[0].latitude},${activeEmergency[0].longitude}&key=${apiKey}`
+            );
+            if (response.ok) {
+              const data = await response.json();
+              if (data.words) {
+                emergencyAlertWhat3Words = data.words;
+              }
+            }
+          }
+        } catch (e) {
+          console.error('[STORAGE] Failed to get what3words:', e);
+        }
+      }
       
       results.push({
         id: row.orgClient.id,
@@ -2506,6 +2531,10 @@ class OrganizationStorage implements IOrganizationStorage {
         clientEmail: row.orgClient.clientEmail,
         alertsEnabled: row.orgClient.alertsEnabled ?? true,
         hasActiveEmergency: activeEmergency.length > 0,
+        emergencyAlertActivatedAt: activeEmergency.length > 0 ? activeEmergency[0].activatedAt?.toISOString() || null : null,
+        emergencyAlertLatitude: activeEmergency.length > 0 ? activeEmergency[0].latitude : null,
+        emergencyAlertLongitude: activeEmergency.length > 0 ? activeEmergency[0].longitude : null,
+        emergencyAlertWhat3Words,
         scheduleStartTime: row.orgClient.scheduleStartTime,
         checkInIntervalHours: row.orgClient.checkInIntervalHours,
         addedAt: row.orgClient.addedAt,
@@ -2884,10 +2913,19 @@ class OrganizationStorage implements IOrganizationStorage {
       // Check for active emergency alert if client is activated
       let hasActiveAlert = false;
       let activeAlertId: string | null = null;
+      let alertActivatedAt: string | null = null;
+      let alertLatitude: string | null = null;
+      let alertLongitude: string | null = null;
+      let alertWhat3Words: string | null = null;
       
       if (client.clientId) {
         const activeAlert = await getDb()
-          .select({ id: activeEmergencyAlerts.id })
+          .select({
+            id: activeEmergencyAlerts.id,
+            activatedAt: activeEmergencyAlerts.activatedAt,
+            latitude: activeEmergencyAlerts.latitude,
+            longitude: activeEmergencyAlerts.longitude,
+          })
           .from(activeEmergencyAlerts)
           .where(and(
             eq(activeEmergencyAlerts.userId, client.clientId),
@@ -2898,6 +2936,29 @@ class OrganizationStorage implements IOrganizationStorage {
         if (activeAlert.length > 0) {
           hasActiveAlert = true;
           activeAlertId = activeAlert[0].id;
+          alertActivatedAt = activeAlert[0].activatedAt?.toISOString() || null;
+          alertLatitude = activeAlert[0].latitude;
+          alertLongitude = activeAlert[0].longitude;
+          
+          // Get what3words address if we have coordinates
+          if (alertLatitude && alertLongitude) {
+            try {
+              const apiKey = process.env.WHAT3WORDS_API_KEY;
+              if (apiKey) {
+                const response = await fetch(
+                  `https://api.what3words.com/v3/convert-to-3wa?coordinates=${alertLatitude},${alertLongitude}&key=${apiKey}`
+                );
+                if (response.ok) {
+                  const data = await response.json();
+                  if (data.words) {
+                    alertWhat3Words = data.words;
+                  }
+                }
+              }
+            } catch (e) {
+              console.error('[STORAGE] Failed to get what3words:', e);
+            }
+          }
         }
       }
       
@@ -2910,6 +2971,10 @@ class OrganizationStorage implements IOrganizationStorage {
         isActivated: !!client.clientId,
         hasActiveAlert,
         activeAlertId,
+        alertActivatedAt,
+        alertLatitude,
+        alertLongitude,
+        alertWhat3Words,
         addedAt: client.addedAt,
         bundleId: client.bundleId,
         clientPhone: client.clientPhone || null,
