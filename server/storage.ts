@@ -3467,17 +3467,27 @@ class OrganizationStorage implements IOrganizationStorage {
     const clientIds = orgClients.filter(c => c.clientId).map(c => c.clientId!);
     if (clientIds.length === 0) return [];
     
-    // Get emergency alerts for these clients
-    const alerts = await db
+    const results: {
+      id: string;
+      clientName: string;
+      referenceCode: string | null;
+      timestamp: string;
+      location: string | null;
+      what3words: string | null;
+      status: string;
+    }[] = [];
+    
+    // Get active/recent emergency alerts from activeEmergencyAlerts table
+    const activeAlerts = await db
       .select()
       .from(activeEmergencyAlerts)
       .where(inArray(activeEmergencyAlerts.userId, clientIds))
       .orderBy(desc(activeEmergencyAlerts.activatedAt));
     
-    // Map to include client names
-    return alerts.map(a => {
+    // Add active emergency alerts
+    for (const a of activeAlerts) {
       const client = orgClients.find(c => c.clientId === a.userId);
-      return {
+      results.push({
         id: a.id,
         clientName: client?.clientName || "Unknown",
         referenceCode: client?.referenceCode || null,
@@ -3485,8 +3495,46 @@ class OrganizationStorage implements IOrganizationStorage {
         location: a.latitude && a.longitude ? `${a.latitude}, ${a.longitude}` : null,
         what3words: a.what3words || null,
         status: a.isActive ? "active" : "resolved",
-      };
-    });
+      });
+    }
+    
+    // Also get historical emergency alerts from alertLogs table (where message contains EMERGENCY)
+    const historicalAlerts = await db
+      .select()
+      .from(alertLogs)
+      .where(and(
+        inArray(alertLogs.userId, clientIds),
+        sql`${alertLogs.message} LIKE '%EMERGENCY%'`
+      ))
+      .orderBy(desc(alertLogs.timestamp));
+    
+    // Add historical alerts (avoid duplicates by checking timestamp proximity)
+    for (const log of historicalAlerts) {
+      const client = orgClients.find(c => c.clientId === log.userId);
+      // Check if we already have this alert from activeEmergencyAlerts (within 1 minute)
+      const logTime = log.timestamp.getTime();
+      const isDuplicate = results.some(r => {
+        const rTime = new Date(r.timestamp).getTime();
+        return Math.abs(rTime - logTime) < 60000 && r.clientName === (client?.clientName || "Unknown");
+      });
+      
+      if (!isDuplicate) {
+        results.push({
+          id: log.id,
+          clientName: client?.clientName || "Unknown",
+          referenceCode: client?.referenceCode || null,
+          timestamp: log.timestamp.toISOString(),
+          location: null,
+          what3words: null,
+          status: "resolved",
+        });
+      }
+    }
+    
+    // Sort all results by timestamp descending
+    results.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    
+    return results;
   }
 
   async getOrganizationDeactivationConfirmations(organizationId: string): Promise<{
