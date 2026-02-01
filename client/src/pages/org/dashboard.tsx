@@ -1585,6 +1585,9 @@ export default function OrganizationDashboard() {
                     {getStatusIcon(client.status.status, "md")}
                     <div>
                       <div className="font-medium flex items-center gap-2">
+                        {client.hasActiveEmergency && (
+                          <Bell className="h-4 w-4 text-destructive animate-pulse" data-testid={`icon-emergency-bell-${client.id}`} />
+                        )}
                         {client.nickname || client.clientName || client.client?.name || "Pending"}
                         {client.nickname && client.client && (
                           <span className="text-muted-foreground text-sm">({client.client.name})</span>

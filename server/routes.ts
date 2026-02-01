@@ -1437,26 +1437,20 @@ export async function registerRoutes(
         }
       }
       
-      let activeAlert = null;
-      
-      // Only create active emergency alert if continuous tracking is enabled
-      if (continuousTrackingEnabled) {
-        // Check if user already has an active emergency alert
-        const existingAlert = await storage.getActiveEmergencyAlert(req.userId!);
-        if (existingAlert) {
-          return res.status(400).json({ error: "An emergency alert is already active" });
-        }
-        
-        activeAlert = await storage.createActiveEmergencyAlert(
-          req.userId!,
-          location?.latitude?.toString() || null,
-          location?.longitude?.toString() || null,
-          what3words
-        );
-        console.log('[EMERGENCY] Created active alert (continuous tracking):', activeAlert.id);
-      } else {
-        console.log('[EMERGENCY] Sending one-time alert (no continuous tracking)');
+      // Always check if user already has an active emergency alert
+      const existingAlert = await storage.getActiveEmergencyAlert(req.userId!);
+      if (existingAlert) {
+        return res.status(400).json({ error: "An emergency alert is already active" });
       }
+      
+      // Always create active emergency alert so org dashboards can track it
+      const activeAlert = await storage.createActiveEmergencyAlert(
+        req.userId!,
+        location?.latitude?.toString() || null,
+        location?.longitude?.toString() || null,
+        what3words
+      );
+      console.log('[EMERGENCY] Created active alert:', activeAlert.id, 'Continuous tracking:', continuousTrackingEnabled);
       
       // Send email and SMS alerts
       const alertResult = await sendEmergencyAlert(
@@ -1488,6 +1482,33 @@ export async function registerRoutes(
         contacts.map(c => c.email),
         `${alertType} triggered - ${notificationSummary.join(', ') || 'no contacts'} notified`
       );
+      
+      // Create safeguarding incident for any organizations this client belongs to
+      try {
+        const orgClients = await storage.getOrganizationClientsForUser(req.userId!);
+        for (const orgClient of orgClients) {
+          if (orgClient.organizationId) {
+            await storage.createIncident(orgClient.organizationId, {
+              clientId: orgClient.id,
+              reportedById: req.userId!,
+              reportedByName: user.name,
+              incidentType: "lone_worker_danger",
+              severity: "immediate_danger",
+              description: `EMERGENCY ALERT triggered by client via SOS button. ${what3words ? `Location: ///${what3words}` : 'Location unknown.'}`,
+              location: what3words ? `///${what3words}` : null,
+              locationLat: location?.latitude?.toString() || null,
+              locationLng: location?.longitude?.toString() || null,
+              what3words: what3words,
+              isAnonymous: false,
+              status: "open",
+            });
+            console.log(`[EMERGENCY] Created safeguarding incident for org ${orgClient.organizationId}`);
+          }
+        }
+      } catch (incidentError) {
+        console.error('[EMERGENCY] Failed to create safeguarding incident:', incidentError);
+        // Don't fail the emergency alert if incident creation fails
+      }
 
       const totalNotified = alertResult.emailsSent + alertResult.smsSent + voiceResult.callsMade;
       let message = `Emergency alert sent to ${alertResult.emailsSent} email(s)`;
@@ -1673,7 +1694,7 @@ export async function registerRoutes(
       
       // Get all confirmed contacts to notify them
       const contacts = await storage.getContacts(userId);
-      const confirmedContacts = contacts.filter(c => c.isConfirmed);
+      const confirmedContacts = contacts.filter(c => c.confirmedAt !== null);
       
       // Create confirmation records for each contact and generate links
       const baseUrl = process.env.APP_URL || 
