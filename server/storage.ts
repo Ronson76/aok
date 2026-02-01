@@ -2495,6 +2495,24 @@ export interface IOrganizationStorage {
     what3words: string | null;
     status: string;
   }[]>;
+  
+  getOrganizationDeactivationConfirmations(organizationId: string): Promise<{
+    id: string;
+    clientName: string;
+    clientEmail: string;
+    referenceCode: string | null;
+    contactName: string;
+    contactEmail: string;
+    alertId: string;
+    lastKnownLatitude: string | null;
+    lastKnownLongitude: string | null;
+    lastKnownWhat3Words: string | null;
+    sentAt: string;
+    confirmedAt: string | null;
+    confirmedByIp: string | null;
+    confirmedByUserAgent: string | null;
+    expiresAt: string;
+  }[]>;
 }
 
 class OrganizationStorage implements IOrganizationStorage {
@@ -3467,6 +3485,72 @@ class OrganizationStorage implements IOrganizationStorage {
         location: a.latitude && a.longitude ? `${a.latitude}, ${a.longitude}` : null,
         what3words: a.what3words || null,
         status: a.isActive ? "active" : "resolved",
+      };
+    });
+  }
+
+  async getOrganizationDeactivationConfirmations(organizationId: string): Promise<{
+    id: string;
+    clientName: string;
+    clientEmail: string;
+    referenceCode: string | null;
+    contactName: string;
+    contactEmail: string;
+    alertId: string;
+    lastKnownLatitude: string | null;
+    lastKnownLongitude: string | null;
+    lastKnownWhat3Words: string | null;
+    sentAt: string;
+    confirmedAt: string | null;
+    confirmedByIp: string | null;
+    confirmedByUserAgent: string | null;
+    expiresAt: string;
+  }[]> {
+    const db = getDb();
+    
+    // Get all client IDs for this organization
+    const orgClients = await db
+      .select({
+        clientId: organizationClients.clientId,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+      })
+      .from(organizationClients)
+      .where(eq(organizationClients.organizationId, organizationId));
+    
+    const clientIds = orgClients.filter(c => c.clientId).map(c => c.clientId!);
+    if (clientIds.length === 0) return [];
+    
+    // Get deactivation confirmations for these clients
+    const confirmations = await db
+      .select({
+        confirmation: deactivationConfirmations,
+        user: users,
+      })
+      .from(deactivationConfirmations)
+      .leftJoin(users, eq(deactivationConfirmations.userId, users.id))
+      .where(inArray(deactivationConfirmations.userId, clientIds))
+      .orderBy(desc(deactivationConfirmations.sentAt));
+    
+    // Map to include client names from org
+    return confirmations.map(c => {
+      const client = orgClients.find(oc => oc.clientId === c.confirmation.userId);
+      return {
+        id: c.confirmation.id,
+        clientName: client?.clientName || c.user?.name || "Unknown",
+        clientEmail: c.user?.email || "",
+        referenceCode: client?.referenceCode || null,
+        contactName: c.confirmation.contactName,
+        contactEmail: c.confirmation.contactEmail,
+        alertId: c.confirmation.alertId,
+        lastKnownLatitude: c.confirmation.lastKnownLatitude,
+        lastKnownLongitude: c.confirmation.lastKnownLongitude,
+        lastKnownWhat3Words: c.confirmation.lastKnownWhat3Words,
+        sentAt: c.confirmation.sentAt.toISOString(),
+        confirmedAt: c.confirmation.confirmedAt?.toISOString() || null,
+        confirmedByIp: c.confirmation.confirmedByIp || null,
+        confirmedByUserAgent: c.confirmation.confirmedByUserAgent || null,
+        expiresAt: c.confirmation.expiresAt.toISOString(),
       };
     });
   }
