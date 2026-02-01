@@ -154,17 +154,12 @@ interface DeactivationConfirmation {
   clientName: string;
   clientEmail: string;
   referenceCode: string | null;
-  contactName: string;
-  contactEmail: string;
   alertId: string;
   lastKnownLatitude: string | null;
   lastKnownLongitude: string | null;
   lastKnownWhat3Words: string | null;
-  sentAt: string;
-  confirmedAt: string | null;
-  confirmedByIp: string | null;
-  confirmedByUserAgent: string | null;
-  expiresAt: string;
+  confirmedAt: string;
+  confirmedBy: { name: string; email: string; ip: string | null; userAgent: string | null }[];
 }
 
 export default function OrgSafeguardingPage() {
@@ -695,7 +690,7 @@ export default function OrgSafeguardingPage() {
   const downloadConfirmationsPDF = () => {
     if (!deactivationConfirmations || deactivationConfirmations.length === 0) return;
     
-    const filteredConfirmations = filterByDateRange(deactivationConfirmations.map(c => ({ ...c, createdAt: c.sentAt })));
+    const filteredConfirmations = filterByDateRange(deactivationConfirmations.map(c => ({ ...c, createdAt: c.confirmedAt })));
     if (filteredConfirmations.length === 0) {
       toast({ title: "No data", description: "No confirmations found for the selected date range.", variant: "destructive" });
       return;
@@ -724,21 +719,27 @@ export default function OrgSafeguardingPage() {
     
     doc.setTextColor(0, 0, 0);
     
-    // Table data
-    const tableData = filteredConfirmations.map(conf => [
-      (conf as any).clientName || "Unknown",
-      (conf as any).referenceCode || "-",
-      (conf as any).contactName,
-      (conf as any).contactEmail,
-      format(new Date((conf as any).sentAt), "dd/MM/yyyy HH:mm"),
-      (conf as any).confirmedAt ? format(new Date((conf as any).confirmedAt), "dd/MM/yyyy HH:mm") : "Pending",
-      (conf as any).lastKnownWhat3Words ? `///${(conf as any).lastKnownWhat3Words}` : "-",
-      (conf as any).confirmedByIp || "-"
-    ]);
+    // Table data - one row per emergency event, with contacts listed
+    const tableData = filteredConfirmations.map(conf => {
+      const contacts = (conf as any).confirmedBy || [];
+      const contactNames = contacts.map((c: any) => c.name).join(", ");
+      const contactEmails = contacts.map((c: any) => c.email).join(", ");
+      const contactIps = contacts.map((c: any) => c.ip || "Unknown").join(", ");
+      
+      return [
+        (conf as any).clientName || "Unknown",
+        (conf as any).referenceCode || "-",
+        format(new Date((conf as any).confirmedAt), "dd/MM/yyyy HH:mm"),
+        (conf as any).lastKnownWhat3Words ? `///${(conf as any).lastKnownWhat3Words}` : "-",
+        contactNames || "-",
+        contactEmails || "-",
+        contactIps || "-"
+      ];
+    });
     
     autoTable(doc, {
       startY: 45,
-      head: [["Client", "Ref #", "Contact Name", "Contact Email", "Sent", "Confirmed", "Location (w3w)", "Confirmed IP"]],
+      head: [["Client", "Ref #", "Confirmed", "Location (w3w)", "Confirmed By", "Contact Emails", "IP Addresses"]],
       body: tableData,
       styles: { fontSize: 8, cellPadding: 2 },
       headStyles: { fillColor: [34, 197, 94], textColor: 255 }
@@ -1378,31 +1379,28 @@ export default function OrgSafeguardingPage() {
                               {conf.referenceCode && (
                                 <Badge variant="outline" className="text-xs">{conf.referenceCode}</Badge>
                               )}
-                              {conf.confirmedAt ? (
-                                <Badge className="bg-green-500 hover:bg-green-600 text-xs">Confirmed</Badge>
-                              ) : new Date(conf.expiresAt) < new Date() ? (
-                                <Badge variant="destructive" className="text-xs">Expired</Badge>
-                              ) : (
-                                <Badge variant="secondary" className="text-xs">Pending</Badge>
-                              )}
+                              <Badge className="bg-green-500 hover:bg-green-600 text-xs">Confirmed</Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">{conf.clientEmail}</p>
                           </div>
                           <div className="text-right text-xs text-muted-foreground">
-                            <p>Sent: {format(new Date(conf.sentAt), "dd/MM/yyyy HH:mm")}</p>
-                            {conf.confirmedAt && (
-                              <p className="text-green-600 dark:text-green-400">
-                                Confirmed: {format(new Date(conf.confirmedAt), "dd/MM/yyyy HH:mm")}
-                              </p>
-                            )}
+                            <p className="text-green-600 dark:text-green-400">
+                              Confirmed: {format(new Date(conf.confirmedAt), "dd/MM/yyyy HH:mm")}
+                            </p>
                           </div>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
-                            <p className="text-muted-foreground">Trusted Contact</p>
-                            <p className="font-medium">{conf.contactName}</p>
-                            <p className="text-muted-foreground">{conf.contactEmail}</p>
+                            <p className="text-muted-foreground">Confirmed by ({conf.confirmedBy.length})</p>
+                            <div className="space-y-1">
+                              {conf.confirmedBy.map((contact, idx) => (
+                                <div key={idx}>
+                                  <p className="font-medium">{contact.name}</p>
+                                  <p className="text-xs text-muted-foreground">{contact.email}</p>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                           {conf.lastKnownWhat3Words && (
                             <div>
@@ -1424,23 +1422,29 @@ export default function OrgSafeguardingPage() {
                           )}
                         </div>
                         
-                        {conf.confirmedAt && (
-                          <div className="pt-2 border-t space-y-1">
-                            <p className="text-xs font-medium text-muted-foreground">Confirmation Audit Trail</p>
-                            <div className="grid grid-cols-2 gap-2 text-xs">
-                              <div>
-                                <span className="text-muted-foreground">IP Address: </span>
-                                <span className="font-mono">{conf.confirmedByIp || "Unknown"}</span>
+                        <div className="pt-2 border-t space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">Confirmation Audit Trail</p>
+                          <div className="space-y-2">
+                            {conf.confirmedBy.map((contact, idx) => (
+                              <div key={idx} className="grid grid-cols-3 gap-2 text-xs">
+                                <div>
+                                  <span className="text-muted-foreground">Contact: </span>
+                                  <span>{contact.name}</span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">IP: </span>
+                                  <span className="font-mono">{contact.ip || "Unknown"}</span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Device: </span>
+                                  <span className="truncate" title={contact.userAgent || undefined}>
+                                    {contact.userAgent ? contact.userAgent.substring(0, 30) + (contact.userAgent.length > 30 ? "..." : "") : "Unknown"}
+                                  </span>
+                                </div>
                               </div>
-                              <div>
-                                <span className="text-muted-foreground">Device: </span>
-                                <span className="truncate" title={conf.confirmedByUserAgent || undefined}>
-                                  {conf.confirmedByUserAgent ? conf.confirmedByUserAgent.substring(0, 50) + (conf.confirmedByUserAgent.length > 50 ? "..." : "") : "Unknown"}
-                                </span>
-                              </div>
-                            </div>
+                            ))}
                           </div>
-                        )}
+                        </div>
                       </div>
                     ))}
                   </div>

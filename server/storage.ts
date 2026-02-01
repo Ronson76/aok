@@ -2501,17 +2501,12 @@ export interface IOrganizationStorage {
     clientName: string;
     clientEmail: string;
     referenceCode: string | null;
-    contactName: string;
-    contactEmail: string;
     alertId: string;
     lastKnownLatitude: string | null;
     lastKnownLongitude: string | null;
     lastKnownWhat3Words: string | null;
-    sentAt: string;
-    confirmedAt: string | null;
-    confirmedByIp: string | null;
-    confirmedByUserAgent: string | null;
-    expiresAt: string;
+    confirmedAt: string;
+    confirmedBy: { name: string; email: string; ip: string | null; userAgent: string | null }[];
   }[]>;
 }
 
@@ -3542,17 +3537,12 @@ class OrganizationStorage implements IOrganizationStorage {
     clientName: string;
     clientEmail: string;
     referenceCode: string | null;
-    contactName: string;
-    contactEmail: string;
     alertId: string;
     lastKnownLatitude: string | null;
     lastKnownLongitude: string | null;
     lastKnownWhat3Words: string | null;
-    sentAt: string;
-    confirmedAt: string | null;
-    confirmedByIp: string | null;
-    confirmedByUserAgent: string | null;
-    expiresAt: string;
+    confirmedAt: string;
+    confirmedBy: { name: string; email: string; ip: string | null; userAgent: string | null }[];
   }[]> {
     const db = getDb();
     
@@ -3583,27 +3573,51 @@ class OrganizationStorage implements IOrganizationStorage {
       ))
       .orderBy(desc(deactivationConfirmations.confirmedAt));
     
-    // Map to include client names from org
-    return confirmations.map(c => {
+    // Group by alertId (one row per emergency event per client)
+    const grouped = new Map<string, {
+      id: string;
+      clientName: string;
+      clientEmail: string;
+      referenceCode: string | null;
+      alertId: string;
+      lastKnownLatitude: string | null;
+      lastKnownLongitude: string | null;
+      lastKnownWhat3Words: string | null;
+      confirmedAt: string;
+      confirmedBy: { name: string; email: string; ip: string | null; userAgent: string | null }[];
+    }>();
+    
+    for (const c of confirmations) {
       const client = orgClients.find(oc => oc.clientId === c.confirmation.userId);
-      return {
-        id: c.confirmation.id,
-        clientName: client?.clientName || c.user?.name || "Unknown",
-        clientEmail: c.user?.email || "",
-        referenceCode: client?.referenceCode || null,
-        contactName: c.confirmation.contactName,
-        contactEmail: c.confirmation.contactEmail,
-        alertId: c.confirmation.alertId,
-        lastKnownLatitude: c.confirmation.lastKnownLatitude,
-        lastKnownLongitude: c.confirmation.lastKnownLongitude,
-        lastKnownWhat3Words: c.confirmation.lastKnownWhat3Words,
-        sentAt: c.confirmation.sentAt.toISOString(),
-        confirmedAt: c.confirmation.confirmedAt?.toISOString() || null,
-        confirmedByIp: c.confirmation.confirmedByIp || null,
-        confirmedByUserAgent: c.confirmation.confirmedByUserAgent || null,
-        expiresAt: c.confirmation.expiresAt.toISOString(),
-      };
-    });
+      const key = c.confirmation.alertId;
+      
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          id: c.confirmation.id,
+          clientName: client?.clientName || c.user?.name || "Unknown",
+          clientEmail: c.user?.email || "",
+          referenceCode: client?.referenceCode || null,
+          alertId: c.confirmation.alertId,
+          lastKnownLatitude: c.confirmation.lastKnownLatitude,
+          lastKnownLongitude: c.confirmation.lastKnownLongitude,
+          lastKnownWhat3Words: c.confirmation.lastKnownWhat3Words,
+          confirmedAt: c.confirmation.confirmedAt!.toISOString(),
+          confirmedBy: [],
+        });
+      }
+      
+      grouped.get(key)!.confirmedBy.push({
+        name: c.confirmation.contactName,
+        email: c.confirmation.contactEmail,
+        ip: c.confirmation.confirmedByIp || null,
+        userAgent: c.confirmation.confirmedByUserAgent || null,
+      });
+    }
+    
+    // Convert to array and sort by confirmedAt descending
+    return Array.from(grouped.values()).sort((a, b) => 
+      new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime()
+    );
   }
 }
 
