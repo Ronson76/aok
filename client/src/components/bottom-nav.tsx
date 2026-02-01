@@ -64,19 +64,19 @@ export function BottomNav() {
     { 
       path: "/app/mood", 
       icon: TrendingUp, 
-      label: "Wellness", 
+      label: "Mood Tracking", 
       enabled: features?.featureMoodTracking !== false && isRegistrationComplete 
     },
     { 
       path: "/app/pets", 
       icon: PawPrint, 
-      label: "Pets", 
+      label: "Pet Protection", 
       enabled: features?.featurePetProtection !== false && isRegistrationComplete 
     },
     { 
       path: "/app/documents", 
       icon: FileText, 
-      label: "Documents", 
+      label: "Digital Will", 
       enabled: features?.featureDigitalWill !== false && isRegistrationComplete 
     },
   ];
