@@ -213,6 +213,9 @@ export default function OrgSafeguardingPage() {
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [selectedConcernId, setSelectedConcernId] = useState<string | null>(null);
   
+  // Expanded client groups for recent incidents
+  const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
+  
   // PDF download state
   const [showPdfDialog, setShowPdfDialog] = useState(false);
   const [pdfType, setPdfType] = useState<"incidents" | "concerns" | "audit" | "confirmations" | null>(null);
@@ -889,26 +892,90 @@ export default function OrgSafeguardingPage() {
                     </CardHeader>
                     <CardContent>
                       {summary?.recentIncidents && summary.recentIncidents.length > 0 ? (
-                        <div className="space-y-3">
-                          {summary.recentIncidents.map((incident) => (
-                            <div key={incident.id} className="flex items-start justify-between gap-2 p-3 rounded-lg border">
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  {getSeverityBadge(incident.severity)}
-                                  <span className="text-sm font-medium">{formatIncidentType(incident.incidentType)}</span>
-                                  {incident.isEmergencyAlert && incident.clientName && (
-                                    <span className="text-sm text-muted-foreground">- {incident.clientName}</span>
-                                  )}
-                                </div>
-                                <p className="text-sm text-muted-foreground line-clamp-2">{incident.description}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {format(new Date(incident.createdAt), "dd/MM/yyyy HH:mm")}
-                                </p>
-                              </div>
-                              {getStatusBadge(incident.status)}
+                        (() => {
+                          // Group incidents by client name
+                          const groupedIncidents = summary.recentIncidents.reduce((acc, incident) => {
+                            const clientKey = incident.clientName || (incident.clientId ? getClientName(incident.clientId) : "Unknown Client");
+                            if (!acc[clientKey]) {
+                              acc[clientKey] = [];
+                            }
+                            acc[clientKey].push(incident);
+                            return acc;
+                          }, {} as Record<string, Incident[]>);
+                          
+                          const toggleClient = (clientName: string) => {
+                            setExpandedClients(prev => {
+                              const next = new Set(prev);
+                              if (next.has(clientName)) {
+                                next.delete(clientName);
+                              } else {
+                                next.add(clientName);
+                              }
+                              return next;
+                            });
+                          };
+                          
+                          return (
+                            <div className="space-y-2">
+                              {Object.entries(groupedIncidents).map(([clientName, clientIncidents]) => {
+                                const isExpanded = expandedClients.has(clientName);
+                                const hasEmergency = clientIncidents.some(i => i.isEmergencyAlert);
+                                const highestSeverity = clientIncidents.reduce((max, i) => {
+                                  const severities = ["low", "medium", "high", "critical"];
+                                  return severities.indexOf(i.severity) > severities.indexOf(max) ? i.severity : max;
+                                }, "low");
+                                
+                                return (
+                                  <div key={clientName} className={`rounded-lg border ${hasEmergency ? "border-destructive/50" : ""}`}>
+                                    <button
+                                      onClick={() => toggleClient(clientName)}
+                                      className="w-full flex items-center justify-between p-3 hover-elevate rounded-lg text-left"
+                                      data-testid={`btn-expand-client-${clientName.replace(/\s+/g, '-').toLowerCase()}`}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        {isExpanded ? (
+                                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                        ) : (
+                                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                        )}
+                                        <span className="font-medium">{clientName}</span>
+                                        {hasEmergency && (
+                                          <Badge variant="destructive" className="text-xs">SOS</Badge>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        {getSeverityBadge(highestSeverity)}
+                                        <Badge variant="secondary" className="text-xs">{clientIncidents.length}</Badge>
+                                      </div>
+                                    </button>
+                                    {isExpanded && (
+                                      <div className="border-t px-3 pb-3 space-y-2">
+                                        {clientIncidents.map((incident) => (
+                                          <div key={incident.id} className={`flex items-start justify-between gap-2 p-2 mt-2 rounded-md ${incident.isEmergencyAlert ? "bg-destructive/5" : "bg-muted/30"}`}>
+                                            <div className="space-y-1">
+                                              <div className="flex items-center gap-2">
+                                                {getSeverityBadge(incident.severity)}
+                                                <span className="text-sm font-medium">{formatIncidentType(incident.incidentType)}</span>
+                                                {incident.isEmergencyAlert && (
+                                                  <Badge variant="destructive" className="text-xs">SOS</Badge>
+                                                )}
+                                              </div>
+                                              <p className="text-sm text-muted-foreground line-clamp-2">{incident.description}</p>
+                                              <p className="text-xs text-muted-foreground">
+                                                {format(new Date(incident.createdAt), "dd/MM/yyyy HH:mm")}
+                                              </p>
+                                            </div>
+                                            {getStatusBadge(incident.status)}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
-                          ))}
-                        </div>
+                          );
+                        })()
                       ) : (
                         <p className="text-sm text-muted-foreground text-center py-4">No recent incidents</p>
                       )}
