@@ -1,4 +1,4 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, organizationStorage, adminStorage } from "./storage";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, insertMoodEntrySchema, insertPetSchema, updatePetSchema, insertDigitalDocumentSchema, updateDigitalDocumentSchema } from "@shared/schema";
@@ -151,10 +151,193 @@ function renderSafetyConfirmationPage(success: boolean, message: string, userNam
   <div class="container">
     <div class="logo">aok</div>
     <div class="icon">${icon}</div>
-    <h1>${success ? 'Safety Confirmed' : 'Error'}</h1>
+    <h1>${success ? 'Confirmation Recorded' : 'Error'}</h1>
     <p>${message}</p>
-    ${success && userName ? `<p class="subtitle">Thank you for confirming ${userName}'s safety.</p>` : ''}
+    ${success && userName ? `<p class="subtitle">Thank you for confirming you have spoken to ${userName}.</p>` : ''}
   </div>
+</body>
+</html>`;
+}
+
+function renderSafetyConfirmationForm(token: string, userName: string, contactName: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>aok - Confirm Safety</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 500px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .logo {
+      color: #22c55e;
+      font-weight: bold;
+      font-size: 28px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    h1 {
+      color: #1e293b;
+      font-size: 22px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .intro {
+      color: #64748b;
+      line-height: 1.6;
+      font-size: 15px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .checkbox-group {
+      margin-bottom: 24px;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px;
+      background: #f8fafc;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .checkbox-item:hover {
+      background: #f1f5f9;
+    }
+    .checkbox-item input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+      accent-color: #22c55e;
+      cursor: pointer;
+    }
+    .checkbox-item label {
+      color: #1e293b;
+      font-size: 15px;
+      line-height: 1.5;
+      cursor: pointer;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .submit-btn:hover {
+      opacity: 0.95;
+    }
+    .submit-btn:active {
+      transform: scale(0.99);
+    }
+    .submit-btn:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .warning {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      color: #92400e;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .error {
+      color: #dc2626;
+      font-size: 14px;
+      margin-bottom: 16px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">aok</div>
+    <h1>Confirm Emergency End</h1>
+    <p class="intro">Hello ${contactName}, please confirm you have spoken to <strong>${userName}</strong> and they have requested the emergency to end.</p>
+    
+    <div class="warning">
+      By confirming below, you are stating that you have personally verified ${userName}'s wellbeing. This will stop all emergency alerts.
+    </div>
+    
+    <form id="confirmForm" method="POST" action="/api/confirm-safety">
+      <input type="hidden" name="token" value="${token}">
+      
+      <div class="checkbox-group">
+        <div class="checkbox-item" onclick="document.getElementById('spoken').click()">
+          <input type="checkbox" id="spoken" name="spoken" required>
+          <label for="spoken">I have spoken directly to ${userName}</label>
+        </div>
+        
+        <div class="checkbox-item" onclick="document.getElementById('safe').click()">
+          <input type="checkbox" id="safe" name="safe" required>
+          <label for="safe">They told me they are safe and requested the emergency to end</label>
+        </div>
+        
+        <div class="checkbox-item" onclick="document.getElementById('understand').click()">
+          <input type="checkbox" id="understand" name="understand" required>
+          <label for="understand">I understand this will stop all further emergency alerts</label>
+        </div>
+      </div>
+      
+      <p id="errorMsg" class="error">Please tick all boxes to confirm</p>
+      
+      <button type="submit" class="submit-btn" id="submitBtn" disabled>
+        Confirm I have spoken to ${userName}
+      </button>
+    </form>
+  </div>
+  
+  <script>
+    const form = document.getElementById('confirmForm');
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    const submitBtn = document.getElementById('submitBtn');
+    const errorMsg = document.getElementById('errorMsg');
+    
+    function updateButtonState() {
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      submitBtn.disabled = !allChecked;
+      errorMsg.style.display = 'none';
+    }
+    
+    checkboxes.forEach(cb => {
+      cb.addEventListener('change', updateButtonState);
+    });
+    
+    form.addEventListener('submit', function(e) {
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      if (!allChecked) {
+        e.preventDefault();
+        errorMsg.style.display = 'block';
+        return false;
+      }
+    });
+  </script>
 </body>
 </html>`;
 }
@@ -1038,11 +1221,12 @@ export async function registerRoutes(
 
   // Safety confirmation endpoint (public - no auth required)
   // This is called when a contact clicks the confirmation link in the deactivation email
+  // GET: Show confirmation form
   app.get("/api/confirm-safety", async (req, res) => {
     try {
       const { token } = req.query;
       
-      console.log("[CONFIRM-SAFETY] Received confirmation request:", { 
+      console.log("[CONFIRM-SAFETY] Received confirmation page request:", { 
         token: token ? `${String(token).substring(0, 10)}...` : 'missing'
       });
       
@@ -1058,7 +1242,7 @@ export async function registerRoutes(
       
       // Check if already confirmed
       if (confirmation.confirmedAt) {
-        return res.send(renderSafetyConfirmationPage(true, "You have already confirmed that you've spoken to this person.", confirmation.user?.name || 'the client'));
+        return res.send(renderSafetyConfirmationPage(true, "You have already confirmed that you've spoken to this person. The emergency has ended.", confirmation.user?.name || 'the client'));
       }
       
       // Check if expired
@@ -1066,12 +1250,105 @@ export async function registerRoutes(
         return res.status(410).send(renderSafetyConfirmationPage(false, "This confirmation link has expired.", null));
       }
       
-      // Confirm the deactivation
-      const confirmed = await storage.confirmDeactivation(token);
+      // Show the confirmation form with checkboxes
+      const userName = confirmation.user?.name || 'the client';
+      const contactName = confirmation.contactName || 'Contact';
+      return res.send(renderSafetyConfirmationForm(token, userName, contactName));
+    } catch (error) {
+      console.error("Safety confirmation page error:", error);
+      res.status(500).send(renderSafetyConfirmationPage(false, "Something went wrong. Please try again.", null));
+    }
+  });
+  
+  // POST: Handle form submission and confirm deactivation
+  app.post("/api/confirm-safety", express.urlencoded({ extended: true }), async (req, res) => {
+    try {
+      const { token, spoken, safe, understand } = req.body;
+      
+      // Get client info for audit logging
+      const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+      const userAgent = req.headers['user-agent'] || 'unknown';
+      const confirmationTime = new Date();
+      
+      console.log("[CONFIRM-SAFETY] Form submission:", { 
+        token: token ? `${String(token).substring(0, 10)}...` : 'missing',
+        spoken: !!spoken,
+        safe: !!safe,
+        understand: !!understand,
+        clientIp: typeof clientIp === 'string' ? clientIp : clientIp[0],
+        userAgent: userAgent.substring(0, 50)
+      });
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).send(renderSafetyConfirmationPage(false, "Invalid confirmation link.", null));
+      }
+      
+      // Verify all checkboxes were ticked
+      if (!spoken || !safe || !understand) {
+        return res.status(400).send(renderSafetyConfirmationPage(false, "You must tick all boxes to confirm.", null));
+      }
+      
+      const confirmation = await storage.getDeactivationConfirmationByToken(token);
+      
+      if (!confirmation) {
+        return res.status(404).send(renderSafetyConfirmationPage(false, "This confirmation link has expired or is invalid.", null));
+      }
+      
+      // Check if already confirmed
+      if (confirmation.confirmedAt) {
+        return res.send(renderSafetyConfirmationPage(true, "You have already confirmed that you've spoken to this person. The emergency has ended.", confirmation.user?.name || 'the client'));
+      }
+      
+      // Check if expired
+      if (new Date(confirmation.expiresAt) < new Date()) {
+        return res.status(410).send(renderSafetyConfirmationPage(false, "This confirmation link has expired.", null));
+      }
+      
+      // Confirm the deactivation with audit info
+      const confirmed = await storage.confirmDeactivation(token, {
+        confirmedAt: confirmationTime,
+        confirmedByIp: typeof clientIp === 'string' ? clientIp : clientIp[0],
+        confirmedByUserAgent: userAgent
+      });
       
       if (confirmed) {
+        const userName = confirmation.user?.name || 'the client';
         console.log(`[CONFIRM-SAFETY] Contact ${confirmation.contactName} confirmed safety for user ${confirmation.userId}`);
-        return res.send(renderSafetyConfirmationPage(true, `Thank you for confirming that you have spoken to ${confirmation.user?.name || 'the client'} and verified they are safe.`, confirmation.user?.name || 'the client'));
+        console.log(`[CONFIRM-SAFETY] Audit: IP=${clientIp}, Time=${confirmationTime.toISOString()}, UserAgent=${userAgent.substring(0, 100)}`);
+        
+        // NOW deactivate the emergency alert
+        if (confirmation.alertId) {
+          await storage.deactivateEmergencyAlert(confirmation.alertId);
+          console.log(`[CONFIRM-SAFETY] Emergency alert ${confirmation.alertId} deactivated`);
+        }
+        
+        // Log the confirmation with audit trail
+        await storage.createAlertLog(
+          confirmation.userId, 
+          [], 
+          `Emergency ended following confirmation by ${confirmation.contactName} at ${confirmationTime.toLocaleString('en-GB')}`
+        );
+        
+        // Send final notification to ALL contacts
+        const allContacts = await storage.getContacts(confirmation.userId);
+        const contactsWithEmail = allContacts.filter(c => c.email && c.email.trim() !== '');
+        
+        if (contactsWithEmail.length > 0 && confirmation.user) {
+          const { sendEmergencyEndedNotification } = await import("./notifications");
+          await sendEmergencyEndedNotification(
+            contactsWithEmail,
+            confirmation.user,
+            confirmation.contactName,
+            confirmationTime
+          );
+          console.log(`[CONFIRM-SAFETY] Final notifications sent to ${contactsWithEmail.length} contacts`);
+        }
+        
+        return res.send(renderSafetyConfirmationPage(
+          true, 
+          `Thank you for confirming that you have spoken to ${userName} and they have requested the emergency to end. All alerts have now stopped.`, 
+          userName
+        ));
       }
       
       return res.status(500).send(renderSafetyConfirmationPage(false, "Something went wrong. Please try again.", null));
@@ -1689,8 +1966,8 @@ export async function registerRoutes(
         }
       }
 
-      // Deactivate the alert
-      await storage.deactivateEmergencyAlert(activeAlert.id);
+      // DO NOT deactivate the alert yet - alerts continue until a contact confirms
+      // Just send confirmation requests to contacts
       
       // Get ALL contacts to notify them (emergency notifications go to all contacts, not just confirmed)
       const contacts = await storage.getContacts(userId);
@@ -1716,29 +1993,29 @@ export async function registerRoutes(
         confirmationLinks.set(contact.email, `${baseUrl}/api/confirm-safety?token=${token}`);
       }
       
-      // Send deactivation notifications to ALL contacts with confirmation links
-      // (Emergency notifications bypass confirmation requirement for safety reasons)
+      // Send confirmation request notifications to ALL contacts
+      // Alert will only stop when a contact confirms they've spoken to the user
       if (contactsWithEmail.length > 0) {
-        const { sendEmergencyDeactivationAlert } = await import("./notifications");
-        await sendEmergencyDeactivationAlert(
+        const { sendEmergencyConfirmationRequest } = await import("./notifications");
+        await sendEmergencyConfirmationRequest(
           contactsWithEmail,
           user,
           location ? { latitude: location.latitude, longitude: location.longitude } : undefined,
           confirmationLinks
         );
-        console.log(`[EMERGENCY] Deactivation notifications sent to ${contactsWithEmail.length} contacts`);
+        console.log(`[EMERGENCY] Confirmation requests sent to ${contactsWithEmail.length} contacts - alerts continue until confirmed`);
       } else {
-        console.log(`[EMERGENCY] No contacts with email addresses to notify about deactivation`);
+        console.log(`[EMERGENCY] No contacts with email addresses to send confirmation requests`);
       }
       
-      // Log the deactivation with location info
-      let logMessage = `Emergency alert deactivated by user via 10-second hold - awaiting contact confirmation`;
+      // Log the confirmation request
+      let logMessage = `Client requested emergency end - awaiting contact confirmation (alerts continue)`;
       if (location) {
         logMessage += ` (Location: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)})`;
       }
       await storage.createAlertLog(userId, [], logMessage);
 
-      res.json({ success: true, message: "Emergency alert deactivated. Contacts have been notified and asked to confirm your safety." });
+      res.json({ success: true, message: "Confirmation requests sent to your contacts. Alerts will stop once a contact confirms they have spoken to you." });
     } catch (error) {
       console.error('[EMERGENCY] Failed to deactivate alert via hold:', error);
       res.status(500).json({ error: "Failed to deactivate alert" });
