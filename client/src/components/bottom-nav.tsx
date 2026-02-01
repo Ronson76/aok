@@ -83,9 +83,9 @@ export function BottomNav() {
   
   const isMoreActive = wellnessFeatures.some(f => location === f.path);
 
-  // Check if any wellness features are enabled
+  // Check if any wellness features are enabled (including Wellbeing AI)
   const hasAnyWellnessFeatures = wellnessFeatures.some(f => f.enabled) || 
-    (!isOrgManagedClient && features?.featureWellbeingAi !== false);
+    (features?.featureWellbeingAi !== false && isRegistrationComplete);
 
   // Show More menu for regular users always, for org-managed clients only if they have wellness features enabled
   const showMoreMenu = !isOrganization && (!isOrgManagedClient || hasAnyWellnessFeatures);
@@ -164,40 +164,38 @@ export function BottomNav() {
                 }
               })}
               
-              {/* Wellbeing-ai external link - only shown for non-org-managed clients, enabled if registration complete AND feature enabled */}
-              {!isOrgManagedClient && (
-                isRegistrationComplete && features?.featureWellbeingAi !== false ? (
-                  <DropdownMenuItem asChild>
-                    <a
-                      href="https://health-insight-engine.replit.app"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 cursor-pointer text-green-600"
-                      onClick={() => setMoreOpen(false)}
-                      data-testid="nav-wellbeing-ai"
-                    >
-                      <div className="relative h-4 w-4 flex items-center justify-center">
-                        <div className="w-3 h-1 bg-green-600 absolute rounded-sm" />
-                        <div className="w-1 h-3 bg-green-600 absolute rounded-sm" />
-                      </div>
-                      <span>Wellbeing AI</span>
-                    </a>
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem 
-                    disabled 
-                    className="flex items-center gap-3 opacity-50"
-                    data-testid="nav-wellbeing-ai-disabled"
+              {/* Wellbeing-ai external link - shown when feature is enabled */}
+              {isRegistrationComplete && features?.featureWellbeingAi !== false ? (
+                <DropdownMenuItem asChild>
+                  <a
+                    href="https://health-insight-engine.replit.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 cursor-pointer text-green-600"
+                    onClick={() => setMoreOpen(false)}
+                    data-testid="nav-wellbeing-ai"
                   >
                     <div className="relative h-4 w-4 flex items-center justify-center">
-                      <div className="w-3 h-1 bg-muted-foreground absolute rounded-sm" />
-                      <div className="w-1 h-3 bg-muted-foreground absolute rounded-sm" />
+                      <div className="w-3 h-1 bg-green-600 absolute rounded-sm" />
+                      <div className="w-1 h-3 bg-green-600 absolute rounded-sm" />
                     </div>
                     <span>Wellbeing AI</span>
-                    <Lock className="h-3 w-3 ml-auto" />
-                  </DropdownMenuItem>
-                )
-              )}
+                  </a>
+                </DropdownMenuItem>
+              ) : !isOrgManagedClient ? (
+                <DropdownMenuItem 
+                  disabled 
+                  className="flex items-center gap-3 opacity-50"
+                  data-testid="nav-wellbeing-ai-disabled"
+                >
+                  <div className="relative h-4 w-4 flex items-center justify-center">
+                    <div className="w-3 h-1 bg-muted-foreground absolute rounded-sm" />
+                    <div className="w-1 h-3 bg-muted-foreground absolute rounded-sm" />
+                  </div>
+                  <span>Wellbeing AI</span>
+                  <Lock className="h-3 w-3 ml-auto" />
+                </DropdownMenuItem>
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
