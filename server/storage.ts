@@ -2407,6 +2407,7 @@ export interface IOrganizationStorage {
   addClient(organizationId: string, clientId: string, bundleId?: string, nickname?: string): Promise<OrganizationClient>;
   removeClient(organizationId: string, clientId: string): Promise<boolean>;
   isClientOfOrganization(organizationId: string, clientId: string): Promise<boolean>;
+  getOrganizationClientsForUser(userId: string): Promise<OrganizationClient[]>;
   updateClientStatus(organizationClientId: string, status: OrgClientStatus): Promise<OrganizationClient | undefined>;
   updateClientFeatures(organizationClientId: string, features: UpdateClientFeatures): Promise<OrganizationClient | undefined>;
   updateClientDetails(organizationClientId: string, details: { nickname?: string; clientName?: string; clientPhone?: string; clientEmail?: string; alertsEnabled?: boolean }): Promise<OrganizationClient | undefined>;
@@ -2762,6 +2763,16 @@ class OrganizationStorage implements IOrganizationStorage {
       ));
     
     return result.length > 0;
+  }
+  
+  // Get all organization clients for a given user
+  async getOrganizationClientsForUser(userId: string): Promise<OrganizationClient[]> {
+    const result = await getDb()
+      .select()
+      .from(organizationClients)
+      .where(eq(organizationClients.clientId, userId));
+    
+    return result;
   }
 
   // Update client status (active/paused/terminated)
@@ -3434,7 +3445,7 @@ class OrganizationStorage implements IOrganizationStorage {
       .select()
       .from(activeEmergencyAlerts)
       .where(inArray(activeEmergencyAlerts.userId, clientIds))
-      .orderBy(desc(activeEmergencyAlerts.createdAt));
+      .orderBy(desc(activeEmergencyAlerts.activatedAt));
     
     // Map to include client names
     return alerts.map(a => {
@@ -3443,7 +3454,7 @@ class OrganizationStorage implements IOrganizationStorage {
         id: a.id,
         clientName: client?.clientName || "Unknown",
         referenceCode: client?.referenceCode || null,
-        timestamp: a.createdAt?.toISOString() || new Date().toISOString(),
+        timestamp: a.activatedAt?.toISOString() || new Date().toISOString(),
         location: a.latitude && a.longitude ? `${a.latitude}, ${a.longitude}` : null,
         what3words: a.what3words || null,
         status: a.isActive ? "active" : "resolved",
