@@ -828,20 +828,40 @@ export default function Dashboard() {
           </Card>
         ) : (
           <Card className="border-destructive bg-destructive/5">
-            <CardContent className="py-4">
-              <Button
-                variant="destructive"
-                size="lg"
-                className="w-full py-6 text-lg font-semibold"
-                onClick={handleOpenEmergencyDialog}
-                data-testid="button-emergency"
-              >
-                <AlertOctagon className="h-6 w-6 mr-2" />
-                Emergency Alert
-              </Button>
-              <p className="text-xs text-center text-muted-foreground mt-2">
-                Sends immediate alert via email, SMS and phone call
-              </p>
+            <CardContent className="py-4 space-y-4">
+              <div>
+                <Button
+                  variant="destructive"
+                  size="lg"
+                  className="w-full py-6 text-lg font-semibold"
+                  onClick={handleOpenEmergencyDialog}
+                  data-testid="button-emergency"
+                >
+                  <AlertOctagon className="h-6 w-6 mr-2" />
+                  Emergency Alert
+                </Button>
+                <p className="text-xs text-center text-muted-foreground mt-2">
+                  Sends immediate alert via email, SMS and phone call
+                </p>
+              </div>
+              
+              {/* Request Emergency End button - always visible but only works when alert is active */}
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full py-6 font-semibold border-2 relative overflow-hidden opacity-50"
+                  disabled
+                  data-testid="button-deactivate-hold-disabled"
+                >
+                  <span className="relative z-10 flex items-center justify-center">
+                    <Lock className="h-5 w-5 mr-2" /> Request Emergency End
+                  </span>
+                </Button>
+                <p className="text-xs text-center text-muted-foreground mt-2">
+                  Only available when an emergency alert is active
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -1195,6 +1215,22 @@ export default function Dashboard() {
                   Emergency Alert
                 </Button>
               )}
+              
+              {/* Request Emergency End button - always visible but disabled when no alert */}
+              <div className="w-full max-w-xs mx-auto mt-4">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full py-6 font-semibold border-2 opacity-50"
+                  disabled
+                  data-testid="button-deactivate-hold-disabled"
+                >
+                  <Lock className="h-5 w-5 mr-2" /> Request Emergency End
+                </Button>
+                <p className="text-xs text-center text-muted-foreground mt-2">
+                  Only available when an emergency alert is active
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
