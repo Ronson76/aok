@@ -506,6 +506,11 @@ export default function OrganizationDashboard() {
     setRegEmergencyContacts(regEmergencyContacts.filter((_, i) => i !== index));
   };
 
+  // Check if at least one valid emergency contact exists
+  const hasValidEmergencyContact = regEmergencyContacts.some(
+    contact => contact.name && contact.email && contact.phone
+  );
+
   const resendPasswordMutation = useMutation({
     mutationFn: async ({ clientId }: { clientId: string }) => {
       const response = await apiRequest("POST", `/api/org/clients/${clientId}/send-reference-code`);
@@ -1421,11 +1426,13 @@ export default function OrganizationDashboard() {
             </Button>
             <Button 
               onClick={() => registerClientMutation.mutate()}
-              disabled={!regClientName || !regClientPhone || registerClientMutation.isPending}
+              disabled={!regClientName || !regClientPhone || !hasValidEmergencyContact || registerClientMutation.isPending}
               data-testid="button-confirm-register-client"
             >
               {registerClientMutation.isPending ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Registering...</>
+              ) : !hasValidEmergencyContact ? (
+                "Add Emergency Contact First"
               ) : (
                 "Register & Send SMS"
               )}
