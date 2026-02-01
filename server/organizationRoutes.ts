@@ -1505,4 +1505,16 @@ export function registerOrganizationRoutes(app: Express) {
       res.status(500).json({ error: "Failed to fetch emergency alerts" });
     }
   });
+
+  // Get deactivation confirmations for organization's clients
+  app.get("/api/org/safeguarding/deactivation-confirmations", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const confirmations = await organizationStorage.getOrganizationDeactivationConfirmations(orgId);
+      res.json(confirmations);
+    } catch (error) {
+      console.error("Error fetching deactivation confirmations:", error);
+      res.status(500).json({ error: "Failed to fetch deactivation confirmations" });
+    }
+  });
 }
