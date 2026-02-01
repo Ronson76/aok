@@ -3569,7 +3569,7 @@ class OrganizationStorage implements IOrganizationStorage {
     const clientIds = orgClients.filter(c => c.clientId).map(c => c.clientId!);
     if (clientIds.length === 0) return [];
     
-    // Get deactivation confirmations for these clients
+    // Get deactivation confirmations for these clients (only confirmed ones)
     const confirmations = await db
       .select({
         confirmation: deactivationConfirmations,
@@ -3577,8 +3577,11 @@ class OrganizationStorage implements IOrganizationStorage {
       })
       .from(deactivationConfirmations)
       .leftJoin(users, eq(deactivationConfirmations.userId, users.id))
-      .where(inArray(deactivationConfirmations.userId, clientIds))
-      .orderBy(desc(deactivationConfirmations.sentAt));
+      .where(and(
+        inArray(deactivationConfirmations.userId, clientIds),
+        isNotNull(deactivationConfirmations.confirmedAt)
+      ))
+      .orderBy(desc(deactivationConfirmations.confirmedAt));
     
     // Map to include client names from org
     return confirmations.map(c => {
