@@ -1186,7 +1186,7 @@ export default function AdminDashboard() {
                               className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
                               data-testid={`button-deactivate-alert-${client.id}`}
                             >
-                              Deactivate Alert
+                              Request Emergency End
                             </Button>
                           )}
                           

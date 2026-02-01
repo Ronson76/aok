@@ -1274,7 +1274,8 @@ If you cannot reach them, consider contacting local emergency services.
 export async function sendEmergencyDeactivationAlert(
   contacts: Contact[],
   user: User,
-  gpsLocation?: { latitude: number; longitude: number }
+  gpsLocation?: { latitude: number; longitude: number },
+  confirmationLinks?: Map<string, string> // email -> confirmation URL
 ): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number }> {
   const displayName = getUserDisplayName(user);
   const identifier = user.accountType === "organization" 
@@ -1323,14 +1324,23 @@ View on map: ${mapsUrl}
       }
     }
     
+    const confirmationUrl = confirmationLinks?.get(contact.email);
+    const needsConfirmation = !!confirmationUrl;
+    
     const emailBody = `*** EMERGENCY ALERT DEACTIVATED ***
 
-Good news! ${identifier} has confirmed they are safe.
+Good news! ${identifier} has deactivated their emergency alert.
 
-The emergency alert has been deactivated at: ${deactivationTime}
+The emergency alert was deactivated at: ${deactivationTime}
 ${locationInfo}
-No further action is required.
+${needsConfirmation ? `
+IMPORTANT: Please confirm you have spoken to ${displayName} and verified they are safe.
 
+Click the link below to confirm:
+${confirmationUrl}
+
+This confirmation is required to complete the safety check.
+` : 'No further action is required.'}
 Thank you for being there when it mattered.
 
 - The aok Team`;
@@ -1354,14 +1364,14 @@ Thank you for being there when it mattered.
   </div>
   
   <div style="background: linear-gradient(135deg, #22c55e, #16a34a); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;">
-    <h1 style="margin: 0; font-size: 24px;">ALL CLEAR</h1>
-    <p style="margin: 10px 0 0 0; font-size: 16px;">${displayName} has confirmed they are safe</p>
+    <h1 style="margin: 0; font-size: 24px;">EMERGENCY ALERT DEACTIVATED</h1>
+    <p style="margin: 10px 0 0 0; font-size: 16px;">${displayName} has deactivated their emergency alert</p>
   </div>
   
   <div style="background: #f0fdf4; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
     <p style="margin: 0 0 10px 0;"><strong>Alert deactivated at:</strong> ${deactivationTime}</p>
     ${gpsLocation ? `
-    <p style="margin: 0;"><strong>Location confirmed:</strong></p>
+    <p style="margin: 0;"><strong>Last known location:</strong></p>
     ${what3wordsAddress ? `
     <p style="margin: 5px 0;"><a href="https://what3words.com/${what3wordsAddress}" style="color: #22c55e; font-weight: bold;">///&zwj;${what3wordsAddress}</a></p>
     ` : `
@@ -1370,7 +1380,17 @@ Thank you for being there when it mattered.
     ` : ''}
   </div>
   
+  ${needsConfirmation ? `
+  <div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
+    <h2 style="margin: 0 0 10px 0; color: #b45309; font-size: 18px;">Action Required</h2>
+    <p style="margin: 0 0 15px 0; color: #92400e;">Please confirm you have spoken to ${displayName} and verified they are safe.</p>
+    <a href="${confirmationUrl}" style="display: inline-block; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">
+      Confirm ${displayName} is Safe
+    </a>
+  </div>
+  ` : `
   <p style="color: #666;">No further action is required. Thank you for being there when it mattered.</p>
+  `}
   
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; text-align: center;">
     <p>This notification was sent by aok - Personal Safety Check-In</p>
@@ -1392,7 +1412,9 @@ Thank you for being there when it mattered.
     
     // Send SMS
     if (contact.phone) {
-      const smsMessage = `ALL CLEAR: ${displayName} has confirmed they are safe. Emergency alert deactivated at ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}. ${smsLocationInfo}`.trim();
+      const smsMessage = needsConfirmation
+        ? `aok Alert: ${displayName} has deactivated their emergency. ${smsLocationInfo} Please confirm you've spoken to them and they're safe: ${confirmationUrl}`.trim()
+        : `ALL CLEAR: ${displayName} has confirmed they are safe. Emergency alert deactivated at ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}. ${smsLocationInfo}`.trim();
       const smsResult = await sendSMS(contact.phone, smsMessage);
       if (smsResult.success) {
         smsSent++;

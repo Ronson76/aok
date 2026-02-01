@@ -81,6 +81,84 @@ function renderConfirmationPage(success: boolean, message: string): string {
 </html>`;
 }
 
+// Helper function to render a safety confirmation page
+function renderSafetyConfirmationPage(success: boolean, message: string, userName: string | null): string {
+  const bgColor = success ? '#22c55e' : '#ef4444';
+  const icon = success ? '&#10004;' : '&#10008;';
+  
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>aok - Safety Confirmation</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 450px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: ${bgColor};
+      color: white;
+      font-size: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+    h1 {
+      color: #1e293b;
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+    p {
+      color: #64748b;
+      line-height: 1.6;
+      font-size: 16px;
+    }
+    .logo {
+      color: #22c55e;
+      font-weight: bold;
+      font-size: 28px;
+      margin-bottom: 32px;
+    }
+    .subtitle {
+      color: #22c55e;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">aok</div>
+    <div class="icon">${icon}</div>
+    <h1>${success ? 'Safety Confirmed' : 'Error'}</h1>
+    <p>${message}</p>
+    ${success && userName ? `<p class="subtitle">Thank you for confirming ${userName}'s safety.</p>` : ''}
+  </div>
+</body>
+</html>`;
+}
+
 // Extend Express Request type
 declare global {
   namespace Express {
@@ -958,6 +1036,51 @@ export async function registerRoutes(
     }
   });
 
+  // Safety confirmation endpoint (public - no auth required)
+  // This is called when a contact clicks the confirmation link in the deactivation email
+  app.get("/api/confirm-safety", async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      console.log("[CONFIRM-SAFETY] Received confirmation request:", { 
+        token: token ? `${String(token).substring(0, 10)}...` : 'missing'
+      });
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).send(renderSafetyConfirmationPage(false, "Invalid confirmation link.", null));
+      }
+      
+      const confirmation = await storage.getDeactivationConfirmationByToken(token);
+      
+      if (!confirmation) {
+        return res.status(404).send(renderSafetyConfirmationPage(false, "This confirmation link has expired or is invalid.", null));
+      }
+      
+      // Check if already confirmed
+      if (confirmation.confirmedAt) {
+        return res.send(renderSafetyConfirmationPage(true, "You have already confirmed that you've spoken to this person.", confirmation.user?.name || 'the client'));
+      }
+      
+      // Check if expired
+      if (new Date(confirmation.expiresAt) < new Date()) {
+        return res.status(410).send(renderSafetyConfirmationPage(false, "This confirmation link has expired.", null));
+      }
+      
+      // Confirm the deactivation
+      const confirmed = await storage.confirmDeactivation(token);
+      
+      if (confirmed) {
+        console.log(`[CONFIRM-SAFETY] Contact ${confirmation.contactName} confirmed safety for user ${confirmation.userId}`);
+        return res.send(renderSafetyConfirmationPage(true, `Thank you for confirming that you have spoken to ${confirmation.user?.name || 'the client'} and verified they are safe.`, confirmation.user?.name || 'the client'));
+      }
+      
+      return res.status(500).send(renderSafetyConfirmationPage(false, "Something went wrong. Please try again.", null));
+    } catch (error) {
+      console.error("Safety confirmation error:", error);
+      res.status(500).send(renderSafetyConfirmationPage(false, "Something went wrong. Please try again.", null));
+    }
+  });
+
   // Protected routes - all require authentication
   app.use("/api/status", authMiddleware);
   app.use("/api/alerts", authMiddleware);
@@ -1242,6 +1365,13 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Please add at least one emergency contact before checking in" });
       }
       
+      // Store user's location if provided (for missed check-in alerts)
+      const location = req.body?.location as { latitude: number; longitude: number } | undefined;
+      if (location?.latitude && location?.longitude) {
+        await storage.updateUserLocation(req.userId!, location.latitude.toString(), location.longitude.toString());
+        console.log(`[CHECK-IN] Updated user ${req.userId} location to ${location.latitude}, ${location.longitude}`);
+      }
+      
       const checkIn = await storage.createCheckIn(req.userId!);
       
       // Notify ALL primary contacts
@@ -1285,6 +1415,28 @@ export async function registerRoutes(
 
       const location = req.body?.location as { latitude: number; longitude: number } | undefined;
       
+      // Get what3words if location is provided
+      let what3words: string | null = null;
+      if (location?.latitude && location?.longitude) {
+        const apiKey = process.env.WHAT3WORDS_API_KEY;
+        if (apiKey) {
+          try {
+            const w3wResponse = await fetch(
+              `https://api.what3words.com/v3/convert-to-3wa?coordinates=${location.latitude},${location.longitude}&key=${apiKey}`
+            );
+            if (w3wResponse.ok) {
+              const w3wData = await w3wResponse.json();
+              if (w3wData.words) {
+                what3words = w3wData.words;
+                console.log('[EMERGENCY] Got what3words:', what3words);
+              }
+            }
+          } catch (e) {
+            console.error('[EMERGENCY] Failed to get what3words:', e);
+          }
+        }
+      }
+      
       let activeAlert = null;
       
       // Only create active emergency alert if continuous tracking is enabled
@@ -1298,7 +1450,8 @@ export async function registerRoutes(
         activeAlert = await storage.createActiveEmergencyAlert(
           req.userId!,
           location?.latitude?.toString() || null,
-          location?.longitude?.toString() || null
+          location?.longitude?.toString() || null,
+          what3words
         );
         console.log('[EMERGENCY] Created active alert (continuous tracking):', activeAlert.id);
       } else {
@@ -1493,6 +1646,27 @@ export async function registerRoutes(
 
       // Get location from request body (sent from client)
       const { location } = req.body;
+      
+      // Get what3words for the location
+      let what3words: string | null = null;
+      if (location?.latitude && location?.longitude) {
+        const apiKey = process.env.WHAT3WORDS_API_KEY;
+        if (apiKey) {
+          try {
+            const w3wResponse = await fetch(
+              `https://api.what3words.com/v3/convert-to-3wa?coordinates=${location.latitude},${location.longitude}&key=${apiKey}`
+            );
+            if (w3wResponse.ok) {
+              const w3wData = await w3wResponse.json();
+              if (w3wData.words) {
+                what3words = w3wData.words;
+              }
+            }
+          } catch (e) {
+            console.error('[EMERGENCY] Failed to get what3words for deactivation:', e);
+          }
+        }
+      }
 
       // Deactivate the alert
       await storage.deactivateEmergencyAlert(activeAlert.id);
@@ -1501,24 +1675,45 @@ export async function registerRoutes(
       const contacts = await storage.getContacts(userId);
       const confirmedContacts = contacts.filter(c => c.isConfirmed);
       
-      // Send deactivation notifications to all contacts
+      // Create confirmation records for each contact and generate links
+      const baseUrl = process.env.APP_URL || 
+        (process.env.REPL_SLUG 
+          ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+          : 'http://localhost:5000');
+      
+      const confirmationLinks = new Map<string, string>();
+      for (const contact of confirmedContacts) {
+        const { token } = await storage.createDeactivationConfirmation(
+          userId,
+          activeAlert.id,
+          contact.email,
+          contact.name,
+          location?.latitude?.toString() || activeAlert.latitude,
+          location?.longitude?.toString() || activeAlert.longitude,
+          what3words || activeAlert.what3words
+        );
+        confirmationLinks.set(contact.email, `${baseUrl}/api/confirm-safety?token=${token}`);
+      }
+      
+      // Send deactivation notifications to all contacts with confirmation links
       if (confirmedContacts.length > 0) {
         const { sendEmergencyDeactivationAlert } = await import("./notifications");
         await sendEmergencyDeactivationAlert(
           confirmedContacts,
           user,
-          location ? { latitude: location.latitude, longitude: location.longitude } : undefined
+          location ? { latitude: location.latitude, longitude: location.longitude } : undefined,
+          confirmationLinks
         );
       }
       
       // Log the deactivation with location info
-      let logMessage = `Emergency alert deactivated by user via 10-second hold - confirmed safe`;
+      let logMessage = `Emergency alert deactivated by user via 10-second hold - awaiting contact confirmation`;
       if (location) {
         logMessage += ` (Location: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)})`;
       }
       await storage.createAlertLog(userId, [], logMessage);
 
-      res.json({ success: true, message: "Emergency alert deactivated. Contacts have been notified." });
+      res.json({ success: true, message: "Emergency alert deactivated. Contacts have been notified and asked to confirm your safety." });
     } catch (error) {
       console.error('[EMERGENCY] Failed to deactivate alert via hold:', error);
       res.status(500).json({ error: "Failed to deactivate alert" });

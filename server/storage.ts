@@ -3,6 +3,7 @@ import {
   adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs, organizationClients, organizationClientProfiles,
   pendingClientContacts, activeEmergencyAlerts, moodEntries, pets, digitalDocuments, globalFeatureFlags, adminPasswordResetTokens,
   incidents, welfareConcerns, caseFiles, caseNotes, escalationRules, missedCheckInEscalations, auditTrail, riskReports,
+  deactivationConfirmations,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
   AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo,
   OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData, OrgClientStatus,
@@ -112,12 +113,20 @@ export interface IStorage {
 
   // Active emergency alerts
   getActiveEmergencyAlert(userId: string): Promise<ActiveEmergencyAlert | undefined>;
-  createActiveEmergencyAlert(userId: string, latitude: string | null, longitude: string | null): Promise<ActiveEmergencyAlert>;
+  createActiveEmergencyAlert(userId: string, latitude: string | null, longitude: string | null, what3words?: string | null): Promise<ActiveEmergencyAlert>;
   updateEmergencyAlertLocation(alertId: string, latitude: string, longitude: string): Promise<void>;
   updateEmergencyAlertDispatchTime(alertId: string): Promise<void>;
   deactivateEmergencyAlert(alertId: string): Promise<void>;
   deactivateEmergencyAlertByUserId(userId: string): Promise<boolean>;
   getOverdueActiveAlerts(): Promise<ActiveEmergencyAlert[]>;
+  
+  // User location
+  updateUserLocation(userId: string, latitude: string, longitude: string): Promise<void>;
+  
+  // Deactivation confirmations
+  createDeactivationConfirmation(userId: string, alertId: string, contactEmail: string, contactName: string, latitude: string | null, longitude: string | null, what3words: string | null): Promise<{ id: string; token: string }>;
+  getDeactivationConfirmationByToken(token: string): Promise<any | undefined>;
+  confirmDeactivation(token: string): Promise<boolean>;
 
   // Terms and conditions
   acceptTerms(userId: string): Promise<void>;
@@ -1037,7 +1046,7 @@ class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async createActiveEmergencyAlert(userId: string, latitude: string | null, longitude: string | null): Promise<ActiveEmergencyAlert> {
+  async createActiveEmergencyAlert(userId: string, latitude: string | null, longitude: string | null, what3words: string | null = null): Promise<ActiveEmergencyAlert> {
     // First deactivate any existing alerts for this user
     await getDb()
       .update(activeEmergencyAlerts)
@@ -1054,16 +1063,17 @@ class DatabaseStorage implements IStorage {
         userId,
         latitude,
         longitude,
+        what3words,
         isActive: true,
       })
       .returning();
     return result[0];
   }
 
-  async updateEmergencyAlertLocation(alertId: string, latitude: string, longitude: string): Promise<void> {
+  async updateEmergencyAlertLocation(alertId: string, latitude: string, longitude: string, what3words: string | null = null): Promise<void> {
     await getDb()
       .update(activeEmergencyAlerts)
-      .set({ latitude, longitude })
+      .set({ latitude, longitude, what3words })
       .where(eq(activeEmergencyAlerts.id, alertId));
   }
 
@@ -1105,6 +1115,81 @@ class DatabaseStorage implements IStorage {
         lt(activeEmergencyAlerts.lastDispatchAt, fiveMinutesAgo)
       ));
     return result;
+  }
+
+  // User location update
+  async updateUserLocation(userId: string, latitude: string, longitude: string): Promise<void> {
+    await getDb()
+      .update(users)
+      .set({ 
+        latitude, 
+        longitude, 
+        lastLocationUpdatedAt: new Date() 
+      })
+      .where(eq(users.id, userId));
+  }
+
+  // Deactivation confirmations
+  async createDeactivationConfirmation(
+    userId: string, 
+    alertId: string, 
+    contactEmail: string, 
+    contactName: string,
+    latitude: string | null,
+    longitude: string | null,
+    what3words: string | null
+  ): Promise<{ id: string; token: string }> {
+    const token = randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    
+    const result = await getDb()
+      .insert(deactivationConfirmations)
+      .values({
+        userId,
+        alertId,
+        contactEmail,
+        contactName,
+        confirmationToken: token,
+        lastKnownLatitude: latitude,
+        lastKnownLongitude: longitude,
+        lastKnownWhat3Words: what3words,
+        expiresAt,
+      })
+      .returning({ id: deactivationConfirmations.id });
+    
+    return { id: result[0].id, token };
+  }
+
+  async getDeactivationConfirmationByToken(token: string): Promise<any | undefined> {
+    const result = await getDb()
+      .select({
+        confirmation: deactivationConfirmations,
+        user: users,
+      })
+      .from(deactivationConfirmations)
+      .leftJoin(users, eq(deactivationConfirmations.userId, users.id))
+      .where(eq(deactivationConfirmations.confirmationToken, token));
+    
+    if (result.length === 0) return undefined;
+    
+    return {
+      ...result[0].confirmation,
+      user: result[0].user,
+    };
+  }
+
+  async confirmDeactivation(token: string): Promise<boolean> {
+    const result = await getDb()
+      .update(deactivationConfirmations)
+      .set({ confirmedAt: new Date() })
+      .where(and(
+        eq(deactivationConfirmations.confirmationToken, token),
+        isNull(deactivationConfirmations.confirmedAt),
+        gt(deactivationConfirmations.expiresAt, new Date())
+      ))
+      .returning({ id: deactivationConfirmations.id });
+    
+    return result.length > 0;
   }
 
   // Terms and conditions
@@ -2482,13 +2567,14 @@ class OrganizationStorage implements IOrganizationStorage {
       const lastAlert = alertLogs.length > 0 ? alertLogs[0] : null;
       const alertCounts = await this.getClientAlertCounts(row.client.id);
       
-      // Check for active emergency alert with full details
+      // Check for active emergency alert with full details (what3words is stored in DB)
       const activeEmergency = await getDb()
         .select({
           id: activeEmergencyAlerts.id,
           activatedAt: activeEmergencyAlerts.activatedAt,
           latitude: activeEmergencyAlerts.latitude,
           longitude: activeEmergencyAlerts.longitude,
+          what3words: activeEmergencyAlerts.what3words,
         })
         .from(activeEmergencyAlerts)
         .where(
@@ -2497,26 +2583,6 @@ class OrganizationStorage implements IOrganizationStorage {
             eq(activeEmergencyAlerts.isActive, true)
           )
         );
-      
-      let emergencyAlertWhat3Words: string | null = null;
-      if (activeEmergency.length > 0 && activeEmergency[0].latitude && activeEmergency[0].longitude) {
-        try {
-          const apiKey = process.env.WHAT3WORDS_API_KEY;
-          if (apiKey) {
-            const response = await fetch(
-              `https://api.what3words.com/v3/convert-to-3wa?coordinates=${activeEmergency[0].latitude},${activeEmergency[0].longitude}&key=${apiKey}`
-            );
-            if (response.ok) {
-              const data = await response.json();
-              if (data.words) {
-                emergencyAlertWhat3Words = data.words;
-              }
-            }
-          }
-        } catch (e) {
-          console.error('[STORAGE] Failed to get what3words:', e);
-        }
-      }
       
       results.push({
         id: row.orgClient.id,
@@ -2534,7 +2600,7 @@ class OrganizationStorage implements IOrganizationStorage {
         emergencyAlertActivatedAt: activeEmergency.length > 0 ? activeEmergency[0].activatedAt?.toISOString() || null : null,
         emergencyAlertLatitude: activeEmergency.length > 0 ? activeEmergency[0].latitude : null,
         emergencyAlertLongitude: activeEmergency.length > 0 ? activeEmergency[0].longitude : null,
-        emergencyAlertWhat3Words,
+        emergencyAlertWhat3Words: activeEmergency.length > 0 ? activeEmergency[0].what3words : null,
         scheduleStartTime: row.orgClient.scheduleStartTime,
         checkInIntervalHours: row.orgClient.checkInIntervalHours,
         addedAt: row.orgClient.addedAt,
