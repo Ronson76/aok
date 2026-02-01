@@ -35,8 +35,10 @@ interface SafeguardingSummary {
 
 interface Incident {
   id: string;
-  organizationId: string;
+  organizationId?: string;
   clientId?: string;
+  clientName?: string;
+  referenceCode?: string;
   reportedById?: string;
   reportedByName?: string;
   incidentType: string;
@@ -46,13 +48,14 @@ interface Incident {
   locationLat?: number;
   locationLng?: number;
   what3words?: string;
-  isAnonymous: boolean;
+  isAnonymous?: boolean;
   status: string;
   resolution?: string;
   resolvedById?: string;
   resolvedAt?: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
+  isEmergencyAlert?: boolean;
 }
 
 interface WelfareConcern {
@@ -415,6 +418,11 @@ export default function OrgSafeguardingPage() {
       case "low": return <Badge variant="secondary">Low</Badge>;
       default: return <Badge variant="outline">{severity}</Badge>;
     }
+  };
+
+  const formatIncidentType = (type: string) => {
+    if (type === "emergency_alert") return "Emergency Alert";
+    return type.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
   };
 
   const getStatusBadge = (status: string) => {
@@ -887,7 +895,10 @@ export default function OrgSafeguardingPage() {
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">
                                   {getSeverityBadge(incident.severity)}
-                                  <span className="text-sm font-medium capitalize">{incident.incidentType}</span>
+                                  <span className="text-sm font-medium">{formatIncidentType(incident.incidentType)}</span>
+                                  {incident.isEmergencyAlert && incident.clientName && (
+                                    <span className="text-sm text-muted-foreground">- {incident.clientName}</span>
+                                  )}
                                 </div>
                                 <p className="text-sm text-muted-foreground line-clamp-2">{incident.description}</p>
                                 <p className="text-xs text-muted-foreground">
@@ -970,19 +981,25 @@ export default function OrgSafeguardingPage() {
                 ) : incidents && incidents.length > 0 ? (
                   <div className="space-y-3">
                     {incidents.map((incident) => (
-                      <div key={incident.id} className="p-4 rounded-lg border space-y-2">
+                      <div key={incident.id} className={`p-4 rounded-lg border space-y-2 ${incident.isEmergencyAlert ? "border-destructive/50 bg-destructive/5" : ""}`}>
                         <div className="flex items-start justify-between gap-2 flex-wrap">
                           <div className="flex items-center gap-2 flex-wrap">
                             {getSeverityBadge(incident.severity)}
-                            <span className="font-medium capitalize">{incident.incidentType}</span>
+                            <span className="font-medium">{formatIncidentType(incident.incidentType)}</span>
                             {getStatusBadge(incident.status)}
+                            {incident.isEmergencyAlert && (
+                              <Badge variant="destructive" className="text-xs">SOS</Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {format(new Date(incident.createdAt), "dd/MM/yyyy HH:mm")}
                           </p>
                         </div>
                         <p className="text-sm">{incident.description}</p>
-                        {incident.clientId && (
+                        {incident.isEmergencyAlert && incident.clientName && (
+                          <p className="text-sm text-muted-foreground">Client: {incident.clientName}{incident.referenceCode ? ` (${incident.referenceCode})` : ""}</p>
+                        )}
+                        {!incident.isEmergencyAlert && incident.clientId && (
                           <p className="text-sm text-muted-foreground">Client: {getClientName(incident.clientId)}</p>
                         )}
                         {incident.what3words && (
