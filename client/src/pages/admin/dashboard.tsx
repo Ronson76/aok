@@ -262,29 +262,6 @@ export default function AdminDashboard() {
     },
   });
   
-  const deactivateAlertMutation = useMutation({
-    mutationFn: async ({ organizationId, clientId }: { organizationId: string; clientId: string }) => {
-      const response = await apiRequest("POST", `/api/admin/organizations/${organizationId}/clients/${clientId}/deactivate-alert`);
-      return response.json();
-    },
-    onSuccess: () => {
-      if (selectedOrg) {
-        fetchOrgClients(selectedOrg.id);
-      }
-      toast({
-        title: "Alert deactivated",
-        description: "The emergency alert has been deactivated. Check-ins will continue as normal.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to deactivate alert",
-        description: error.message || "Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-  
   const updateScheduleMutation = useMutation({
     mutationFn: async ({ organizationId, clientId, scheduleStartTime, checkInIntervalHours }: { 
       organizationId: string; 
@@ -1174,21 +1151,6 @@ export default function AdminDashboard() {
                             </Button>
                           ) : null}
                           
-                          {client.hasActiveAlert && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => deactivateAlertMutation.mutate({ 
-                                organizationId: selectedOrg!.id, 
-                                clientId: client.id 
-                              })}
-                              disabled={deactivateAlertMutation.isPending}
-                              className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
-                              data-testid={`button-deactivate-alert-${client.id}`}
-                            >
-                              Request Emergency End
-                            </Button>
-                          )}
                           
                           {client.isActivated && (
                             <>

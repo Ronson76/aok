@@ -407,28 +407,6 @@ export default function OrganizationDashboard() {
     },
   });
 
-  const deactivateAlertMutation = useMutation({
-    mutationFn: async (clientId: string) => {
-      const response = await apiRequest("POST", `/api/org/clients/${clientId}/deactivate-alert`);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
-      toast({
-        title: "Emergency alert deactivated",
-        description: "The client's emergency alert has been deactivated.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to deactivate alert",
-        description: error.message || "Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const registerClientMutation = useMutation({
     mutationFn: async () => {
       // Combine country code with phone number
@@ -1658,17 +1636,6 @@ export default function OrganizationDashboard() {
                             <AlertOctagon className="h-3 w-3 mr-1" />
                             SOS Active
                           </Badge>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deactivateAlertMutation.mutate(client.clientId || client.id)}
-                            disabled={deactivateAlertMutation.isPending}
-                            className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
-                            data-testid={`button-deactivate-alert-${client.clientId}`}
-                          >
-                            {deactivateAlertMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellOff className="h-4 w-4 mr-1" />}
-                            Request Emergency End
-                          </Button>
                         </div>
                         {/* Alert details - time and location */}
                         <div className="text-xs text-destructive">
@@ -2342,18 +2309,6 @@ export default function OrganizationDashboard() {
                           </p>
                         </div>
                       </div>
-                      <Button
-                        variant="destructive"
-                        onClick={() => deactivateAlertMutation.mutate(selectedClient.id)}
-                        disabled={deactivateAlertMutation.isPending}
-                        data-testid="button-deactivate-alert"
-                      >
-                        {deactivateAlertMutation.isPending ? (
-                          <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Requesting...</>
-                        ) : (
-                          "Request Emergency End"
-                        )}
-                      </Button>
                     </div>
                     {/* Emergency Alert Details */}
                     <div className="bg-white dark:bg-background rounded p-3 text-sm space-y-2">
