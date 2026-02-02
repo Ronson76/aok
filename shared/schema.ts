@@ -1161,3 +1161,6 @@ export const riskReports = pgTable("risk_reports", {
 });
 
 export type RiskReport = typeof riskReports.$inferSelect;
+
+// Re-export chat models for AI integrations (used by integration storage)
+export * from "./models/chat";
