@@ -164,13 +164,11 @@ export function BottomNav() {
                 }
               })}
               
-              {/* Wellbeing-ai external link - shown when feature is enabled */}
+              {/* Wellbeing-ai internal link - shown when feature is enabled */}
               {isRegistrationComplete && features?.featureWellbeingAi !== false ? (
                 <DropdownMenuItem asChild>
-                  <a
-                    href="https://health-insight-engine.replit.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    href="/app/wellbeing-ai"
                     className="flex items-center gap-3 cursor-pointer text-green-600"
                     onClick={() => setMoreOpen(false)}
                     data-testid="nav-wellbeing-ai"
@@ -180,7 +178,7 @@ export function BottomNav() {
                       <div className="w-1 h-3 bg-green-600 absolute rounded-sm" />
                     </div>
                     <span>Wellbeing AI</span>
-                  </a>
+                  </Link>
                 </DropdownMenuItem>
               ) : !isOrgManagedClient ? (
                 <DropdownMenuItem 
