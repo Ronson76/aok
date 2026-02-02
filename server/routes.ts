@@ -7,6 +7,7 @@ import bcrypt from "bcrypt";
 import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification, sendContactRemovedNotification } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
+import { registerWellbeingAIRoutes } from "./wellbeingAI";
 import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
 import { stripeService } from "./stripeService";
 
@@ -681,6 +682,9 @@ export async function registerRoutes(
     return authMiddleware(req, res, next);
   });
   registerOrganizationRoutes(app);
+  
+  // Wellbeing AI routes (uses session auth)
+  registerWellbeingAIRoutes(app);
 
   // Auth routes (public)
   app.post("/api/auth/register", async (req, res) => {

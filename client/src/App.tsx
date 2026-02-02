@@ -60,6 +60,7 @@ import Onboarding from "@/pages/onboarding";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
 import ConfirmContact from "@/pages/confirm-contact";
+import WellbeingAI from "@/pages/wellbeing-ai";
 import { TermsModal } from "@/components/terms-modal";
 
 function PaymentBlockedScreen() {
@@ -209,6 +210,7 @@ function AppRoutes() {
       <Route path="/app/mood" component={() => <ProtectedRoute component={Mood} />} />
       <Route path="/app/pets" component={() => <ProtectedRoute component={Pets} />} />
       <Route path="/app/documents" component={() => <ProtectedRoute component={Documents} />} />
+      <Route path="/app/wellbeing-ai" component={() => <ProtectedRoute component={WellbeingAI} />} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -442,12 +444,10 @@ function AppLayout() {
               <>
                 <div className="h-8 w-px bg-muted-foreground/30" />
                 {user?.termsAcceptedAt ? (
-                  <a 
-                    href="https://health-insight-engine.replit.app" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex flex-col items-center"
-                    data-testid="link-health-insight"
+                  <Link 
+                    href="/app/wellbeing-ai"
+                    className="flex flex-col items-center hover:opacity-80 transition-opacity"
+                    data-testid="link-wellbeing-ai"
                   >
                     <div className="relative h-6 w-6 flex items-center justify-center">
                       <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
@@ -455,12 +455,12 @@ function AppLayout() {
                       <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
                     </div>
                     <span className="text-[10px] font-medium text-green-600 mt-0.5">Wellbeing AI</span>
-                  </a>
+                  </Link>
                 ) : (
                   <div 
                     className="flex flex-col items-center cursor-not-allowed"
                     title="Complete registration to access"
-                    data-testid="link-health-insight-disabled"
+                    data-testid="link-wellbeing-ai-disabled"
                   >
                     <div className="relative h-6 w-6 flex items-center justify-center">
                       <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
