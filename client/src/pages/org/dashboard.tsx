@@ -979,7 +979,14 @@ export default function OrganizationDashboard() {
       {/* Header with logo and logout */}
       <header className="sticky top-0 z-40 bg-background border-b">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" 
+            data-testid="link-home-logo"
+            onClick={async () => {
+              await logout();
+              setLocation("/");
+            }}
+          >
             <ShieldCheck className="h-9 w-9 text-green-600" />
             <span className="text-2xl font-bold text-green-600">aok</span>
           </div>
