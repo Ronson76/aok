@@ -132,6 +132,13 @@ export default function OrganizationDashboard() {
     };
   }, [resetInactivityTimer]);
   
+  // Auto-logout when navigating away from org dashboard
+  useEffect(() => {
+    return () => {
+      logoutRef.current();
+    };
+  }, []);
+  
   const handleLogout = async () => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
