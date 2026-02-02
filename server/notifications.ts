@@ -959,13 +959,27 @@ export async function sendMissedCheckInAlert(
     
     let locationInfo = "";
     
+    // Always include location section header
+    locationInfo += `
+
+LOCATION INFORMATION:
+`;
+    
     // Include what3words location if available
     if (what3wordsAddress) {
       const w3wUrl = `https://what3words.com/${what3wordsAddress}`;
       locationInfo += `
-Last known location:
+Last known GPS location:
 what3words: ///${what3wordsAddress}
 View on map: ${w3wUrl}
+`;
+    } else if (user.latitude && user.longitude) {
+      // Fallback to raw GPS coordinates if what3words lookup failed
+      const googleMapsUrl = `https://www.google.com/maps?q=${user.latitude},${user.longitude}`;
+      locationInfo += `
+Last known GPS location:
+Coordinates: ${user.latitude}, ${user.longitude}
+View on map: ${googleMapsUrl}
 `;
     }
     
@@ -980,6 +994,11 @@ ${user.country || ""}`;
     if (user.mobileNumber) {
       locationInfo += `
 Mobile number: ${user.mobileNumber}`;
+    }
+    
+    // If no location info was added, note that
+    if (!what3wordsAddress && !user.latitude && !user.addressLine1 && !user.mobileNumber) {
+      locationInfo += `No location information available for this user.`;
     }
     
     const additionalInfoText = formatAdditionalInfo(additionalInfo || null);

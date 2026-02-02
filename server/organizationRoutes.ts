@@ -3,7 +3,7 @@ import { organizationStorage, storage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema } from "@shared/schema";
-import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS } from "./notifications";
+import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail } from "./notifications";
 
 // Generate a unique 6-character reference code
 function generateReferenceCode(): string {
@@ -783,7 +783,28 @@ export function registerOrganizationRoutes(app: Express) {
         if (isPrimary && result.contact) {
           await storage.setPrimaryContact(orgClient.clientId, result.contact.id);
         }
-        res.status(201).json(result.contact);
+        
+        // Send confirmation email to the new contact
+        if (result.contact && result.confirmationToken) {
+          const user = await storage.getUserById(orgClient.clientId);
+          if (user) {
+            const baseUrl = process.env.APP_URL || `https://aok.care`;
+            console.log("[ORG] Sending contact confirmation email to:", result.contact.email);
+            sendContactConfirmationEmail(result.contact, user, result.confirmationToken, baseUrl)
+              .then(emailResult => {
+                console.log("[ORG] Contact confirmation email result:", emailResult);
+              })
+              .catch(err => {
+                console.error("[ORG] Failed to send contact confirmation email:", err);
+              });
+          }
+        }
+        
+        res.status(201).json({
+          ...result.contact,
+          pending: true,
+          message: "Confirmation email sent. Contact must confirm within 24 hours."
+        });
       } else {
         // Otherwise add to pending contacts
         await organizationStorage.addPendingClientContact(orgClientId, {
