@@ -109,6 +109,15 @@ export default function Contacts() {
   const [expandedContactId, setExpandedContactId] = useState<string | null>(null);
   
   const isOrganization = user?.accountType === "organization";
+  
+  // Check if user is an org client (contacts managed by organisation)
+  const { data: features } = useQuery<{
+    isOrgClient: boolean;
+  }>({
+    queryKey: ["/api/features"],
+  });
+  
+  const isOrgClient = features?.isOrgClient ?? false;
 
   // Screenshot protection: blur content when page loses focus or visibility
   useEffect(() => {
@@ -326,11 +335,13 @@ export default function Contacts() {
         </div>
         
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="icon" data-testid="button-add-contact">
-              <Plus className="h-5 w-5" />
-            </Button>
-          </DialogTrigger>
+          {!isOrgClient && (
+            <DialogTrigger asChild>
+              <Button size="icon" data-testid="button-add-contact">
+                <Plus className="h-5 w-5" />
+              </Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden">
             <DialogHeader className="flex-shrink-0">
               <DialogTitle className="flex items-center gap-2">
@@ -501,12 +512,17 @@ export default function Contacts() {
             </div>
             <h3 className="text-lg font-medium mb-2">No contacts yet</h3>
             <p className="text-sm text-muted-foreground mb-4 max-w-xs">
-              Add your loved ones so they can be alerted if you miss a check-in.
+              {isOrgClient 
+                ? "Your emergency contacts are managed by your organisation."
+                : "Add your loved ones so they can be alerted if you miss a check-in."
+              }
             </p>
-            <Button onClick={() => setDialogOpen(true)} data-testid="button-add-first-contact">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Contact
-            </Button>
+            {!isOrgClient && (
+              <Button onClick={() => setDialogOpen(true)} data-testid="button-add-first-contact">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Contact
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -594,23 +610,27 @@ export default function Contacts() {
                       <Star className={`h-4 w-4 ${contact.isPrimary && isConfirmed ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} />
                     </Button>
                   )}
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleEditContact(contact)}
-                    title="Edit contact"
-                    data-testid={`button-edit-contact-${contact.id}`}
-                  >
-                    <Pencil className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => setDeleteId(contact.id)}
-                    data-testid={`button-delete-contact-${contact.id}`}
-                  >
-                    <Trash2 className="h-4 w-4 text-muted-foreground" />
-                  </Button>
+                  {!isOrgClient && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleEditContact(contact)}
+                      title="Edit contact"
+                      data-testid={`button-edit-contact-${contact.id}`}
+                    >
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  )}
+                  {!isOrgClient && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setDeleteId(contact.id)}
+                      data-testid={`button-delete-contact-${contact.id}`}
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
