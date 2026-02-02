@@ -103,6 +103,13 @@ export default function AdminDashboard() {
     };
   }, [resetActivityTimer]);
   
+  // Auto-logout when navigating away from admin dashboard
+  useEffect(() => {
+    return () => {
+      logoutRef.current();
+    };
+  }, []);
+  
   // State for viewing organization clients
   const [selectedOrg, setSelectedOrg] = useState<AdminOrganizationView | null>(null);
   const [orgClients, setOrgClients] = useState<AdminOrganizationClientView[]>([]);
