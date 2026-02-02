@@ -154,10 +154,8 @@ export default function Landing() {
               <span className="text-2xl font-bold text-green-600">aok</span>
             </Link>
             <div className="h-8 w-px bg-muted-foreground/30" />
-            <a 
-              href="https://health-insight-engine.replit.app" 
-              target="_blank" 
-              rel="noopener noreferrer"
+            <Link 
+              href="/wellbeing-ai"
               className="flex flex-col items-start"
               data-testid="link-health-insight"
             >
@@ -167,7 +165,7 @@ export default function Landing() {
                 <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-0.5 -right-0.5" fill="currentColor" />
               </div>
               <span className="text-xs font-semibold text-green-600 leading-none whitespace-nowrap">Wellbeing AI</span>
-            </a>
+            </Link>
           </div>
           <nav className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-features">Features</a>
