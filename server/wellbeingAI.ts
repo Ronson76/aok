@@ -3,6 +3,18 @@ import OpenAI from "openai";
 import { db } from "./db";
 import { moodEntries, users } from "@shared/schema";
 import { eq, desc, gte, and } from "drizzle-orm";
+import { storage } from "./storage";
+
+// Helper to get authenticated userId from session cookie
+async function getAuthenticatedUserId(req: Request): Promise<string | null> {
+  const sessionId = (req as any).cookies?.session;
+  if (!sessionId) return null;
+  
+  const session = await storage.getSession(sessionId);
+  if (!session) return null;
+  
+  return session.userId;
+}
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -120,7 +132,7 @@ Start by acknowledging their feelings and asking how you can support them today.
 export function registerWellbeingAIRoutes(app: Express): void {
   app.get("/api/wellbeing-ai/mood-check", async (req: Request, res: Response) => {
     try {
-      const userId = (req as any).session?.userId;
+      const userId = await getAuthenticatedUserId(req);
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -144,7 +156,7 @@ export function registerWellbeingAIRoutes(app: Express): void {
 
   app.post("/api/wellbeing-ai/chat", async (req: Request, res: Response) => {
     try {
-      const userId = (req as any).session?.userId;
+      const userId = await getAuthenticatedUserId(req);
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
