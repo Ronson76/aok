@@ -1968,11 +1968,11 @@ export async function sendContactConfirmationReminder(
   contactPhone: string,
   contactName: string,
   userName: string,
-  confirmationLink: string
+  contactEmail: string
 ): Promise<{ success: boolean; error?: string }> {
-  const message = `REMINDER: ${userName} has added you as an emergency contact on aok. Please confirm within the next hour or the link will expire.
+  const message = `REMINDER: ${userName} has added you as an emergency contact on aok. You have less than 1 hour to confirm or the request will expire.
 
-Confirm here: ${confirmationLink}
+Please check the email sent to ${contactEmail} and click the confirmation link.
 
 If you did not expect this, you can ignore this message.`;
 

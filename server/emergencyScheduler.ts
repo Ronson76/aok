@@ -105,18 +105,17 @@ async function sendContactReminders(): Promise<void> {
           continue;
         }
 
-        // Build the confirmation link using APP_URL for production
-        const baseUrl = process.env.APP_URL || 
-          (process.env.REPL_SLUG 
-            ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
-            : 'http://localhost:5000');
-        const confirmationLink = `${baseUrl}/confirm-contact?token=${contact.confirmationToken}`;
+        if (!contact.email) {
+          console.log(`[CONTACT REMINDER] No email for contact ${contact.name}, skipping`);
+          continue;
+        }
 
+        // Direct user to check their email for the original confirmation link
         const result = await sendContactConfirmationReminder(
           contact.phone,
           contact.name,
           user.name,
-          confirmationLink
+          contact.email
         );
 
         if (result.success) {
