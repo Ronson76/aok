@@ -84,6 +84,14 @@ Preferred communication style: Simple, everyday language.
 - **what3words**: Integrates precise location sharing (three-word addresses) into emergency alerts.
 - **Stripe**: Payment processing with subscription management, 7-day free trial, Apple Pay/Google Pay support.
 
+### Recent Changes (Feb 2026)
+- **Native Wellbeing AI Chat**: In-app AI chat feature replacing external link at `/wellbeing-ai`
+  - GDPR-compliant ephemeral chat (no conversation storage - held only in client state)
+  - Mood pattern detection analyzing last 14 days of entries for concerning trends
+  - Proactive prompts for users with consecutive low mood days or declining patterns
+  - Streaming chat responses using OpenAI (gpt-4o) via Replit AI Integrations
+  - Compassionate support companion with British English, crisis helpline signposting
+
 ### Recent Changes (Jan 2026)
 - **Subscription Management**: Settings page displays subscription status (Active/Trial/Cancelling) with plan details, cancel/reactivate buttons with password confirmation
 - **Forgot Password**: Complete password reset flow via email (`/forgot-password`, `/reset-password?token=xxx`)
