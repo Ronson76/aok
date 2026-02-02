@@ -155,7 +155,7 @@ export default function Landing() {
             </Link>
             <div className="h-8 w-px bg-muted-foreground/30" />
             <Link 
-              href="/wellbeing-ai"
+              href="/app/wellbeing-ai"
               className="flex flex-col items-start"
               data-testid="link-health-insight"
             >
