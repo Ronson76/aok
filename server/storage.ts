@@ -852,12 +852,11 @@ class DatabaseStorage implements IStorage {
       return { wasMissed: false, alertSent: false };
     }
 
-    // Determine contacts to alert
-    const primaryContact = allContacts.find(c => c.isPrimary);
+    // Determine contacts to alert - only primary contacts receive missed check-in alerts
+    // Non-primary contacts only receive emergency alerts
+    const primaryContacts = allContacts.filter(c => c.isPrimary);
     const alertsEnabled = row.alertsEnabled;
-    const contactsToAlert = alertsEnabled 
-      ? allContacts 
-      : (primaryContact ? [primaryContact] : []);
+    const contactsToAlert = alertsEnabled ? primaryContacts : [];
     
     const contactNames = contactsToAlert.map(c => c.name);
     let alertSent = false;
