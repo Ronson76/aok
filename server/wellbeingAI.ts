@@ -172,19 +172,39 @@ export function registerWellbeingAIRoutes(app: Express): void {
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      // Handle multipart form data with audio file
+      // Handle raw audio data with size limit (10MB max)
+      const maxSize = 10 * 1024 * 1024;
       const chunks: Buffer[] = [];
+      let totalSize = 0;
       
       req.on("data", (chunk: Buffer) => {
-        chunks.push(chunk);
+        totalSize += chunk.length;
+        if (totalSize <= maxSize) {
+          chunks.push(chunk);
+        }
+      });
+
+      req.on("error", (error) => {
+        console.error("Request error in STT:", error);
+        if (!res.headersSent) {
+          res.status(500).json({ error: "Request error" });
+        }
       });
 
       req.on("end", async () => {
         try {
+          if (totalSize > maxSize) {
+            return res.status(413).json({ error: "Audio file too large" });
+          }
+          
+          if (chunks.length === 0) {
+            return res.status(400).json({ error: "No audio data received" });
+          }
+
           const audioBuffer = Buffer.concat(chunks);
           
-          // Create a File-like object for OpenAI API
-          const audioFile = new File([audioBuffer], "audio.webm", {
+          // Use OpenAI's toFile helper for Node.js compatibility
+          const audioFile = await openai.toFile(audioBuffer, "audio.webm", {
             type: "audio/webm",
           });
 
@@ -197,7 +217,9 @@ export function registerWellbeingAIRoutes(app: Express): void {
           res.json({ text: transcription.text });
         } catch (error) {
           console.error("Error transcribing audio:", error);
-          res.status(500).json({ error: "Failed to transcribe audio" });
+          if (!res.headersSent) {
+            res.status(500).json({ error: "Failed to transcribe audio" });
+          }
         }
       });
     } catch (error) {
