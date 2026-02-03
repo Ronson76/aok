@@ -1197,6 +1197,25 @@ Please try to reach out to ensure their safety.
       emailsFailed++;
       console.error(`[ALERT] Failed to send email to ${contact.email}:`, error);
     }
+    
+    // Send SMS if contact has a mobile phone
+    if (contact.phone && contact.phoneType === 'mobile') {
+      const smsLocationInfo = what3wordsAddress 
+        ? `Location: ///${what3wordsAddress}` 
+        : (user.latitude && user.longitude 
+          ? `Map: https://maps.google.com/?q=${user.latitude},${user.longitude}` 
+          : '');
+      const smsBody = `MISSED CHECK-IN from aok: ${identifier} has missed their scheduled check-in. ${smsLocationInfo} ${user.mobileNumber ? `Call them: ${user.mobileNumber}` : 'Please try to contact them.'}`.trim();
+      
+      const smsResult = await sendSMS(contact.phone, smsBody);
+      if (smsResult.success) {
+        smsSent++;
+        console.log(`[ALERT] SMS sent to primary contact ${contact.name} (${contact.phone})`);
+      } else {
+        smsFailed++;
+        console.error(`[ALERT] Failed to send SMS to ${contact.phone}:`, smsResult.error);
+      }
+    }
   }
 
   return { emailsSent, emailsFailed, smsSent, smsFailed, whatsappSent, whatsappFailed };
