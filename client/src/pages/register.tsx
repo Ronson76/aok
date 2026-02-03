@@ -689,6 +689,20 @@ export default function Register() {
                       <input type="hidden" {...field} />
                     )}
                   />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <input type="hidden" {...field} />
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <input type="hidden" {...field} />
+                    )}
+                  />
                 </>
               ) : (
                 <>
@@ -889,25 +903,42 @@ export default function Register() {
               )}
 
               {accountType !== "organization" && (
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={registerMutation.isPending || !canSubmit}
-                  data-testid="button-register"
-                >
-                  {registerMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {fromOnboarding ? "Confirming..." : "Creating account..."}
-                    </>
-                  ) : !canSubmit ? (
-                    "Grant Location Access to Continue"
-                  ) : fromOnboarding ? (
-                    "Confirm"
-                  ) : (
-                    "Create Account"
+                <>
+                  {/* Show form errors for onboarding users since fields are hidden */}
+                  {fromOnboarding && Object.keys(form.formState.errors).length > 0 && (
+                    <Alert className="border-red-500 bg-red-50 dark:bg-red-950/20">
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                      <AlertDescription className="text-red-700 dark:text-red-400">
+                        There was an issue with your registration details. Please go back to onboarding and try again.
+                      </AlertDescription>
+                    </Alert>
                   )}
-                </Button>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={registerMutation.isPending || !canSubmit}
+                    data-testid="button-register"
+                    onClick={() => {
+                      // Log form errors for debugging
+                      if (Object.keys(form.formState.errors).length > 0) {
+                        console.log("Form validation errors:", form.formState.errors);
+                      }
+                    }}
+                  >
+                    {registerMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {fromOnboarding ? "Confirming..." : "Creating account..."}
+                      </>
+                    ) : !canSubmit ? (
+                      "Grant Location Access to Continue"
+                    ) : fromOnboarding ? (
+                      "Confirm"
+                    ) : (
+                      "Create Account"
+                    )}
+                  </Button>
+                </>
               )}
             </form>
           </Form>
