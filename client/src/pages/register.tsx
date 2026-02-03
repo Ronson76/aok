@@ -64,6 +64,7 @@ export default function Register() {
     }
 
     // Check if permission is already granted
+    // Note: Safari doesn't fully support permissions.query for geolocation, so we wrap in try/catch
     if ('permissions' in navigator) {
       navigator.permissions.query({ name: 'geolocation' }).then((result) => {
         if (result.state === 'granted') {
@@ -83,9 +84,12 @@ export default function Register() {
           }
         };
       }).catch(() => {
-        // Fallback - will request on button click
+        // Safari doesn't support permissions.query for geolocation - fallback to pending
         setLocationPermission('pending');
       });
+    } else {
+      // No permissions API - will request on button click
+      setLocationPermission('pending');
     }
   }, []);
 
