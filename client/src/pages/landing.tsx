@@ -1031,6 +1031,74 @@ export default function Landing() {
                 bundles and pricing.
               </AccordionContent>
             </AccordionItem>
+            
+            <AccordionItem value="item-8" className="bg-card rounded-lg border px-6" data-testid="faq-item-8">
+              <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-8">
+                Who is contacted in an emergency?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-8">
+                <p className="mb-4">You can designate up to 3 primary contacts who receive more frequent updates. Here's how notifications work:</p>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border-collapse mb-4">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 pr-4 font-semibold text-foreground">Alert Type</th>
+                        <th className="text-center py-2 px-2 font-semibold text-foreground">Email</th>
+                        <th className="text-center py-2 px-2 font-semibold text-foreground">SMS</th>
+                        <th className="text-center py-2 px-2 font-semibold text-foreground">Voice Call</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-border/50">
+                        <td colSpan={4} className="py-2 font-semibold text-foreground">Primary Contacts (up to 3)</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 pr-4 pl-4">Successful Check-in</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 pr-4 pl-4">Missed Check-in</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 pr-4 pl-4">Emergency SOS</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td colSpan={4} className="py-2 font-semibold text-foreground">Non-Primary Contacts</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 pr-4 pl-4">Successful Check-in</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 pr-4 pl-4">Missed Check-in</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 pr-4 pl-4">Emergency SOS</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                
+                <p>Non-primary contacts are only alerted in genuine emergencies, reducing notification fatigue while ensuring critical alerts always get through.</p>
+              </AccordionContent>
+            </AccordionItem>
           </Accordion>
         </div>
       </section>
