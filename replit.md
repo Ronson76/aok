@@ -122,6 +122,12 @@ Preferred communication style: Simple, everyday language.
   - Proactive prompts for users with consecutive low mood days or declining patterns
   - Streaming chat responses using OpenAI (gpt-4o) via Replit AI Integrations
   - Compassionate support companion with British English, crisis helpline signposting
+  - **Voice Chat Mode**: Full voice interaction with AI
+    - Text-to-Speech: AI responses spoken aloud using OpenAI TTS (nova voice)
+    - Speech-to-Text: User can tap mic to speak instead of typing (Whisper API)
+    - Toggle button in header to enable/disable voice responses
+    - 60-second recording timeout for safety
+    - Stop button to interrupt AI speech
 
 ### Recent Changes (Jan 2026)
 - **Subscription Management**: Settings page displays subscription status (Active/Trial/Cancelling) with plan details, cancel/reactivate buttons with password confirmation
