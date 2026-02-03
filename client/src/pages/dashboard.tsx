@@ -9,6 +9,7 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/components/theme-provider";
+import { useEmergencyContactCache } from "@/hooks/use-emergency-contact-cache";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { StatusData, Settings } from "@shared/schema";
@@ -271,6 +272,9 @@ export default function Dashboard() {
 
   // Check if user is org-managed (activated via reference code)
   const isOrgManagedClient = !!user?.referenceId;
+  
+  // Cache emergency contact for offline use
+  useEmergencyContactCache();
 
   const { data: status, isLoading } = useQuery<StatusData>({
     queryKey: ["/api/status"],

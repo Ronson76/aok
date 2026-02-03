@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useHeartbeat } from "@/contexts/heartbeat-context";
 import { useAuth } from "@/contexts/auth-context";
+import { getCachedEmergencyContact, type CachedEmergencyContact } from "@/hooks/use-emergency-contact-cache";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -14,57 +14,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { WifiOff, Phone, AlertTriangle } from "lucide-react";
-import type { Contact } from "@shared/schema";
-
-const CACHED_CONTACT_KEY = "aok_emergency_contact";
-
-interface CachedContact {
-  name: string;
-  phone: string;
-}
 
 export function OfflineEmergencyOverlay() {
   const { isOnline } = useHeartbeat();
   const { user } = useAuth();
   const [show999Confirmation, setShow999Confirmation] = useState(false);
-  const [cachedContact, setCachedContact] = useState<CachedContact | null>(null);
+  const [emergencyContact, setEmergencyContact] = useState<CachedEmergencyContact | null>(null);
 
-  const { data: contacts } = useQuery<Contact[]>({
-    queryKey: ["/api/contacts"],
-    enabled: !!user && isOnline,
-    staleTime: 1000 * 60 * 5,
-  });
-
-  const primaryContact = contacts?.find((c) => c.isPrimary && c.confirmedAt);
-
-  // Cache primary contact to localStorage when available
+  // Load cached contact on mount and when coming online/offline
   useEffect(() => {
-    if (primaryContact?.phone) {
-      const contactData: CachedContact = {
-        name: primaryContact.name,
-        phone: primaryContact.phone,
-      };
-      localStorage.setItem(CACHED_CONTACT_KEY, JSON.stringify(contactData));
-      setCachedContact(contactData);
-    }
-  }, [primaryContact]);
-
-  // Load cached contact on mount
-  useEffect(() => {
-    try {
-      const cached = localStorage.getItem(CACHED_CONTACT_KEY);
-      if (cached) {
-        setCachedContact(JSON.parse(cached));
-      }
-    } catch {
-      // Ignore parse errors
-    }
-  }, []);
-
-  // Use live data if available, otherwise use cached
-  const emergencyContact = primaryContact?.phone 
-    ? { name: primaryContact.name, phone: primaryContact.phone }
-    : cachedContact;
+    const contact = getCachedEmergencyContact();
+    setEmergencyContact(contact);
+  }, [isOnline]);
 
   const handleCall999 = () => {
     setShow999Confirmation(true);
