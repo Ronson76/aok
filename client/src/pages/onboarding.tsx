@@ -1891,12 +1891,11 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
                 type="tel"
                 value={currentContact.phone}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/[^\d\s]/g, '');
-                  updateCurrentContact('phone', value);
-                }}
-                onBlur={(e) => {
                   let value = e.target.value.replace(/[^\d\s]/g, '');
-                  value = value.replace(/^0+/, '');
+                  // Auto-remove leading zero when country code is present
+                  if (value.startsWith('0') && currentContact.phoneCountry) {
+                    value = value.substring(1);
+                  }
                   updateCurrentContact('phone', value);
                 }}
                 placeholder={currentContact.phoneCountry === "+44" ? "7700 900000" : "Phone number"}
