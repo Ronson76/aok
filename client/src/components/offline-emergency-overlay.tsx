@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useHeartbeat } from "@/contexts/heartbeat-context";
 import { useAuth } from "@/contexts/auth-context";
 import { getCachedEmergencyContact, type CachedEmergencyContact } from "@/hooks/use-emergency-contact-cache";
-import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,11 +54,12 @@ export function OfflineEmergencyOverlay() {
           </p>
         </div>
 
-        <div className="w-full max-w-sm space-y-4">
+        <div className="w-full max-w-sm flex flex-col gap-4">
           {emergencyContact?.phone && (
             <a
               href={`tel:${emergencyContact.phone.replace(/[^+\d]/g, "")}`}
-              className="flex items-center w-full h-20 px-6 text-lg bg-primary hover:bg-primary/90 text-primary-foreground rounded-md"
+              className="flex items-center justify-center w-full h-20 px-6 text-lg bg-primary hover:bg-primary/90 text-primary-foreground rounded-md touch-manipulation"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
               data-testid="button-call-contact"
             >
               <Phone className="h-6 w-6 mr-3 flex-shrink-0" />
@@ -70,18 +70,19 @@ export function OfflineEmergencyOverlay() {
             </a>
           )}
 
-          <Button
+          <button
+            type="button"
             onClick={handleCall999}
-            variant="destructive"
-            className="w-full h-20 text-lg bg-red-600 hover:bg-red-700"
+            className="flex items-center justify-center w-full h-20 px-6 text-lg bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-md touch-manipulation"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
             data-testid="button-call-999"
           >
-            <AlertTriangle className="h-6 w-6 mr-3" />
+            <AlertTriangle className="h-6 w-6 mr-3 flex-shrink-0" />
             <div className="text-left">
               <div className="font-semibold">Emergency: 999</div>
               <div className="text-sm opacity-80">Police, Fire, Ambulance</div>
             </div>
-          </Button>
+          </button>
         </div>
 
         <p className="text-xs text-muted-foreground mt-8 text-center max-w-xs">
@@ -90,7 +91,7 @@ export function OfflineEmergencyOverlay() {
       </div>
 
       <AlertDialog open={show999Confirmation} onOpenChange={setShow999Confirmation}>
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[10000]">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
