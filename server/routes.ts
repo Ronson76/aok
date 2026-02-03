@@ -409,6 +409,16 @@ export async function registerRoutes(
       res.status(404).json({ error: "Video not found" });
     }
   });
+
+  // Heartbeat/ping endpoint for connection monitoring
+  // Client pings this every 60 seconds to ensure connectivity
+  app.get("/api/heartbeat", (_req, res) => {
+    res.json({ 
+      ok: true, 
+      timestamp: Date.now(),
+      serverTime: new Date().toISOString()
+    });
+  });
   
   app.get("/promo-emergency.mp4", (_req, res) => {
     const videoPath = path.resolve(process.cwd(), "attached_assets/generated_videos/emergency_gps_tracking_scene.mp4");
