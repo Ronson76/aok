@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import OpenAI from "openai";
+import OpenAI, { toFile } from "openai";
 import { db } from "./db";
 import { moodEntries, users } from "@shared/schema";
 import { eq, desc, gte, and } from "drizzle-orm";
@@ -204,7 +204,7 @@ export function registerWellbeingAIRoutes(app: Express): void {
           const audioBuffer = Buffer.concat(chunks);
           
           // Use OpenAI's toFile helper for Node.js compatibility
-          const audioFile = await openai.toFile(audioBuffer, "audio.webm", {
+          const audioFile = await toFile(audioBuffer, "audio.webm", {
             type: "audio/webm",
           });
 
