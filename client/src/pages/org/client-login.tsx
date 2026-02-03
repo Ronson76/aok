@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useSearch } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -7,12 +7,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Loader2, Building2, ArrowLeft } from "lucide-react";
+import { ShieldCheck, Loader2, Building2 } from "lucide-react";
 
 export default function OrganizationClientLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [referenceCode, setReferenceCode] = useState("");
+  const searchString = useSearch();
+  
+  // Parse URL parameters for reference code pre-fill
+  const getRefFromUrl = () => {
+    const params = new URLSearchParams(searchString);
+    return params.get("ref")?.toUpperCase() || "";
+  };
+  
+  const [referenceCode, setReferenceCode] = useState(getRefFromUrl);
+  
+  // Update reference code if URL parameter changes
+  useEffect(() => {
+    const refFromUrl = getRefFromUrl();
+    if (refFromUrl) {
+      setReferenceCode(refFromUrl);
+    }
+  }, [searchString]);
 
   const loginMutation = useMutation({
     mutationFn: async () => {
@@ -44,17 +60,10 @@ export default function OrganizationClientLogin() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-center">
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
-            <ArrowLeft className="h-5 w-5 text-green-600" />
             <ShieldCheck className="h-9 w-9 text-green-600" />
             <span className="text-2xl font-bold text-green-600">aok</span>
-          </Link>
-          <Link href="/org/login">
-            <Button variant="ghost" size="sm" data-testid="button-back">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
           </Link>
         </div>
       </header>
