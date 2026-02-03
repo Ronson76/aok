@@ -454,14 +454,21 @@ class DatabaseStorage implements IStorage {
     // Toggle the isPrimary status
     const newPrimaryStatus = !existingContact.isPrimary;
     
+    const allContacts = await this.getContacts(userId);
+    const primaryContacts = allContacts.filter(c => c.isPrimary);
+    
     // If turning OFF primary, ensure at least one other contact remains primary
     if (!newPrimaryStatus) {
-      const allContacts = await this.getContacts(userId);
-      const primaryContacts = allContacts.filter(c => c.isPrimary);
-      
       // If this is the only primary contact, don't allow turning it off
       if (primaryContacts.length === 1 && primaryContacts[0].id === contactId) {
         return existingContact; // Return unchanged - at least one must remain primary
+      }
+    }
+    
+    // If turning ON primary, ensure max 3 primary contacts
+    if (newPrimaryStatus) {
+      if (primaryContacts.length >= 3) {
+        throw new Error("Maximum of 3 primary contacts allowed");
       }
     }
     

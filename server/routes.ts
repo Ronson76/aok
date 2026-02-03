@@ -1550,7 +1550,10 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Contact not found" });
       }
       res.json(contact);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message === "Maximum of 3 primary contacts allowed") {
+        return res.status(400).json({ error: error.message });
+      }
       res.status(500).json({ error: "Failed to set primary contact" });
     }
   });
