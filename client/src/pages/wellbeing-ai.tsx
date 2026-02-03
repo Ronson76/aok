@@ -1,14 +1,15 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heart, Send, Loader2, ArrowLeft, AlertTriangle } from "lucide-react";
+import { Heart, Send, Loader2, ArrowLeft, AlertTriangle, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import { Link } from "wouter";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  audioUrl?: string; // Store TTS audio URL
 }
 
 interface MoodCheckResponse {
@@ -26,6 +27,15 @@ export default function WellbeingAI() {
   const [hasStarted, setHasStarted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Voice chat state
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [recordingStatus, setRecordingStatus] = useState<string>("");
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const { data: moodCheck } = useQuery<MoodCheckResponse>({
     queryKey: ["/api/wellbeing-ai/mood-check"],
@@ -38,6 +48,135 @@ export default function WellbeingAI() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Text-to-Speech function
+  const speakText = useCallback(async (text: string) => {
+    if (!voiceEnabled || !text.trim()) return;
+    
+    try {
+      setIsPlaying(true);
+      const response = await fetch("/api/wellbeing-ai/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) throw new Error("TTS failed");
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+      
+      audio.onended = () => {
+        setIsPlaying(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      audio.onerror = () => {
+        setIsPlaying(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      await audio.play();
+    } catch (error) {
+      console.error("Error speaking text:", error);
+      setIsPlaying(false);
+    }
+  }, [voiceEnabled]);
+
+  // Stop audio playback
+  const stopAudio = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setIsPlaying(false);
+  }, []);
+
+  // Start voice recording
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4",
+      });
+      
+      audioChunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(track => track.stop());
+        
+        if (audioChunksRef.current.length === 0) {
+          setRecordingStatus("");
+          return;
+        }
+        
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        setRecordingStatus("Transcribing...");
+        
+        try {
+          const response = await fetch("/api/wellbeing-ai/stt", {
+            method: "POST",
+            headers: { "Content-Type": "audio/webm" },
+            body: audioBlob,
+          });
+          
+          if (!response.ok) throw new Error("Transcription failed");
+          
+          const { text } = await response.json();
+          if (text && text.trim()) {
+            setInput(text.trim());
+            setRecordingStatus("");
+          } else {
+            setRecordingStatus("Couldn't hear that. Try again?");
+            setTimeout(() => setRecordingStatus(""), 2000);
+          }
+        } catch (error) {
+          console.error("Error transcribing:", error);
+          setRecordingStatus("Transcription failed");
+          setTimeout(() => setRecordingStatus(""), 2000);
+        }
+      };
+      
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingStatus("Listening...");
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      setRecordingStatus("Microphone access denied");
+      setTimeout(() => setRecordingStatus(""), 2000);
+    }
+  }, []);
+
+  // Stop voice recording
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  }, [isRecording]);
+
+  // Toggle recording
+  const toggleRecording = useCallback(() => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  }, [isRecording, startRecording, stopRecording]);
 
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
@@ -103,6 +242,11 @@ export default function WellbeingAI() {
           }
         }
       }
+      
+      // Speak the complete response if voice is enabled
+      if (assistantMessage && voiceEnabled) {
+        speakText(assistantMessage);
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       setMessages((prev) => [
@@ -129,23 +273,38 @@ export default function WellbeingAI() {
 
   return (
     <div className="flex flex-col h-full max-w-md mx-auto">
-      <div className="flex items-center gap-3 p-4 border-b bg-background">
-        <Link href="/app">
-          <Button variant="ghost" size="icon" data-testid="button-back">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div className="flex items-center gap-2">
-          <div className="relative h-8 w-8 flex items-center justify-center">
-            <div className="w-6 h-2 bg-green-600 absolute rounded-sm" />
-            <div className="w-2 h-6 bg-green-600 absolute rounded-sm" />
-            <Heart className="h-3 w-3 text-green-600 absolute -bottom-1 -right-0" fill="currentColor" />
-          </div>
-          <div>
-            <h1 className="font-semibold text-lg">Wellbeing AI</h1>
-            <p className="text-xs text-muted-foreground">Your conversations are not stored</p>
+      <div className="flex items-center justify-between p-4 border-b bg-background">
+        <div className="flex items-center gap-3">
+          <Link href="/app">
+            <Button variant="ghost" size="icon" data-testid="button-back">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div className="flex items-center gap-2">
+            <div className="relative h-8 w-8 flex items-center justify-center">
+              <div className="w-6 h-2 bg-green-600 absolute rounded-sm" />
+              <div className="w-2 h-6 bg-green-600 absolute rounded-sm" />
+              <Heart className="h-3 w-3 text-green-600 absolute -bottom-1 -right-0" fill="currentColor" />
+            </div>
+            <div>
+              <h1 className="font-semibold text-lg">Wellbeing AI</h1>
+              <p className="text-xs text-muted-foreground">Your conversations are not stored</p>
+            </div>
           </div>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            if (isPlaying) stopAudio();
+            setVoiceEnabled(!voiceEnabled);
+          }}
+          className={voiceEnabled ? "text-green-600" : "text-muted-foreground"}
+          data-testid="button-toggle-voice"
+          title={voiceEnabled ? "Voice responses on" : "Voice responses off"}
+        >
+          {voiceEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+        </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -232,19 +391,52 @@ export default function WellbeingAI() {
 
       {hasStarted && (
         <form onSubmit={handleSubmit} className="p-4 border-t bg-background">
+          {recordingStatus && (
+            <div className="mb-2 text-center">
+              <span className={`text-sm ${isRecording ? "text-red-500 animate-pulse" : "text-muted-foreground"}`}>
+                {recordingStatus}
+              </span>
+            </div>
+          )}
+          {isPlaying && (
+            <div className="mb-2 text-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={stopAudio}
+                className="text-xs"
+                data-testid="button-stop-audio"
+              >
+                <VolumeX className="h-3 w-3 mr-1" /> Stop speaking
+              </Button>
+            </div>
+          )}
           <div className="flex gap-2">
+            <Button
+              type="button"
+              variant={isRecording ? "destructive" : "outline"}
+              size="icon"
+              onClick={toggleRecording}
+              disabled={isLoading}
+              className={isRecording ? "animate-pulse" : ""}
+              data-testid="button-voice-input"
+              title={isRecording ? "Stop recording" : "Tap to speak"}
+            >
+              {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            </Button>
             <Input
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type a message..."
-              disabled={isLoading}
+              placeholder="Type or tap mic to speak..."
+              disabled={isLoading || isRecording}
               className="flex-1"
               data-testid="input-chat-message"
             />
             <Button 
               type="submit" 
-              disabled={!input.trim() || isLoading}
+              disabled={!input.trim() || isLoading || isRecording}
               className="bg-green-600 hover:bg-green-700"
               data-testid="button-send-message"
             >
