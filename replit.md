@@ -83,8 +83,19 @@ Preferred communication style: Simple, everyday language.
 - **Twilio**: For SMS alerts (mobile contacts) and automated voice calls (landline contacts) for emergencies and missed check-ins.
 - **what3words**: Integrates precise location sharing (three-word addresses) into emergency alerts.
 - **Stripe**: Payment processing with subscription management, 7-day free trial, Apple Pay/Google Pay support.
+- **Ecologi**: Environmental impact tracking and automatic tree planting for new subscribers.
+  - Username: nghuman18
+  - Test mode enabled by default (ECOLOGI_TEST_MODE env var controls this)
+  - Public endpoint `/api/ecologi/impact` returns trees planted and carbon offset (cached 5 mins)
+  - Trees planted automatically for each new individual subscriber
+  - Set ECOLOGI_API_KEY and ECOLOGI_TEST_MODE=false to enable live tree purchases
 
 ### Recent Changes (Feb 2026)
+- **Ecologi Environmental Integration**: Tree planting and carbon offset tracking
+  - Displays trees planted and CO₂ offset on landing page
+  - Automatically plants 1 tree for each new individual subscriber
+  - Test mode enabled during development (no real purchases)
+  - Server-side caching (5 mins) for API efficiency
 - **Native Wellbeing AI Chat**: In-app AI chat feature replacing external link at `/wellbeing-ai`
   - GDPR-compliant ephemeral chat (no conversation storage - held only in client state)
   - Mood pattern detection analyzing last 14 days of entries for concerning trends
