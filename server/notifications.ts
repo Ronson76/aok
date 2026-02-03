@@ -5,6 +5,119 @@ import twilio from 'twilio';
 import { google } from 'googleapis';
 import { Client } from '@microsoft/microsoft-graph-client';
 
+// Helper to format date in British format (DD/MM/YYYY HH:mm)
+function formatDate(date: Date): string {
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${day}/${month}/${year} at ${hours}:${minutes}`;
+}
+
+// Professional HTML email template with aok branding
+function createBrandedEmail(options: {
+  recipientName: string;
+  subject: string;
+  alertType: 'missed_checkin' | 'emergency' | 'checkin_success' | 'confirmation' | 'password_reset' | 'general';
+  mainContent: string;
+  locationSection?: string;
+  additionalInfo?: string;
+  ctaButton?: { text: string; url: string };
+}): string {
+  const { recipientName, alertType, mainContent, locationSection, additionalInfo, ctaButton } = options;
+  
+  // Determine header colour based on alert type
+  const headerColor = alertType === 'emergency' || alertType === 'missed_checkin' 
+    ? '#DC2626' // Red for alerts
+    : '#F97316'; // Orange for regular communications
+  
+  const alertBanner = alertType === 'emergency' 
+    ? `<div style="background-color: #DC2626; color: white; text-align: center; padding: 12px; font-weight: bold; font-size: 16px;">EMERGENCY ALERT</div>`
+    : alertType === 'missed_checkin'
+    ? `<div style="background-color: #F59E0B; color: white; text-align: center; padding: 12px; font-weight: bold; font-size: 16px;">MISSED CHECK-IN ALERT</div>`
+    : '';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${options.subject}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5; line-height: 1.6;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <!-- Header with logo -->
+          <tr>
+            <td style="background-color: ${headerColor}; padding: 24px; text-align: center;">
+              <img src="https://aok.care/aok-logo.png" alt="aok" style="height: 48px; width: auto;" />
+            </td>
+          </tr>
+          
+          ${alertBanner ? `<tr><td>${alertBanner}</td></tr>` : ''}
+          
+          <!-- Main content -->
+          <tr>
+            <td style="padding: 32px 24px;">
+              <p style="margin: 0 0 16px 0; font-size: 16px; color: #18181b;">Hi ${recipientName},</p>
+              
+              <div style="margin: 0 0 24px 0; font-size: 16px; color: #3f3f46;">
+                ${mainContent}
+              </div>
+              
+              ${locationSection ? `
+              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
+                <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px;">Location Information</h3>
+                <div style="font-size: 14px; color: #78350f; white-space: pre-line;">${locationSection}</div>
+              </div>
+              ` : ''}
+              
+              ${additionalInfo ? `
+              <div style="background-color: #f4f4f5; border-radius: 8px; padding: 16px; margin: 24px 0;">
+                <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #52525b; text-transform: uppercase; letter-spacing: 0.5px;">Additional Information</h3>
+                <div style="font-size: 14px; color: #3f3f46; white-space: pre-line;">${additionalInfo}</div>
+              </div>
+              ` : ''}
+              
+              ${ctaButton ? `
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="${ctaButton.url}" style="display: inline-block; background-color: #F97316; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">${ctaButton.text}</a>
+              </div>
+              ` : ''}
+              
+              <p style="margin: 24px 0 0 0; font-size: 14px; color: #71717a;">
+                Please try to reach out to ensure their safety.
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f4f4f5; padding: 24px; text-align: center; border-top: 1px solid #e4e4e7;">
+              <p style="margin: 0 0 8px 0; font-size: 14px; color: #71717a;">
+                Sent with care by the aok Team
+              </p>
+              <p style="margin: 0; font-size: 12px; color: #a1a1aa;">
+                <a href="https://aok.care" style="color: #F97316; text-decoration: none;">aok.care</a> - Personal safety made simple
+              </p>
+            </td>
+          </tr>
+        </table>
+        
+        <!-- Footer note -->
+        <p style="text-align: center; font-size: 12px; color: #a1a1aa; margin: 24px 0 0 0;">
+          This is an automated message. Please do not reply directly to this email.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
 // Helper to get a display name for a user with fallbacks
 function getUserDisplayName(user: User): string {
   if (user.name && user.name.trim()) {
@@ -957,66 +1070,89 @@ export async function sendMissedCheckInAlert(
     
     const emailSubject = `ALERT: ${subjectIdentifier} missed their aok check-in`;
     
-    let locationInfo = "";
+    // Build location section for HTML email
+    const locationTimestamp = user.lastLocationUpdatedAt 
+      ? ` (recorded ${formatDate(new Date(user.lastLocationUpdatedAt))})`
+      : '';
     
-    // Always include location section header
-    locationInfo += `
-
-LOCATION INFORMATION:
-`;
+    let locationHtml = "";
     
-    // Include what3words location if available
     if (what3wordsAddress) {
       const w3wUrl = `https://what3words.com/${what3wordsAddress}`;
-      locationInfo += `
-Last known GPS location:
-what3words: ///${what3wordsAddress}
-View on map: ${w3wUrl}
-`;
+      locationHtml += `<p style="margin: 0 0 8px 0;"><strong>Last known GPS location${locationTimestamp}:</strong></p>`;
+      locationHtml += `<p style="margin: 0 0 4px 0;">what3words: <strong>///${what3wordsAddress}</strong></p>`;
+      locationHtml += `<p style="margin: 0 0 12px 0;"><a href="${w3wUrl}" style="color: #F97316;">View on map</a></p>`;
     } else if (user.latitude && user.longitude) {
-      // Fallback to raw GPS coordinates if what3words lookup failed
       const googleMapsUrl = `https://www.google.com/maps?q=${user.latitude},${user.longitude}`;
-      locationInfo += `
-Last known GPS location:
-Coordinates: ${user.latitude}, ${user.longitude}
-View on map: ${googleMapsUrl}
-`;
+      locationHtml += `<p style="margin: 0 0 8px 0;"><strong>Last known GPS location${locationTimestamp}:</strong></p>`;
+      locationHtml += `<p style="margin: 0 0 4px 0;">Coordinates: ${user.latitude}, ${user.longitude}</p>`;
+      locationHtml += `<p style="margin: 0 0 12px 0;"><a href="${googleMapsUrl}" style="color: #F97316;">View on map</a></p>`;
+    } else {
+      locationHtml += `<p style="margin: 0 0 8px 0; color: #92400e;">GPS location not available (location permission may not be enabled)</p>`;
     }
     
     if (user.addressLine1) {
-      locationInfo += `
-Registered address:
-${user.addressLine1}
-${user.addressLine2 ? user.addressLine2 + '\n' : ''}${user.city || ""}, ${user.postalCode || ""}
-${user.country || ""}`;
+      locationHtml += `<p style="margin: 12px 0 4px 0;"><strong>Registered address:</strong></p>`;
+      locationHtml += `<p style="margin: 0;">${user.addressLine1}`;
+      if (user.addressLine2) locationHtml += `<br/>${user.addressLine2}`;
+      locationHtml += `<br/>${user.city || ""}, ${user.postalCode || ""}`;
+      if (user.country) locationHtml += `<br/>${user.country}`;
+      locationHtml += `</p>`;
     }
     
     if (user.mobileNumber) {
-      locationInfo += `
-Mobile number: ${user.mobileNumber}`;
+      locationHtml += `<p style="margin: 12px 0 0 0;"><strong>Mobile:</strong> <a href="tel:${user.mobileNumber.replace(/[^+\d]/g, '')}" style="color: #F97316;">${user.mobileNumber}</a></p>`;
     }
     
-    // If no location info was added, note that
-    if (!what3wordsAddress && !user.latitude && !user.addressLine1 && !user.mobileNumber) {
-      locationInfo += `No location information available for this user.`;
+    // Format additional info for HTML
+    let additionalHtml = "";
+    if (additionalInfo) {
+      const parsed = JSON.parse(additionalInfo);
+      if (parsed.healthConditions?.length) {
+        additionalHtml += `<p style="margin: 0 0 8px 0;"><strong>Health Conditions:</strong> ${parsed.healthConditions.join(', ')}</p>`;
+      }
+      if (parsed.medications?.length) {
+        additionalHtml += `<p style="margin: 0 0 8px 0;"><strong>Medications:</strong> ${parsed.medications.join(', ')}</p>`;
+      }
+      if (parsed.allergies?.length) {
+        additionalHtml += `<p style="margin: 0 0 8px 0;"><strong>Allergies:</strong> ${parsed.allergies.join(', ')}</p>`;
+      }
+      if (parsed.notes) {
+        additionalHtml += `<p style="margin: 0;"><strong>Notes:</strong> ${parsed.notes}</p>`;
+      }
     }
     
+    // Create branded HTML email
+    const htmlEmail = createBrandedEmail({
+      recipientName: contact.name,
+      subject: emailSubject,
+      alertType: 'missed_checkin',
+      mainContent: `<p style="margin: 0;"><strong>${identifier}</strong> has missed their scheduled check-in. This may indicate they need assistance.</p>`,
+      locationSection: locationHtml,
+      additionalInfo: additionalHtml || undefined
+    });
+    
+    // Plain text fallback
     const additionalInfoText = formatAdditionalInfo(additionalInfo || null);
-    
     const emailBody = `Hi ${contact.name},
 
 This is an automated alert from aok.
 
 ${identifier} has missed their scheduled check-in. This may indicate they need assistance.
-${locationInfo}${additionalInfoText}
+
+LOCATION INFORMATION:
+${what3wordsAddress ? `Last known GPS location${locationTimestamp}: ///${what3wordsAddress}\nView on map: https://what3words.com/${what3wordsAddress}` : user.latitude && user.longitude ? `Last known GPS location${locationTimestamp}: ${user.latitude}, ${user.longitude}\nView on map: https://www.google.com/maps?q=${user.latitude},${user.longitude}` : 'GPS location not available'}
+${user.addressLine1 ? `Registered address: ${user.addressLine1}${user.addressLine2 ? ', ' + user.addressLine2 : ''}, ${user.city || ''}, ${user.postalCode || ''} ${user.country || ''}` : ''}
+${user.mobileNumber ? `Mobile: ${user.mobileNumber}` : ''}
+${additionalInfoText}
 
 Please try to reach out to ensure their safety.
 
 - The aok Team`;
 
-    // Send email only for missed check-in alerts (to primary contacts only)
+    // Send email with HTML and plain text
     try {
-      await sendEmail(contact.email, emailSubject, emailBody);
+      await sendEmail(contact.email, emailSubject, emailBody, htmlEmail);
       emailsSent++;
       console.log(`[ALERT] Email sent to primary contact ${contact.name} (${contact.email})`);
     } catch (error) {
