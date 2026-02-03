@@ -130,6 +130,82 @@ Start by acknowledging their feelings and asking how you can support them today.
 }
 
 export function registerWellbeingAIRoutes(app: Express): void {
+  // Text-to-Speech endpoint - converts AI text to speech
+  app.post("/api/wellbeing-ai/tts", async (req: Request, res: Response) => {
+    try {
+      const userId = await getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { text } = req.body;
+      if (!text || typeof text !== "string") {
+        return res.status(400).json({ error: "Text is required" });
+      }
+
+      // Limit text length to prevent abuse
+      const truncatedText = text.slice(0, 2000);
+
+      const mp3Response = await openai.audio.speech.create({
+        model: "tts-1",
+        voice: "nova", // Warm, friendly female voice suitable for wellbeing support
+        input: truncatedText,
+        response_format: "mp3",
+      });
+
+      const buffer = Buffer.from(await mp3Response.arrayBuffer());
+
+      res.setHeader("Content-Type", "audio/mpeg");
+      res.setHeader("Content-Length", buffer.length);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error generating speech:", error);
+      res.status(500).json({ error: "Failed to generate speech" });
+    }
+  });
+
+  // Speech-to-Text endpoint - transcribes user voice to text
+  app.post("/api/wellbeing-ai/stt", async (req: Request, res: Response) => {
+    try {
+      const userId = await getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Handle multipart form data with audio file
+      const chunks: Buffer[] = [];
+      
+      req.on("data", (chunk: Buffer) => {
+        chunks.push(chunk);
+      });
+
+      req.on("end", async () => {
+        try {
+          const audioBuffer = Buffer.concat(chunks);
+          
+          // Create a File-like object for OpenAI API
+          const audioFile = new File([audioBuffer], "audio.webm", {
+            type: "audio/webm",
+          });
+
+          const transcription = await openai.audio.transcriptions.create({
+            file: audioFile,
+            model: "whisper-1",
+            language: "en",
+          });
+
+          res.json({ text: transcription.text });
+        } catch (error) {
+          console.error("Error transcribing audio:", error);
+          res.status(500).json({ error: "Failed to transcribe audio" });
+        }
+      });
+    } catch (error) {
+      console.error("Error in STT endpoint:", error);
+      res.status(500).json({ error: "Failed to process audio" });
+    }
+  });
+
   app.get("/api/wellbeing-ai/mood-check", async (req: Request, res: Response) => {
     try {
       const userId = await getAuthenticatedUserId(req);
