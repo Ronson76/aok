@@ -622,8 +622,8 @@ export default function Contacts() {
                 </div>
 
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                  {(!isConfirmed || isExpanded) && (() => {
-                    const isDisabled = setPrimaryMutation.isPending || !contact.confirmedAt || (!contact.isPrimary && maxPrimariesReached);
+                  {(() => {
+                    const isDisabled = setPrimaryMutation.isPending || (!contact.isPrimary && maxPrimariesReached);
                     return (
                     <div className="flex items-center gap-1.5 mr-2">
                       <Checkbox
@@ -633,11 +633,9 @@ export default function Contacts() {
                         onCheckedChange={() => setPrimaryMutation.mutate(contact.id)}
                         data-testid={`checkbox-primary-${contact.id}`}
                         title={
-                          !contact.confirmedAt 
-                            ? "Contact must confirm first" 
-                            : (!contact.isPrimary && maxPrimariesReached)
-                              ? "Maximum 3 primary contacts"
-                              : (contact.isPrimary ? "Remove primary status" : "Set as primary contact")
+                          (!contact.isPrimary && maxPrimariesReached)
+                            ? "Maximum 3 primary contacts"
+                            : (contact.isPrimary ? "Remove primary status" : "Set as primary contact")
                         }
                       />
                       <label 
