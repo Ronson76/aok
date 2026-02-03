@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 
 interface HeartbeatContextType {
   isOnline: boolean;
@@ -8,16 +8,24 @@ interface HeartbeatContextType {
 
 const HeartbeatContext = createContext<HeartbeatContextType | null>(null);
 
-const PING_INTERVAL = 60 * 1000; // 60 seconds
-const MAX_FAILED_ATTEMPTS = 2; // Show offline after 2 consecutive failures
-const PING_TIMEOUT = 10 * 1000; // 10 second timeout for each ping
+const PING_INTERVAL = 60 * 1000; // 60 seconds when online
+const RETRY_INTERVAL = 5 * 1000; // 5 seconds when offline (faster retry)
+const PING_TIMEOUT = 5 * 1000; // 5 second timeout for each ping
 
 export function HeartbeatProvider({ children }: { children: ReactNode }) {
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
   const [lastPingTime, setLastPingTime] = useState<Date | null>(null);
   const [failedAttempts, setFailedAttempts] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const ping = useCallback(async () => {
+    // If browser says offline, immediately mark as offline
+    if (!navigator.onLine) {
+      setIsOnline(false);
+      setFailedAttempts(1);
+      return;
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), PING_TIMEOUT);
 
@@ -40,27 +48,43 @@ export function HeartbeatProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       clearTimeout(timeoutId);
       
-      setFailedAttempts((prev) => {
-        const newAttempts = prev + 1;
-        if (newAttempts >= MAX_FAILED_ATTEMPTS) {
-          setIsOnline(false);
-        }
-        return newAttempts;
-      });
+      // Immediately go offline on first failure if browser also reports offline
+      if (!navigator.onLine) {
+        setIsOnline(false);
+        setFailedAttempts(1);
+      } else {
+        // Otherwise wait for consecutive failures
+        setFailedAttempts((prev) => {
+          const newAttempts = prev + 1;
+          if (newAttempts >= 2) {
+            setIsOnline(false);
+          }
+          return newAttempts;
+        });
+      }
     }
   }, []);
 
+  // Dynamic interval based on online status
   useEffect(() => {
     ping();
 
-    const intervalId = setInterval(ping, PING_INTERVAL);
+    const scheduleNextPing = () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      const interval = isOnline ? PING_INTERVAL : RETRY_INTERVAL;
+      intervalRef.current = setInterval(ping, interval);
+    };
+
+    scheduleNextPing();
 
     const handleOnline = () => {
       ping();
     };
 
     const handleOffline = () => {
-      setFailedAttempts(MAX_FAILED_ATTEMPTS);
+      setFailedAttempts(1);
       setIsOnline(false);
     };
 
@@ -68,11 +92,13 @@ export function HeartbeatProvider({ children }: { children: ReactNode }) {
     window.addEventListener("offline", handleOffline);
 
     return () => {
-      clearInterval(intervalId);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [ping]);
+  }, [ping, isOnline]);
 
   return (
     <HeartbeatContext.Provider value={{ isOnline, lastPingTime, failedAttempts }}>
