@@ -1040,8 +1040,7 @@ export default function Settings() {
               Confirm Timer Change
             </DialogTitle>
             <DialogDescription>
-              As an organization account, changing the check-in timer requires password verification 
-              to protect the safety settings of monitored individuals.
+              Please confirm your password to change your check-in timer. This helps keep your safety settings secure.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
