@@ -8,6 +8,8 @@ import { BottomNav } from "@/components/bottom-nav";
 import { SplashScreen } from "@/components/splash-screen";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
+import { HeartbeatProvider } from "@/contexts/heartbeat-context";
+import { OfflineEmergencyOverlay } from "@/components/offline-emergency-overlay";
 import { Loader2, ShieldCheck, Volume2, MoreVertical, Mail, QrCode, Share2, Plus, Heart } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -722,9 +724,12 @@ function App() {
       <ThemeProvider>
         <TooltipProvider>
           <AuthProvider>
-            {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
-            <Router />
-            <Toaster />
+            <HeartbeatProvider>
+              {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+              <Router />
+              <OfflineEmergencyOverlay />
+              <Toaster />
+            </HeartbeatProvider>
           </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
