@@ -512,9 +512,9 @@ export default function Contacts() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        These people will be notified if you miss a check-in. New contacts must confirm via email 
-        before they become active. You can mark up to 3 contacts as Primary - they will receive 
-        notifications for every successful check-in.
+        Primary contacts (up to 3) receive notifications for successful check-ins and missed check-in alerts. 
+        Non-primary contacts only receive emergency SOS alerts. New contacts must confirm via email 
+        before they become active.
       </p>
 
       {contacts.length > 0 && (
