@@ -3,8 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { History as HistoryIcon, CheckCircle, XCircle, Loader2, Bell, AlertTriangle, ChevronDown } from "lucide-react";
 import type { CheckIn, AlertLog } from "@shared/schema";
-import { format, isToday, startOfDay, subDays, isSameDay } from "date-fns";
+import { format, isToday, startOfDay, subDays, isSameDay, differenceInDays } from "date-fns";
 import { useState } from "react";
+import { useAuth } from "@/contexts/auth-context";
 
 interface DayData {
   date: Date;
@@ -13,10 +14,20 @@ interface DayData {
   label: string;
 }
 
-function getDays(checkIns: CheckIn[], alerts: AlertLog[]): DayData[] {
+function getDays(checkIns: CheckIn[], alerts: AlertLog[], signupDate?: Date): DayData[] {
   const days: DayData[] = [];
+  const today = startOfDay(new Date());
   
-  for (let i = 0; i <= 6; i++) {
+  // Calculate days since signup (max 30 days to avoid too many rows)
+  let dayCount = 7; // default fallback
+  if (signupDate) {
+    const signupStart = startOfDay(signupDate);
+    dayCount = Math.min(differenceInDays(today, signupStart) + 1, 30);
+    // Ensure at least 1 day (today)
+    dayCount = Math.max(dayCount, 1);
+  }
+  
+  for (let i = 0; i < dayCount; i++) {
     const date = startOfDay(subDays(new Date(), i));
     const label = i === 0 ? "Today" : format(date, "EEEE");
     
@@ -151,6 +162,8 @@ function DayRow({ day, defaultOpen = false }: { day: DayData, defaultOpen?: bool
 }
 
 export default function History() {
+  const { user } = useAuth();
+  
   const { data: checkIns = [], isLoading: checkInsLoading } = useQuery<CheckIn[]>({
     queryKey: ["/api/checkins"],
   });
@@ -167,7 +180,9 @@ export default function History() {
     );
   }
 
-  const days = getDays(checkIns, alerts);
+  // Use the user's signup date to determine how many days to show
+  const signupDate = user?.createdAt ? new Date(user.createdAt) : undefined;
+  const days = getDays(checkIns, alerts, signupDate);
   
   const totalCheckIns = checkIns.filter(c => c.status === "success").length;
   const totalMissed = checkIns.filter(c => c.status === "missed").length;
