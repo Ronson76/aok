@@ -41,7 +41,7 @@ function getShieldDataUri(alertType: string): string {
   let svg: string;
   if (alertType === 'emergency' || alertType === 'missed_checkin') {
     svg = redShieldSvg;
-  } else if (alertType === 'checkin_success' || alertType === 'confirmation') {
+  } else if (alertType === 'checkin_success' || alertType === 'confirmation' || alertType === 'welcome') {
     svg = greenShieldSvg;
   } else {
     svg = orangeShieldSvg;
@@ -53,19 +53,20 @@ function getShieldDataUri(alertType: string): string {
 function createBrandedEmail(options: {
   recipientName: string;
   subject: string;
-  alertType: 'missed_checkin' | 'emergency' | 'checkin_success' | 'confirmation' | 'password_reset' | 'general';
+  alertType: 'missed_checkin' | 'emergency' | 'checkin_success' | 'confirmation' | 'password_reset' | 'general' | 'welcome';
   mainContent: string;
   locationSection?: string;
   additionalInfo?: string;
   ctaButton?: { text: string; url: string };
+  customFooterNote?: string;
 }): string {
-  const { recipientName, alertType, mainContent, locationSection, additionalInfo, ctaButton } = options;
+  const { recipientName, alertType, mainContent, locationSection, additionalInfo, ctaButton, customFooterNote } = options;
   
   // Determine header colour based on alert type
   const headerColor = alertType === 'emergency' || alertType === 'missed_checkin' 
     ? '#DC2626' // Red for alerts
-    : alertType === 'checkin_success' || alertType === 'confirmation'
-    ? '#16A34A' // Green for success
+    : alertType === 'checkin_success' || alertType === 'confirmation' || alertType === 'welcome'
+    ? '#16A34A' // Green for success/welcome
     : '#F97316'; // Orange for regular communications
   
   const shieldDataUri = getShieldDataUri(alertType);
@@ -126,9 +127,15 @@ function createBrandedEmail(options: {
               </div>
               ` : ''}
               
+              ${customFooterNote ? `
+              <p style="margin: 24px 0 0 0; font-size: 14px; color: #71717a;">
+                ${customFooterNote}
+              </p>
+              ` : alertType === 'emergency' || alertType === 'missed_checkin' ? `
               <p style="margin: 24px 0 0 0; font-size: 14px; color: #71717a;">
                 Please try to reach out to ensure their safety.
               </p>
+              ` : ''}
             </td>
           </tr>
           
@@ -2417,5 +2424,75 @@ The ${appName} Team`;
     }
   } catch (error) {
     console.error(`[PAYMENT FAILED] Failed to send email to primary contact:`, error);
+  }
+}
+
+/**
+ * Send a welcome email to a new individual subscriber
+ */
+export async function sendWelcomeEmail(
+  email: string,
+  name?: string | null
+): Promise<boolean> {
+  const recipientName = name?.trim() || 'there';
+  const subject = 'Welcome to aok - Your Personal Safety Companion';
+  
+  const htmlEmail = createBrandedEmail({
+    recipientName,
+    subject,
+    alertType: 'welcome',
+    mainContent: `
+      <p style="margin: 0 0 16px 0;">Thank you for joining <strong>aok</strong> - we're thrilled to have you!</p>
+      
+      <p style="margin: 0 0 16px 0;">aok is designed to give you and your loved ones peace of mind through simple, reliable safety check-ins.</p>
+      
+      <div style="background-color: #f0fdf4; border-radius: 8px; padding: 20px; margin: 24px 0;">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #166534;">Here's how to get started:</h3>
+        <ol style="margin: 0; padding-left: 20px; color: #15803d;">
+          <li style="margin-bottom: 12px;"><strong>Set your check-in schedule</strong> - Choose how often you'd like to check in (1-48 hours)</li>
+          <li style="margin-bottom: 12px;"><strong>Add your emergency contacts</strong> - They'll be notified if you miss a check-in or trigger an SOS</li>
+          <li style="margin-bottom: 12px;"><strong>Mark up to 3 as Primary</strong> - Primary contacts receive every successful check-in notification</li>
+          <li style="margin-bottom: 0;"><strong>Complete your first check-in</strong> - Just tap the check-in button when prompted</li>
+        </ol>
+      </div>
+      
+      <p style="margin: 0 0 16px 0;"><strong>Need help?</strong> Visit our FAQ section or reach out to our support team at any time.</p>
+      
+      <p style="margin: 0;">Stay safe!</p>
+    `,
+    ctaButton: {
+      text: 'Open aok Dashboard',
+      url: 'https://aok.care/dashboard'
+    },
+    customFooterNote: "We're here to help you stay connected and protected."
+  });
+  
+  const plainBody = `Hi ${recipientName},
+
+Thank you for joining aok - we're thrilled to have you!
+
+aok is designed to give you and your loved ones peace of mind through simple, reliable safety check-ins.
+
+HERE'S HOW TO GET STARTED:
+
+1. Set your check-in schedule - Choose how often you'd like to check in (1-48 hours)
+2. Add your emergency contacts - They'll be notified if you miss a check-in or trigger an SOS
+3. Mark up to 3 as Primary - Primary contacts receive every successful check-in notification
+4. Complete your first check-in - Just tap the check-in button when prompted
+
+Need help? Visit our FAQ section or reach out to our support team at any time.
+
+Stay safe!
+
+- The aok Team
+https://aok.care`;
+
+  try {
+    await sendEmail(email, subject, plainBody, htmlEmail);
+    console.log(`[WELCOME] Welcome email sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error(`[WELCOME] Failed to send welcome email to ${email}:`, error);
+    return false;
   }
 }

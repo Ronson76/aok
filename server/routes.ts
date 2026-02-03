@@ -4,7 +4,7 @@ import { storage, organizationStorage, adminStorage } from "./storage";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, insertMoodEntrySchema, insertPetSchema, updatePetSchema, insertDigitalDocumentSchema, updateDigitalDocumentSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
-import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification, sendContactRemovedNotification } from "./notifications";
+import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification, sendContactRemovedNotification, sendWelcomeEmail } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
 import { registerWellbeingAIRoutes } from "./wellbeingAI";
@@ -748,8 +748,14 @@ export async function registerRoutes(
       // Initialize settings for new user
       await storage.initializeSettings(user.id);
 
-      // Plant a tree for new individual subscribers via Ecologi
+      // For new individual subscribers
       if (accountType === "individual") {
+        // Send welcome email
+        sendWelcomeEmail(email, name).catch(err => {
+          console.error("[WELCOME] Failed to send welcome email:", err);
+        });
+        
+        // Plant a tree via Ecologi
         plantTreeForNewSubscriber(email).catch(err => {
           console.error("[ECOLOGI] Failed to plant tree for new subscriber:", err);
         });
