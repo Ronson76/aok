@@ -10,6 +10,7 @@ import { registerOrganizationRoutes } from "./organizationRoutes";
 import { registerWellbeingAIRoutes } from "./wellbeingAI";
 import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
 import { stripeService } from "./stripeService";
+import { getEcologiImpact, plantTreeForNewSubscriber, isTestMode as isEcologiTestMode } from "./ecologiService";
 
 // Helper function to render a simple HTML confirmation page
 function renderConfirmationPage(success: boolean, message: string): string {
@@ -736,6 +737,13 @@ export async function registerRoutes(
 
       // Initialize settings for new user
       await storage.initializeSettings(user.id);
+
+      // Plant a tree for new individual subscribers via Ecologi
+      if (accountType === "individual") {
+        plantTreeForNewSubscriber(email).catch(err => {
+          console.error("[ECOLOGI] Failed to plant tree for new subscriber:", err);
+        });
+      }
 
       // Create session
       const session = await storage.createSession(user.id);
@@ -2442,6 +2450,24 @@ export async function registerRoutes(
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete document" });
+    }
+  });
+
+  // Ecologi environmental impact stats (public endpoint)
+  app.get("/api/ecologi/impact", async (_req, res) => {
+    try {
+      const impact = await getEcologiImpact();
+      if (!impact) {
+        return res.status(503).json({ error: "Unable to fetch Ecologi impact data" });
+      }
+      res.json({
+        trees: impact.trees,
+        carbonOffset: impact.carbonOffset,
+        testMode: isEcologiTestMode(),
+      });
+    } catch (error) {
+      console.error("[ECOLOGI] Error fetching impact:", error);
+      res.status(500).json({ error: "Failed to fetch Ecologi impact" });
     }
   });
 
