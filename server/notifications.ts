@@ -2149,18 +2149,15 @@ export async function sendAppInviteSMS(
   referenceCode: string,
   organizationName: string
 ): Promise<{ success: boolean; error?: string }> {
-  const appStoreLink = "https://apps.apple.com/app/aok";
-  const playStoreLink = "https://play.google.com/store/apps/details?id=com.aok";
+  const directLoginUrl = `https://aok.care/org/client-login?ref=${referenceCode}`;
   
   const message = `Hi! ${organizationName} has registered you for aok safety check-ins.
 
-Download the app:
-iPhone: ${appStoreLink}
-Android: ${playStoreLink}
+Your code: ${referenceCode}
 
-Your reference code: ${referenceCode}
+Get started: ${directLoginUrl}
 
-Enter this code when you open the app to get started.`;
+After signing in, add aok to your home screen for the best experience.`;
 
   console.log(`[SMS INVITE] Sending app invite to ${phoneNumber} with code ${referenceCode}`);
   return await sendSMS(phoneNumber, message);
@@ -2172,9 +2169,12 @@ export async function sendReferenceCodeSMS(
   referenceCode: string,
   organizationName: string
 ): Promise<{ success: boolean; error?: string }> {
-  const message = `Hi from ${organizationName}. Your aok reference code is: ${referenceCode}
+  const directLoginUrl = `https://aok.care/org/client-login?ref=${referenceCode}`;
+  const message = `Hi from ${organizationName}. Your aok code is: ${referenceCode}
 
-Use this code to log back into the aok app. If you have any issues, please contact your organisation.`;
+Sign in here: ${directLoginUrl}
+
+If you have any issues, please contact your organisation.`;
 
   console.log(`[SMS REFERENCE] Sending reference code to ${phoneNumber}: ${referenceCode}`);
   return await sendSMS(phoneNumber, message);
