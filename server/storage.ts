@@ -19,7 +19,7 @@ import { ensureDb } from "./db";
 import { eq, ne, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray, inArray } from "drizzle-orm";
 import { randomUUID, randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
-import { sendMissedCheckInAlert, sendVoiceAlerts, sendPushNotification } from "./notifications";
+import { sendMissedCheckInAlert, sendPushNotification } from "./notifications";
 
 // Get database instance at runtime (not at import time)
 function getDb() {
