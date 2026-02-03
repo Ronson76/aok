@@ -140,7 +140,7 @@ export async function purchaseCarbonOffset(kgCO2: number): Promise<any | null> {
 export async function plantTreeForNewSubscriber(userEmail: string): Promise<boolean> {
   console.log(`[ECOLOGI] Planting tree for new subscriber: ${userEmail}`);
   
-  const result = await plantTrees(1, false);
+  const result = await plantTrees(1);
   
   if (result) {
     console.log(`[ECOLOGI] Tree planted successfully for ${userEmail}`);

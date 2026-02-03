@@ -2453,13 +2453,39 @@ export async function registerRoutes(
     }
   });
 
-  // Ecologi environmental impact stats (public endpoint)
+  // Ecologi environmental impact stats (public endpoint with server-side caching)
+  let cachedEcologiImpact: { trees: number; carbonOffset: number; timestamp: number } | null = null;
+  const ECOLOGI_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+  
   app.get("/api/ecologi/impact", async (_req, res) => {
     try {
+      // Check if cached data is still valid
+      const now = Date.now();
+      if (cachedEcologiImpact && (now - cachedEcologiImpact.timestamp) < ECOLOGI_CACHE_TTL) {
+        return res.json({
+          trees: cachedEcologiImpact.trees,
+          carbonOffset: cachedEcologiImpact.carbonOffset,
+          testMode: isEcologiTestMode(),
+        });
+      }
+      
       const impact = await getEcologiImpact();
       if (!impact) {
-        return res.status(503).json({ error: "Unable to fetch Ecologi impact data" });
+        // Return fallback with zeros or last cached value if API fails
+        return res.json({
+          trees: cachedEcologiImpact?.trees ?? 0,
+          carbonOffset: cachedEcologiImpact?.carbonOffset ?? 0,
+          testMode: isEcologiTestMode(),
+        });
       }
+      
+      // Update cache
+      cachedEcologiImpact = {
+        trees: impact.trees,
+        carbonOffset: impact.carbonOffset,
+        timestamp: now,
+      };
+      
       res.json({
         trees: impact.trees,
         carbonOffset: impact.carbonOffset,
@@ -2467,7 +2493,12 @@ export async function registerRoutes(
       });
     } catch (error) {
       console.error("[ECOLOGI] Error fetching impact:", error);
-      res.status(500).json({ error: "Failed to fetch Ecologi impact" });
+      // Return fallback with zeros or last cached value
+      res.json({
+        trees: cachedEcologiImpact?.trees ?? 0,
+        carbonOffset: cachedEcologiImpact?.carbonOffset ?? 0,
+        testMode: isEcologiTestMode(),
+      });
     }
   });
 
