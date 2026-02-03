@@ -200,11 +200,19 @@ export default function Register() {
           
           // Use intervalHours directly from onboarding slider, or fall back to frequency mapping
           const intervalHours = onboardingData.intervalHours || frequencyToHours[onboardingData.checkInFrequency] || 24;
-          const scheduleTime = onboardingData.scheduleStartTime || timeToSchedule[onboardingData.checkInTime] || "10:00";
+          let scheduleTime = onboardingData.scheduleStartTime || timeToSchedule[onboardingData.checkInTime] || "10:00";
+          
+          // Ensure scheduleTime is in HH:MM format - it might be a full ISO date string
+          if (scheduleTime.includes("T")) {
+            // It's an ISO date string, extract the time part
+            const date = new Date(scheduleTime);
+            scheduleTime = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+          }
           
           // Calculate next check-in due based on schedule time from step 12
           const now = new Date();
-          const [hours, minutes] = scheduleTime.split(":").map(Number);
+          const timeParts = scheduleTime.split(":");
+          const [hours, minutes] = timeParts.length >= 2 ? timeParts.map(Number) : [10, 0];
           const scheduleDate = new Date();
           scheduleDate.setHours(hours, minutes, 0, 0);
           
@@ -362,7 +370,11 @@ export default function Register() {
         title: "Account Created",
         description: "Welcome to aok! Your account has been created successfully.",
       });
-      setLocation("/app");
+      
+      // Redirect to app - use setTimeout to ensure state updates complete first
+      setTimeout(() => {
+        setLocation("/app");
+      }, 100);
     },
     onError: (error: Error) => {
       toast({
