@@ -1762,6 +1762,16 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
   const contactsWithNames = data.contacts.filter(c => c.name.trim() !== "");
   const currentContact = contactsWithNames[currentContactIndex];
   
+  // Check which contacts are complete
+  const isContactComplete = (contact: ContactData) => {
+    const hasEmail = contact.email.includes("@");
+    const hasPhone = contact.phone.trim().length > 0 && isValidMobileNumber(contact.phone, contact.phoneCountry);
+    return hasEmail && hasPhone;
+  };
+  
+  const incompleteContacts = contactsWithNames.filter(c => !isContactComplete(c));
+  const hasIncompleteContacts = incompleteContacts.length > 0;
+  
   if (!currentContact) {
     return (
       <Card className="border-0 shadow-lg">
@@ -1795,22 +1805,50 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
     }
   };
   
+  const currentContactComplete = isContactComplete(currentContact);
+  
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-4 sm:p-6">
+        {/* Show alert if there are incomplete contacts */}
+        {hasIncompleteContacts && contactsWithNames.length > 1 && (
+          <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  Please complete details for all contacts
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                  Still need: {incompleteContacts.map(c => c.name).join(", ")}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {contactsWithNames.length > 1 && (
-          <div className="flex gap-2 mb-4">
-            {contactsWithNames.map((contact, idx) => (
-              <Button
-                key={idx}
-                variant={currentContactIndex === idx ? "default" : "outline"}
-                size="sm"
-                onClick={() => setCurrentContactIndex(idx)}
-                data-testid={`button-tab-contact-${idx}`}
-              >
-                {contact.name || `Contact ${idx + 1}`}
-              </Button>
-            ))}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {contactsWithNames.map((contact, idx) => {
+              const complete = isContactComplete(contact);
+              return (
+                <Button
+                  key={idx}
+                  variant={currentContactIndex === idx ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentContactIndex(idx)}
+                  className={`relative ${!complete && currentContactIndex !== idx ? 'border-amber-500 text-amber-700 dark:text-amber-400' : ''}`}
+                  data-testid={`button-tab-contact-${idx}`}
+                >
+                  {contact.name || `Contact ${idx + 1}`}
+                  {complete ? (
+                    <Check className="h-3 w-3 ml-1.5 text-green-500" />
+                  ) : (
+                    <span className="ml-1.5 h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                  )}
+                </Button>
+              );
+            })}
           </div>
         )}
         
