@@ -352,6 +352,10 @@ export default function Register() {
           
           // Clear onboarding data
           localStorage.removeItem("onboardingData");
+          
+          // Invalidate status and contacts queries to ensure dashboard shows correct state
+          queryClient.invalidateQueries({ queryKey: ["/api/status"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
         } catch (e) {
           console.log("Failed to apply onboarding settings:", e);
         }
