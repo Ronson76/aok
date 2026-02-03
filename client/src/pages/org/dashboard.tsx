@@ -144,7 +144,7 @@ export default function OrganizationDashboard() {
       clearTimeout(timeoutRef.current);
     }
     await logout();
-    setLocation("/org/login");
+    setLocation("/");
   };
   
   // New client registration form state
