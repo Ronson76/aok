@@ -15,6 +15,40 @@ function formatDate(date: Date): string {
   return `${day}/${month}/${year} at ${hours}:${minutes}`;
 }
 
+// SVG shield icons for email templates (base64 encoded for email compatibility)
+// Red shield with exclamation mark for alerts
+const redShieldSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none">
+  <path d="M12 2L3 6V12C3 17.55 7.16 22.74 12 24C16.84 22.74 21 17.55 21 12V6L12 2Z" fill="#DC2626"/>
+  <path d="M12 2L3 6V12C3 17.55 7.16 22.74 12 24C16.84 22.74 21 17.55 21 12V6L12 2Z" stroke="white" stroke-width="0.5"/>
+  <text x="12" y="16" text-anchor="middle" fill="white" font-size="12" font-weight="bold" font-family="Arial">!</text>
+</svg>`;
+
+// Green shield with tick for confirmations/success
+const greenShieldSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none">
+  <path d="M12 2L3 6V12C3 17.55 7.16 22.74 12 24C16.84 22.74 21 17.55 21 12V6L12 2Z" fill="#16A34A"/>
+  <path d="M12 2L3 6V12C3 17.55 7.16 22.74 12 24C16.84 22.74 21 17.55 21 12V6L12 2Z" stroke="white" stroke-width="0.5"/>
+  <path d="M9 12L11 14L15 10" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+// Orange shield for general/password reset
+const orangeShieldSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none">
+  <path d="M12 2L3 6V12C3 17.55 7.16 22.74 12 24C16.84 22.74 21 17.55 21 12V6L12 2Z" fill="#F97316"/>
+  <path d="M12 2L3 6V12C3 17.55 7.16 22.74 12 24C16.84 22.74 21 17.55 21 12V6L12 2Z" stroke="white" stroke-width="0.5"/>
+  <path d="M12 8V12M12 16H12.01" stroke="white" stroke-width="2" stroke-linecap="round"/>
+</svg>`;
+
+function getShieldDataUri(alertType: string): string {
+  let svg: string;
+  if (alertType === 'emergency' || alertType === 'missed_checkin') {
+    svg = redShieldSvg;
+  } else if (alertType === 'checkin_success' || alertType === 'confirmation') {
+    svg = greenShieldSvg;
+  } else {
+    svg = orangeShieldSvg;
+  }
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+}
+
 // Professional HTML email template with aok branding
 function createBrandedEmail(options: {
   recipientName: string;
@@ -30,7 +64,11 @@ function createBrandedEmail(options: {
   // Determine header colour based on alert type
   const headerColor = alertType === 'emergency' || alertType === 'missed_checkin' 
     ? '#DC2626' // Red for alerts
+    : alertType === 'checkin_success' || alertType === 'confirmation'
+    ? '#16A34A' // Green for success
     : '#F97316'; // Orange for regular communications
+  
+  const shieldDataUri = getShieldDataUri(alertType);
   
   const alertBanner = alertType === 'emergency' 
     ? `<div style="background-color: #DC2626; color: white; text-align: center; padding: 12px; font-weight: bold; font-size: 16px;">EMERGENCY ALERT</div>`
@@ -50,10 +88,10 @@ function createBrandedEmail(options: {
     <tr>
       <td style="padding: 40px 20px;">
         <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-          <!-- Header with logo -->
+          <!-- Header with shield icon -->
           <tr>
             <td style="background-color: ${headerColor}; padding: 24px; text-align: center;">
-              <img src="https://aok.care/aok-logo.png" alt="aok" style="height: 48px; width: auto;" />
+              <img src="${shieldDataUri}" alt="aok" style="height: 64px; width: 64px;" />
             </td>
           </tr>
           
