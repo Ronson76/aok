@@ -16,22 +16,59 @@ import {
 import { WifiOff, Phone, AlertTriangle } from "lucide-react";
 import type { Contact } from "@shared/schema";
 
+const CACHED_CONTACT_KEY = "aok_emergency_contact";
+
+interface CachedContact {
+  name: string;
+  phone: string;
+}
+
 export function OfflineEmergencyOverlay() {
   const { isOnline } = useHeartbeat();
   const { user } = useAuth();
   const [show999Confirmation, setShow999Confirmation] = useState(false);
+  const [cachedContact, setCachedContact] = useState<CachedContact | null>(null);
 
   const { data: contacts } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
-    enabled: !!user,
+    enabled: !!user && isOnline,
     staleTime: 1000 * 60 * 5,
   });
 
   const primaryContact = contacts?.find((c) => c.isPrimary && c.confirmedAt);
 
-  const handleCallContact = () => {
+  // Cache primary contact to localStorage when available
+  useEffect(() => {
     if (primaryContact?.phone) {
-      const cleanPhone = primaryContact.phone.replace(/[^+\d]/g, "");
+      const contactData: CachedContact = {
+        name: primaryContact.name,
+        phone: primaryContact.phone,
+      };
+      localStorage.setItem(CACHED_CONTACT_KEY, JSON.stringify(contactData));
+      setCachedContact(contactData);
+    }
+  }, [primaryContact]);
+
+  // Load cached contact on mount
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem(CACHED_CONTACT_KEY);
+      if (cached) {
+        setCachedContact(JSON.parse(cached));
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }, []);
+
+  // Use live data if available, otherwise use cached
+  const emergencyContact = primaryContact?.phone 
+    ? { name: primaryContact.name, phone: primaryContact.phone }
+    : cachedContact;
+
+  const handleCallContact = () => {
+    if (emergencyContact?.phone) {
+      const cleanPhone = emergencyContact.phone.replace(/[^+\d]/g, "");
       window.location.href = `tel:${cleanPhone}`;
     }
   };
@@ -70,7 +107,7 @@ export function OfflineEmergencyOverlay() {
         </div>
 
         <div className="w-full max-w-sm space-y-4">
-          {primaryContact?.phone && (
+          {emergencyContact?.phone && (
             <Button
               onClick={handleCallContact}
               className="w-full h-20 text-lg bg-primary hover:bg-primary/90"
@@ -78,8 +115,8 @@ export function OfflineEmergencyOverlay() {
             >
               <Phone className="h-6 w-6 mr-3" />
               <div className="text-left">
-                <div className="font-semibold">Call {primaryContact.name}</div>
-                <div className="text-sm opacity-80">{primaryContact.phone}</div>
+                <div className="font-semibold">Call {emergencyContact.name}</div>
+                <div className="text-sm opacity-80">{emergencyContact.phone}</div>
               </div>
             </Button>
           )}
