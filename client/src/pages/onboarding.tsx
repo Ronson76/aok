@@ -306,8 +306,9 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="container mx-auto px-4 py-4 flex items-center justify-between border-b">
-        <Link href="/" className="flex items-center hover:opacity-80 transition-opacity" data-testid="link-back-home">
-          <ArrowLeft className="h-5 w-5 text-green-600" />
+        <Link href="/" className="flex items-center gap-1 hover:opacity-80 transition-opacity text-green-600" data-testid="link-back-home">
+          <ArrowLeft className="h-4 w-4" />
+          <span className="text-sm font-medium">Home</span>
         </Link>
         <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-logo-home">
           <ShieldCheck className="h-9 w-9 text-green-600" />
@@ -1245,53 +1246,103 @@ function Step7ContactDistance({ data, setData }: { data: OnboardingData; setData
 }
 
 function Step8Summary({ data }: { data: OnboardingData }) {
-  // Get scenario content based on contact distance
+  // Get scenario content based on living situation and contact distance
   const getScenarioContent = () => {
     const contactName = formatContactNames(data.contacts, "your contact");
     const contactNameCapitalized = formatContactNames(data.contacts, "Your contact");
+    const contactPlural = data.contacts.filter(c => c.name).length === 1 ? "gets" : "get";
+    const contactIsAre = data.contacts.filter(c => c.name).length === 1 ? "is" : "are";
     
-    switch (data.contactDistance) {
-      case "lives-with":
-        return {
-          stat: "Even people living together can go hours without checking on each other",
-          scenario: "It's a weekday morning. Your housemate has left for work. You have a fall and can't easily reach your phone.",
-          withoutDelay: `Hours before ${contactName} returns home and realises you need help`,
-          withoutDetail: "You're alone all day with no way to call for help",
-          withAokDetail: `${contactNameCapitalized} ${data.contacts.filter(c => c.name).length === 1 ? "gets" : "get"} an instant alert - even while at work`
-        };
-      case "same-city":
-        return {
-          stat: "43% of emergencies at home happen when we're alone",
-          scenario: "It's Wednesday morning. You have a fall and can't easily reach your phone.",
-          withoutDelay: `3-6 hours before ${contactName} realises something is wrong`,
-          withoutDetail: "Hours pass with no one knowing you need help",
-          withAokDetail: `${contactNameCapitalized} ${data.contacts.filter(c => c.name).length === 1 ? "is" : "are"} alerted and can reach you within 30 minutes`
-        };
-      case "few-hours":
-        return {
-          stat: "When contacts live hours away, delays in getting help can be critical",
-          scenario: "It's Wednesday morning. You have a fall and can't easily reach your phone.",
-          withoutDelay: `6-12 hours before ${contactName} starts to worry`,
-          withoutDetail: "By the time they realise, precious time has been lost",
-          withAokDetail: `${contactNameCapitalized} ${data.contacts.filter(c => c.name).length === 1 ? "gets" : "get"} an instant alert and can arrange local help`
-        };
-      case "different-country":
-        return {
-          stat: "When loved ones are overseas, missed calls can go unnoticed for days",
-          scenario: "It's Wednesday morning. You have a fall and can't easily reach your phone.",
-          withoutDelay: `24-48 hours before ${contactName} realises you're not responding`,
-          withoutDetail: "Time zone differences mean delayed concern",
-          withAokDetail: `${contactNameCapitalized} ${data.contacts.filter(c => c.name).length === 1 ? "gets" : "get"} an instant alert regardless of time zone`
-        };
-      default:
-        return {
-          stat: "23% of young adults living alone have no local emergency contact",
-          scenario: "It's Wednesday morning. You have a fall and can't easily reach your phone.",
-          withoutDelay: `6-12 hours before ${contactName} realises you need help`,
-          withoutDetail: "Hours pass with no one knowing",
-          withAokDetail: `${contactNameCapitalized} ${data.contacts.filter(c => c.name).length === 1 ? "gets" : "get"} an instant alert`
-        };
-    }
+    // Get scenario based on living situation (from step 3)
+    const getLivingSituationScenario = () => {
+      switch (data.livingSituation) {
+        case "alone":
+          return {
+            stat: "43% of emergencies at home happen when we're alone",
+            scenario: "It's Wednesday morning. You're home alone and have a fall, hurting your ankle. You can't easily reach your phone.",
+          };
+        case "alone-pets":
+          return {
+            stat: "Pet owners who live alone often have no one checking on them daily",
+            scenario: "It's Wednesday morning. You're home with your pet when you have a fall and hurt yourself. Your phone is out of reach and your pet can't call for help.",
+          };
+        case "single-parent":
+          return {
+            stat: "Single parents face unique risks when children depend solely on them",
+            scenario: "It's a school morning. You've just dropped the kids off when you feel unwell and have to pull over. You're alone and struggling to call for help.",
+          };
+        case "partner-travels":
+          return {
+            stat: "When partners travel for work, emergencies at home can go unnoticed",
+            scenario: "Your partner is away on a business trip. It's evening and you have a fall at home. There's no one else in the house.",
+          };
+        case "rural":
+          return {
+            stat: "Rural residents are often miles from neighbours and emergency services",
+            scenario: "You're at your remote property when you have a fall outside. Your phone has low signal and your nearest neighbour is miles away.",
+          };
+        case "solo-traveller":
+          return {
+            stat: "Solo travellers are at higher risk when emergencies happen abroad",
+            scenario: "You're travelling alone and suddenly feel unwell in your hotel room. You're in an unfamiliar place with no one expecting to hear from you.",
+          };
+        case "lone-worker":
+          return {
+            stat: "Lone workers face increased risks without colleagues nearby",
+            scenario: "You're working alone at a site when you have an accident. There's no one around and your employer doesn't know something is wrong.",
+          };
+        default:
+          return {
+            stat: "23% of young adults living alone have no local emergency contact",
+            scenario: "It's Wednesday morning. You have a fall and can't easily reach your phone.",
+          };
+      }
+    };
+    
+    // Get delay based on contact distance
+    const getDistanceDetails = () => {
+      switch (data.contactDistance) {
+        case "lives-with":
+          return {
+            withoutDelay: `Hours before ${contactName} returns home and realises you need help`,
+            withoutDetail: "You're alone all day with no way to call for help",
+            withAokDetail: `${contactNameCapitalized} ${contactPlural} an instant alert - even while away`
+          };
+        case "same-city":
+          return {
+            withoutDelay: `3-6 hours before ${contactName} realises something is wrong`,
+            withoutDetail: "Hours pass with no one knowing you need help",
+            withAokDetail: `${contactNameCapitalized} ${contactIsAre} alerted and can reach you within 30 minutes`
+          };
+        case "few-hours":
+          return {
+            withoutDelay: `6-12 hours before ${contactName} starts to worry`,
+            withoutDetail: "By the time they realise, precious time has been lost",
+            withAokDetail: `${contactNameCapitalized} ${contactPlural} an instant alert and can arrange local help`
+          };
+        case "different-country":
+          return {
+            withoutDelay: `24-48 hours before ${contactName} realises you're not responding`,
+            withoutDetail: "Time zone differences mean delayed concern",
+            withAokDetail: `${contactNameCapitalized} ${contactPlural} an instant alert regardless of time zone`
+          };
+        default:
+          return {
+            withoutDelay: `6-12 hours before ${contactName} realises you need help`,
+            withoutDetail: "Hours pass with no one knowing",
+            withAokDetail: `${contactNameCapitalized} ${contactPlural} an instant alert`
+          };
+      }
+    };
+    
+    const situationContent = getLivingSituationScenario();
+    const distanceContent = getDistanceDetails();
+    
+    return {
+      stat: situationContent.stat,
+      scenario: situationContent.scenario,
+      ...distanceContent
+    };
   };
 
   const content = getScenarioContent();
