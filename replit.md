@@ -91,6 +91,20 @@ Preferred communication style: Simple, everyday language.
   - Set ECOLOGI_API_KEY and ECOLOGI_TEST_MODE=false to enable live tree purchases
 
 ### Recent Changes (Feb 2026)
+- **Capacitor Native App Support**: iOS and Android app build capability
+  - App ID: `care.aok.app`, configured for App Store and Play Store
+  - Native plugins: push notifications, local notifications, haptics, geolocation, motion (shake detection)
+  - Utility module at `client/src/lib/native.ts` with platform detection and plugin wrappers
+  - Build guide: `NATIVE_APP_BUILD.md` with full iOS/Android setup instructions
+  - Deep linking ready: `aok://` URL scheme for direct app opening from SMS invites
+- **Direct Client Login Links**: SMS invites now include clickable login links
+  - Format: `https://aok.care/org/client-login?ref=ABC123`
+  - Reference code auto-fills from URL parameter
+  - Universal Links / App Links ready for native apps
+- **Welcome Email for Individual Sign-ups**: Branded onboarding email
+  - Getting started guide with 4 steps
+  - Direct link to dashboard
+  - Sent automatically on registration
 - **Heartbeat Connection Monitor**: Offline emergency overlay system
   - Pings server every 60 seconds to verify connectivity
   - After 2 failed pings, displays offline emergency overlay
