@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Mail, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall, ShieldAlert, Pencil, Clock, Eye, EyeOff } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -230,6 +231,9 @@ export default function Contacts() {
     },
   });
 
+  const primaryContactCount = contacts.filter(c => c.isPrimary).length;
+  const maxPrimariesReached = primaryContactCount >= 3;
+  
   const setPrimaryMutation = useMutation({
     mutationFn: (id: string) => apiRequest("POST", `/api/contacts/${id}/primary`),
     onSuccess: (_, contactId) => {
@@ -239,16 +243,25 @@ export default function Contacts() {
       toast({
         title: wasToggled ? "Primary status removed" : "Primary contact set",
         description: wasToggled 
-          ? "This contact will only receive notifications for missed check-ins."
+          ? "This contact will only receive emergency alerts."
           : "This contact will now receive notifications for every check-in.",
       });
     },
-    onError: () => {
-      toast({
-        title: "Failed to update primary status",
-        description: "At least one contact must remain as primary.",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      const message = error?.message || "";
+      if (message.includes("Maximum of 3")) {
+        toast({
+          title: "Maximum primary contacts reached",
+          description: "You can have up to 3 primary contacts. Remove one to add another.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Failed to update primary status",
+          description: "At least one contact must remain as primary.",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -500,9 +513,20 @@ export default function Contacts() {
 
       <p className="text-sm text-muted-foreground">
         These people will be notified if you miss a check-in. New contacts must confirm via email 
-        before they become active. Primary contacts (marked with a filled star) will also receive 
+        before they become active. You can mark up to 3 contacts as Primary - they will receive 
         notifications for every successful check-in.
       </p>
+
+      {contacts.length > 0 && (
+        <div className="flex items-center gap-2 text-sm">
+          <span className={`font-medium ${maxPrimariesReached ? "text-amber-600" : "text-muted-foreground"}`}>
+            Primary contacts: {primaryContactCount}/3
+          </span>
+          {maxPrimariesReached && (
+            <span className="text-xs text-amber-600">(maximum reached)</span>
+          )}
+        </div>
+      )}
 
       {contacts.length === 0 ? (
         <Card className="border-dashed">
@@ -598,18 +622,40 @@ export default function Contacts() {
                 </div>
 
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                  {(!isConfirmed || isExpanded) && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setPrimaryMutation.mutate(contact.id)}
-                      disabled={setPrimaryMutation.isPending || !contact.confirmedAt}
-                      title={!contact.confirmedAt ? "Contact must confirm first" : (contact.isPrimary ? "Remove primary status" : "Set as primary contact")}
-                      data-testid={`button-toggle-primary-${contact.id}`}
-                    >
-                      <Star className={`h-4 w-4 ${contact.isPrimary && isConfirmed ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} />
-                    </Button>
-                  )}
+                  {(!isConfirmed || isExpanded) && (() => {
+                    const isDisabled = setPrimaryMutation.isPending || !contact.confirmedAt || (!contact.isPrimary && maxPrimariesReached);
+                    return (
+                    <div className="flex items-center gap-1.5 mr-2">
+                      <Checkbox
+                        id={`primary-${contact.id}`}
+                        checked={contact.isPrimary}
+                        disabled={isDisabled}
+                        onCheckedChange={() => setPrimaryMutation.mutate(contact.id)}
+                        data-testid={`checkbox-primary-${contact.id}`}
+                        title={
+                          !contact.confirmedAt 
+                            ? "Contact must confirm first" 
+                            : (!contact.isPrimary && maxPrimariesReached)
+                              ? "Maximum 3 primary contacts"
+                              : (contact.isPrimary ? "Remove primary status" : "Set as primary contact")
+                        }
+                      />
+                      <label 
+                        htmlFor={`primary-${contact.id}`}
+                        className={`text-xs ${
+                          isDisabled
+                            ? "text-muted-foreground cursor-not-allowed"
+                            : contact.isPrimary 
+                              ? "text-foreground font-medium cursor-pointer" 
+                              : "text-muted-foreground cursor-pointer"
+                        }`}
+                        data-testid={`label-primary-${contact.id}`}
+                      >
+                        Primary
+                      </label>
+                    </div>
+                    );
+                  })()}
                   {!isOrgClient && (
                     <Button
                       size="icon"

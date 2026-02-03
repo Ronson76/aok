@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, ShieldAlert, AlertTriangle, Smartphone, Eye, EyeOff, ExternalLink, CreditCard, AlertCircle, MapPin, Vibrate } from "lucide-react";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, AlertTriangle, Smartphone, Eye, EyeOff, ExternalLink, CreditCard, AlertCircle, MapPin, Vibrate } from "lucide-react";
 import ShakeDetector from "@/lib/shake-detector";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -349,8 +349,6 @@ export default function Settings() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [localInterval, setLocalInterval] = useState<number>(24);
-  const [showDisableDialog, setShowDisableDialog] = useState(false);
-  const [disablePassword, setDisablePassword] = useState("");
   
   const [logoutStep, setLogoutStep] = useState<"none" | "confirm" | "password">("none");
   const [logoutPassword, setLogoutPassword] = useState("");
@@ -361,7 +359,6 @@ export default function Settings() {
   const [showIntervalPasswordDialog, setShowIntervalPasswordDialog] = useState(false);
   const [intervalPassword, setIntervalPassword] = useState("");
   const [showIntervalPasswordVisible, setShowIntervalPasswordVisible] = useState(false);
-  const [showDisablePasswordVisible, setShowDisablePasswordVisible] = useState(false);
   const [pendingInterval, setPendingInterval] = useState<number | null>(null);
   
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -537,8 +534,6 @@ export default function Settings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
       queryClient.invalidateQueries({ queryKey: ["/api/status"] });
-      setShowDisableDialog(false);
-      setDisablePassword("");
       setShowIntervalPasswordDialog(false);
       setIntervalPassword("");
       setShowIntervalPasswordVisible(false);
@@ -584,25 +579,6 @@ export default function Settings() {
     },
   });
 
-  const handleAlertsToggle = (checked: boolean) => {
-    if (checked) {
-      updateMutation.mutate({ alertsEnabled: true });
-    } else {
-      setShowDisableDialog(true);
-    }
-  };
-
-  const handleConfirmDisable = () => {
-    if (!disablePassword.trim()) {
-      toast({
-        title: "Password required",
-        description: "Please enter your password to disable alerts.",
-        variant: "destructive",
-      });
-      return;
-    }
-    updateMutation.mutate({ alertsEnabled: false, password: disablePassword });
-  };
 
   const handleIntervalChange = (value: number[]) => {
     // Slider uses index, convert to hours for display
@@ -805,42 +781,6 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Bell className="h-4 w-4 text-muted-foreground" />
-            Notifications
-          </CardTitle>
-          <CardDescription>
-            Control how alerts are sent to your contacts.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="space-y-0.5">
-              <Label htmlFor="alerts-enabled" className="font-medium">
-                Alert Contacts
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Notify contacts when you miss a check-in
-              </p>
-            </div>
-            <Switch
-              id="alerts-enabled"
-              checked={settings?.alertsEnabled ?? true}
-              onCheckedChange={handleAlertsToggle}
-              data-testid="switch-alerts-enabled"
-            />
-          </div>
-
-          <div className="flex items-start gap-2 p-3 rounded-md bg-muted/50">
-            <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-muted-foreground">
-              When enabled, all your emergency contacts will receive an alert if you miss a check-in. When disabled, only your primary contact will be notified.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
 
       {pushSupported && (
         <Card>
@@ -1092,76 +1032,6 @@ export default function Settings() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showDisableDialog} onOpenChange={(open) => {
-        setShowDisableDialog(open);
-        if (!open) {
-          setDisablePassword("");
-          setShowDisablePasswordVisible(false);
-        }
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-destructive" />
-              Disable Safety Alerts?
-            </DialogTitle>
-            <DialogDescription>
-              This will stop your emergency contacts from being notified if you miss a check-in. 
-              For your safety, please enter your password to confirm this change.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="confirm-password"
-                  type={showDisablePasswordVisible ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={disablePassword}
-                  onChange={(e) => setDisablePassword(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleConfirmDisable();
-                  }}
-                  autoComplete="off"
-                  data-testid="input-disable-password"
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowDisablePasswordVisible(!showDisablePasswordVisible)}
-                  data-testid="button-toggle-disable-password"
-                >
-                  {showDisablePasswordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowDisableDialog(false);
-                setDisablePassword("");
-              }}
-              data-testid="button-cancel-disable"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleConfirmDisable}
-              disabled={updateMutation.isPending}
-              data-testid="button-confirm-disable"
-            >
-              {updateMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
-              Disable Alerts
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={showDisablePushDialog} onOpenChange={(open) => {
         setShowDisablePushDialog(open);
