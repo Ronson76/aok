@@ -877,9 +877,6 @@ class DatabaseStorage implements IStorage {
           row.additionalInfo
         );
         
-        // Send voice calls to landline contacts
-        const { callsMade, callsFailed } = await sendVoiceAlerts(contactsToAlert, user, 'missed_checkin');
-        
         // Send push notifications to user's devices
         const userSubscriptions = await this.getPushSubscriptions(userId);
         let pushSent = 0;
@@ -896,18 +893,16 @@ class DatabaseStorage implements IStorage {
           pushFailed = pushResult.failed;
         }
         
-        alertSent = emailsSent > 0 || smsSent > 0 || callsMade > 0 || pushSent > 0;
+        alertSent = emailsSent > 0 || smsSent > 0 || pushSent > 0;
         
         const notificationParts = [];
         if (emailsSent > 0) notificationParts.push(`${emailsSent} email(s)`);
         if (smsSent > 0) notificationParts.push(`${smsSent} SMS`);
-        if (callsMade > 0) notificationParts.push(`${callsMade} voice call(s)`);
         if (pushSent > 0) notificationParts.push(`${pushSent} push notification(s)`);
         
         const failedParts = [];
         if (emailsFailed > 0) failedParts.push(`${emailsFailed} email(s)`);
         if (smsFailed > 0) failedParts.push(`${smsFailed} SMS`);
-        if (callsFailed > 0) failedParts.push(`${callsFailed} call(s)`);
         if (pushFailed > 0) failedParts.push(`${pushFailed} push(es)`);
         
         const message = `${alertType} missed check-in alert sent! ${notificationParts.join(', ') || 'no notifications'} delivered${failedParts.length > 0 ? `, ${failedParts.join(', ')} failed` : ''}.`;
