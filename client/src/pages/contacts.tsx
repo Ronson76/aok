@@ -622,7 +622,8 @@ export default function Contacts() {
                 </div>
 
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                  {(() => {
+                  {/* Only show primary checkbox for confirmed contacts */}
+                  {isConfirmed && (() => {
                     const isDisabled = setPrimaryMutation.isPending || (!contact.isPrimary && maxPrimariesReached);
                     return (
                     <div className="flex items-center gap-1.5 mr-2">
