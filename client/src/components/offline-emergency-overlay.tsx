@@ -66,20 +66,8 @@ export function OfflineEmergencyOverlay() {
     ? { name: primaryContact.name, phone: primaryContact.phone }
     : cachedContact;
 
-  const handleCallContact = () => {
-    if (emergencyContact?.phone) {
-      const cleanPhone = emergencyContact.phone.replace(/[^+\d]/g, "");
-      window.location.href = `tel:${cleanPhone}`;
-    }
-  };
-
   const handleCall999 = () => {
     setShow999Confirmation(true);
-  };
-
-  const confirmCall999 = () => {
-    setShow999Confirmation(false);
-    window.location.href = "tel:999";
   };
 
   if (isOnline) {
@@ -108,17 +96,17 @@ export function OfflineEmergencyOverlay() {
 
         <div className="w-full max-w-sm space-y-4">
           {emergencyContact?.phone && (
-            <Button
-              onClick={handleCallContact}
-              className="w-full h-20 text-lg bg-primary hover:bg-primary/90"
+            <a
+              href={`tel:${emergencyContact.phone.replace(/[^+\d]/g, "")}`}
+              className="flex items-center w-full h-20 px-6 text-lg bg-primary hover:bg-primary/90 text-primary-foreground rounded-md"
               data-testid="button-call-contact"
             >
-              <Phone className="h-6 w-6 mr-3" />
+              <Phone className="h-6 w-6 mr-3 flex-shrink-0" />
               <div className="text-left">
                 <div className="font-semibold">Call {emergencyContact.name}</div>
                 <div className="text-sm opacity-80">{emergencyContact.phone}</div>
               </div>
-            </Button>
+            </a>
           )}
 
           <Button
@@ -153,13 +141,14 @@ export function OfflineEmergencyOverlay() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel data-testid="button-cancel-999">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmCall999}
-              className="bg-red-600 hover:bg-red-700"
+            <a
+              href="tel:999"
+              onClick={() => setShow999Confirmation(false)}
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-10 px-4 py-2 bg-red-600 hover:bg-red-700 text-white"
               data-testid="button-confirm-999"
             >
               Call 999 Now
-            </AlertDialogAction>
+            </a>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
