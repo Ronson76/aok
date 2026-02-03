@@ -462,6 +462,20 @@ function Step1Terms({ accepted, setAccepted, onComplete }: { accepted: boolean; 
 function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  // Validation states
+  const nameValid = data.name.trim().length > 0;
+  const emailValid = data.email.includes("@") && data.email.includes(".");
+  const passwordValid = data.password.length >= 8;
+  const confirmPasswordValid = data.password === data.confirmPassword && data.confirmPassword.length > 0;
+  const phoneValid = isValidMobileNumber(data.userPhone, data.userPhoneCountry);
+
+  const markTouched = (field: string) => {
+    if (!touched[field]) {
+      setTouched({ ...touched, [field]: true });
+    }
+  };
 
   return (
     <Card className="border-0 shadow-lg">
@@ -477,12 +491,13 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
             <Input
               value={data.name}
               onChange={(e) => setData({ ...data, name: e.target.value })}
+              onBlur={() => markTouched('name')}
               placeholder="Enter your full name"
-              className="text-lg"
+              className={`text-lg ${touched.name && !nameValid ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
               data-testid="input-name"
             />
-            <p className="text-xs text-muted-foreground">
-              This name will appear on alerts to your contacts.
+            <p className={`text-xs ${touched.name && !nameValid ? 'text-red-500' : 'text-muted-foreground'}`}>
+              {touched.name && !nameValid ? 'Please enter your name' : 'This name will appear on alerts to your contacts.'}
             </p>
           </div>
 
@@ -492,11 +507,13 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
               type="email"
               value={data.email}
               onChange={(e) => setData({ ...data, email: e.target.value })}
+              onBlur={() => markTouched('email')}
               placeholder="you@example.com"
+              className={touched.email && !emailValid ? 'border-red-500 focus-visible:ring-red-500' : ''}
               data-testid="input-email"
             />
-            <p className="text-xs text-muted-foreground">
-              We'll send your check-in reminders here.
+            <p className={`text-xs ${touched.email && !emailValid ? 'text-red-500' : 'text-muted-foreground'}`}>
+              {touched.email && !emailValid ? 'Please enter a valid email address' : "We'll send your check-in reminders here."}
             </p>
           </div>
 
@@ -507,7 +524,9 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
                 type={showPassword ? "text" : "password"}
                 value={data.password}
                 onChange={(e) => setData({ ...data, password: e.target.value })}
+                onBlur={() => markTouched('password')}
                 placeholder="At least 8 characters"
+                className={touched.password && !passwordValid ? 'border-red-500 focus-visible:ring-red-500' : ''}
                 data-testid="input-password"
               />
               <button
@@ -519,9 +538,11 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className={`text-xs ${touched.password && !passwordValid ? 'text-red-500' : 'text-muted-foreground'}`}>
               {data.password.length > 0 && data.password.length < 8 
                 ? `${8 - data.password.length} more characters needed`
+                : touched.password && !passwordValid 
+                ? 'Password must be at least 8 characters'
                 : "Used to secure your account."}
             </p>
           </div>
@@ -533,7 +554,9 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
                 type={showConfirmPassword ? "text" : "password"}
                 value={data.confirmPassword}
                 onChange={(e) => setData({ ...data, confirmPassword: e.target.value })}
+                onBlur={() => markTouched('confirmPassword')}
                 placeholder="Re-enter your password"
+                className={touched.confirmPassword && !confirmPasswordValid ? 'border-red-500 focus-visible:ring-red-500' : ''}
                 data-testid="input-confirm-password"
               />
               <button
@@ -545,10 +568,10 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <p className={`text-xs ${data.confirmPassword.length > 0 ? (data.password === data.confirmPassword ? "text-green-600" : "text-red-500") : "text-muted-foreground"}`}>
+            <p className={`text-xs ${data.confirmPassword.length > 0 ? (confirmPasswordValid ? "text-green-600" : "text-red-500") : touched.confirmPassword ? "text-red-500" : "text-muted-foreground"}`}>
               {data.confirmPassword.length > 0 
-                ? (data.password === data.confirmPassword ? "Passwords match" : "Passwords don't match")
-                : "Enter the same password again."}
+                ? (confirmPasswordValid ? "Passwords match" : "Passwords don't match")
+                : touched.confirmPassword ? "Please confirm your password" : "Enter the same password again."}
             </p>
           </div>
 
@@ -578,13 +601,18 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
                   }
                   setData({ ...data, userPhone: value });
                 }}
+                onBlur={() => markTouched('phone')}
                 placeholder="7700900123"
-                className="flex-1"
+                className={`flex-1 ${touched.phone && !phoneValid ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                 data-testid="input-user-phone"
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              For check-in reminders and emergency alerts.
+            <p className={`text-xs ${touched.phone && !phoneValid ? 'text-red-500' : 'text-muted-foreground'}`}>
+              {touched.phone && !phoneValid 
+                ? data.userPhoneCountry === '+44' 
+                  ? 'Enter 10 digits starting with 7 (e.g. 7700900123)' 
+                  : 'Please enter a valid mobile number'
+                : 'For check-in reminders and emergency alerts.'}
             </p>
           </div>
 
