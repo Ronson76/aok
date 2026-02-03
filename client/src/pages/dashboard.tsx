@@ -408,7 +408,27 @@ export default function Dashboard() {
   }, [effectivelyOverdue, status?.nextCheckInDue, status]);
 
   const checkInMutation = useMutation({
-    mutationFn: () => apiRequest("POST", "/api/checkins"),
+    mutationFn: async () => {
+      // Try to get current location to store as last known location
+      let location: { latitude: number; longitude: number } | undefined;
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 60000
+          });
+        });
+        location = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+      } catch (err) {
+        // Location not available - that's fine, we'll check in without it
+        console.log("[CHECK-IN] Location not available:", err);
+      }
+      return apiRequest("POST", "/api/checkins", { location });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/status"] });
       queryClient.invalidateQueries({ queryKey: ["/api/checkins"] });
