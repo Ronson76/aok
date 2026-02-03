@@ -149,9 +149,16 @@ export default function WellbeingAI() {
             method: "POST",
             headers: { "Content-Type": "audio/webm" },
             body: audioBlob,
+            credentials: "include",
           });
           
-          if (!response.ok) throw new Error("Transcription failed");
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            if (response.status === 401) {
+              throw new Error("Please sign in first");
+            }
+            throw new Error(errorData.error || "Transcription failed");
+          }
           
           const { text } = await response.json();
           if (text && text.trim()) {
@@ -161,10 +168,10 @@ export default function WellbeingAI() {
             setRecordingStatus("Couldn't hear that. Try again?");
             setTimeout(() => setRecordingStatus(""), 2000);
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error("Error transcribing:", error);
-          setRecordingStatus("Transcription failed");
-          setTimeout(() => setRecordingStatus(""), 2000);
+          setRecordingStatus(error.message || "Transcription failed");
+          setTimeout(() => setRecordingStatus(""), 3000);
         }
       };
       
