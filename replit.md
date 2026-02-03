@@ -91,6 +91,12 @@ Preferred communication style: Simple, everyday language.
   - Set ECOLOGI_API_KEY and ECOLOGI_TEST_MODE=false to enable live tree purchases
 
 ### Recent Changes (Feb 2026)
+- **Heartbeat Connection Monitor**: Offline emergency overlay system
+  - Pings server every 60 seconds to verify connectivity
+  - After 2 failed pings, displays offline emergency overlay
+  - Shows primary contact quick-dial button and 999 emergency button
+  - 999 requires confirmation before dialing for safety
+  - Auto-recovers when connection is restored
 - **Ecologi Environmental Integration**: Tree planting and carbon offset tracking
   - Displays trees planted and CO₂ offset on landing page
   - Automatically plants 1 tree for each new individual subscriber
