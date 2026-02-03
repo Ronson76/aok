@@ -101,6 +101,13 @@ export default function WellbeingAI() {
 
   // Start voice recording
   const startRecording = useCallback(async () => {
+    // Stop any playing audio first
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+      setIsPlaying(false);
+    }
+    
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream, {
@@ -109,6 +116,16 @@ export default function WellbeingAI() {
       
       audioChunksRef.current = [];
       
+      // Auto-stop after 60 seconds to prevent indefinite recording
+      const recordingTimeout = setTimeout(() => {
+        if (mediaRecorder.state === "recording") {
+          mediaRecorder.stop();
+          setIsRecording(false);
+          setRecordingStatus("Recording stopped (60s limit)");
+          setTimeout(() => setRecordingStatus(""), 2000);
+        }
+      }, 60000);
+      
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
@@ -116,6 +133,7 @@ export default function WellbeingAI() {
       };
       
       mediaRecorder.onstop = async () => {
+        clearTimeout(recordingTimeout);
         stream.getTracks().forEach(track => track.stop());
         
         if (audioChunksRef.current.length === 0) {
@@ -343,7 +361,7 @@ export default function WellbeingAI() {
 
             <Button 
               onClick={startConversation} 
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600"
               data-testid="button-start-chat"
             >
               <Heart className="h-4 w-4 mr-2" />
@@ -437,7 +455,7 @@ export default function WellbeingAI() {
             <Button 
               type="submit" 
               disabled={!input.trim() || isLoading || isRecording}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600"
               data-testid="button-send-message"
             >
               <Send className="h-4 w-4" />
