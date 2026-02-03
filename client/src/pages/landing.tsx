@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +22,7 @@ import {
   ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail, 
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
   ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles,
-  MessageCircle, MessageSquare, ArrowLeft
+  MessageCircle, MessageSquare, ArrowLeft, TreeDeciduous, Leaf
 } from "lucide-react";
 import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
@@ -33,11 +34,23 @@ import alertsVideo from "@assets/generated_videos/english_sms_alert_notification
 const MONTHLY_PRICE = 6.99;
 const YEARLY_PRICE = 69.99;
 
+interface EcologiImpact {
+  trees: number;
+  carbonOffset: number;
+  testMode?: boolean;
+}
+
 export default function Landing() {
   const { toast } = useToast();
   const { user, logout } = useAuth();
   const [isYearly, setIsYearly] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
+  // Fetch Ecologi environmental impact stats
+  const { data: ecologiImpact } = useQuery<EcologiImpact>({
+    queryKey: ["/api/ecologi/impact"],
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
 
   const handleShare = async () => {
     const shareData = {
@@ -329,6 +342,54 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* Ecologi Environmental Impact Section */}
+      {ecologiImpact && (
+        <section className="py-12 px-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-y border-green-200 dark:border-green-800/50">
+          <div className="container mx-auto max-w-4xl">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <TreeDeciduous className="h-8 w-8 text-green-600" />
+                  <span className="text-4xl font-bold text-green-700 dark:text-green-400">
+                    {ecologiImpact.trees.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-sm text-green-600 dark:text-green-500 font-medium">Trees Planted</p>
+              </div>
+              
+              <div className="hidden md:block h-12 w-px bg-green-300 dark:bg-green-700" />
+              
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Leaf className="h-8 w-8 text-emerald-600" />
+                  <span className="text-4xl font-bold text-emerald-700 dark:text-emerald-400">
+                    {ecologiImpact.carbonOffset.toFixed(1)}t
+                  </span>
+                </div>
+                <p className="text-sm text-emerald-600 dark:text-emerald-500 font-medium">CO₂ Offset</p>
+              </div>
+              
+              <div className="hidden md:block h-12 w-px bg-green-300 dark:bg-green-700" />
+              
+              <div className="text-center max-w-xs">
+                <p className="text-sm text-green-700 dark:text-green-400">
+                  Every new subscriber plants a tree. We're proud to partner with{" "}
+                  <a 
+                    href="https://ecologi.com/nghuman18" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="underline font-medium hover:text-green-800 dark:hover:text-green-300"
+                  >
+                    Ecologi
+                  </a>{" "}
+                  to protect our planet.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section id="features" className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto max-w-6xl">
