@@ -24,7 +24,7 @@ const openai = new OpenAI({
 
 // Separate client for Whisper STT/TTS (must use standard OpenAI API, not Azure)
 const openaiWhisper = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 interface MoodPattern {
