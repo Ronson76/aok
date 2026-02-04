@@ -59,6 +59,7 @@ export default function WellbeingAI() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
+        credentials: "include",
       });
 
       if (!response.ok) throw new Error("TTS failed");
@@ -221,6 +222,7 @@ export default function WellbeingAI() {
       const response = await fetch("/api/wellbeing-ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           message: messageText,
           conversationHistory,
