@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heart, Send, Loader2, ArrowLeft, AlertTriangle, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { Heart, Send, Loader2, ArrowLeft, AlertTriangle, Mic, Volume2, VolumeX } from "lucide-react";
 import { Link } from "wouter";
 
 interface Message {
@@ -418,56 +418,42 @@ export default function WellbeingAI() {
 
       {hasStarted && (
         <form onSubmit={handleSubmit} className="p-4 border-t bg-background">
-          {recordingStatus && (
+          {recordingStatus && !isRecording && (
             <div className="mb-2 text-center">
-              <span className={`text-sm ${isRecording ? "text-red-500 animate-pulse" : "text-muted-foreground"}`}>
+              <span className="text-sm text-muted-foreground">
                 {recordingStatus}
               </span>
-            </div>
-          )}
-          {isPlaying && (
-            <div className="mb-2 text-center">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={stopAudio}
-                className="text-xs"
-                data-testid="button-stop-audio"
-              >
-                <VolumeX className="h-3 w-3 mr-1" /> Stop speaking
-              </Button>
             </div>
           )}
           <div className="flex gap-2">
             <Button
               type="button"
-              variant={isRecording ? "destructive" : "outline"}
-              size="icon"
-              onClick={toggleRecording}
-              disabled={isLoading}
-              className={isRecording ? "animate-pulse" : ""}
+              variant="outline"
+              onClick={isRecording ? undefined : startRecording}
+              disabled={isLoading || isRecording}
+              className={`h-12 w-12 ${isRecording ? "bg-green-600 border-green-600 text-white" : ""}`}
               data-testid="button-voice-input"
-              title={isRecording ? "Stop recording" : "Tap to speak"}
+              title="Tap to speak"
             >
-              {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              <Mic className="h-5 w-5" />
             </Button>
             <Input
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type or tap mic to speak..."
+              placeholder={isRecording ? "Listening..." : "Type or tap mic to speak..."}
               disabled={isLoading || isRecording}
-              className="flex-1"
+              className="flex-1 h-12 text-base"
               data-testid="input-chat-message"
             />
             <Button 
-              type="submit" 
-              disabled={!input.trim() || isLoading || isRecording}
-              className="bg-green-600"
+              type={isRecording ? "button" : "submit"}
+              onClick={isRecording ? stopRecording : undefined}
+              disabled={isRecording ? false : (!input.trim() || isLoading)}
+              className="bg-green-600 h-12 w-12"
               data-testid="button-send-message"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-5 w-5" />
             </Button>
           </div>
           <p className="text-xs text-muted-foreground text-center mt-2">
