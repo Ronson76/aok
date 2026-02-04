@@ -225,8 +225,15 @@ export function registerWellbeingAIRoutes(app: Express): void {
           res.json({ text: transcription.text });
         } catch (error: any) {
           console.error("[STT] Error transcribing audio:", error.message || error);
+          console.error("[STT] Full error:", JSON.stringify(error, null, 2));
           if (!res.headersSent) {
-            res.status(500).json({ error: "Failed to transcribe audio" });
+            // Return more details for debugging
+            const errorMessage = error.message || "Failed to transcribe audio";
+            const errorCode = error.code || error.status || "unknown";
+            res.status(500).json({ 
+              error: `Transcription error: ${errorMessage}`,
+              code: errorCode
+            });
           }
         }
       });
