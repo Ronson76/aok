@@ -166,11 +166,14 @@ export function registerWellbeingAIRoutes(app: Express): void {
 
   // Speech-to-Text endpoint - transcribes user voice to text
   app.post("/api/wellbeing-ai/stt", async (req: Request, res: Response) => {
+    console.log("[STT] Received speech-to-text request");
     try {
       const userId = await getAuthenticatedUserId(req);
       if (!userId) {
+        console.log("[STT] User not authenticated");
         return res.status(401).json({ error: "Not authenticated" });
       }
+      console.log("[STT] User authenticated:", userId);
 
       // Handle raw audio data with size limit (10MB max)
       const maxSize = 10 * 1024 * 1024;
@@ -185,23 +188,27 @@ export function registerWellbeingAIRoutes(app: Express): void {
       });
 
       req.on("error", (error) => {
-        console.error("Request error in STT:", error);
+        console.error("[STT] Request error:", error);
         if (!res.headersSent) {
           res.status(500).json({ error: "Request error" });
         }
       });
 
       req.on("end", async () => {
+        console.log("[STT] Received audio data, size:", totalSize, "bytes");
         try {
           if (totalSize > maxSize) {
+            console.log("[STT] Audio too large");
             return res.status(413).json({ error: "Audio file too large" });
           }
           
           if (chunks.length === 0) {
+            console.log("[STT] No audio data received");
             return res.status(400).json({ error: "No audio data received" });
           }
 
           const audioBuffer = Buffer.concat(chunks);
+          console.log("[STT] Sending to Whisper API...");
           
           // Use OpenAI's toFile helper for Node.js compatibility
           const audioFile = await toFile(audioBuffer, "audio.webm", {
@@ -214,16 +221,17 @@ export function registerWellbeingAIRoutes(app: Express): void {
             language: "en",
           });
 
+          console.log("[STT] Transcription successful:", transcription.text?.substring(0, 50));
           res.json({ text: transcription.text });
-        } catch (error) {
-          console.error("Error transcribing audio:", error);
+        } catch (error: any) {
+          console.error("[STT] Error transcribing audio:", error.message || error);
           if (!res.headersSent) {
             res.status(500).json({ error: "Failed to transcribe audio" });
           }
         }
       });
-    } catch (error) {
-      console.error("Error in STT endpoint:", error);
+    } catch (error: any) {
+      console.error("[STT] Error in STT endpoint:", error.message || error);
       res.status(500).json({ error: "Failed to process audio" });
     }
   });
