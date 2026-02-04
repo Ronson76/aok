@@ -33,9 +33,13 @@ export default function WellbeingAI() {
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [recordingStatus, setRecordingStatus] = useState<string>("");
+  const [audioLevels, setAudioLevels] = useState<number[]>([0, 0, 0, 0, 0]);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const { data: moodCheck } = useQuery<MoodCheckResponse>({
     queryKey: ["/api/wellbeing-ai/mood-check"],
@@ -100,6 +104,30 @@ export default function WellbeingAI() {
     setIsPlaying(false);
   }, []);
 
+  // Update audio levels for visualizer
+  const updateAudioLevels = useCallback(() => {
+    if (!analyserRef.current) return;
+    
+    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+    analyserRef.current.getByteFrequencyData(dataArray);
+    
+    // Sample 5 frequency bands for the visualizer
+    const bands = 5;
+    const bandSize = Math.floor(dataArray.length / bands);
+    const levels = [];
+    
+    for (let i = 0; i < bands; i++) {
+      let sum = 0;
+      for (let j = 0; j < bandSize; j++) {
+        sum += dataArray[i * bandSize + j];
+      }
+      levels.push(Math.min(100, (sum / bandSize) * 0.5));
+    }
+    
+    setAudioLevels(levels);
+    animationFrameRef.current = requestAnimationFrame(updateAudioLevels);
+  }, []);
+
   // Start voice recording
   const startRecording = useCallback(async () => {
     // Stop any playing audio first
@@ -111,6 +139,16 @@ export default function WellbeingAI() {
     
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      
+      // Set up audio analyser for visualizer
+      const audioContext = new AudioContext();
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+      
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4",
       });
@@ -120,10 +158,7 @@ export default function WellbeingAI() {
       // Auto-stop after 60 seconds to prevent indefinite recording
       const recordingTimeout = setTimeout(() => {
         if (mediaRecorder.state === "recording") {
-          mediaRecorder.stop();
-          setIsRecording(false);
-          setRecordingStatus("Recording stopped (60s limit)");
-          setTimeout(() => setRecordingStatus(""), 2000);
+          stopRecordingAndSend();
         }
       }, 60000);
       
@@ -135,6 +170,13 @@ export default function WellbeingAI() {
       
       mediaRecorder.onstop = async () => {
         clearTimeout(recordingTimeout);
+        
+        // Stop visualizer
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        setAudioLevels([0, 0, 0, 0, 0]);
+        
         stream.getTracks().forEach(track => track.stop());
         
         if (audioChunksRef.current.length === 0) {
@@ -163,8 +205,9 @@ export default function WellbeingAI() {
           
           const { text } = await response.json();
           if (text && text.trim()) {
-            setInput(text.trim());
             setRecordingStatus("");
+            // Auto-send the transcribed message
+            sendMessage(text.trim());
           } else {
             setRecordingStatus("Couldn't hear that. Try again?");
             setTimeout(() => setRecordingStatus(""), 2000);
@@ -179,30 +222,24 @@ export default function WellbeingAI() {
       mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start();
       setIsRecording(true);
-      setRecordingStatus("Listening...");
+      setRecordingStatus("");
+      
+      // Start visualizer
+      updateAudioLevels();
     } catch (error) {
       console.error("Error starting recording:", error);
       setRecordingStatus("Microphone access denied");
       setTimeout(() => setRecordingStatus(""), 2000);
     }
-  }, []);
+  }, [updateAudioLevels]);
 
-  // Stop voice recording
-  const stopRecording = useCallback(() => {
+  // Stop voice recording and send
+  const stopRecordingAndSend = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     }
   }, [isRecording]);
-
-  // Toggle recording
-  const toggleRecording = useCallback(() => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
-  }, [isRecording, startRecording, stopRecording]);
 
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
@@ -417,49 +454,81 @@ export default function WellbeingAI() {
       </div>
 
       {hasStarted && (
-        <form onSubmit={handleSubmit} className="p-4 border-t bg-background">
-          {recordingStatus && !isRecording && (
-            <div className="mb-2 text-center">
+        <div className="p-4 border-t bg-background space-y-3">
+          {recordingStatus && (
+            <div className="text-center">
               <span className="text-sm text-muted-foreground">
                 {recordingStatus}
               </span>
             </div>
           )}
-          <div className="flex gap-2">
+          
+          {/* Voice input with visualizer */}
+          <div className="flex items-center gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={isRecording ? undefined : startRecording}
               disabled={isLoading || isRecording}
-              className={`h-12 w-12 ${isRecording ? "bg-green-600 border-green-600 text-white" : ""}`}
+              className={`h-14 w-14 rounded-full ${isRecording ? "bg-green-600 border-green-600 text-white" : ""}`}
               data-testid="button-voice-input"
               title="Tap to speak"
             >
-              <Mic className="h-5 w-5" />
+              <Mic className="h-6 w-6" />
             </Button>
+            
+            {/* Voice visualizer */}
+            <div className="flex-1 h-14 bg-muted rounded-lg flex items-center justify-center gap-1 px-4">
+              {isRecording ? (
+                audioLevels.map((level, i) => (
+                  <div
+                    key={i}
+                    className="w-2 bg-green-600 rounded-full transition-all duration-75"
+                    style={{ height: `${Math.max(8, level * 0.4)}px` }}
+                  />
+                ))
+              ) : (
+                <span className="text-muted-foreground text-sm">Tap mic to speak</span>
+              )}
+            </div>
+            
+            <Button 
+              type="button"
+              onClick={isRecording ? stopRecordingAndSend : undefined}
+              disabled={!isRecording || isLoading}
+              className="bg-green-600 h-14 w-14 rounded-full"
+              data-testid="button-send-voice"
+            >
+              <Send className="h-6 w-6" />
+            </Button>
+          </div>
+          
+          {/* Text input option */}
+          <form onSubmit={handleSubmit} className="flex gap-2">
             <Input
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={isRecording ? "Listening..." : "Type or tap mic to speak..."}
+              placeholder="Or type a message..."
               disabled={isLoading || isRecording}
-              className="flex-1 h-12 text-base"
+              className="flex-1 h-10"
               data-testid="input-chat-message"
             />
             <Button 
-              type={isRecording ? "button" : "submit"}
-              onClick={isRecording ? stopRecording : undefined}
-              disabled={isRecording ? false : (!input.trim() || isLoading)}
-              className="bg-green-600 h-12 w-12"
+              type="submit"
+              disabled={!input.trim() || isLoading || isRecording}
+              variant="outline"
+              className="h-10"
               data-testid="button-send-message"
             >
-              <Send className="h-5 w-5" />
+              <Send className="h-4 w-4" />
             </Button>
-          </div>
-          <p className="text-xs text-muted-foreground text-center mt-2">
+          </form>
+          
+          <p className="text-xs text-muted-foreground text-center">
             This conversation is not stored. Refresh to start fresh.
           </p>
-        </form>
+        </div>
       )}
     </div>
   );
