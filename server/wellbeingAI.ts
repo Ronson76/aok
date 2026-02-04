@@ -16,9 +16,15 @@ async function getAuthenticatedUserId(req: Request): Promise<string | null> {
   return session.userId;
 }
 
+// Main OpenAI client for chat (uses Replit AI integration)
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+});
+
+// Separate client for Whisper STT/TTS (must use standard OpenAI API, not Azure)
+const openaiWhisper = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
 });
 
 interface MoodPattern {
@@ -146,7 +152,7 @@ export function registerWellbeingAIRoutes(app: Express): void {
       // Limit text length to prevent abuse
       const truncatedText = text.slice(0, 2000);
 
-      const mp3Response = await openai.audio.speech.create({
+      const mp3Response = await openaiWhisper.audio.speech.create({
         model: "tts-1",
         voice: "nova", // Warm, friendly female voice suitable for wellbeing support
         input: truncatedText,
@@ -215,7 +221,7 @@ export function registerWellbeingAIRoutes(app: Express): void {
             type: "audio/webm",
           });
 
-          const transcription = await openai.audio.transcriptions.create({
+          const transcription = await openaiWhisper.audio.transcriptions.create({
             file: audioFile,
             model: "whisper-1",
             language: "en",
