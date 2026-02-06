@@ -139,7 +139,7 @@ function PreShiftSetup({ onStart }: { onStart: () => void }) {
         body.locationLat = geo.position.lat;
         body.locationLng = geo.position.lng;
       }
-      return apiRequest("/api/lone-worker/start", "POST", body);
+      return apiRequest("POST", "/api/lone-worker/start", body);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/lone-worker/active"] });
@@ -289,7 +289,7 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
     locationInterval.current = setInterval(() => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((pos) => {
-          apiRequest(`/api/lone-worker/${session.id}/location`, "POST", {
+          apiRequest("POST", `/api/lone-worker/${session.id}/location`, {
             lat: pos.coords.latitude.toString(),
             lng: pos.coords.longitude.toString(),
           }).catch(() => {});
@@ -307,7 +307,7 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
         body.lat = geo.position.lat;
         body.lng = geo.position.lng;
       }
-      return apiRequest(`/api/lone-worker/${session.id}/check-in`, "POST", body);
+      return apiRequest("POST", `/api/lone-worker/${session.id}/check-in`, body);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/lone-worker/active"] });
@@ -332,7 +332,7 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
           lng = pos.coords.longitude.toString();
         } catch {}
       }
-      return apiRequest(`/api/lone-worker/${session.id}/panic`, "POST", { lat, lng });
+      return apiRequest("POST", `/api/lone-worker/${session.id}/panic`, { lat, lng });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/lone-worker/active"] });
@@ -346,7 +346,7 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
   });
 
   const resolveMutation = useMutation({
-    mutationFn: () => apiRequest(`/api/lone-worker/${session.id}/resolve`, "POST", { outcome: resolveOutcome, notes: resolveNotes }),
+    mutationFn: () => apiRequest("POST", `/api/lone-worker/${session.id}/resolve`, { outcome: resolveOutcome, notes: resolveNotes }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/lone-worker/active"] });
       setShowResolveDialog(false);
