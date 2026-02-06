@@ -1176,6 +1176,7 @@ export const organizationStaffInvites = pgTable("organization_staff_invites", {
   staffEmail: text("staff_email"),
   emergencyContactName: text("emergency_contact_name"),
   emergencyContactPhone: text("emergency_contact_phone"),
+  emergencyContactEmail: text("emergency_contact_email"),
   emergencyContactRelationship: text("emergency_contact_relationship"),
   inviteCode: varchar("invite_code", { length: 10 }).notNull().unique(),
   status: text("status").notNull().$type<StaffInviteStatus>().default("pending"),
