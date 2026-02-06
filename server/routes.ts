@@ -722,7 +722,18 @@ export async function registerRoutes(
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(email.toLowerCase());
       if (existingUser) {
-        return res.status(400).json({ error: "An account with this email already exists" });
+        // Allow staff invite registrations where the email matches the invite
+        const pendingStaffCode = req.body.staffInviteCode;
+        let staffEmailMatch = false;
+        if (pendingStaffCode && typeof pendingStaffCode === "string") {
+          const invite = await organizationStorage.getStaffInviteByCode(pendingStaffCode);
+          if (invite && invite.status === "pending" && invite.staffEmail?.toLowerCase() === email.toLowerCase()) {
+            staffEmailMatch = true;
+          }
+        }
+        if (!staffEmailMatch) {
+          return res.status(400).json({ error: "An account with this email already exists" });
+        }
       }
 
       // Hash password
