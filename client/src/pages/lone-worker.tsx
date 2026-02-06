@@ -451,10 +451,10 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
               <Button
                 data-testid="button-check-in"
                 onClick={() => checkInMutation.mutate()}
-                disabled={checkInMutation.isPending}
+                disabled={checkInMutation.isPending || !isDue}
                 className={isDue ? "bg-yellow-600 hover-elevate" : ""}
               >
-                {checkInMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle className="w-4 h-4 mr-1" /> I'm OK</>}
+                {checkInMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle className="w-4 h-4 mr-1" /> {isDue ? "I'm OK" : "Not Yet Due"}</>}
               </Button>
             </div>
           </CardContent>
