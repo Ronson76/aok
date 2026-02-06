@@ -1914,15 +1914,16 @@ class DatabaseStorage implements IStorage {
   async loneWorkerCancelPanic(sessionId: string): Promise<LoneWorkerSession> {
     const session = await this.getLoneWorkerSession(sessionId);
     if (!session) throw new Error("Session not found");
-    const now = new Date();
-    const nextCheckIn = new Date(now.getTime() + (session.checkInIntervalMins || 30) * 60 * 1000);
+    const updateData: any = {
+      status: "active" as const,
+      panicTriggeredAt: null,
+    };
+    if (!session.nextCheckInDue || new Date(session.nextCheckInDue) < new Date()) {
+      updateData.nextCheckInDue = new Date(new Date().getTime() + (session.checkInIntervalMins || 30) * 60 * 1000);
+    }
     const [updated] = await getDb()
       .update(loneWorkerSessions)
-      .set({
-        status: "active" as const,
-        panicTriggeredAt: null,
-        nextCheckInDue: nextCheckIn,
-      })
+      .set(updateData)
       .where(eq(loneWorkerSessions.id, sessionId))
       .returning();
     return updated;
@@ -2815,7 +2816,7 @@ export interface IOrganizationStorage {
   }[]>;
   
   // Staff invites
-  createStaffInvite(data: { organizationId: string; bundleId: string; staffName: string; staffPhone: string; staffEmail?: string; inviteCode: string }): Promise<OrganizationStaffInvite>;
+  createStaffInvite(data: { organizationId: string; bundleId: string; staffName: string; staffPhone: string; staffEmail?: string; inviteCode: string; emergencyContactName?: string; emergencyContactPhone?: string; emergencyContactRelationship?: string }): Promise<OrganizationStaffInvite>;
   getStaffInvites(organizationId: string): Promise<OrganizationStaffInvite[]>;
   getStaffInviteByCode(inviteCode: string): Promise<OrganizationStaffInvite | undefined>;
   updateStaffInviteDetails(inviteId: string, organizationId: string, data: { staffName?: string; staffPhone?: string; staffEmail?: string }): Promise<OrganizationStaffInvite | undefined>;
@@ -3935,7 +3936,7 @@ class OrganizationStorage implements IOrganizationStorage {
     );
   }
 
-  async createStaffInvite(data: { organizationId: string; bundleId: string; staffName: string; staffPhone: string; staffEmail?: string; inviteCode: string }): Promise<OrganizationStaffInvite> {
+  async createStaffInvite(data: { organizationId: string; bundleId: string; staffName: string; staffPhone: string; staffEmail?: string; inviteCode: string; emergencyContactName?: string; emergencyContactPhone?: string; emergencyContactRelationship?: string }): Promise<OrganizationStaffInvite> {
     const [invite] = await getDb().insert(organizationStaffInvites).values({
       organizationId: data.organizationId,
       bundleId: data.bundleId,
@@ -3943,6 +3944,9 @@ class OrganizationStorage implements IOrganizationStorage {
       staffPhone: data.staffPhone,
       staffEmail: data.staffEmail || null,
       inviteCode: data.inviteCode,
+      emergencyContactName: data.emergencyContactName || null,
+      emergencyContactPhone: data.emergencyContactPhone || null,
+      emergencyContactRelationship: data.emergencyContactRelationship || null,
     }).returning();
     return invite;
   }
