@@ -2534,6 +2534,128 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/sms-checkin/:token", async (req, res) => {
+    try {
+      const tokenData = await storage.getSmsCheckinTokenByToken(req.params.token);
+      const isValid = tokenData && !tokenData.used && new Date() < tokenData.expiresAt;
+      const user = isValid ? await storage.getUserById(tokenData.userId) : null;
+      const firstName = user?.name?.split(' ')[0] || "there";
+
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>aok - Check In</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0fdf4;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+    .logo{display:flex;align-items:center;gap:8px;margin-bottom:32px}
+    .logo svg{width:40px;height:40px;color:#16a34a}
+    .logo span{font-size:32px;font-weight:700;color:#16a34a}
+    .card{background:white;border-radius:16px;padding:32px;box-shadow:0 2px 16px rgba(0,0,0,0.08);text-align:center;max-width:380px;width:100%}
+    h1{font-size:22px;color:#111;margin-bottom:8px}
+    p{font-size:15px;color:#666;margin-bottom:24px;line-height:1.5}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:20px 24px;border:none;border-radius:14px;font-size:22px;font-weight:700;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px}
+    .btn-check{background:#16a34a;color:white;box-shadow:0 4px 14px rgba(22,163,74,0.4)}
+    .btn-check:hover{background:#15803d;transform:scale(1.02)}
+    .btn-check:active{transform:scale(0.98)}
+    .btn-check:disabled{background:#a3a3a3;box-shadow:none;transform:none;cursor:not-allowed}
+    .btn-check svg{width:28px;height:28px}
+    .success{display:none}
+    .success.show{display:block}
+    .success h1{color:#16a34a;font-size:26px}
+    .success .tick{width:64px;height:64px;margin:0 auto 16px;background:#16a34a;border-radius:50%;display:flex;align-items:center;justify-content:center}
+    .success .tick svg{width:36px;height:36px;color:white}
+    .error{display:none;color:#dc2626;margin-top:12px;font-size:14px}
+    .error.show{display:block}
+    .expired{color:#dc2626}
+    .footer{margin-top:24px;font-size:12px;color:#999}
+    .spin{animation:spin 1s linear infinite}
+    @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="logo">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+    <span>aok</span>
+  </div>
+  <div class="card">
+    ${isValid ? `
+    <div id="checkin-form">
+      <h1>Hi ${firstName}</h1>
+      <p>Your check-in is overdue. Tap below to let your contacts know you're safe.</p>
+      <button class="btn btn-check" id="checkin-btn" onclick="doCheckin()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        I'm OK
+      </button>
+      <div class="error" id="error-msg"></div>
+    </div>
+    <div class="success" id="success-msg">
+      <div class="tick"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <h1>You're checked in</h1>
+      <p>Your contacts have been notified. Stay safe!</p>
+    </div>
+    <script>
+      async function doCheckin(){
+        var btn=document.getElementById('checkin-btn'),err=document.getElementById('error-msg');
+        btn.disabled=true;
+        btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Checking in...';
+        try{
+          var r=await fetch('/api/sms-checkin/${req.params.token}',{method:'POST'});
+          var d=await r.json();
+          if(r.ok&&d.success){document.getElementById('checkin-form').style.display='none';document.getElementById('success-msg').classList.add('show')}
+          else{err.textContent=d.error||'Something went wrong.';err.classList.add('show');btn.disabled=false;btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> I\\u0027m OK'}
+        }catch(e){err.textContent='Connection error. Please try again.';err.classList.add('show');btn.disabled=false;btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> I\\u0027m OK'}
+      }
+    </script>
+    ` : `
+    <h1 class="expired">Link Expired</h1>
+    <p>This check-in link has expired or has already been used. Open the aok app to check in, or wait for a new SMS.</p>
+    `}
+  </div>
+  <p class="footer">aok.care &mdash; keeping you safe</p>
+</body>
+</html>`);
+    } catch (error) {
+      console.error("[SMS CHECK-IN] Error rendering page:", error);
+      res.status(500).send("Something went wrong. Please try again.");
+    }
+  });
+
+  app.post("/api/sms-checkin/:token", async (req, res) => {
+    try {
+      const consumed = await storage.consumeSmsCheckinToken(req.params.token);
+      if (!consumed) {
+        return res.status(400).json({ error: "This check-in link has expired or already been used." });
+      }
+
+      const contacts = await storage.getContacts(consumed.userId);
+      if (contacts.length === 0) {
+        return res.status(400).json({ error: "No emergency contacts configured." });
+      }
+
+      await storage.createCheckIn(consumed.userId);
+
+      const primaryContacts = await storage.getPrimaryContacts(consumed.userId);
+      const user = await storage.getUserById(consumed.userId);
+      if (primaryContacts.length > 0 && user) {
+        for (const contact of primaryContacts) {
+          sendSuccessfulCheckInNotification(contact, user as any).catch(err => {
+            console.error("[SMS CHECK-IN] Failed to notify primary contact:", contact.email, err);
+          });
+        }
+      }
+
+      console.log(`[SMS CHECK-IN] User ${consumed.userId} checked in via SMS link`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[SMS CHECK-IN] Error processing check-in:", error);
+      res.status(500).json({ error: "Failed to process check-in. Please try again." });
+    }
+  });
+
   // Backup download route
   app.get("/api/download-backup", async (_req, res) => {
     const path = require("path");

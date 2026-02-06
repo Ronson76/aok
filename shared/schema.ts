@@ -1192,5 +1192,17 @@ export const insertStaffInviteSchema = createInsertSchema(organizationStaffInvit
 export type InsertStaffInvite = z.infer<typeof insertStaffInviteSchema>;
 export type OrganizationStaffInvite = typeof organizationStaffInvites.$inferSelect;
 
+export const smsCheckinTokens = pgTable("sms_checkin_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  token: varchar("token", { length: 32 }).notNull().unique(),
+  used: boolean("used").notNull().default(false),
+  usedAt: timestamp("used_at"),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type SmsCheckinToken = typeof smsCheckinTokens.$inferSelect;
+
 // Re-export chat models for AI integrations (used by integration storage)
 export * from "./models/chat";

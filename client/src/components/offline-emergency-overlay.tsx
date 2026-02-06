@@ -12,7 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { WifiOff, Phone, AlertTriangle } from "lucide-react";
+import { WifiOff, Phone, AlertTriangle, MessageSquare } from "lucide-react";
 
 export function OfflineEmergencyOverlay() {
   const { isOnline } = useHeartbeat();
@@ -85,7 +85,19 @@ export function OfflineEmergencyOverlay() {
           </button>
         </div>
 
-        <p className="text-xs text-muted-foreground mt-8 text-center max-w-xs">
+        <div className="mt-8 p-4 rounded-lg border border-border bg-card/50 max-w-sm w-full" data-testid="sms-checkin-info">
+          <div className="flex items-start gap-3">
+            <MessageSquare className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium mb-1">Check in via SMS</p>
+              <p className="text-xs text-muted-foreground">
+                If your check-in is overdue, we'll text you a link. Just tap the button in the SMS to let your contacts know you're safe.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground mt-4 text-center max-w-xs">
           The app will automatically reconnect when your connection is restored.
         </p>
       </div>

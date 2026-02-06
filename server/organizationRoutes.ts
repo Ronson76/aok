@@ -1597,7 +1597,7 @@ export function registerOrganizationRoutes(app: Express) {
   const staffInviteSchema = z.object({
     staffName: z.string().min(1, "Staff name is required"),
     staffPhone: z.string().min(10, "Valid phone number is required"),
-    staffEmail: z.string().email().optional().or(z.literal("")),
+    staffEmail: z.string().email("Valid email is required").min(1, "Email is required"),
     bundleId: z.string().min(1, "Bundle is required"),
   });
 
@@ -1644,6 +1644,16 @@ export function registerOrganizationRoutes(app: Express) {
         inviteCode,
       });
 
+      await storage.createAuditEntry(orgId, {
+        userEmail: orgUser.email,
+        userRole: "organization",
+        action: "created",
+        entityType: "staff_invite",
+        entityId: invite.id,
+        newData: { staffName, staffPhone, staffEmail, bundleId, inviteCode },
+        ipAddress: req.ip || undefined,
+      });
+
       const smsResult = await sendStaffInviteSMS(staffPhone, inviteCode, orgUser.name || "Your organisation");
 
       res.status(201).json({ invite, smsSent: smsResult.success, smsError: smsResult.error });
@@ -1656,15 +1666,54 @@ export function registerOrganizationRoutes(app: Express) {
   app.post("/api/org/staff/invite/:inviteId/revoke", requireOrganization, async (req, res) => {
     try {
       const orgId = (req.user as any).id;
+      const orgUser = req.user as any;
       const { inviteId } = req.params;
+      const invites = await organizationStorage.getStaffInvites(orgId);
+      const targetInvite = invites.find(i => i.id === inviteId);
       const success = await organizationStorage.revokeStaffInvite(inviteId, orgId);
       if (!success) {
         return res.status(404).json({ error: "Invite not found or already used" });
       }
+      await storage.createAuditEntry(orgId, {
+        userEmail: orgUser.email,
+        userRole: "organization",
+        action: "revoked",
+        entityType: "staff_invite",
+        entityId: inviteId,
+        previousData: targetInvite ? { staffName: targetInvite.staffName, staffPhone: targetInvite.staffPhone } : undefined,
+        ipAddress: req.ip || undefined,
+      });
       res.json({ success: true });
     } catch (error) {
       console.error("Error revoking staff invite:", error);
       res.status(500).json({ error: "Failed to revoke staff invite" });
+    }
+  });
+
+  app.delete("/api/org/staff/invite/:inviteId", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const orgUser = req.user as any;
+      const { inviteId } = req.params;
+      const invites = await organizationStorage.getStaffInvites(orgId);
+      const targetInvite = invites.find(i => i.id === inviteId);
+      const success = await organizationStorage.deleteStaffInvite(inviteId, orgId);
+      if (!success) {
+        return res.status(404).json({ error: "Invite not found" });
+      }
+      await storage.createAuditEntry(orgId, {
+        userEmail: orgUser.email,
+        userRole: "organization",
+        action: "deleted",
+        entityType: "staff_invite",
+        entityId: inviteId,
+        previousData: targetInvite ? { staffName: targetInvite.staffName, staffPhone: targetInvite.staffPhone, status: targetInvite.status } : undefined,
+        ipAddress: req.ip || undefined,
+      });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting staff invite:", error);
+      res.status(500).json({ error: "Failed to delete staff invite" });
     }
   });
 
@@ -1673,15 +1722,39 @@ export function registerOrganizationRoutes(app: Express) {
       const orgId = (req.user as any).id;
       const orgUser = req.user as any;
       const { inviteId } = req.params;
+      const { staffName, staffPhone, staffEmail } = req.body || {};
 
       const invites = await organizationStorage.getStaffInvites(orgId);
-      const invite = invites.find(i => i.id === inviteId && i.status === "pending");
+      let invite = invites.find(i => i.id === inviteId && i.status === "pending");
       if (!invite) {
         return res.status(404).json({ error: "Invite not found or not pending" });
       }
 
+      const hasUpdates = (staffName && staffName !== invite.staffName) ||
+        (staffPhone && staffPhone !== invite.staffPhone) ||
+        (staffEmail && staffEmail !== invite.staffEmail);
+      if (hasUpdates) {
+        const updated = await organizationStorage.updateStaffInviteDetails(inviteId, orgId, {
+          ...(staffName ? { staffName } : {}),
+          ...(staffPhone ? { staffPhone } : {}),
+          ...(staffEmail ? { staffEmail } : {}),
+        });
+        if (updated) invite = updated;
+      }
+
       const smsResult = await sendStaffInviteSMS(invite.staffPhone, invite.inviteCode, orgUser.name || "Your organisation");
-      res.json({ success: smsResult.success, error: smsResult.error });
+
+      await storage.createAuditEntry(orgId, {
+        userEmail: orgUser.email,
+        userRole: "organization",
+        action: "resent",
+        entityType: "staff_invite",
+        entityId: inviteId,
+        newData: { staffName: invite.staffName, staffPhone: invite.staffPhone, staffEmail: invite.staffEmail, smsSent: smsResult.success },
+        ipAddress: req.ip || undefined,
+      });
+
+      res.json({ success: smsResult.success, error: smsResult.error, invite });
     } catch (error) {
       console.error("Error resending staff invite:", error);
       res.status(500).json({ error: "Failed to resend staff invite" });
@@ -1716,6 +1789,19 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching staff stats:", error);
       res.status(500).json({ error: "Failed to fetch staff stats" });
+    }
+  });
+
+  app.get("/api/org/staff/audit-trail", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const limit = parseInt(req.query.limit as string) || 100;
+      const allTrail = await storage.getAuditTrail(orgId, 500);
+      const staffTrail = allTrail.filter(e => e.entityType === "staff_invite").slice(0, limit);
+      res.json(staffTrail);
+    } catch (error) {
+      console.error("Error fetching staff audit trail:", error);
+      res.status(500).json({ error: "Failed to fetch staff audit trail" });
     }
   });
 

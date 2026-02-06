@@ -3,7 +3,7 @@ import {
   adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs, organizationClients, organizationClientProfiles,
   pendingClientContacts, activeEmergencyAlerts, moodEntries, pets, digitalDocuments, globalFeatureFlags, adminPasswordResetTokens,
   incidents, welfareConcerns, caseFiles, caseNotes, escalationRules, missedCheckInEscalations, auditTrail, riskReports,
-  deactivationConfirmations, organizationStaffInvites,
+  deactivationConfirmations, organizationStaffInvites, smsCheckinTokens,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
   AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo,
   OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData, OrgClientStatus,
@@ -13,7 +13,7 @@ import {
   MoodEntry, InsertMoodEntry, Pet, InsertPet, UpdatePet, DigitalDocument, InsertDigitalDocument, UpdateDigitalDocument,
   Incident, InsertIncident, WelfareConcern, InsertWelfareConcern, CaseFile, CaseNote, InsertCaseNote,
   EscalationRule, InsertEscalationRule, MissedCheckInEscalation, AuditTrailEntry, RiskReport,
-  CaseStatus, RiskLevel, OrganizationStaffInvite
+  CaseStatus, RiskLevel, OrganizationStaffInvite, SmsCheckinToken
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, ne, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray, inArray } from "drizzle-orm";
@@ -110,6 +110,13 @@ export interface IStorage {
     lastPushSentAt: Date | null;
   }>>;
   updateLastPushSentAt(userId: string): Promise<void>;
+
+  // SMS check-in tokens
+  createSmsCheckinToken(userId: string): Promise<SmsCheckinToken>;
+  getSmsCheckinTokenByToken(token: string): Promise<SmsCheckinToken | undefined>;
+  consumeSmsCheckinToken(token: string): Promise<SmsCheckinToken | undefined>;
+  getUserByMobileNumber(mobileNumber: string): Promise<User | undefined>;
+  getOverdueUsersForSmsCheckin(): Promise<Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date }>>;
 
   // Active emergency alerts
   getActiveEmergencyAlert(userId: string): Promise<ActiveEmergencyAlert | undefined>;
@@ -1715,6 +1722,70 @@ class DatabaseStorage implements IStorage {
       .returning();
     return result[0];
   }
+
+  async createSmsCheckinToken(userId: string): Promise<SmsCheckinToken> {
+    const token = randomBytes(16).toString("hex");
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    const result = await getDb().insert(smsCheckinTokens).values({
+      userId,
+      token,
+      expiresAt,
+    }).returning();
+    return result[0];
+  }
+
+  async getSmsCheckinTokenByToken(token: string): Promise<SmsCheckinToken | undefined> {
+    const result = await getDb()
+      .select()
+      .from(smsCheckinTokens)
+      .where(eq(smsCheckinTokens.token, token));
+    return result[0];
+  }
+
+  async consumeSmsCheckinToken(token: string): Promise<SmsCheckinToken | undefined> {
+    const existing = await this.getSmsCheckinTokenByToken(token);
+    if (!existing || existing.used || new Date() > existing.expiresAt) {
+      return undefined;
+    }
+    const result = await getDb()
+      .update(smsCheckinTokens)
+      .set({ used: true, usedAt: new Date() })
+      .where(eq(smsCheckinTokens.token, token))
+      .returning();
+    return result[0];
+  }
+
+  async getUserByMobileNumber(mobileNumber: string): Promise<User | undefined> {
+    const result = await getDb()
+      .select()
+      .from(users)
+      .where(eq(users.mobileNumber, mobileNumber));
+    return result[0];
+  }
+
+  async getOverdueUsersForSmsCheckin(): Promise<Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date }>> {
+    const now = new Date();
+    const result = await getDb()
+      .select({
+        userId: users.id,
+        userName: users.name,
+        mobileNumber: users.mobileNumber,
+        nextCheckInDue: settings.nextCheckInDue,
+      })
+      .from(users)
+      .innerJoin(settings, eq(users.id, settings.userId))
+      .where(
+        and(
+          isNotNull(users.mobileNumber),
+          isNotNull(settings.nextCheckInDue),
+          lt(settings.nextCheckInDue, now),
+          eq(settings.alertsEnabled, true),
+          eq(users.disabled, false),
+          eq(users.accountType, "individual")
+        )
+      );
+    return result.filter(r => r.mobileNumber && r.nextCheckInDue) as Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date }>;
+  }
 }
 
 export const storage = new DatabaseStorage();
@@ -2514,7 +2585,9 @@ export interface IOrganizationStorage {
   createStaffInvite(data: { organizationId: string; bundleId: string; staffName: string; staffPhone: string; staffEmail?: string; inviteCode: string }): Promise<OrganizationStaffInvite>;
   getStaffInvites(organizationId: string): Promise<OrganizationStaffInvite[]>;
   getStaffInviteByCode(inviteCode: string): Promise<OrganizationStaffInvite | undefined>;
+  updateStaffInviteDetails(inviteId: string, organizationId: string, data: { staffName?: string; staffPhone?: string; staffEmail?: string }): Promise<OrganizationStaffInvite | undefined>;
   revokeStaffInvite(inviteId: string, organizationId: string): Promise<boolean>;
+  deleteStaffInvite(inviteId: string, organizationId: string): Promise<boolean>;
   acceptStaffInvite(inviteCode: string, userId: string): Promise<OrganizationStaffInvite | undefined>;
   incrementBundleSeatsUsed(bundleId: string): Promise<void>;
 }
@@ -3657,6 +3730,24 @@ class OrganizationStorage implements IOrganizationStorage {
     return invite;
   }
 
+  async updateStaffInviteDetails(inviteId: string, organizationId: string, data: { staffName?: string; staffPhone?: string; staffEmail?: string }): Promise<OrganizationStaffInvite | undefined> {
+    const updateData: Record<string, any> = {};
+    if (data.staffName !== undefined) updateData.staffName = data.staffName;
+    if (data.staffPhone !== undefined) updateData.staffPhone = data.staffPhone;
+    if (data.staffEmail !== undefined) updateData.staffEmail = data.staffEmail;
+    if (Object.keys(updateData).length === 0) return undefined;
+    const [invite] = await getDb()
+      .update(organizationStaffInvites)
+      .set(updateData)
+      .where(and(
+        eq(organizationStaffInvites.id, inviteId),
+        eq(organizationStaffInvites.organizationId, organizationId),
+        eq(organizationStaffInvites.status, "pending"),
+      ))
+      .returning();
+    return invite;
+  }
+
   async revokeStaffInvite(inviteId: string, organizationId: string): Promise<boolean> {
     const result = await getDb()
       .update(organizationStaffInvites)
@@ -3665,6 +3756,17 @@ class OrganizationStorage implements IOrganizationStorage {
         eq(organizationStaffInvites.id, inviteId),
         eq(organizationStaffInvites.organizationId, organizationId),
         eq(organizationStaffInvites.status, "pending"),
+      ))
+      .returning();
+    return result.length > 0;
+  }
+
+  async deleteStaffInvite(inviteId: string, organizationId: string): Promise<boolean> {
+    const result = await getDb()
+      .delete(organizationStaffInvites)
+      .where(and(
+        eq(organizationStaffInvites.id, inviteId),
+        eq(organizationStaffInvites.organizationId, organizationId),
       ))
       .returning();
     return result.length > 0;
