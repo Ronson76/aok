@@ -721,12 +721,13 @@ export async function registerRoutes(
 
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(email.toLowerCase());
+      const staffInviteCode = req.body.staffInviteCode;
+
       if (existingUser) {
         // Allow staff invite registrations where the email matches the invite
-        const pendingStaffCode = req.body.staffInviteCode;
         let staffEmailMatch = false;
-        if (pendingStaffCode && typeof pendingStaffCode === "string") {
-          const invite = await organizationStorage.getStaffInviteByCode(pendingStaffCode);
+        if (staffInviteCode && typeof staffInviteCode === "string") {
+          const invite = await organizationStorage.getStaffInviteByCode(staffInviteCode);
           if (invite && invite.status === "pending" && invite.staffEmail?.toLowerCase() === email.toLowerCase()) {
             staffEmailMatch = true;
           }
@@ -734,6 +735,33 @@ export async function registerRoutes(
         if (!staffEmailMatch) {
           return res.status(400).json({ error: "An account with this email already exists" });
         }
+
+        // Staff email match — update existing user's password and link to invite
+        const newPasswordHash = await bcrypt.hash(password, 10);
+        await storage.updateUserPassword(existingUser.id, newPasswordHash);
+
+        // Accept invite and consume bundle seat
+        try {
+          const acceptedInvite = await organizationStorage.acceptStaffInvite(staffInviteCode!, existingUser.id);
+          if (acceptedInvite) {
+            await organizationStorage.incrementBundleSeatsUsed(acceptedInvite.bundleId);
+            console.log(`[STAFF INVITE] Existing user ${existingUser.id} accepted staff invite ${staffInviteCode}, bundle ${acceptedInvite.bundleId} seat consumed`);
+          }
+        } catch (err) {
+          console.error("[STAFF INVITE] Error processing staff invite:", err);
+        }
+
+        // Create session for existing user
+        const session = await storage.createSession(existingUser.id);
+        res.cookie("session", session.id, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 14 * 24 * 60 * 60 * 1000,
+        });
+
+        const { passwordHash: _, ...userProfile } = { ...existingUser, passwordHash: newPasswordHash, name: name || existingUser.name };
+        return res.status(201).json(userProfile);
       }
 
       // Hash password
@@ -760,7 +788,6 @@ export async function registerRoutes(
       await storage.initializeSettings(user.id);
 
       // Handle staff invite code - accept invite and consume bundle seat
-      const staffInviteCode = req.body.staffInviteCode;
       if (staffInviteCode && typeof staffInviteCode === "string") {
         try {
           const acceptedInvite = await organizationStorage.acceptStaffInvite(staffInviteCode, user.id);
