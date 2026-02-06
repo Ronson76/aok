@@ -685,47 +685,6 @@ export default function Settings() {
         Customise how aok works for you.
       </p>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            Check-In Interval
-          </CardTitle>
-          <CardDescription>
-            How long between check-ins before an alert is sent?
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">5 mins</span>
-              <span className="text-lg font-semibold text-primary">
-                {formatInterval(localInterval)}
-              </span>
-              <span className="text-sm text-muted-foreground">48 hours</span>
-            </div>
-            <Slider
-              value={[hoursToIndex(localInterval)]}
-              onValueChange={handleIntervalChange}
-              onValueCommit={handleIntervalCommit}
-              min={0}
-              max={INTERVAL_VALUES.length - 1}
-              step={1}
-              className="w-full"
-              data-testid="slider-interval"
-            />
-          </div>
-          
-          <div className="flex items-start gap-2 p-3 rounded-md bg-muted/50">
-            <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-muted-foreground">
-              If you don't check in within {formatInterval(localInterval)}, your emergency contacts will be notified.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-
       {pushSupported && (
         <Card>
           <CardHeader>
