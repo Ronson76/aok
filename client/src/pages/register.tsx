@@ -24,7 +24,7 @@ export default function Register() {
   const [fromOnboarding, setFromOnboarding] = useState(false);
   const [onboardingData, setOnboardingData] = useState<any>(null);
   const [staffInviteCode, setStaffInviteCode] = useState<string | null>(null);
-  const [staffInviteInfo, setStaffInviteInfo] = useState<{ organizationName: string; staffName: string } | null>(null);
+  const [staffInviteInfo, setStaffInviteInfo] = useState<{ organizationName: string; staffName: string; staffPhone: string; staffEmail: string } | null>(null);
 
   // Check if coming from onboarding and load data
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function Register() {
         })
         .then(data => {
           if (data?.valid) {
-            setStaffInviteInfo({ organizationName: data.organizationName, staffName: data.staffName });
+            setStaffInviteInfo({ organizationName: data.organizationName, staffName: data.staffName, staffPhone: data.staffPhone || "", staffEmail: data.staffEmail || "" });
           } else {
             toast({ title: "Invalid invite", description: "This staff invite link is no longer valid.", variant: "destructive" });
             setStaffInviteCode(null);
@@ -170,6 +170,15 @@ export default function Register() {
       }
     }
   }, [onboardingData, form]);
+
+  // Pre-fill form from staff invite data
+  useEffect(() => {
+    if (staffInviteInfo) {
+      if (staffInviteInfo.staffName) form.setValue("name", staffInviteInfo.staffName);
+      if (staffInviteInfo.staffEmail) form.setValue("email", staffInviteInfo.staffEmail);
+      if (staffInviteInfo.staffPhone) form.setValue("mobileNumber", staffInviteInfo.staffPhone);
+    }
+  }, [staffInviteInfo, form]);
 
   // Auto-submit registration when coming from onboarding with complete data
   useEffect(() => {

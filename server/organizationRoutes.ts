@@ -1817,6 +1817,8 @@ export function registerOrganizationRoutes(app: Express) {
         valid: true, 
         organizationName: orgUser?.name || "Organisation",
         staffName: invite.staffName,
+        staffPhone: invite.staffPhone,
+        staffEmail: invite.staffEmail || "",
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to verify invite code" });
