@@ -369,8 +369,6 @@ export default function Settings() {
   const [showRedAlertConfirmDialog, setShowRedAlertConfirmDialog] = useState(false);
   const [showRedAlertDisableDialog, setShowRedAlertDisableDialog] = useState(false);
   
-  const [scheduleStartInput, setScheduleStartInput] = useState("");
-  const [pendingScheduleStart, setPendingScheduleStart] = useState<string | null>(null);
   
   const isOrganization = user?.accountType === "organization";
 
@@ -538,8 +536,6 @@ export default function Settings() {
       setIntervalPassword("");
       setShowIntervalPasswordVisible(false);
       setPendingInterval(null);
-      setPendingScheduleStart(null);
-      setScheduleStartInput("");
       toast({
         title: "Settings updated",
         description: "Your preferences have been saved.",
@@ -608,10 +604,6 @@ export default function Settings() {
       updateMutation.mutate({ intervalHours: pendingInterval, password: intervalPassword }, {
         onSettled: () => setIsChangingInterval(false)
       });
-    } else if (pendingScheduleStart !== null) {
-      updateMutation.mutate({ scheduleStartTime: pendingScheduleStart, password: intervalPassword }, {
-        onSettled: () => setIsChangingInterval(false)
-      });
     }
   };
 
@@ -620,7 +612,6 @@ export default function Settings() {
     setIntervalPassword("");
     setShowIntervalPasswordVisible(false);
     setPendingInterval(null);
-    setPendingScheduleStart(null);
     setIsChangingInterval(false);
     // Reset slider to current saved value
     if (settings?.intervalHours) {
@@ -628,20 +619,6 @@ export default function Settings() {
     }
   };
 
-  const handleScheduleStartSubmit = () => {
-    if (!scheduleStartInput) return;
-    
-    // Convert time-only input (HH:MM) to full datetime using today's date
-    const [hours, minutes] = scheduleStartInput.split(':').map(Number);
-    const scheduleDate = new Date();
-    scheduleDate.setHours(hours, minutes, 0, 0);
-    const fullDateTime = scheduleDate.toISOString();
-    
-    // Always require password to change schedule start time
-    setPendingInterval(null);
-    setPendingScheduleStart(fullDateTime);
-    setShowIntervalPasswordDialog(true);
-  };
 
   const handleLogoutClick = () => {
     setLogoutStep("confirm");
@@ -719,40 +696,7 @@ export default function Settings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <Label htmlFor="schedule-start" className="font-medium">
-                Schedule Start Time
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Set the time of day your check-in schedule starts from.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                id="schedule-start"
-                type="time"
-                value={scheduleStartInput}
-                onChange={(e) => setScheduleStartInput(e.target.value)}
-                className="flex-1"
-                data-testid="input-schedule-start"
-              />
-              <Button
-                onClick={handleScheduleStartSubmit}
-                disabled={!scheduleStartInput || updateMutation.isPending}
-                data-testid="button-set-schedule"
-              >
-                {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Set"}
-              </Button>
-            </div>
-            {settings?.scheduleStartTime && (
-              <p className="text-xs text-muted-foreground">
-                Current schedule: {new Date(settings.scheduleStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
-            )}
-          </div>
-
-          <div className="border-t pt-4 space-y-4">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">5 mins</span>
               <span className="text-lg font-semibold text-primary">
