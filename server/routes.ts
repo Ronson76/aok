@@ -753,7 +753,7 @@ export async function registerRoutes(
               await storage.initializeSettings(existingUser.id);
               const { contact: newContact, confirmationToken: contactToken } = await storage.createContact(existingUser.id, {
                 name: invite.emergencyContactName,
-                email: invite.staffEmail || email,
+                email: invite.emergencyContactEmail || invite.staffEmail || email,
                 phone: invite.emergencyContactPhone,
                 phoneType: "mobile",
                 relationship: invite.emergencyContactRelationship || "colleague",
