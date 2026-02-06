@@ -130,6 +130,7 @@ export default function Landing() {
         { text: "Mood & wellness tracking", icon: TrendingUp },
         { text: "Pet protection profiles", icon: PawPrint },
         { text: "Digital will storage", icon: Scroll },
+        { text: "Offline SMS check-in backup", icon: MessageSquare },
         { text: "Wellbeing AI (Exclusive)", icon: Sparkles },
       ],
       cta: "Get Started",
