@@ -2180,6 +2180,70 @@ No payment required - your access is covered by your organisation.`;
   return await sendSMS(phoneNumber, message);
 }
 
+export async function sendEmergencyContactConfirmationForStaffInvite(
+  contactName: string,
+  contactEmail: string,
+  staffName: string,
+  organizationName: string
+): Promise<{ sent: boolean; error?: string }> {
+  const escapedContactName = escapeHtml(contactName);
+  const escapedStaffName = escapeHtml(staffName);
+  const escapedOrgName = escapeHtml(organizationName);
+
+  const emailSubject = `Please confirm: Emergency contact request from aok`;
+
+  const emailBody = `Hi ${contactName},
+
+${organizationName} has invited ${staffName} to join aok, a personal safety check-in app, and has listed you as their emergency contact.
+
+If ${staffName} misses a check-in during a lone working shift, you will be notified automatically via email, SMS, or phone call so you can check on their safety.
+
+Once ${staffName} completes their registration, you will receive a separate confirmation email with a link to formally accept or decline this role.
+
+If you have any questions, please contact ${organizationName} directly.
+
+Thank you,
+- The aok Team`;
+
+  const htmlBody = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h2 style="color: #2563eb;">Emergency Contact Notification</h2>
+  
+  <p>Hi ${escapedContactName},</p>
+  
+  <p><strong>${escapedOrgName}</strong> has invited <strong>${escapedStaffName}</strong> to join <strong>aok</strong>, a personal safety check-in app, and has listed you as their emergency contact.</p>
+  
+  <p>If ${escapedStaffName} misses a check-in during a lone working shift, you will be notified automatically via email, SMS, or phone call so you can check on their safety.</p>
+  
+  <div style="background-color: #dbeafe; border-left: 4px solid #2563eb; padding: 12px 16px; margin: 20px 0;">
+    <strong style="color: #1e40af;">What happens next?</strong>
+    <p style="margin: 8px 0 0 0; color: #1e3a5f;">Once ${escapedStaffName} completes their registration, you will receive a separate confirmation email with a link to formally accept or decline this role.</p>
+  </div>
+  
+  <p style="color: #6b7280; font-size: 14px;">If you have any questions, please contact ${escapedOrgName} directly.</p>
+  
+  <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+  
+  <p style="color: #6b7280; font-size: 14px;">Thank you,<br>- The aok Team</p>
+</body>
+</html>`;
+
+  try {
+    await sendEmail(contactEmail, emailSubject, emailBody, htmlBody);
+    console.log(`[NOTIFICATION] Staff invite EC confirmation email sent to ${contactEmail} for staff ${staffName}`);
+    return { sent: true };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : "Failed to send email";
+    console.error(`[NOTIFICATION] Failed to send staff invite EC confirmation to ${contactEmail}: ${errorMsg}`);
+    return { sent: false, error: errorMsg };
+  }
+}
+
 // Send reference code reminder SMS to org-managed client
 export async function sendReferenceCodeSMS(
   phoneNumber: string,

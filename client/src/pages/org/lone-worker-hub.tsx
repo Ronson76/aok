@@ -138,6 +138,7 @@ export default function OrgLoneWorkerHub() {
   const [ecName, setEcName] = useState("");
   const [ecPhone, setEcPhone] = useState("");
   const [ecCountryCode, setEcCountryCode] = useState("+44");
+  const [ecEmail, setEcEmail] = useState("");
   const [ecRelationship, setEcRelationship] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [inviteFilter, setInviteFilter] = useState("all");
@@ -215,7 +216,7 @@ export default function OrgLoneWorkerHub() {
   };
 
   const createInviteMutation = useMutation({
-    mutationFn: async (data: { staffName: string; staffPhone: string; staffEmail: string; bundleId: string }) => {
+    mutationFn: async (data: { staffName: string; staffPhone: string; staffEmail: string; bundleId: string; emergencyContactName?: string; emergencyContactPhone?: string; emergencyContactEmail?: string; emergencyContactRelationship?: string }) => {
       const res = await apiRequest("POST", "/api/org/staff/invite", data);
       return res.json();
     },
@@ -301,6 +302,7 @@ export default function OrgLoneWorkerHub() {
     setEcName("");
     setEcPhone("");
     setEcCountryCode("+44");
+    setEcEmail("");
     setEcRelationship("");
     setResendingInviteId(null);
   };
@@ -321,8 +323,8 @@ export default function OrgLoneWorkerHub() {
       toast({ title: "Missing fields", description: "Please fill in name, mobile number, and email.", variant: "destructive" });
       return;
     }
-    if (!ecName.trim() || !ecPhone.trim() || !ecRelationship.trim()) {
-      toast({ title: "Missing fields", description: "Please fill in the emergency contact details.", variant: "destructive" });
+    if (!ecName.trim() || !ecPhone.trim() || !ecEmail.trim() || !ecRelationship.trim()) {
+      toast({ title: "Missing fields", description: "Please fill in all emergency contact details including email.", variant: "destructive" });
       return;
     }
     if (!selectedBundleId && !resendingInviteId) {
@@ -341,6 +343,7 @@ export default function OrgLoneWorkerHub() {
         bundleId: selectedBundleId,
         emergencyContactName: ecName.trim(),
         emergencyContactPhone: fullEcPhone,
+        emergencyContactEmail: ecEmail.trim(),
         emergencyContactRelationship: ecRelationship.trim(),
       });
     }
@@ -824,6 +827,11 @@ export default function OrgLoneWorkerHub() {
                     </Select>
                     <Input id="ecPhone" type="tel" value={ecPhone} onChange={(e) => setEcPhone(e.target.value)} placeholder="7700 900000" className="flex-1" data-testid="input-ec-phone" />
                   </div>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="ecEmail">Contact Email *</Label>
+                  <Input id="ecEmail" type="email" value={ecEmail} onChange={(e) => setEcEmail(e.target.value)} placeholder="e.g. john@example.com" data-testid="input-ec-email" />
+                  <p className="text-xs text-muted-foreground">A confirmation email will be sent to this address</p>
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="ecRelationship">Relationship *</Label>

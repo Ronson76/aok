@@ -3,7 +3,7 @@ import { organizationStorage, storage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema } from "@shared/schema";
-import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail, sendStaffInviteSMS } from "./notifications";
+import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail, sendStaffInviteSMS, sendEmergencyContactConfirmationForStaffInvite } from "./notifications";
 import { plantTreeForNewSubscriber } from "./ecologiService";
 
 // Generate a unique 6-character reference code
@@ -1601,6 +1601,7 @@ export function registerOrganizationRoutes(app: Express) {
     bundleId: z.string().min(1, "Bundle is required"),
     emergencyContactName: z.string().min(1, "Emergency contact name is required"),
     emergencyContactPhone: z.string().min(10, "Emergency contact phone is required"),
+    emergencyContactEmail: z.string().email("Valid email is required").min(1, "Emergency contact email is required"),
     emergencyContactRelationship: z.string().min(1, "Emergency contact relationship is required"),
   });
 
@@ -1625,7 +1626,7 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
       }
 
-      const { staffName, staffPhone, staffEmail, bundleId, emergencyContactName, emergencyContactPhone, emergencyContactRelationship } = parsed.data;
+      const { staffName, staffPhone, staffEmail, bundleId, emergencyContactName, emergencyContactPhone, emergencyContactEmail, emergencyContactRelationship } = parsed.data;
 
       const stats = await organizationStorage.getOrganizationDashboardStats(orgId);
       const bundle = stats.bundles.find(b => b.id === bundleId);
@@ -1646,6 +1647,7 @@ export function registerOrganizationRoutes(app: Express) {
         staffEmail: staffEmail || undefined,
         emergencyContactName,
         emergencyContactPhone,
+        emergencyContactEmail,
         emergencyContactRelationship,
         inviteCode,
       });
@@ -1661,6 +1663,20 @@ export function registerOrganizationRoutes(app: Express) {
       });
 
       const smsResult = await sendStaffInviteSMS(staffPhone, inviteCode, orgUser.name || "Your organisation");
+
+      if (emergencyContactEmail) {
+        try {
+          await sendEmergencyContactConfirmationForStaffInvite(
+            emergencyContactName,
+            emergencyContactEmail,
+            staffName,
+            orgUser.name || "Your organisation"
+          );
+          console.log(`[STAFF INVITE] Confirmation email sent to emergency contact ${emergencyContactEmail} for staff ${staffName}`);
+        } catch (emailErr) {
+          console.error("[STAFF INVITE] Failed to send emergency contact confirmation email:", emailErr);
+        }
+      }
 
       res.status(201).json({ invite, smsSent: smsResult.success, smsError: smsResult.error });
     } catch (error) {
