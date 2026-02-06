@@ -153,23 +153,38 @@ export default function Register() {
   const accountType = form.watch("accountType");
   const referenceId = form.watch("referenceId");
   
+  const [autoSubmitting, setAutoSubmitting] = useState(false);
+
   // Pre-fill form from onboarding data
   useEffect(() => {
     if (onboardingData) {
       form.setValue("name", onboardingData.name || "");
       form.setValue("email", onboardingData.email || "");
-      // Pre-fill password if collected during onboarding
       if (onboardingData.password) {
         form.setValue("password", onboardingData.password);
         form.setValue("confirmPassword", onboardingData.password);
       }
-      // Pre-fill mobile number from onboarding (stored as userPhone)
       if (onboardingData.userPhone) {
         const countryCode = onboardingData.userPhoneCountry || "+44";
         form.setValue("mobileNumber", countryCode + onboardingData.userPhone);
       }
     }
   }, [onboardingData, form]);
+
+  // Auto-submit registration when coming from onboarding with complete data
+  useEffect(() => {
+    if (fromOnboarding && onboardingData && !autoSubmitting && !registerMutation.isPending) {
+      const hasName = onboardingData.name?.trim();
+      const hasEmail = onboardingData.email?.includes("@");
+      const hasPassword = onboardingData.password?.length >= 8;
+      if (hasName && hasEmail && hasPassword) {
+        setAutoSubmitting(true);
+        setTimeout(() => {
+          form.handleSubmit(onSubmit)();
+        }, 300);
+      }
+    }
+  }, [fromOnboarding, onboardingData, autoSubmitting]);
   
   // Allow all users to register regardless of location permission
   // Location can be enabled later in settings if needed
@@ -403,6 +418,7 @@ export default function Register() {
       }, 100);
     },
     onError: (error: Error) => {
+      setAutoSubmitting(false);
       toast({
         title: "Registration Failed",
         description: error.message,
@@ -457,6 +473,24 @@ export default function Register() {
     }
   };
 
+  if (autoSubmitting || (fromOnboarding && onboardingData && registerMutation.isPending)) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <header className="container mx-auto px-4 py-4 flex items-center justify-center border-b">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-logo-home">
+            <ShieldCheck className="h-9 w-9 text-green-600" />
+            <span className="text-2xl font-bold text-green-600">aok</span>
+          </Link>
+        </header>
+        <div className="flex-1 flex flex-col items-center justify-center p-4 gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-green-600" />
+          <p className="text-lg font-medium" data-testid="text-creating-account">Creating your account...</p>
+          <p className="text-sm text-muted-foreground">This will only take a moment.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="container mx-auto px-4 py-4 flex items-center justify-between border-b">
@@ -474,13 +508,11 @@ export default function Register() {
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center space-y-2">
           <CardTitle className="text-2xl">
-            {staffInviteInfo ? "Staff Registration" : fromOnboarding ? "Registration Complete" : "Create Your Account"}
+            {staffInviteInfo ? "Staff Registration" : "Create Your Account"}
           </CardTitle>
           <CardDescription>
             {staffInviteInfo 
               ? `You've been invited by ${staffInviteInfo.organizationName} to use aok. No payment required.`
-              : fromOnboarding 
-              ? "Please check and confirm your details below."
               : "Sign up for aok to stay connected with your loved ones. You must be 16 years or older to use this service."
             }
           </CardDescription>
