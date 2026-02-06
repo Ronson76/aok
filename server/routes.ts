@@ -751,7 +751,7 @@ export async function registerRoutes(
           if (invite?.emergencyContactName && invite?.emergencyContactPhone) {
             try {
               await storage.initializeSettings(existingUser.id);
-              const { contact: newContact } = await storage.createContact(existingUser.id, {
+              const { contact: newContact, confirmationToken: contactToken } = await storage.createContact(existingUser.id, {
                 name: invite.emergencyContactName,
                 email: invite.staffEmail || email,
                 phone: invite.emergencyContactPhone,
@@ -759,6 +759,10 @@ export async function registerRoutes(
                 relationship: invite.emergencyContactRelationship || "colleague",
               });
               console.log(`[STAFF INVITE] Emergency contact ${newContact.id} created for staff user ${existingUser.id}`);
+              const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+              sendContactConfirmationEmail(newContact, existingUser, contactToken, baseUrl).catch(err => {
+                console.error("[STAFF INVITE] Failed to send contact confirmation email:", err);
+              });
             } catch (contactErr) {
               console.error("[STAFF INVITE] Error creating emergency contact:", contactErr);
             }
@@ -814,7 +818,7 @@ export async function registerRoutes(
           }
           if (invite?.emergencyContactName && invite?.emergencyContactPhone) {
             try {
-              const { contact: newContact } = await storage.createContact(user.id, {
+              const { contact: newContact, confirmationToken: contactToken } = await storage.createContact(user.id, {
                 name: invite.emergencyContactName,
                 email: invite.staffEmail || email,
                 phone: invite.emergencyContactPhone,
@@ -822,6 +826,10 @@ export async function registerRoutes(
                 relationship: invite.emergencyContactRelationship || "colleague",
               });
               console.log(`[STAFF INVITE] Emergency contact ${newContact.id} created for staff user ${user.id}`);
+              const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+              sendContactConfirmationEmail(newContact, user, contactToken, baseUrl).catch(err => {
+                console.error("[STAFF INVITE] Failed to send contact confirmation email:", err);
+              });
             } catch (contactErr) {
               console.error("[STAFF INVITE] Error creating emergency contact:", contactErr);
             }

@@ -1445,13 +1445,13 @@ export default function OrganizationDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
+            <CardTitle className="text-sm font-medium">Seats</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-total-clients">{stats?.totalClients || 0}</div>
+            <div className="text-2xl font-bold" data-testid="text-total-clients">{stats?.seatsUsed || 0} / {stats?.totalSeats || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {stats?.seatsUsed || 0} of {stats?.totalSeats || 0} seats used
+              Shared across clients and staff
             </p>
           </CardContent>
         </Card>

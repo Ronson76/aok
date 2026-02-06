@@ -492,7 +492,8 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
       <Button
         data-testid="button-end-shift"
         variant="outline"
-        className="w-full"
+        size="lg"
+        className="w-full mt-2"
         onClick={() => setShowResolveDialog(true)}
       >
         <XCircle className="w-4 h-4 mr-2" /> End Shift
