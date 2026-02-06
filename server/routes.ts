@@ -762,18 +762,17 @@ export async function registerRoutes(
         }
       }
 
-      // For new individual subscribers
+      // Send welcome email for individual sign-ups
       if (accountType === "individual") {
-        // Send welcome email
         sendWelcomeEmail(email, name).catch(err => {
           console.error("[WELCOME] Failed to send welcome email:", err);
         });
-        
-        // Plant a tree via Ecologi
-        plantTreeForNewSubscriber(email).catch(err => {
-          console.error("[ECOLOGI] Failed to plant tree for new subscriber:", err);
-        });
       }
+
+      // Plant a tree for every person we onboard
+      plantTreeForNewSubscriber(email).catch(err => {
+        console.error("[ECOLOGI] Failed to plant tree for new user:", err);
+      });
 
       // Create session
       const session = await storage.createSession(user.id);
