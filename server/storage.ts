@@ -1911,6 +1911,23 @@ class DatabaseStorage implements IStorage {
     return session;
   }
 
+  async loneWorkerCancelPanic(sessionId: string): Promise<LoneWorkerSession> {
+    const session = await this.getLoneWorkerSession(sessionId);
+    if (!session) throw new Error("Session not found");
+    const now = new Date();
+    const nextCheckIn = new Date(now.getTime() + (session.checkInIntervalMins || 30) * 60 * 1000);
+    const [updated] = await getDb()
+      .update(loneWorkerSessions)
+      .set({
+        status: "active" as const,
+        panicTriggeredAt: null,
+        nextCheckInDue: nextCheckIn,
+      })
+      .where(eq(loneWorkerSessions.id, sessionId))
+      .returning();
+    return updated;
+  }
+
   async loneWorkerMarkUnresponsive(sessionId: string): Promise<LoneWorkerSession> {
     const [session] = await getDb()
       .update(loneWorkerSessions)

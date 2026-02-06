@@ -29,16 +29,10 @@ const JOB_TYPES: { value: string; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
-const DURATION_OPTIONS = [
-  { value: "30", label: "30 minutes" },
-  { value: "60", label: "1 hour" },
-  { value: "120", label: "2 hours" },
-  { value: "180", label: "3 hours" },
-  { value: "240", label: "4 hours" },
-  { value: "360", label: "6 hours" },
-  { value: "480", label: "8 hours" },
-  { value: "720", label: "12 hours" },
-];
+const DURATION_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
+  value: String((i + 1) * 60),
+  label: i === 0 ? "1 hour" : `${i + 1} hours`,
+}));
 
 const CHECKIN_INTERVALS = [
   { value: "15", label: "Every 15 mins" },
@@ -273,6 +267,7 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
   const { toast } = useToast();
   const geo = useGeolocation();
   const [showPanicConfirm, setShowPanicConfirm] = useState(false);
+  const [showCancelPanicConfirm, setShowCancelPanicConfirm] = useState(false);
   const [showResolveDialog, setShowResolveDialog] = useState(false);
   const [resolveOutcome, setResolveOutcome] = useState("safe");
   const [resolveNotes, setResolveNotes] = useState("");
@@ -345,6 +340,19 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
     },
   });
 
+  const cancelPanicMutation = useMutation({
+    mutationFn: () => apiRequest("POST", `/api/lone-worker/${session.id}/cancel-panic`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/lone-worker/active"] });
+      setShowCancelPanicConfirm(false);
+      toast({ title: "Panic cancelled", description: "Your session is back to active monitoring." });
+      onRefresh();
+    },
+    onError: (err: any) => {
+      toast({ title: "Failed to cancel panic", description: err.message, variant: "destructive" });
+    },
+  });
+
   const resolveMutation = useMutation({
     mutationFn: () => apiRequest("POST", `/api/lone-worker/${session.id}/resolve`, { outcome: resolveOutcome, notes: resolveNotes }),
     onSuccess: () => {
@@ -383,6 +391,14 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
             <p className="text-xs text-muted-foreground mt-1">
               Triggered {session.panicTriggeredAt ? formatDistanceToNow(new Date(session.panicTriggeredAt), { addSuffix: true }) : ""}
             </p>
+            <Button
+              data-testid="button-cancel-panic-alert"
+              variant="outline"
+              className="mt-3"
+              onClick={() => setShowCancelPanicConfirm(true)}
+            >
+              <XCircle className="w-4 h-4 mr-1" /> Cancel Panic
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -549,6 +565,27 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
               data-testid="button-confirm-panic"
             >
               {panicMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "YES, SEND ALERT"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCancelPanicConfirm} onOpenChange={setShowCancelPanicConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancel Panic Alert</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel the panic alert? This will return your session to active monitoring.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowCancelPanicConfirm(false)}>Go Back</Button>
+            <Button
+              onClick={() => cancelPanicMutation.mutate()}
+              disabled={cancelPanicMutation.isPending}
+              data-testid="button-confirm-cancel-panic"
+            >
+              {cancelPanicMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Yes, Cancel Panic"}
             </Button>
           </DialogFooter>
         </DialogContent>
