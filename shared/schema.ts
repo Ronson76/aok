@@ -795,6 +795,7 @@ export interface DashboardStats {
 // Organization dashboard statistics type
 export interface OrganizationDashboardStats {
   totalClients: number;
+  totalStaff: number;
   totalSeats: number;
   seatsUsed: number;
   clientsSafe: number;

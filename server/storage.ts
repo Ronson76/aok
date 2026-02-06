@@ -1812,7 +1812,8 @@ class DatabaseStorage implements IStorage {
   async createLoneWorkerSession(userId: string, organizationId: string, data: InsertLoneWorkerSession): Promise<LoneWorkerSession> {
     const now = new Date();
     const expectedEndAt = new Date(now.getTime() + data.expectedDurationMins * 60 * 1000);
-    const nextCheckInDue = new Date(now.getTime() + data.checkInIntervalMins * 60 * 1000);
+    const checkInIntervalMins = data.checkInIntervalMins || 30;
+    const nextCheckInDue = new Date(now.getTime() + checkInIntervalMins * 60 * 1000);
     const result = await getDb().insert(loneWorkerSessions).values({
       userId,
       organizationId,
@@ -3416,6 +3417,15 @@ class OrganizationStorage implements IOrganizationStorage {
     const totalSeats = bundles.reduce((sum, b) => sum + b.seatLimit, 0);
     const seatsUsed = bundles.reduce((sum, b) => sum + b.seatsUsed, 0);
     
+    const staffInvites = await getDb()
+      .select({ count: count() })
+      .from(organizationStaffInvites)
+      .where(and(
+        eq(organizationStaffInvites.organizationId, organizationId),
+        eq(organizationStaffInvites.status, "accepted")
+      ));
+    const totalStaff = staffInvites[0]?.count || 0;
+    
     let clientsSafe = 0;
     let clientsPending = 0;
     let clientsOverdue = 0;
@@ -3449,6 +3459,7 @@ class OrganizationStorage implements IOrganizationStorage {
     
     return {
       totalClients: clients.length,
+      totalStaff,
       totalSeats,
       seatsUsed,
       clientsSafe,

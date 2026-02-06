@@ -1451,7 +1451,7 @@ export default function OrganizationDashboard() {
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-total-clients">{stats?.seatsUsed || 0} / {stats?.totalSeats || 0}</div>
             <p className="text-xs text-muted-foreground">
-              Shared across clients and staff
+              {stats?.totalClients || 0} client{(stats?.totalClients || 0) !== 1 ? 's' : ''}, {stats?.totalStaff || 0} staff
             </p>
           </CardContent>
         </Card>
