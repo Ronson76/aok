@@ -132,10 +132,13 @@ export default function OrganizationDashboard() {
     };
   }, [resetInactivityTimer]);
   
-  // Auto-logout when navigating away from org dashboard
+  // Auto-logout when navigating away from org pages entirely
   useEffect(() => {
     return () => {
-      logoutRef.current();
+      const currentPath = window.location.pathname;
+      if (!currentPath.startsWith("/org/")) {
+        logoutRef.current();
+      }
     };
   }, []);
   
