@@ -34,13 +34,6 @@ const DURATION_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
   label: i === 0 ? "1 hour" : `${i + 1} hours`,
 }));
 
-const CHECKIN_INTERVALS = [
-  { value: "15", label: "Every 15 mins" },
-  { value: "30", label: "Every 30 mins" },
-  { value: "60", label: "Every hour" },
-  { value: "90", label: "Every 90 mins" },
-  { value: "120", label: "Every 2 hours" },
-];
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -71,7 +64,15 @@ function useGeolocation() {
         setError(null);
       },
       (err) => {
-        setError(err.message);
+        if (err.code === err.PERMISSION_DENIED) {
+          setError("Location permission blocked. Please allow location access in your browser settings to share your position during shifts.");
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          setError("Location unavailable. Please check your device's location services are turned on.");
+        } else if (err.code === err.TIMEOUT) {
+          setError("Location request timed out. Please try again.");
+        } else {
+          setError(err.message);
+        }
         setLoading(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -116,7 +117,6 @@ function PreShiftSetup({ onStart }: { onStart: () => void }) {
   const [jobType, setJobType] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [duration, setDuration] = useState("60");
-  const [checkInInterval, setCheckInInterval] = useState("30");
 
   useEffect(() => { geo.requestLocation(); }, []);
 
@@ -126,7 +126,6 @@ function PreShiftSetup({ onStart }: { onStart: () => void }) {
         jobType,
         jobDescription: jobDescription || undefined,
         expectedDurationMins: parseInt(duration),
-        checkInIntervalMins: parseInt(checkInInterval),
         graceWindowSecs: 120,
       };
       if (geo.position) {
@@ -204,20 +203,6 @@ function PreShiftSetup({ onStart }: { onStart: () => void }) {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Check-in Interval</Label>
-            <Select value={checkInInterval} onValueChange={setCheckInInterval}>
-              <SelectTrigger data-testid="select-checkin-interval">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CHECKIN_INTERVALS.map(ci => (
-                  <SelectItem key={ci.value} value={ci.value}>{ci.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">How often you'll be prompted to check in</p>
           </div>
         </CardContent>
       </Card>
