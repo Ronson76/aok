@@ -1014,10 +1014,10 @@ export default function OrganizationDashboard() {
             <p className="text-muted-foreground">Monitor your clients' safety and check-in status</p>
           </div>
           <div className="flex gap-2">
-            <Link href="/org/staff-hub">
-              <Button variant="outline" data-testid="button-staff-hub">
-                <Users className="h-4 w-4 mr-2" />
-                Staff Hub
+            <Link href="/org/lone-worker">
+              <Button variant="outline" data-testid="button-lone-worker-hub">
+                <Shield className="h-4 w-4 mr-2" />
+                Lone Worker Hub
               </Button>
             </Link>
             <Link href="/org/safeguarding">

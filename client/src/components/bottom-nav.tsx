@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, Users, History, Settings, Building2, TrendingUp, PawPrint, FileText, Heart, Lock } from "lucide-react";
+import { Home, Users, History, Settings, Building2, TrendingUp, PawPrint, FileText, Heart, Lock, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -23,7 +23,11 @@ const organizationNavItems = [
   { path: "/app/settings", icon: Settings, label: "Settings" },
 ];
 
-// Restricted nav for org-managed clients (home only, no settings)
+const staffNavItems = [
+  { path: "/app", icon: Shield, label: "Lone Worker" },
+  { path: "/app/settings", icon: Settings, label: "Settings" },
+];
+
 const orgManagedClientNavItems = [
   { path: "/app", icon: Home, label: "Home" },
 ];
@@ -41,23 +45,23 @@ export function BottomNav() {
   const { user } = useAuth();
   const isOrganization = user?.accountType === "organization";
   const isOrgManagedClient = !!user?.referenceId;
+  const isStaff = !!(user as any)?.isStaffMember;
   const [moreOpen, setMoreOpen] = useState(false);
   
-  // Fetch feature flags
   const { data: features } = useQuery<FeatureFlags>({
     queryKey: ["/api/features"],
-    enabled: !!user && !isOrganization,
+    enabled: !!user && !isOrganization && !isStaff,
   });
   
-  // Check if registration is complete
   const isRegistrationComplete = !!user?.termsAcceptedAt;
   
-  // Determine which nav items to show
-  const navItems = isOrganization 
-    ? organizationNavItems 
-    : isOrgManagedClient 
-      ? orgManagedClientNavItems 
-      : coreNavItems;
+  const navItems = isStaff
+    ? staffNavItems
+    : isOrganization 
+      ? organizationNavItems 
+      : isOrgManagedClient 
+        ? orgManagedClientNavItems 
+        : coreNavItems;
 
   // Wellness features for the More menu
   const wellnessFeatures = [
@@ -87,8 +91,7 @@ export function BottomNav() {
   const hasAnyWellnessFeatures = wellnessFeatures.some(f => f.enabled) || 
     (features?.featureWellbeingAi !== false && isRegistrationComplete);
 
-  // Show More menu for regular users always, for org-managed clients only if they have wellness features enabled
-  const showMoreMenu = !isOrganization && (!isOrgManagedClient || hasAnyWellnessFeatures);
+  const showMoreMenu = !isOrganization && !isStaff && (!isOrgManagedClient || hasAnyWellnessFeatures);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-card-border z-50">
@@ -198,8 +201,7 @@ export function BottomNav() {
           </DropdownMenu>
         )}
         
-        {/* Settings - shown after Wellbeing for regular users */}
-        {!isOrganization && !isOrgManagedClient && (
+        {!isOrganization && !isOrgManagedClient && !isStaff && (
           <Link
             href={settingsNavItem.path}
             className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[56px] ${

@@ -1075,11 +1075,12 @@ export async function registerRoutes(
 
     const { passwordHash, ...userProfile } = user;
     
+    // Check if user is a staff member (accepted a staff invite)
+    const staffInfo = await storage.isStaffMember(user.id);
+    
     // Check if user is an org client and apply org's feature restrictions
     const orgClientFeatures = await organizationStorage.getClientFeaturesByUserId(user.id);
     if (orgClientFeatures) {
-      // Org client features override user's own feature settings
-      // Features are only enabled if BOTH org allows it AND user has it enabled
       const mergedProfile = {
         ...userProfile,
         featureWellbeingAi: orgClientFeatures.featureWellbeingAi && userProfile.featureWellbeingAi,
@@ -1087,13 +1088,16 @@ export async function registerRoutes(
         featureWellness: orgClientFeatures.featureMoodTracking && userProfile.featureWellness,
         featurePetProtection: orgClientFeatures.featurePetProtection && userProfile.featurePetProtection,
         featureDigitalWill: orgClientFeatures.featureDigitalWill && userProfile.featureDigitalWill,
-        // Include org restrictions so client knows what's available
         orgFeatureRestrictions: orgClientFeatures,
+        ...(staffInfo.isStaff ? { isStaffMember: true, staffOrganizationId: staffInfo.organizationId, staffOrganizationName: staffInfo.organizationName } : {}),
       };
       return res.json(mergedProfile);
     }
     
-    res.json(userProfile);
+    const profileWithStaff = staffInfo.isStaff 
+      ? { ...userProfile, isStaffMember: true, staffOrganizationId: staffInfo.organizationId, staffOrganizationName: staffInfo.organizationName }
+      : userProfile;
+    res.json(profileWithStaff);
   });
 
   // Accept terms and conditions
@@ -2653,6 +2657,211 @@ export async function registerRoutes(
     } catch (error) {
       console.error("[SMS CHECK-IN] Error processing check-in:", error);
       res.status(500).json({ error: "Failed to process check-in. Please try again." });
+    }
+  });
+
+  // ==================== LONE WORKER SESSION ROUTES ====================
+
+  app.post("/api/lone-worker/start", authMiddleware, async (req, res) => {
+    try {
+      const user = req.user!;
+      const staffInfo = await storage.isStaffMember(user.id);
+      if (!staffInfo.isStaff) return res.status(403).json({ error: "Only staff members can start lone worker sessions" });
+
+      const existing = await storage.getActiveLoneWorkerSession(user.id);
+      if (existing) return res.status(409).json({ error: "You already have an active session", session: existing });
+
+      const { insertLoneWorkerSessionSchema } = await import("@shared/schema");
+      const parsed = insertLoneWorkerSessionSchema.parse(req.body);
+      const session = await storage.createLoneWorkerSession(user.id, staffInfo.organizationId!, parsed);
+
+      await storage.createAuditEntry(staffInfo.organizationId!, {
+        userId: user.id,
+        userEmail: user.email,
+        userRole: "staff",
+        action: "session_started",
+        entityType: "lone_worker_session",
+        entityId: session.id,
+        newData: { jobType: parsed.jobType, jobDescription: parsed.jobDescription, expectedDurationMins: parsed.expectedDurationMins, checkInIntervalMins: parsed.checkInIntervalMins, staffName: user.name },
+        ipAddress: req.ip || undefined,
+      });
+
+      res.json(session);
+    } catch (error: any) {
+      console.error("[LONE WORKER] Error starting session:", error);
+      res.status(400).json({ error: error.message || "Failed to start session" });
+    }
+  });
+
+  app.get("/api/lone-worker/active", authMiddleware, async (req, res) => {
+    try {
+      const session = await storage.getActiveLoneWorkerSession(req.user!.id);
+      res.json({ session: session || null });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get active session" });
+    }
+  });
+
+  app.get("/api/lone-worker/history", authMiddleware, async (req, res) => {
+    try {
+      const sessions = await storage.getLoneWorkerSessionHistory(req.user!.id);
+      res.json(sessions);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get session history" });
+    }
+  });
+
+  app.post("/api/lone-worker/:sessionId/check-in", authMiddleware, async (req, res) => {
+    try {
+      const user = req.user!;
+      const { status, lat, lng } = req.body;
+      const session = await storage.getLoneWorkerSession(req.params.sessionId);
+      if (!session || session.userId !== user.id) return res.status(404).json({ error: "Session not found" });
+
+      const checkIn = await storage.loneWorkerCheckIn(req.params.sessionId, user.id, status || "ok", lat, lng);
+
+      await storage.createAuditEntry(session.organizationId, {
+        userId: user.id,
+        userEmail: user.email,
+        userRole: "staff",
+        action: status === "help_needed" ? "check_in_help_needed" : "check_in_ok",
+        entityType: "lone_worker_session",
+        entityId: req.params.sessionId,
+        newData: { checkInId: checkIn.id, status: status || "ok", lat, lng, staffName: user.name },
+        ipAddress: req.ip || undefined,
+      });
+
+      res.json(checkIn);
+    } catch (error: any) {
+      console.error("[LONE WORKER] Check-in error:", error);
+      res.status(400).json({ error: error.message || "Failed to check in" });
+    }
+  });
+
+  app.post("/api/lone-worker/:sessionId/panic", authMiddleware, async (req, res) => {
+    try {
+      const user = req.user!;
+      const session = await storage.getLoneWorkerSession(req.params.sessionId);
+      if (!session || session.userId !== user.id) return res.status(404).json({ error: "Session not found" });
+
+      const { lat, lng, what3words } = req.body;
+      const updated = await storage.loneWorkerPanic(req.params.sessionId, lat, lng);
+      
+      await storage.createLoneWorkerEscalation(
+        req.params.sessionId,
+        "local_alert",
+        "user_panic",
+        undefined,
+        lat, lng, what3words
+      );
+
+      await storage.createAuditEntry(session.organizationId, {
+        userId: user.id,
+        userEmail: user.email,
+        userRole: "staff",
+        action: "panic_triggered",
+        entityType: "lone_worker_session",
+        entityId: req.params.sessionId,
+        newData: { lat, lng, what3words, staffName: user.name, jobType: session.jobType },
+        ipAddress: req.ip || undefined,
+      });
+
+      res.json(updated);
+    } catch (error: any) {
+      console.error("[LONE WORKER] Panic error:", error);
+      res.status(500).json({ error: "Failed to trigger panic" });
+    }
+  });
+
+  app.post("/api/lone-worker/:sessionId/resolve", authMiddleware, async (req, res) => {
+    try {
+      const user = req.user!;
+      const session = await storage.getLoneWorkerSession(req.params.sessionId);
+      if (!session) return res.status(404).json({ error: "Session not found" });
+      if (session.userId !== user.id && session.organizationId !== user.id) {
+        return res.status(403).json({ error: "Not authorised to resolve this session" });
+      }
+
+      const { outcome, notes } = req.body;
+      if (!outcome || !["safe", "assistance_required", "emergency_attended"].includes(outcome)) {
+        return res.status(400).json({ error: "Invalid outcome" });
+      }
+
+      const resolved = await storage.resolveLoneWorkerSession(req.params.sessionId, user.id, outcome, notes);
+
+      const isOrgResolving = user.accountType === "organization";
+      await storage.createAuditEntry(session.organizationId, {
+        userId: user.id,
+        userEmail: user.email,
+        userRole: isOrgResolving ? "organization" : "staff",
+        action: "session_resolved",
+        entityType: "lone_worker_session",
+        entityId: req.params.sessionId,
+        newData: { outcome, notes, resolvedBy: isOrgResolving ? "organisation" : "staff", staffName: user.name },
+        previousData: { status: session.status, jobType: session.jobType },
+        ipAddress: req.ip || undefined,
+      });
+
+      res.json(resolved);
+    } catch (error: any) {
+      console.error("[LONE WORKER] Resolve error:", error);
+      res.status(500).json({ error: "Failed to resolve session" });
+    }
+  });
+
+  app.post("/api/lone-worker/:sessionId/location", authMiddleware, async (req, res) => {
+    try {
+      const session = await storage.getLoneWorkerSession(req.params.sessionId);
+      if (!session || session.userId !== req.user!.id) return res.status(404).json({ error: "Session not found" });
+
+      const { lat, lng } = req.body;
+      if (!lat || !lng) return res.status(400).json({ error: "Location required" });
+
+      await storage.loneWorkerUpdateLocation(req.params.sessionId, lat, lng);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to update location" });
+    }
+  });
+
+  app.get("/api/lone-worker/:sessionId/escalations", authMiddleware, async (req, res) => {
+    try {
+      const escalations = await storage.getLoneWorkerEscalations(req.params.sessionId);
+      res.json(escalations);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get escalations" });
+    }
+  });
+
+  app.get("/api/lone-worker/:sessionId/check-ins", authMiddleware, async (req, res) => {
+    try {
+      const checkIns = await storage.getLoneWorkerCheckIns(req.params.sessionId);
+      res.json(checkIns);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get check-ins" });
+    }
+  });
+
+  // Org monitoring: get active lone worker sessions for their org
+  app.get("/api/org/lone-worker/active", authMiddleware, async (req, res) => {
+    try {
+      const user = req.user!;
+      if (user.accountType !== "organization") return res.status(403).json({ error: "Organisation access only" });
+      const sessions = await storage.getOrgActiveLoneWorkerSessions(user.id);
+      res.json(sessions);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get active sessions" });
+    }
+  });
+
+  app.get("/api/org/lone-worker/history", authMiddleware, async (req, res) => {
+    try {
+      const user = req.user!;
+      if (user.accountType !== "organization") return res.status(403).json({ error: "Organisation access only" });
+      const sessions = await storage.getOrgLoneWorkerSessionHistory(user.id);
+      res.json(sessions);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get session history" });
     }
   });
 
