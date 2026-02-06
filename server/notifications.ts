@@ -2163,6 +2163,25 @@ After signing in, add aok to your home screen for the best experience.`;
   return await sendSMS(phoneNumber, message);
 }
 
+export async function sendStaffInviteSMS(
+  phoneNumber: string,
+  inviteCode: string,
+  organizationName: string
+): Promise<{ success: boolean; error?: string }> {
+  const signUpUrl = `https://aok.care/register?staff=${inviteCode}`;
+  
+  const message = `Hi! ${organizationName} has invited you to use the aok safety app as a staff member.
+
+Your staff code: ${inviteCode}
+
+Sign up free: ${signUpUrl}
+
+No payment required - your access is covered by your organisation.`;
+
+  console.log(`[SMS STAFF INVITE] Sending staff invite to ${phoneNumber} with code ${inviteCode}`);
+  return await sendSMS(phoneNumber, message);
+}
+
 // Send reference code reminder SMS to org-managed client
 export async function sendReferenceCodeSMS(
   phoneNumber: string,

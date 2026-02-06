@@ -16,10 +16,11 @@ async function getAuthenticatedUserId(req: Request): Promise<string | null> {
   return session.userId;
 }
 
-// Main OpenAI client for chat (uses Replit AI integration)
+// Main OpenAI client for chat (uses Replit AI integration with fallback)
+const aiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
 const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  apiKey: aiKey,
+  ...(process.env.AI_INTEGRATIONS_OPENAI_BASE_URL ? { baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL } : {}),
 });
 
 // Separate client for Whisper STT/TTS (must use standard OpenAI API, not Azure)

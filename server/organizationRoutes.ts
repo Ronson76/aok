@@ -3,7 +3,7 @@ import { organizationStorage, storage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema } from "@shared/schema";
-import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail } from "./notifications";
+import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail, sendStaffInviteSMS } from "./notifications";
 
 // Generate a unique 6-character reference code
 function generateReferenceCode(): string {
@@ -1583,6 +1583,151 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching deactivation confirmations:", error);
       res.status(500).json({ error: "Failed to fetch deactivation confirmations" });
+    }
+  });
+
+  // ==================== STAFF INVITE ROUTES ====================
+
+  const staffInviteSchema = z.object({
+    staffName: z.string().min(1, "Staff name is required"),
+    staffPhone: z.string().min(10, "Valid phone number is required"),
+    staffEmail: z.string().email().optional().or(z.literal("")),
+    bundleId: z.string().min(1, "Bundle is required"),
+  });
+
+  app.get("/api/org/staff/invites", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const invites = await organizationStorage.getStaffInvites(orgId);
+      res.json(invites);
+    } catch (error) {
+      console.error("Error fetching staff invites:", error);
+      res.status(500).json({ error: "Failed to fetch staff invites" });
+    }
+  });
+
+  app.post("/api/org/staff/invite", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const orgUser = req.user as any;
+
+      const parsed = staffInviteSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
+      }
+
+      const { staffName, staffPhone, staffEmail, bundleId } = parsed.data;
+
+      const stats = await organizationStorage.getOrganizationDashboardStats(orgId);
+      const bundle = stats.bundles.find(b => b.id === bundleId);
+      if (!bundle || bundle.status !== "active") {
+        return res.status(400).json({ error: "Invalid or inactive bundle" });
+      }
+      if (bundle.seatsUsed >= bundle.seatLimit) {
+        return res.status(400).json({ error: "No seats available in this bundle" });
+      }
+
+      const inviteCode = "ST" + generateReferenceCode();
+
+      const invite = await organizationStorage.createStaffInvite({
+        organizationId: orgId,
+        bundleId,
+        staffName,
+        staffPhone,
+        staffEmail: staffEmail || undefined,
+        inviteCode,
+      });
+
+      const smsResult = await sendStaffInviteSMS(staffPhone, inviteCode, orgUser.name || "Your organisation");
+
+      res.status(201).json({ invite, smsSent: smsResult.success, smsError: smsResult.error });
+    } catch (error) {
+      console.error("Error creating staff invite:", error);
+      res.status(500).json({ error: "Failed to create staff invite" });
+    }
+  });
+
+  app.post("/api/org/staff/invite/:inviteId/revoke", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const { inviteId } = req.params;
+      const success = await organizationStorage.revokeStaffInvite(inviteId, orgId);
+      if (!success) {
+        return res.status(404).json({ error: "Invite not found or already used" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error revoking staff invite:", error);
+      res.status(500).json({ error: "Failed to revoke staff invite" });
+    }
+  });
+
+  app.post("/api/org/staff/invite/:inviteId/resend", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const orgUser = req.user as any;
+      const { inviteId } = req.params;
+
+      const invites = await organizationStorage.getStaffInvites(orgId);
+      const invite = invites.find(i => i.id === inviteId && i.status === "pending");
+      if (!invite) {
+        return res.status(404).json({ error: "Invite not found or not pending" });
+      }
+
+      const smsResult = await sendStaffInviteSMS(invite.staffPhone, invite.inviteCode, orgUser.name || "Your organisation");
+      res.json({ success: smsResult.success, error: smsResult.error });
+    } catch (error) {
+      console.error("Error resending staff invite:", error);
+      res.status(500).json({ error: "Failed to resend staff invite" });
+    }
+  });
+
+  app.get("/api/org/staff/stats", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const invites = await organizationStorage.getStaffInvites(orgId);
+      const stats = await organizationStorage.getOrganizationDashboardStats(orgId);
+
+      const totalInvites = invites.length;
+      const pendingInvites = invites.filter(i => i.status === "pending").length;
+      const acceptedInvites = invites.filter(i => i.status === "accepted").length;
+      const revokedInvites = invites.filter(i => i.status === "revoked").length;
+
+      const activeBundles = stats.bundles.filter(b => b.status === "active");
+      const totalSeats = activeBundles.reduce((sum, b) => sum + b.seatLimit, 0);
+      const usedSeats = activeBundles.reduce((sum, b) => sum + b.seatsUsed, 0);
+
+      res.json({
+        totalInvites,
+        pendingInvites,
+        acceptedInvites,
+        revokedInvites,
+        totalSeats,
+        usedSeats,
+        availableSeats: totalSeats - usedSeats,
+        bundles: activeBundles,
+      });
+    } catch (error) {
+      console.error("Error fetching staff stats:", error);
+      res.status(500).json({ error: "Failed to fetch staff stats" });
+    }
+  });
+
+  // Public endpoint - verify staff invite code (no auth needed)
+  app.get("/api/staff-invite/:code", async (req, res) => {
+    try {
+      const invite = await organizationStorage.getStaffInviteByCode(req.params.code);
+      if (!invite || invite.status !== "pending") {
+        return res.status(404).json({ error: "Invalid or expired invite code" });
+      }
+      const orgUser = await storage.getUserById(invite.organizationId);
+      res.json({ 
+        valid: true, 
+        organizationName: orgUser?.name || "Organisation",
+        staffName: invite.staffName,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to verify invite code" });
     }
   });
 }

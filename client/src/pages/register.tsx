@@ -23,21 +23,38 @@ export default function Register() {
   const [isPWA, setIsPWA] = useState(false);
   const [fromOnboarding, setFromOnboarding] = useState(false);
   const [onboardingData, setOnboardingData] = useState<any>(null);
+  const [staffInviteCode, setStaffInviteCode] = useState<string | null>(null);
+  const [staffInviteInfo, setStaffInviteInfo] = useState<{ organizationName: string; staffName: string } | null>(null);
 
   // Check if coming from onboarding and load data
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const onboarded = urlParams.get('onboarded') === 'true';
     const emailFromUrl = urlParams.get('email');
+    const staffCode = urlParams.get('staff');
     const storedData = localStorage.getItem("onboardingData");
     
-    if (onboarded && storedData) {
+    if (staffCode) {
+      setStaffInviteCode(staffCode);
+      fetch(`/api/staff-invite/${staffCode}`)
+        .then(r => {
+          if (r.ok) return r.json();
+          return null;
+        })
+        .then(data => {
+          if (data?.valid) {
+            setStaffInviteInfo({ organizationName: data.organizationName, staffName: data.staffName });
+          } else {
+            toast({ title: "Invalid invite", description: "This staff invite link is no longer valid.", variant: "destructive" });
+            setStaffInviteCode(null);
+          }
+        })
+        .catch(() => setStaffInviteCode(null));
+    } else if (onboarded && storedData) {
       try {
         const data = JSON.parse(storedData);
-        // Use email from URL if available (from Stripe redirect), otherwise use stored email
         if (emailFromUrl) {
           data.email = emailFromUrl;
-          // Update localStorage with the email from URL
           localStorage.setItem("onboardingData", JSON.stringify(data));
         }
         setOnboardingData(data);
@@ -171,6 +188,7 @@ export default function Register() {
       const res = await apiRequest("POST", "/api/auth/register", {
         ...data,
         termsAcceptedAt,
+        ...(staffInviteCode ? { staffInviteCode } : {}),
       });
       if (!res.ok) {
         const error = await res.json();
@@ -456,19 +474,29 @@ export default function Register() {
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center space-y-2">
           <CardTitle className="text-2xl">
-            {fromOnboarding ? "Registration Complete" : "Create Your Account"}
+            {staffInviteInfo ? "Staff Registration" : fromOnboarding ? "Registration Complete" : "Create Your Account"}
           </CardTitle>
           <CardDescription>
-            {fromOnboarding 
+            {staffInviteInfo 
+              ? `You've been invited by ${staffInviteInfo.organizationName} to use aok. No payment required.`
+              : fromOnboarding 
               ? "Please check and confirm your details below."
               : "Sign up for aok to stay connected with your loved ones. You must be 16 years or older to use this service."
             }
           </CardDescription>
+          {staffInviteInfo && (
+            <Alert className="text-left mt-2">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Your access is covered by <strong>{staffInviteInfo.organizationName}</strong>. You'll get full access to all features at no cost.
+              </AlertDescription>
+            </Alert>
+          )}
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {!fromOnboarding && (
+              {!fromOnboarding && !staffInviteCode && (
               <FormField
                 control={form.control}
                 name="accountType"

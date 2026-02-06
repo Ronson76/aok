@@ -748,6 +748,20 @@ export async function registerRoutes(
       // Initialize settings for new user
       await storage.initializeSettings(user.id);
 
+      // Handle staff invite code - accept invite and consume bundle seat
+      const staffInviteCode = req.body.staffInviteCode;
+      if (staffInviteCode && typeof staffInviteCode === "string") {
+        try {
+          const acceptedInvite = await organizationStorage.acceptStaffInvite(staffInviteCode, user.id);
+          if (acceptedInvite) {
+            await organizationStorage.incrementBundleSeatsUsed(acceptedInvite.bundleId);
+            console.log(`[STAFF INVITE] User ${user.id} accepted staff invite ${staffInviteCode}, bundle ${acceptedInvite.bundleId} seat consumed`);
+          }
+        } catch (err) {
+          console.error("[STAFF INVITE] Error processing staff invite:", err);
+        }
+      }
+
       // For new individual subscribers
       if (accountType === "individual") {
         // Send welcome email

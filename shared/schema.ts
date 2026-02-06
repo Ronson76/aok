@@ -1162,5 +1162,35 @@ export const riskReports = pgTable("risk_reports", {
 
 export type RiskReport = typeof riskReports.$inferSelect;
 
+// Staff invite statuses
+export const staffInviteStatuses = ["pending", "accepted", "revoked"] as const;
+export type StaffInviteStatus = typeof staffInviteStatuses[number];
+
+export const organizationStaffInvites = pgTable("organization_staff_invites", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  bundleId: varchar("bundle_id").notNull().references(() => organizationBundles.id, { onDelete: "cascade" }),
+  staffName: text("staff_name").notNull(),
+  staffPhone: text("staff_phone").notNull(),
+  staffEmail: text("staff_email"),
+  inviteCode: varchar("invite_code", { length: 10 }).notNull().unique(),
+  status: text("status").notNull().$type<StaffInviteStatus>().default("pending"),
+  acceptedByUserId: varchar("accepted_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  acceptedAt: timestamp("accepted_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertStaffInviteSchema = createInsertSchema(organizationStaffInvites).omit({
+  id: true,
+  inviteCode: true,
+  status: true,
+  acceptedByUserId: true,
+  acceptedAt: true,
+  createdAt: true,
+});
+
+export type InsertStaffInvite = z.infer<typeof insertStaffInviteSchema>;
+export type OrganizationStaffInvite = typeof organizationStaffInvites.$inferSelect;
+
 // Re-export chat models for AI integrations (used by integration storage)
 export * from "./models/chat";
