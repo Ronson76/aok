@@ -3965,26 +3965,52 @@ class OrganizationStorage implements IOrganizationStorage {
   }
 
   async revokeStaffInvite(inviteId: string, organizationId: string): Promise<boolean> {
-    const result = await getDb()
-      .update(organizationStaffInvites)
-      .set({ status: "revoked" })
+    const [invite] = await getDb()
+      .select()
+      .from(organizationStaffInvites)
       .where(and(
         eq(organizationStaffInvites.id, inviteId),
         eq(organizationStaffInvites.organizationId, organizationId),
         eq(organizationStaffInvites.status, "pending"),
-      ))
+      ));
+    if (!invite) return false;
+
+    const result = await getDb()
+      .update(organizationStaffInvites)
+      .set({ status: "revoked" })
+      .where(eq(organizationStaffInvites.id, inviteId))
       .returning();
+
+    if (result.length > 0 && invite.bundleId) {
+      await getDb()
+        .update(organizationBundles)
+        .set({ seatsUsed: sql`GREATEST(seats_used - 1, 0)` })
+        .where(eq(organizationBundles.id, invite.bundleId));
+    }
     return result.length > 0;
   }
 
   async deleteStaffInvite(inviteId: string, organizationId: string): Promise<boolean> {
-    const result = await getDb()
-      .delete(organizationStaffInvites)
+    const [invite] = await getDb()
+      .select()
+      .from(organizationStaffInvites)
       .where(and(
         eq(organizationStaffInvites.id, inviteId),
         eq(organizationStaffInvites.organizationId, organizationId),
-      ))
+      ));
+    if (!invite) return false;
+
+    const result = await getDb()
+      .delete(organizationStaffInvites)
+      .where(eq(organizationStaffInvites.id, inviteId))
       .returning();
+
+    if (result.length > 0 && invite.bundleId && invite.status !== "revoked") {
+      await getDb()
+        .update(organizationBundles)
+        .set({ seatsUsed: sql`GREATEST(seats_used - 1, 0)` })
+        .where(eq(organizationBundles.id, invite.bundleId));
+    }
     return result.length > 0;
   }
 
