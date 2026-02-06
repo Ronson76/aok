@@ -3,7 +3,7 @@ import {
   adminUsers, adminSessions, organizationBundles, bundleUsage, adminAuditLogs, organizationClients, organizationClientProfiles,
   pendingClientContacts, activeEmergencyAlerts, moodEntries, pets, digitalDocuments, globalFeatureFlags, adminPasswordResetTokens,
   incidents, welfareConcerns, caseFiles, caseNotes, escalationRules, missedCheckInEscalations, auditTrail, riskReports,
-  deactivationConfirmations,
+  deactivationConfirmations, organizationStaffInvites,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
   AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo,
   OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData, OrgClientStatus,
@@ -13,7 +13,7 @@ import {
   MoodEntry, InsertMoodEntry, Pet, InsertPet, UpdatePet, DigitalDocument, InsertDigitalDocument, UpdateDigitalDocument,
   Incident, InsertIncident, WelfareConcern, InsertWelfareConcern, CaseFile, CaseNote, InsertCaseNote,
   EscalationRule, InsertEscalationRule, MissedCheckInEscalation, AuditTrailEntry, RiskReport,
-  CaseStatus, RiskLevel
+  CaseStatus, RiskLevel, OrganizationStaffInvite
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, ne, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray, inArray } from "drizzle-orm";
@@ -2509,6 +2509,14 @@ export interface IOrganizationStorage {
     confirmedAt: string;
     confirmedBy: { name: string; email: string; ip: string | null; userAgent: string | null }[];
   }[]>;
+  
+  // Staff invites
+  createStaffInvite(data: { organizationId: string; bundleId: string; staffName: string; staffPhone: string; staffEmail?: string; inviteCode: string }): Promise<OrganizationStaffInvite>;
+  getStaffInvites(organizationId: string): Promise<OrganizationStaffInvite[]>;
+  getStaffInviteByCode(inviteCode: string): Promise<OrganizationStaffInvite | undefined>;
+  revokeStaffInvite(inviteId: string, organizationId: string): Promise<boolean>;
+  acceptStaffInvite(inviteCode: string, userId: string): Promise<OrganizationStaffInvite | undefined>;
+  incrementBundleSeatsUsed(bundleId: string): Promise<void>;
 }
 
 class OrganizationStorage implements IOrganizationStorage {
@@ -3619,6 +3627,70 @@ class OrganizationStorage implements IOrganizationStorage {
     return Array.from(grouped.values()).sort((a, b) => 
       new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime()
     );
+  }
+
+  async createStaffInvite(data: { organizationId: string; bundleId: string; staffName: string; staffPhone: string; staffEmail?: string; inviteCode: string }): Promise<OrganizationStaffInvite> {
+    const [invite] = await getDb().insert(organizationStaffInvites).values({
+      organizationId: data.organizationId,
+      bundleId: data.bundleId,
+      staffName: data.staffName,
+      staffPhone: data.staffPhone,
+      staffEmail: data.staffEmail || null,
+      inviteCode: data.inviteCode,
+    }).returning();
+    return invite;
+  }
+
+  async getStaffInvites(organizationId: string): Promise<OrganizationStaffInvite[]> {
+    return await getDb()
+      .select()
+      .from(organizationStaffInvites)
+      .where(eq(organizationStaffInvites.organizationId, organizationId))
+      .orderBy(desc(organizationStaffInvites.createdAt));
+  }
+
+  async getStaffInviteByCode(inviteCode: string): Promise<OrganizationStaffInvite | undefined> {
+    const [invite] = await getDb()
+      .select()
+      .from(organizationStaffInvites)
+      .where(eq(organizationStaffInvites.inviteCode, inviteCode.toUpperCase()));
+    return invite;
+  }
+
+  async revokeStaffInvite(inviteId: string, organizationId: string): Promise<boolean> {
+    const result = await getDb()
+      .update(organizationStaffInvites)
+      .set({ status: "revoked" })
+      .where(and(
+        eq(organizationStaffInvites.id, inviteId),
+        eq(organizationStaffInvites.organizationId, organizationId),
+        eq(organizationStaffInvites.status, "pending"),
+      ))
+      .returning();
+    return result.length > 0;
+  }
+
+  async acceptStaffInvite(inviteCode: string, userId: string): Promise<OrganizationStaffInvite | undefined> {
+    const [invite] = await getDb()
+      .update(organizationStaffInvites)
+      .set({ 
+        status: "accepted", 
+        acceptedByUserId: userId, 
+        acceptedAt: new Date() 
+      })
+      .where(and(
+        eq(organizationStaffInvites.inviteCode, inviteCode.toUpperCase()),
+        eq(organizationStaffInvites.status, "pending"),
+      ))
+      .returning();
+    return invite;
+  }
+
+  async incrementBundleSeatsUsed(bundleId: string): Promise<void> {
+    await getDb()
+      .update(organizationBundles)
+      .set({ seatsUsed: sql`seats_used + 1` })
+      .where(eq(organizationBundles.id, bundleId));
   }
 }
 
