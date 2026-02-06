@@ -4,6 +4,7 @@ import { z } from "zod";
 import bcrypt from "bcrypt";
 import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema } from "@shared/schema";
 import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail, sendStaffInviteSMS } from "./notifications";
+import { plantTreeForNewSubscriber } from "./ecologiService";
 
 // Generate a unique 6-character reference code
 function generateReferenceCode(): string {
@@ -183,6 +184,11 @@ export function registerOrganizationRoutes(app: Express) {
       if (smsResult.success) {
         await organizationStorage.updateClientRegistrationStatus(orgClient.id, "pending_registration");
       }
+
+      // Plant a tree for every person we onboard
+      plantTreeForNewSubscriber(clientPhone).catch(err => {
+        console.error("[ECOLOGI] Failed to plant tree for new client:", err);
+      });
 
       res.status(201).json({
         success: true,
