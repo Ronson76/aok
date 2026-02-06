@@ -1599,6 +1599,9 @@ export function registerOrganizationRoutes(app: Express) {
     staffPhone: z.string().min(10, "Valid phone number is required"),
     staffEmail: z.string().email("Valid email is required").min(1, "Email is required"),
     bundleId: z.string().min(1, "Bundle is required"),
+    emergencyContactName: z.string().min(1, "Emergency contact name is required"),
+    emergencyContactPhone: z.string().min(10, "Emergency contact phone is required"),
+    emergencyContactRelationship: z.string().min(1, "Emergency contact relationship is required"),
   });
 
   app.get("/api/org/staff/invites", requireOrganization, async (req, res) => {
@@ -1622,7 +1625,7 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
       }
 
-      const { staffName, staffPhone, staffEmail, bundleId } = parsed.data;
+      const { staffName, staffPhone, staffEmail, bundleId, emergencyContactName, emergencyContactPhone, emergencyContactRelationship } = parsed.data;
 
       const stats = await organizationStorage.getOrganizationDashboardStats(orgId);
       const bundle = stats.bundles.find(b => b.id === bundleId);
@@ -1641,6 +1644,9 @@ export function registerOrganizationRoutes(app: Express) {
         staffName,
         staffPhone,
         staffEmail: staffEmail || undefined,
+        emergencyContactName,
+        emergencyContactPhone,
+        emergencyContactRelationship,
         inviteCode,
       });
 

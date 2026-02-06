@@ -948,7 +948,7 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      <SubscriptionCard />
+      {!(user as any)?.isStaffMember && <SubscriptionCard />}
 
       <Card>
         <CardHeader>

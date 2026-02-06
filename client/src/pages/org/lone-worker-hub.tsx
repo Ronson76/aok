@@ -135,6 +135,10 @@ export default function OrgLoneWorkerHub() {
   const [staffCountryCode, setStaffCountryCode] = useState("+44");
   const [staffEmail, setStaffEmail] = useState("");
   const [selectedBundleId, setSelectedBundleId] = useState("");
+  const [ecName, setEcName] = useState("");
+  const [ecPhone, setEcPhone] = useState("");
+  const [ecCountryCode, setEcCountryCode] = useState("+44");
+  const [ecRelationship, setEcRelationship] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [inviteFilter, setInviteFilter] = useState("all");
   const [auditFilter, setAuditFilter] = useState("all");
@@ -294,6 +298,10 @@ export default function OrgLoneWorkerHub() {
     setStaffCountryCode("+44");
     setStaffEmail("");
     setSelectedBundleId("");
+    setEcName("");
+    setEcPhone("");
+    setEcCountryCode("+44");
+    setEcRelationship("");
     setResendingInviteId(null);
   };
 
@@ -313,15 +321,28 @@ export default function OrgLoneWorkerHub() {
       toast({ title: "Missing fields", description: "Please fill in name, mobile number, and email.", variant: "destructive" });
       return;
     }
+    if (!ecName.trim() || !ecPhone.trim() || !ecRelationship.trim()) {
+      toast({ title: "Missing fields", description: "Please fill in the emergency contact details.", variant: "destructive" });
+      return;
+    }
     if (!selectedBundleId && !resendingInviteId) {
       toast({ title: "Missing fields", description: "Please select a bundle.", variant: "destructive" });
       return;
     }
     const fullPhone = formatFullPhone(staffCountryCode, staffPhone);
+    const fullEcPhone = formatFullPhone(ecCountryCode, ecPhone);
     if (resendingInviteId) {
       resendMutation.mutate({ inviteId: resendingInviteId, staffName: staffName.trim(), staffPhone: fullPhone, staffEmail: staffEmail.trim() });
     } else {
-      createInviteMutation.mutate({ staffName: staffName.trim(), staffPhone: fullPhone, staffEmail: staffEmail.trim(), bundleId: selectedBundleId });
+      createInviteMutation.mutate({
+        staffName: staffName.trim(),
+        staffPhone: fullPhone,
+        staffEmail: staffEmail.trim(),
+        bundleId: selectedBundleId,
+        emergencyContactName: ecName.trim(),
+        emergencyContactPhone: fullEcPhone,
+        emergencyContactRelationship: ecRelationship.trim(),
+      });
     }
   };
 
@@ -779,6 +800,50 @@ export default function OrgLoneWorkerHub() {
                 </Select>
               </div>
             )}
+            <div className="border-t pt-4 mt-2">
+              <p className="text-sm font-medium mb-3">Emergency Contact *</p>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="ecName">Contact Name *</Label>
+                  <Input id="ecName" value={ecName} onChange={(e) => setEcName(e.target.value)} placeholder="e.g. John Smith" data-testid="input-ec-name" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="ecPhone">Contact Phone *</Label>
+                  <div className="flex gap-2">
+                    <Select value={ecCountryCode} onValueChange={setEcCountryCode}>
+                      <SelectTrigger className="w-28" data-testid="select-ec-country-code">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="+44">+44 UK</SelectItem>
+                        <SelectItem value="+1">+1 US</SelectItem>
+                        <SelectItem value="+353">+353 IE</SelectItem>
+                        <SelectItem value="+33">+33 FR</SelectItem>
+                        <SelectItem value="+49">+49 DE</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input id="ecPhone" type="tel" value={ecPhone} onChange={(e) => setEcPhone(e.target.value)} placeholder="7700 900000" className="flex-1" data-testid="input-ec-phone" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="ecRelationship">Relationship *</Label>
+                  <Select value={ecRelationship} onValueChange={setEcRelationship}>
+                    <SelectTrigger data-testid="select-ec-relationship">
+                      <SelectValue placeholder="Select relationship" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="partner">Partner</SelectItem>
+                      <SelectItem value="parent">Parent</SelectItem>
+                      <SelectItem value="sibling">Sibling</SelectItem>
+                      <SelectItem value="friend">Friend</SelectItem>
+                      <SelectItem value="colleague">Colleague</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setShowInviteDialog(false); resetInviteForm(); }}>Cancel</Button>

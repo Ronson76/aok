@@ -740,12 +740,28 @@ export async function registerRoutes(
         const newPasswordHash = await bcrypt.hash(password, 10);
         await storage.updateUserPassword(existingUser.id, newPasswordHash);
 
-        // Accept invite and consume bundle seat
+        // Accept invite and consume bundle seat, create emergency contact
         try {
+          const invite = await organizationStorage.getStaffInviteByCode(staffInviteCode!);
           const acceptedInvite = await organizationStorage.acceptStaffInvite(staffInviteCode!, existingUser.id);
           if (acceptedInvite) {
             await organizationStorage.incrementBundleSeatsUsed(acceptedInvite.bundleId);
             console.log(`[STAFF INVITE] Existing user ${existingUser.id} accepted staff invite ${staffInviteCode}, bundle ${acceptedInvite.bundleId} seat consumed`);
+          }
+          if (invite?.emergencyContactName && invite?.emergencyContactPhone) {
+            try {
+              await storage.initializeSettings(existingUser.id);
+              const { contact: newContact } = await storage.createContact(existingUser.id, {
+                name: invite.emergencyContactName,
+                email: invite.staffEmail || email,
+                phone: invite.emergencyContactPhone,
+                phoneType: "mobile",
+                relationship: invite.emergencyContactRelationship || "colleague",
+              });
+              console.log(`[STAFF INVITE] Emergency contact ${newContact.id} created for staff user ${existingUser.id}`);
+            } catch (contactErr) {
+              console.error("[STAFF INVITE] Error creating emergency contact:", contactErr);
+            }
           }
         } catch (err) {
           console.error("[STAFF INVITE] Error processing staff invite:", err);
@@ -787,13 +803,28 @@ export async function registerRoutes(
       // Initialize settings for new user
       await storage.initializeSettings(user.id);
 
-      // Handle staff invite code - accept invite and consume bundle seat
+      // Handle staff invite code - accept invite, consume bundle seat, create emergency contact
       if (staffInviteCode && typeof staffInviteCode === "string") {
         try {
+          const invite = await organizationStorage.getStaffInviteByCode(staffInviteCode);
           const acceptedInvite = await organizationStorage.acceptStaffInvite(staffInviteCode, user.id);
           if (acceptedInvite) {
             await organizationStorage.incrementBundleSeatsUsed(acceptedInvite.bundleId);
             console.log(`[STAFF INVITE] User ${user.id} accepted staff invite ${staffInviteCode}, bundle ${acceptedInvite.bundleId} seat consumed`);
+          }
+          if (invite?.emergencyContactName && invite?.emergencyContactPhone) {
+            try {
+              const { contact: newContact } = await storage.createContact(user.id, {
+                name: invite.emergencyContactName,
+                email: invite.staffEmail || email,
+                phone: invite.emergencyContactPhone,
+                phoneType: "mobile",
+                relationship: invite.emergencyContactRelationship || "colleague",
+              });
+              console.log(`[STAFF INVITE] Emergency contact ${newContact.id} created for staff user ${user.id}`);
+            } catch (contactErr) {
+              console.error("[STAFF INVITE] Error creating emergency contact:", contactErr);
+            }
           }
         } catch (err) {
           console.error("[STAFF INVITE] Error processing staff invite:", err);
@@ -2808,6 +2839,33 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("[LONE WORKER] Panic error:", error);
       res.status(500).json({ error: "Failed to trigger panic" });
+    }
+  });
+
+  app.post("/api/lone-worker/:sessionId/cancel-panic", authMiddleware, async (req, res) => {
+    try {
+      const user = req.user!;
+      const session = await storage.getLoneWorkerSession(req.params.sessionId);
+      if (!session || session.userId !== user.id) return res.status(404).json({ error: "Session not found" });
+      if (session.status !== "panic") return res.status(400).json({ error: "Session is not in panic state" });
+
+      const updated = await storage.loneWorkerCancelPanic(req.params.sessionId);
+
+      await storage.createAuditEntry(session.organizationId, {
+        userId: user.id,
+        userEmail: user.email,
+        userRole: "staff",
+        action: "panic_cancelled",
+        entityType: "lone_worker_session",
+        entityId: req.params.sessionId,
+        newData: { staffName: user.name, jobType: session.jobType },
+        ipAddress: req.ip || undefined,
+      });
+
+      res.json(updated);
+    } catch (error: any) {
+      console.error("[LONE WORKER] Cancel panic error:", error);
+      res.status(500).json({ error: "Failed to cancel panic" });
     }
   });
 
