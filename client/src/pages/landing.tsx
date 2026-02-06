@@ -489,6 +489,21 @@ export default function Landing() {
               </CardContent>
             </Card>
 
+            <Card className="border-0 shadow-lg ring-2 ring-primary/20">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="rounded-full bg-teal-500/10 p-3 w-fit">
+                    <MessageSquare className="h-6 w-6 text-teal-500" />
+                  </div>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary border-0">Offline Safe</Badge>
+                </div>
+                <h3 className="text-lg font-semibold mb-2">SMS Check-In When Offline</h3>
+                <p className="text-muted-foreground text-sm">
+                  No internet? No problem. If you miss a check-in, we text you a reminder. Simply reply to confirm you're safe — no app or data connection needed.
+                </p>
+              </CardContent>
+            </Card>
+
             <Card className="border-0 shadow-lg">
               <CardContent className="pt-6">
                 <div className="rounded-full bg-amber-500/10 p-3 w-fit mb-4">
