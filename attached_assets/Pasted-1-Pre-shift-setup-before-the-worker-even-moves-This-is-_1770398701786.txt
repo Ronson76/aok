@@ -1,0 +1,178 @@
+1. Pre-shift setup (before the worker even moves)
+
+This is where most apps already fail. AOK doesn’t.
+
+Worker does this in 15 seconds:
+
+Opens AOK
+
+Taps “Start Lone Worker Session”
+
+Selects:
+
+Job type (visit / inspection / outreach / delivery)
+
+Expected duration (e.g. 30 / 60 / 120 mins)
+
+Location (auto via GPS, editable)
+
+Confirms check-in interval (default set by employer policy)
+
+System locks this in.
+No ambiguity. No “I forgot”.
+
+2. Live monitoring (silent, non-intrusive)
+
+While the worker is active:
+
+AOK runs passively in the background
+
+GPS pings at low frequency (battery-safe)
+
+No constant tracking screen
+
+No Big Brother nonsense
+
+This is important:
+
+You are monitoring status, not stalking movement
+
+That keeps unions and HR off your back
+
+3. Scheduled check-in (the core trigger)
+
+At the check-in time:
+
+Screen forces itself to the foreground
+
+Worker sees:
+
+✅ “I’m OK”
+
+🚨 “I need help”
+
+No dismiss.
+No swipe away.
+No silent ignore.
+
+If they tap “I’m OK”:
+
+Timer resets
+
+Session continues
+
+Log updated (time + GPS)
+
+4. Missed check-in (this is where it gets serious)
+
+If no response within the grace window (e.g. 60–120 seconds):
+
+Step 1 — Local escalation
+
+Phone vibrates
+
+Loud audible alert
+
+Full-screen countdown warning
+
+This covers:
+
+Worker distracted
+
+Phone in pocket
+
+Simple human error
+
+Step 2 — Automatic escalation
+
+If still no response:
+
+Lone worker status flips to “Unresponsive”
+
+System immediately:
+
+Alerts nominated monitoring contact / control room
+
+Pushes last known location
+
+Starts escalation timer
+
+No human discretion. It fires every time.
+
+5. Manual panic trigger (real danger scenario)
+
+At any point, worker can:
+
+Press panic button
+
+Or use gesture trigger (shake / triple-tap / hardware key)
+
+This instantly:
+
+Skips check-ins
+
+Skips grace periods
+
+Sends distress alert
+
+Streams:
+
+Live GPS
+
+Time stamp
+
+Worker profile
+
+Risk notes (if stored)
+
+This is the “someone is in the room with me” scenario.
+
+6. Escalation ladder (non-negotiable)
+
+AOK escalates in this exact order:
+
+Internal monitoring team / manager
+
+Secondary contact
+
+Organisation escalation contact
+
+Emergency services (only if policy-enabled)
+
+Each step is:
+
+Logged
+
+Time-stamped
+
+Auditable
+
+No “we thought someone else was handling it”.
+
+7. Resolution & close-out
+
+Once contact is made:
+
+Session is manually closed by:
+
+Worker
+
+Monitoring team
+
+Mandatory incident outcome selected:
+
+Safe
+
+Assistance required
+
+Emergency attended
+
+Optional incident notes added
+
+This creates:
+
+A legal audit trail
+
+A safeguarding record
+
+Evidence of duty of care

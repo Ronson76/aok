@@ -1204,5 +1204,111 @@ export const smsCheckinTokens = pgTable("sms_checkin_tokens", {
 
 export type SmsCheckinToken = typeof smsCheckinTokens.$inferSelect;
 
+// ==================== LONE WORKER SESSIONS ====================
+
+export const loneWorkerJobTypes = ["visit", "inspection", "outreach", "delivery", "patrol", "maintenance", "other"] as const;
+export type LoneWorkerJobType = typeof loneWorkerJobTypes[number];
+
+export const loneWorkerSessionStatuses = ["active", "check_in_due", "unresponsive", "panic", "resolved"] as const;
+export type LoneWorkerSessionStatus = typeof loneWorkerSessionStatuses[number];
+
+export const loneWorkerOutcomes = ["safe", "assistance_required", "emergency_attended"] as const;
+export type LoneWorkerOutcome = typeof loneWorkerOutcomes[number];
+
+export const loneWorkerSessions = pgTable("lone_worker_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  jobType: text("job_type").notNull().$type<LoneWorkerJobType>(),
+  jobDescription: text("job_description"),
+  expectedDurationMins: integer("expected_duration_mins").notNull(),
+  checkInIntervalMins: integer("check_in_interval_mins").notNull().default(30),
+  graceWindowSecs: integer("grace_window_secs").notNull().default(120),
+  status: text("status").notNull().$type<LoneWorkerSessionStatus>().default("active"),
+  locationLat: text("location_lat"),
+  locationLng: text("location_lng"),
+  locationAddress: text("location_address"),
+  what3words: text("what3words"),
+  lastCheckInAt: timestamp("last_check_in_at"),
+  nextCheckInDue: timestamp("next_check_in_due"),
+  lastLocationLat: text("last_location_lat"),
+  lastLocationLng: text("last_location_lng"),
+  lastLocationAt: timestamp("last_location_at"),
+  panicTriggeredAt: timestamp("panic_triggered_at"),
+  outcome: text("outcome").$type<LoneWorkerOutcome>(),
+  outcomeNotes: text("outcome_notes"),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedById: varchar("resolved_by_id"),
+  startedAt: timestamp("started_at").notNull().defaultNow(),
+  expectedEndAt: timestamp("expected_end_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertLoneWorkerSessionSchema = createInsertSchema(loneWorkerSessions).omit({
+  id: true,
+  userId: true,
+  organizationId: true,
+  status: true,
+  lastCheckInAt: true,
+  nextCheckInDue: true,
+  lastLocationLat: true,
+  lastLocationLng: true,
+  lastLocationAt: true,
+  panicTriggeredAt: true,
+  outcome: true,
+  outcomeNotes: true,
+  resolvedAt: true,
+  resolvedById: true,
+  startedAt: true,
+  expectedEndAt: true,
+  createdAt: true,
+}).extend({
+  jobType: z.enum(loneWorkerJobTypes),
+  expectedDurationMins: z.number().min(5).max(720),
+  checkInIntervalMins: z.number().min(5).max(240).default(30),
+  graceWindowSecs: z.number().min(30).max(300).default(120),
+  locationLat: z.string().optional(),
+  locationLng: z.string().optional(),
+  locationAddress: z.string().optional(),
+  what3words: z.string().optional(),
+  jobDescription: z.string().optional(),
+});
+
+export type InsertLoneWorkerSession = z.infer<typeof insertLoneWorkerSessionSchema>;
+export type LoneWorkerSession = typeof loneWorkerSessions.$inferSelect;
+
+export const loneWorkerEscalationLevels = ["local_alert", "monitoring_contact", "secondary_contact", "org_escalation", "emergency_services"] as const;
+export type LoneWorkerEscalationLevel = typeof loneWorkerEscalationLevels[number];
+
+export const loneWorkerEscalations = pgTable("lone_worker_escalations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => loneWorkerSessions.id, { onDelete: "cascade" }),
+  level: text("level").notNull().$type<LoneWorkerEscalationLevel>(),
+  triggeredBy: text("triggered_by").notNull(), // "system" | "panic" | "manual"
+  notifiedContacts: jsonb("notified_contacts").$type<{ name: string; method: string; phone?: string; email?: string }[]>(),
+  locationLat: text("location_lat"),
+  locationLng: text("location_lng"),
+  what3words: text("what3words"),
+  acknowledged: boolean("acknowledged").notNull().default(false),
+  acknowledgedById: varchar("acknowledged_by_id"),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type LoneWorkerEscalation = typeof loneWorkerEscalations.$inferSelect;
+
+export const loneWorkerCheckIns = pgTable("lone_worker_check_ins", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => loneWorkerSessions.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  status: text("status").notNull().$type<"ok" | "help_needed" | "missed">(),
+  locationLat: text("location_lat"),
+  locationLng: text("location_lng"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type LoneWorkerCheckIn = typeof loneWorkerCheckIns.$inferSelect;
+
 // Re-export chat models for AI integrations (used by integration storage)
 export * from "./models/chat";

@@ -4,6 +4,7 @@ import {
   pendingClientContacts, activeEmergencyAlerts, moodEntries, pets, digitalDocuments, globalFeatureFlags, adminPasswordResetTokens,
   incidents, welfareConcerns, caseFiles, caseNotes, escalationRules, missedCheckInEscalations, auditTrail, riskReports,
   deactivationConfirmations, organizationStaffInvites, smsCheckinTokens,
+  loneWorkerSessions, loneWorkerEscalations, loneWorkerCheckIns,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
   AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo,
   OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData, OrgClientStatus,
@@ -13,7 +14,9 @@ import {
   MoodEntry, InsertMoodEntry, Pet, InsertPet, UpdatePet, DigitalDocument, InsertDigitalDocument, UpdateDigitalDocument,
   Incident, InsertIncident, WelfareConcern, InsertWelfareConcern, CaseFile, CaseNote, InsertCaseNote,
   EscalationRule, InsertEscalationRule, MissedCheckInEscalation, AuditTrailEntry, RiskReport,
-  CaseStatus, RiskLevel, OrganizationStaffInvite, SmsCheckinToken
+  CaseStatus, RiskLevel, OrganizationStaffInvite, SmsCheckinToken,
+  LoneWorkerSession, InsertLoneWorkerSession, LoneWorkerEscalation, LoneWorkerCheckIn,
+  LoneWorkerSessionStatus, LoneWorkerOutcome, LoneWorkerEscalationLevel
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, ne, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray, inArray } from "drizzle-orm";
@@ -1785,6 +1788,219 @@ class DatabaseStorage implements IStorage {
         )
       );
     return result.filter(r => r.mobileNumber && r.nextCheckInDue) as Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date }>;
+  }
+
+  // ==================== LONE WORKER SESSIONS ====================
+
+  async isStaffMember(userId: string): Promise<{ isStaff: boolean; organizationId?: string; organizationName?: string }> {
+    const result = await getDb()
+      .select({
+        id: organizationStaffInvites.id,
+        organizationId: organizationStaffInvites.organizationId,
+      })
+      .from(organizationStaffInvites)
+      .where(and(
+        eq(organizationStaffInvites.acceptedByUserId, userId),
+        eq(organizationStaffInvites.status, "accepted"),
+      ))
+      .limit(1);
+    if (result.length === 0) return { isStaff: false };
+    const org = await this.getUserById(result[0].organizationId);
+    return { isStaff: true, organizationId: result[0].organizationId, organizationName: org?.name };
+  }
+
+  async createLoneWorkerSession(userId: string, organizationId: string, data: InsertLoneWorkerSession): Promise<LoneWorkerSession> {
+    const now = new Date();
+    const expectedEndAt = new Date(now.getTime() + data.expectedDurationMins * 60 * 1000);
+    const nextCheckInDue = new Date(now.getTime() + data.checkInIntervalMins * 60 * 1000);
+    const result = await getDb().insert(loneWorkerSessions).values({
+      userId,
+      organizationId,
+      jobType: data.jobType,
+      jobDescription: data.jobDescription || null,
+      expectedDurationMins: data.expectedDurationMins,
+      checkInIntervalMins: data.checkInIntervalMins,
+      graceWindowSecs: data.graceWindowSecs,
+      locationLat: data.locationLat || null,
+      locationLng: data.locationLng || null,
+      locationAddress: data.locationAddress || null,
+      what3words: data.what3words || null,
+      lastCheckInAt: now,
+      nextCheckInDue,
+      lastLocationLat: data.locationLat || null,
+      lastLocationLng: data.locationLng || null,
+      lastLocationAt: data.locationLat ? now : null,
+      expectedEndAt,
+      startedAt: now,
+    }).returning();
+    return result[0];
+  }
+
+  async getActiveLoneWorkerSession(userId: string): Promise<LoneWorkerSession | undefined> {
+    const result = await getDb()
+      .select()
+      .from(loneWorkerSessions)
+      .where(and(
+        eq(loneWorkerSessions.userId, userId),
+        inArray(loneWorkerSessions.status, ["active", "check_in_due", "unresponsive", "panic"]),
+      ))
+      .orderBy(desc(loneWorkerSessions.createdAt))
+      .limit(1);
+    return result[0];
+  }
+
+  async getLoneWorkerSession(sessionId: string): Promise<LoneWorkerSession | undefined> {
+    const result = await getDb()
+      .select()
+      .from(loneWorkerSessions)
+      .where(eq(loneWorkerSessions.id, sessionId));
+    return result[0];
+  }
+
+  async getLoneWorkerSessionHistory(userId: string, limit: number = 20): Promise<LoneWorkerSession[]> {
+    return getDb()
+      .select()
+      .from(loneWorkerSessions)
+      .where(eq(loneWorkerSessions.userId, userId))
+      .orderBy(desc(loneWorkerSessions.createdAt))
+      .limit(limit);
+  }
+
+  async loneWorkerCheckIn(sessionId: string, userId: string, status: "ok" | "help_needed", lat?: string, lng?: string): Promise<LoneWorkerCheckIn> {
+    const session = await this.getLoneWorkerSession(sessionId);
+    if (!session || session.userId !== userId) throw new Error("Session not found");
+
+    const now = new Date();
+    const nextCheckInDue = new Date(now.getTime() + session.checkInIntervalMins * 60 * 1000);
+
+    const [checkIn] = await getDb().insert(loneWorkerCheckIns).values({
+      sessionId,
+      userId,
+      status,
+      locationLat: lat || null,
+      locationLng: lng || null,
+    }).returning();
+
+    const updateData: any = {
+      lastCheckInAt: now,
+      nextCheckInDue,
+      status: status === "help_needed" ? "panic" as const : "active" as const,
+    };
+    if (lat && lng) {
+      updateData.lastLocationLat = lat;
+      updateData.lastLocationLng = lng;
+      updateData.lastLocationAt = now;
+    }
+    await getDb().update(loneWorkerSessions).set(updateData).where(eq(loneWorkerSessions.id, sessionId));
+
+    return checkIn;
+  }
+
+  async loneWorkerPanic(sessionId: string, lat?: string, lng?: string): Promise<LoneWorkerSession> {
+    const now = new Date();
+    const updateData: any = {
+      status: "panic" as const,
+      panicTriggeredAt: now,
+    };
+    if (lat && lng) {
+      updateData.lastLocationLat = lat;
+      updateData.lastLocationLng = lng;
+      updateData.lastLocationAt = now;
+    }
+    const [session] = await getDb().update(loneWorkerSessions).set(updateData).where(eq(loneWorkerSessions.id, sessionId)).returning();
+    return session;
+  }
+
+  async loneWorkerMarkUnresponsive(sessionId: string): Promise<LoneWorkerSession> {
+    const [session] = await getDb()
+      .update(loneWorkerSessions)
+      .set({ status: "unresponsive" as const })
+      .where(eq(loneWorkerSessions.id, sessionId))
+      .returning();
+    return session;
+  }
+
+  async loneWorkerUpdateLocation(sessionId: string, lat: string, lng: string): Promise<void> {
+    await getDb().update(loneWorkerSessions).set({
+      lastLocationLat: lat,
+      lastLocationLng: lng,
+      lastLocationAt: new Date(),
+    }).where(eq(loneWorkerSessions.id, sessionId));
+  }
+
+  async resolveLoneWorkerSession(sessionId: string, resolvedById: string, outcome: LoneWorkerOutcome, notes?: string): Promise<LoneWorkerSession> {
+    const [session] = await getDb()
+      .update(loneWorkerSessions)
+      .set({
+        status: "resolved" as const,
+        outcome,
+        outcomeNotes: notes || null,
+        resolvedAt: new Date(),
+        resolvedById,
+      })
+      .where(eq(loneWorkerSessions.id, sessionId))
+      .returning();
+    return session;
+  }
+
+  async createLoneWorkerEscalation(sessionId: string, level: LoneWorkerEscalationLevel, triggeredBy: string, notifiedContacts?: any[], lat?: string, lng?: string, what3words?: string): Promise<LoneWorkerEscalation> {
+    const [escalation] = await getDb().insert(loneWorkerEscalations).values({
+      sessionId,
+      level,
+      triggeredBy,
+      notifiedContacts: notifiedContacts || null,
+      locationLat: lat || null,
+      locationLng: lng || null,
+      what3words: what3words || null,
+    }).returning();
+    return escalation;
+  }
+
+  async getLoneWorkerEscalations(sessionId: string): Promise<LoneWorkerEscalation[]> {
+    return getDb()
+      .select()
+      .from(loneWorkerEscalations)
+      .where(eq(loneWorkerEscalations.sessionId, sessionId))
+      .orderBy(desc(loneWorkerEscalations.createdAt));
+  }
+
+  async getLoneWorkerCheckIns(sessionId: string): Promise<LoneWorkerCheckIn[]> {
+    return getDb()
+      .select()
+      .from(loneWorkerCheckIns)
+      .where(eq(loneWorkerCheckIns.sessionId, sessionId))
+      .orderBy(desc(loneWorkerCheckIns.createdAt));
+  }
+
+  async getOrgActiveLoneWorkerSessions(organizationId: string): Promise<(LoneWorkerSession & { userName: string; userPhone: string | null })[]> {
+    const result = await getDb()
+      .select({
+        session: loneWorkerSessions,
+        userName: users.name,
+        userPhone: users.mobileNumber,
+      })
+      .from(loneWorkerSessions)
+      .innerJoin(users, eq(loneWorkerSessions.userId, users.id))
+      .where(and(
+        eq(loneWorkerSessions.organizationId, organizationId),
+        inArray(loneWorkerSessions.status, ["active", "check_in_due", "unresponsive", "panic"]),
+      ))
+      .orderBy(desc(loneWorkerSessions.createdAt));
+    return result.map(r => ({ ...r.session, userName: r.userName, userPhone: r.userPhone }));
+  }
+
+  async getOrgLoneWorkerSessionHistory(organizationId: string, limit: number = 50): Promise<(LoneWorkerSession & { userName: string })[]> {
+    const result = await getDb()
+      .select({
+        session: loneWorkerSessions,
+        userName: users.name,
+      })
+      .from(loneWorkerSessions)
+      .innerJoin(users, eq(loneWorkerSessions.userId, users.id))
+      .where(eq(loneWorkerSessions.organizationId, organizationId))
+      .orderBy(desc(loneWorkerSessions.createdAt))
+      .limit(limit);
+    return result.map(r => ({ ...r.session, userName: r.userName }));
   }
 }
 

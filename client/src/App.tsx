@@ -54,7 +54,7 @@ import OrganizationStaffLogin from "@/pages/org/staff-login";
 import OrgForgotPassword from "@/pages/org/forgot-password";
 import OrgResetPassword from "@/pages/org/reset-password";
 import OrgSafeguarding from "@/pages/org/safeguarding";
-import OrgStaffHub from "@/pages/org/staff-hub";
+import OrgLoneWorkerHub from "@/pages/org/lone-worker-hub";
 import OrgMissedCheckInsReport from "@/pages/org/missed-checkins-report";
 import OrgEmergencyAlertsReport from "@/pages/org/emergency-alerts-report";
 import Activate from "@/pages/activate";
@@ -64,6 +64,7 @@ import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
 import ConfirmContact from "@/pages/confirm-contact";
 import WellbeingAI from "@/pages/wellbeing-ai";
+import LoneWorker from "@/pages/lone-worker";
 import { TermsModal } from "@/components/terms-modal";
 
 function PaymentBlockedScreen() {
@@ -198,14 +199,16 @@ function AdminAuthRoute({ component: Component }: { component: React.ComponentTy
 function AppRoutes() {
   const { user } = useAuth();
   const isOrganization = user?.accountType === "organization";
+  const isStaff = !!(user as any)?.isStaffMember;
 
   return (
     <Switch>
-      <Route path="/app" component={() => <ProtectedRoute component={isOrganization ? OrganizationDashboard : Dashboard} />} />
+      <Route path="/app" component={() => <ProtectedRoute component={isOrganization ? OrganizationDashboard : isStaff ? LoneWorker : Dashboard} />} />
+      <Route path="/app/lone-worker" component={() => <ProtectedRoute component={LoneWorker} />} />
       <Route path="/app/org" component={() => <ProtectedRoute component={OrganizationDashboard} />} />
       <Route path="/org/dashboard" component={() => <ProtectedRoute component={OrganizationDashboard} />} />
       <Route path="/org/safeguarding" component={() => <ProtectedRoute component={OrgSafeguarding} />} />
-      <Route path="/org/staff-hub" component={() => <ProtectedRoute component={OrgStaffHub} />} />
+      <Route path="/org/lone-worker" component={() => <ProtectedRoute component={OrgLoneWorkerHub} />} />
       <Route path="/org/missed-checkins" component={() => <ProtectedRoute component={OrgMissedCheckInsReport} />} />
       <Route path="/org/emergency-alerts" component={() => <ProtectedRoute component={OrgEmergencyAlertsReport} />} />
       <Route path="/app/contacts" component={() => <ProtectedRoute component={Contacts} />} />
@@ -699,7 +702,7 @@ function Router() {
   }
 
   // Org pages have their own layout/header, don't use AppLayout
-  if (location.startsWith("/org/dashboard") || location.startsWith("/org/safeguarding") || location.startsWith("/org/staff-hub") || location.startsWith("/org/missed-checkins") || location.startsWith("/org/emergency-alerts")) {
+  if (location.startsWith("/org/dashboard") || location.startsWith("/org/safeguarding") || location.startsWith("/org/lone-worker") || location.startsWith("/org/missed-checkins") || location.startsWith("/org/emergency-alerts")) {
     return <AppRoutes />;
   }
 

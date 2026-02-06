@@ -1795,9 +1795,9 @@ export function registerOrganizationRoutes(app: Express) {
   app.get("/api/org/staff/audit-trail", requireOrganization, async (req, res) => {
     try {
       const orgId = (req.user as any).id;
-      const limit = parseInt(req.query.limit as string) || 100;
+      const limit = parseInt(req.query.limit as string) || 200;
       const allTrail = await storage.getAuditTrail(orgId, 500);
-      const staffTrail = allTrail.filter(e => e.entityType === "staff_invite").slice(0, limit);
+      const staffTrail = allTrail.filter(e => e.entityType === "staff_invite" || e.entityType === "lone_worker_session").slice(0, limit);
       res.json(staffTrail);
     } catch (error) {
       console.error("Error fetching staff audit trail:", error);
