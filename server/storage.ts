@@ -3007,15 +3007,23 @@ class OrganizationStorage implements IOrganizationStorage {
         throw new Error("You can only use bundles assigned to your organization");
       }
       
-      if (bundle[0].seatsUsed >= bundle[0].seatLimit) {
+      // Compute actual seats used (clients + accepted staff) for accurate check
+      const clientsInBundle = await getDb()
+        .select({ count: count() })
+        .from(organizationClients)
+        .where(eq(organizationClients.bundleId, bundleId));
+      const staffInBundle = await getDb()
+        .select({ count: count() })
+        .from(organizationStaffInvites)
+        .where(and(
+          eq(organizationStaffInvites.bundleId, bundleId),
+          eq(organizationStaffInvites.status, "accepted")
+        ));
+      const computedSeatsUsed = (clientsInBundle[0]?.count || 0) + (staffInBundle[0]?.count || 0);
+      
+      if (computedSeatsUsed >= bundle[0].seatLimit) {
         throw new Error("No seats available in this bundle");
       }
-      
-      // Increment seats used
-      await getDb()
-        .update(organizationBundles)
-        .set({ seatsUsed: bundle[0].seatsUsed + 1 })
-        .where(eq(organizationBundles.id, bundleId));
     }
 
     // Get the next ordinal number for this organization
@@ -3414,17 +3422,29 @@ class OrganizationStorage implements IOrganizationStorage {
       .from(organizationBundles)
       .where(eq(organizationBundles.userId, organizationId));
     
-    const totalSeats = bundles.reduce((sum, b) => sum + b.seatLimit, 0);
-    const seatsUsed = bundles.reduce((sum, b) => sum + b.seatsUsed, 0);
-    
-    const staffInvites = await getDb()
-      .select({ count: count() })
+    const rawClients = await getDb()
+      .select({ id: organizationClients.id, bundleId: organizationClients.bundleId })
+      .from(organizationClients)
+      .where(eq(organizationClients.organizationId, organizationId));
+
+    const acceptedStaff = await getDb()
+      .select()
       .from(organizationStaffInvites)
       .where(and(
         eq(organizationStaffInvites.organizationId, organizationId),
         eq(organizationStaffInvites.status, "accepted")
       ));
-    const totalStaff = staffInvites[0]?.count || 0;
+    const totalStaff = acceptedStaff.length;
+
+    const bundlesWithComputedSeats = bundles.map(b => {
+      const clientsInBundle = rawClients.filter(c => c.bundleId === b.id).length;
+      const staffInBundle = acceptedStaff.filter(s => s.bundleId === b.id).length;
+      const computedSeatsUsed = clientsInBundle + staffInBundle;
+      return { ...b, seatsUsed: computedSeatsUsed };
+    });
+    
+    const totalSeats = bundlesWithComputedSeats.reduce((sum, b) => sum + b.seatLimit, 0);
+    const seatsUsed = bundlesWithComputedSeats.reduce((sum, b) => sum + b.seatsUsed, 0);
     
     let clientsSafe = 0;
     let clientsPending = 0;
@@ -3467,7 +3487,7 @@ class OrganizationStorage implements IOrganizationStorage {
       clientsOverdue,
       clientsAwaitingActivation,
       totalEmergencyAlerts,
-      bundles,
+      bundles: bundlesWithComputedSeats,
     };
   }
 
