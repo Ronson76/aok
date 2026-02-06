@@ -142,6 +142,32 @@ const TOTAL_STEPS = 16;
 export default function Onboarding() {
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
+  const [staffInviteCode, setStaffInviteCode] = useState<string | null>(null);
+  const [staffInviteInfo, setStaffInviteInfo] = useState<{ organizationName: string; staffName: string } | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const staffCode = urlParams.get("staff");
+    if (staffCode) {
+      setStaffInviteCode(staffCode);
+      fetch(`/api/staff-invite/${staffCode}`)
+        .then(res => res.json())
+        .then(result => {
+          if (result.valid) {
+            setStaffInviteInfo({ organizationName: result.organizationName, staffName: result.staffName });
+          } else {
+            toast({ title: "Invalid invite", description: "This staff invite link is no longer valid.", variant: "destructive" });
+            setStaffInviteCode(null);
+          }
+        })
+        .catch(() => setStaffInviteCode(null));
+    }
+  }, []);
+
+  const isStaffFlow = !!staffInviteCode;
+  const effectiveSteps = isStaffFlow ? TOTAL_STEPS - 2 : TOTAL_STEPS;
+
   const [data, setData] = useState<OnboardingData>({
     name: "",
     email: "",
@@ -184,36 +210,51 @@ export default function Onboarding() {
     billingCycle: "monthly",
   });
 
-  const progress = Math.round((currentStep / TOTAL_STEPS) * 100);
+  const getDisplayStep = () => {
+    if (!isStaffFlow) return currentStep;
+    if (currentStep <= 13) return currentStep;
+    if (currentStep === 16) return 14;
+    return currentStep;
+  };
+  const progress = Math.round((getDisplayStep() / effectiveSteps) * 100);
 
-  // Persist onboarding data to localStorage whenever it changes
   useEffect(() => {
-    // Only save if user has started filling in data (has a name or email)
     if (data.name || data.email) {
       localStorage.setItem("onboardingData", JSON.stringify(data));
     }
   }, [data]);
 
   const handleNext = () => {
+    if (isStaffFlow && currentStep === 13) {
+      setCurrentStep(16);
+      return;
+    }
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handleBack = () => {
+    if (isStaffFlow && currentStep === 16) {
+      setCurrentStep(13);
+      return;
+    }
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
   };
 
   const handleComplete = () => {
-    // Save termsAcceptedAt timestamp when completing onboarding
     const dataWithTerms = {
       ...data,
       termsAcceptedAt: new Date().toISOString(),
+      ...(staffInviteCode ? { staffInviteCode } : {}),
     };
     localStorage.setItem("onboardingData", JSON.stringify(dataWithTerms));
-    setLocation("/register?onboarded=true");
+    const registerUrl = staffInviteCode
+      ? `/register?onboarded=true&staff=${staffInviteCode}`
+      : "/register?onboarded=true";
+    setLocation(registerUrl);
   };
 
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -283,7 +324,7 @@ export default function Onboarding() {
 
   const renderStep = () => {
     switch (currentStep) {
-      case 1: return <Step2Welcome data={data} setData={setData} />;
+      case 1: return <Step2Welcome data={data} setData={setData} staffInviteInfo={staffInviteInfo} />;
       case 2: return <Step3AgeGroup data={data} setData={setData} />;
       case 3: return <Step4LivingSituation data={data} setData={setData} />;
       case 4: return <Step5WhoWorries data={data} setData={setData} />;
@@ -319,7 +360,7 @@ export default function Onboarding() {
 
       <div className="px-4 py-2 border-b bg-background">
         <div className="flex justify-between items-center text-sm text-muted-foreground mb-1">
-          <span data-testid="text-step-indicator">Step {currentStep} of {TOTAL_STEPS}</span>
+          <span data-testid="text-step-indicator">Step {getDisplayStep()} of {effectiveSteps}</span>
           <span data-testid="text-progress-percent">{progress}%</span>
         </div>
         <Progress value={progress} className="h-2" data-testid="progress-bar" />
@@ -460,12 +501,11 @@ function Step1Terms({ accepted, setAccepted, onComplete }: { accepted: boolean; 
   );
 }
 
-function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: OnboardingData) => void }) {
+function Step2Welcome({ data, setData, staffInviteInfo }: { data: OnboardingData; setData: (d: OnboardingData) => void; staffInviteInfo?: { organizationName: string; staffName: string } | null }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  // Validation states
   const nameValid = data.name.trim().length > 0;
   const emailValid = data.email.includes("@") && data.email.includes(".");
   const passwordValid = data.password.length >= 8;
@@ -481,6 +521,17 @@ function Step2Welcome({ data, setData }: { data: OnboardingData; setData: (d: On
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-4 sm:p-6">
+        {staffInviteInfo && (
+          <div className="mb-4 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg" data-testid="staff-invite-banner">
+            <p className="text-sm font-medium text-green-800 dark:text-green-200">
+              <Building2 className="h-4 w-4 inline mr-1" />
+              Invited by {staffInviteInfo.organizationName}
+            </p>
+            <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+              Your access is fully covered - no payment required.
+            </p>
+          </div>
+        )}
         <h1 className="text-xl sm:text-2xl font-bold mb-2" data-testid="text-welcome-title">Let's get to know you</h1>
         <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6" data-testid="text-welcome-subtitle">
           Let's build your personal protection plan. It only takes 2 minutes.

@@ -2168,7 +2168,7 @@ export async function sendStaffInviteSMS(
   inviteCode: string,
   organizationName: string
 ): Promise<{ success: boolean; error?: string }> {
-  const signUpUrl = `https://aok.care/register?staff=${inviteCode}`;
+  const signUpUrl = `https://aok.care/onboarding?staff=${inviteCode}`;
   
   const message = `Hi! ${organizationName} has invited you to use the aok safety app as a staff member.
 
@@ -2481,7 +2481,7 @@ export async function sendWelcomeEmail(
     `,
     ctaButton: {
       text: 'Open aok Dashboard',
-      url: 'https://aok.care/dashboard'
+      url: 'https://aok.care/app'
     },
     customFooterNote: "We're here to help you stay connected and protected."
   });
@@ -2504,7 +2504,7 @@ Need help? Visit our FAQ section or reach out to our support team at any time.
 Stay safe!
 
 - The aok Team
-https://aok.care`;
+https://aok.care/app`;
 
   try {
     await sendEmail(email, subject, plainBody, htmlEmail);
@@ -2514,4 +2514,22 @@ https://aok.care`;
     console.error(`[WELCOME] Failed to send welcome email to ${email}:`, error);
     return false;
   }
+}
+
+export async function sendSmsCheckinLink(
+  phoneNumber: string,
+  userName: string,
+  token: string
+): Promise<{ success: boolean; error?: string }> {
+  const checkinUrl = `https://aok.care/sms-checkin/${token}`;
+
+  const message = `Hi ${userName.split(' ')[0]}, your aok check-in is overdue.
+
+Tap here to check in now:
+${checkinUrl}
+
+This link expires in 48 hours. If you're safe, just tap the button.`;
+
+  console.log(`[SMS CHECK-IN] Sending check-in link to ${phoneNumber}`);
+  return await sendSMS(phoneNumber, message);
 }

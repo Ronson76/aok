@@ -1,13 +1,18 @@
 import { storage } from "./storage";
-import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder } from "./notifications";
+import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder, sendSmsCheckinLink } from "./notifications";
 
 let schedulerInterval: NodeJS.Timeout | null = null;
 let cleanupInterval: NodeJS.Timeout | null = null;
 let pushNotificationInterval: NodeJS.Timeout | null = null;
 let contactReminderInterval: NodeJS.Timeout | null = null;
+let smsCheckinInterval: NodeJS.Timeout | null = null;
 
 // Minimum interval between push notifications to same user (30 seconds)
 const PUSH_NOTIFICATION_COOLDOWN_MS = 30 * 1000;
+
+// Track which users have been sent SMS check-in links this overdue cycle
+const smsCheckinSentCache = new Map<string, number>();
+const SMS_CHECKIN_COOLDOWN_MS = 30 * 60 * 1000;
 
 // Send push notifications to overdue users
 async function processOverduePushNotifications(): Promise<void> {
@@ -53,6 +58,53 @@ async function processOverduePushNotifications(): Promise<void> {
     }
   } catch (error) {
     console.error('[PUSH SCHEDULER] Error processing overdue push notifications:', error);
+  }
+}
+
+// Send SMS check-in links to overdue users who are likely offline
+async function processOverdueSmsCheckins(): Promise<void> {
+  try {
+    const overdueUsers = await storage.getOverdueUsersForSmsCheckin();
+
+    if (overdueUsers.length === 0) return;
+
+    const now = Date.now();
+
+    for (const user of overdueUsers) {
+      const lastSent = smsCheckinSentCache.get(user.userId);
+      if (lastSent && now - lastSent < SMS_CHECKIN_COOLDOWN_MS) {
+        continue;
+      }
+
+      try {
+        const tokenData = await storage.createSmsCheckinToken(user.userId);
+
+        const result = await sendSmsCheckinLink(
+          user.mobileNumber,
+          user.userName,
+          tokenData.token
+        );
+
+        if (result.success) {
+          smsCheckinSentCache.set(user.userId, now);
+          console.log(`[SMS CHECK-IN] Sent check-in link to ${user.userName} (${user.mobileNumber})`);
+        } else {
+          console.error(`[SMS CHECK-IN] Failed to send to ${user.userName}: ${result.error}`);
+        }
+      } catch (error) {
+        console.error(`[SMS CHECK-IN] Error processing user ${user.userName}:`, error);
+      }
+    }
+
+    // Clean up cache entries for users who are no longer overdue
+    const overdueIds = new Set(overdueUsers.map(u => u.userId));
+    Array.from(smsCheckinSentCache.keys()).forEach(userId => {
+      if (!overdueIds.has(userId)) {
+        smsCheckinSentCache.delete(userId);
+      }
+    });
+  } catch (error) {
+    console.error('[SMS CHECK-IN] Error processing overdue SMS check-ins:', error);
   }
 }
 
@@ -227,6 +279,11 @@ export function startEmergencyScheduler(): void {
     await sendContactReminders();
   }, 5 * 60 * 1000);
 
+  // SMS check-in links every 2 minutes for overdue users who are offline
+  smsCheckinInterval = setInterval(async () => {
+    await processOverdueSmsCheckins();
+  }, 2 * 60 * 1000);
+
   // Run cleanup daily (every 24 hours)
   cleanupInterval = setInterval(async () => {
     await cleanupOldLocationData();
@@ -238,6 +295,7 @@ export function startEmergencyScheduler(): void {
   cleanupOldLocationData();
   cleanupExpiredContacts();
   sendContactReminders();
+  console.log('[SMS CHECK-IN] Starting SMS check-in scheduler (checks every 2 minutes, 30min cooldown per user)');
 }
 
 export function stopEmergencyScheduler(): void {
@@ -256,6 +314,10 @@ export function stopEmergencyScheduler(): void {
   if (contactReminderInterval) {
     clearInterval(contactReminderInterval);
     contactReminderInterval = null;
+  }
+  if (smsCheckinInterval) {
+    clearInterval(smsCheckinInterval);
+    smsCheckinInterval = null;
   }
   console.log('[EMERGENCY SCHEDULER] Scheduler stopped');
 }
