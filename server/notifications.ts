@@ -2168,7 +2168,7 @@ export async function sendStaffInviteSMS(
   inviteCode: string,
   organizationName: string
 ): Promise<{ success: boolean; error?: string }> {
-  const signUpUrl = `https://aok.care/onboarding?staff=${inviteCode}`;
+  const signUpUrl = `https://aok.care/register?staff=${inviteCode}`;
   
   const message = `Hi! ${organizationName} has invited you to use the aok safety app as a staff member.
 

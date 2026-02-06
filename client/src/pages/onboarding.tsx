@@ -150,18 +150,8 @@ export default function Onboarding() {
     const urlParams = new URLSearchParams(window.location.search);
     const staffCode = urlParams.get("staff");
     if (staffCode) {
-      setStaffInviteCode(staffCode);
-      fetch(`/api/staff-invite/${staffCode}`)
-        .then(res => res.json())
-        .then(result => {
-          if (result.valid) {
-            setStaffInviteInfo({ organizationName: result.organizationName, staffName: result.staffName });
-          } else {
-            toast({ title: "Invalid invite", description: "This staff invite link is no longer valid.", variant: "destructive" });
-            setStaffInviteCode(null);
-          }
-        })
-        .catch(() => setStaffInviteCode(null));
+      setLocation(`/register?staff=${staffCode}`);
+      return;
     }
   }, []);
 
