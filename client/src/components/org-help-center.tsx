@@ -759,12 +759,11 @@ export function OrgHelpButton() {
     <>
       <Button
         variant="outline"
-        size="icon"
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 h-12 w-12 rounded-full shadow-lg bg-indigo-600 border-indigo-700 text-white"
         data-testid="button-org-help"
       >
-        <Search className="w-5 h-5" />
+        <Search className="w-4 h-4 mr-2" />
+        Help
       </Button>
       <OrgHelpDialog open={open} onOpenChange={setOpen} />
     </>

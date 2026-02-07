@@ -808,6 +808,7 @@ export default function OrgSafeguardingPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <OrgHelpButton />
               <Button variant="outline" onClick={() => setShowConcernDialog(true)} data-testid="button-report-concern">
                 <FileWarning className="h-4 w-4 mr-2" />
                 Report Concern
@@ -2086,7 +2087,6 @@ export default function OrgSafeguardingPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <OrgHelpButton />
     </div>
   );
 }
