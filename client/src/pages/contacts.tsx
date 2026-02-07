@@ -423,7 +423,7 @@ export default function Contacts() {
                         <FormControl>
                           <Input 
                             type="tel" 
-                            placeholder="7123456789" 
+                            placeholder="7XXX XXXXXX" 
                             {...field} 
                             value={field.value?.replace(selectedCountryCode, "") || ""} 
                             onChange={(e) => {
@@ -887,7 +887,7 @@ export default function Contacts() {
                       <FormControl>
                         <Input 
                           type="tel" 
-                          placeholder="7123456789" 
+                          placeholder="7XXX XXXXXX" 
                           {...field} 
                           value={field.value?.replace(editSelectedCountryCode, "") || ""} 
                           onChange={(e) => {

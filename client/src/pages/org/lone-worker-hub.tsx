@@ -782,7 +782,7 @@ export default function OrgLoneWorkerHub() {
                     <SelectItem value="+49">+49 DE</SelectItem>
                   </SelectContent>
                 </Select>
-                <Input id="staffPhone" type="tel" value={staffPhone} onChange={(e) => setStaffPhone(e.target.value)} placeholder="7700 900000" className="flex-1" data-testid="input-staff-phone" />
+                <Input id="staffPhone" type="tel" value={staffPhone} onChange={(e) => setStaffPhone(e.target.value)} placeholder="7XXX XXXXXX" className="flex-1" data-testid="input-staff-phone" />
               </div>
               <p className="text-xs text-muted-foreground">Leading zero will be removed automatically</p>
             </div>
@@ -825,7 +825,7 @@ export default function OrgLoneWorkerHub() {
                         <SelectItem value="+49">+49 DE</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Input id="ecPhone" type="tel" value={ecPhone} onChange={(e) => setEcPhone(e.target.value)} placeholder="7700 900000" className="flex-1" data-testid="input-ec-phone" />
+                    <Input id="ecPhone" type="tel" value={ecPhone} onChange={(e) => setEcPhone(e.target.value)} placeholder="7XXX XXXXXX" className="flex-1" data-testid="input-ec-phone" />
                   </div>
                 </div>
                 <div className="space-y-1">
