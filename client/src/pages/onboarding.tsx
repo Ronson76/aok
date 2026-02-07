@@ -764,7 +764,7 @@ function Step5WhoWorries({ data, setData }: { data: OnboardingData; setData: (d:
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-4 sm:p-6">
-        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6" data-testid="text-worries-title">Who worries about you most?</h1>
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6" data-testid="text-worries-title">Who would you like to be notified in an emergency?</h1>
         
         <div className="space-y-2 sm:space-y-3">
           {options.map((option) => (
