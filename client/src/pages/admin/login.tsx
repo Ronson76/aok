@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAdmin } from "@/contexts/admin-context";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ShieldCheck, UserPlus, Eye, EyeOff } from "lucide-react";
+import { Loader2, ShieldCheck, UserPlus, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function AdminLogin() {
@@ -17,10 +17,19 @@ export default function AdminLogin() {
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const { login } = useAdmin();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("sessionExpired") === "true") {
+      setSessionExpired(true);
+      window.history.replaceState({}, "", "/admin/login");
+    }
+  }, []);
 
   const { data: adminStatus, isLoading: checkingAdmin } = useQuery<{ hasAdmin: boolean }>({
     queryKey: ["/api/admin/status"],
@@ -32,6 +41,7 @@ export default function AdminLogin() {
     e.preventDefault();
     setIsLoading(true);
 
+    setSessionExpired(false);
     try {
       await login(email, password);
       setLocation("/admin");
@@ -88,7 +98,21 @@ export default function AdminLogin() {
         </div>
       </header>
       <div className="flex-1 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+      <div className="w-full max-w-md space-y-4">
+        {sessionExpired && (
+          <Card className="border-destructive bg-destructive/10" data-testid="card-session-expired">
+            <CardContent className="py-4">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-destructive text-sm">Session Timed Out</p>
+                  <p className="text-xs text-muted-foreground">You were logged out due to inactivity. Please sign in again to continue.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      <Card className="w-full">
         <CardHeader className="text-center">
           <div className="flex flex-col items-center mb-4">
             <ShieldCheck className="h-12 w-12 text-slate-600 dark:text-slate-400" />
@@ -187,6 +211,7 @@ export default function AdminLogin() {
           </form>
         </CardContent>
       </Card>
+      </div>
       </div>
       <footer className="py-4 text-center">
         <p className="text-xs text-muted-foreground">aok Admin Portal</p>
