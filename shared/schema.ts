@@ -3,10 +3,9 @@ import { pgTable, text, varchar, timestamp, boolean, date, integer, jsonb } from
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Password validation: minimum 8 characters, alphanumeric only
+// Password validation: minimum 8 characters
 export const passwordSchema = z.string()
-  .min(8, "Password must be at least 8 characters")
-  .regex(/^[a-zA-Z0-9]+$/, "Password must contain only letters and numbers");
+  .min(8, "Password must be at least 8 characters");
 
 // Check-in frequency options
 export const checkInFrequencies = ["daily", "every_two_days"] as const;
