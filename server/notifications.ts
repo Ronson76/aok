@@ -2592,3 +2592,100 @@ This link expires in 48 hours. If you're safe, just tap the button.`;
   console.log(`[SMS CHECK-IN] Sending check-in link to ${phoneNumber}`);
   return await sendSMS(phoneNumber, message);
 }
+
+export async function sendTeamMemberInviteEmail(
+  email: string,
+  name: string,
+  inviteCode: string
+): Promise<boolean> {
+  try {
+    const acceptUrl = `https://aok.care/org/team-invite?code=${inviteCode}`;
+    const firstName = name.split(" ")[0];
+
+    await sendEmail(
+      email,
+      `You've been invited to join an aok organisation`,
+      `You've been invited to join an organisation on aok. Visit ${acceptUrl} to accept.`,
+      `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #1a1a1a; font-size: 24px; margin: 0;">aok</h1>
+          <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Personal Safety Platform</p>
+        </div>
+        
+        <div style="background: #f8f9fa; border-radius: 8px; padding: 24px; margin-bottom: 20px;">
+          <h2 style="color: #1a1a1a; font-size: 20px; margin: 0 0 16px 0;">Hello ${firstName},</h2>
+          <p style="color: #333; font-size: 16px; line-height: 1.5; margin: 0 0 16px 0;">
+            You've been invited to join an organisation on aok as a team member.
+          </p>
+          <p style="color: #333; font-size: 16px; line-height: 1.5; margin: 0 0 24px 0;">
+            Click the button below to set up your account and get started:
+          </p>
+          <div style="text-align: center;">
+            <a href="${acceptUrl}" style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-size: 16px; font-weight: 600;">
+              Accept Invite
+            </a>
+          </div>
+        </div>
+        
+        <p style="color: #999; font-size: 12px; text-align: center; margin-top: 20px;">
+          This invite expires in 7 days. If you didn't expect this email, you can safely ignore it.
+        </p>
+      </div>
+      `
+    );
+
+    console.log(`[TEAM INVITE] Email sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error(`[TEAM INVITE] Failed to send invite email to ${email}:`, error);
+    return false;
+  }
+}
+
+export async function sendAdminInviteEmail(
+  email: string,
+  name: string,
+  inviteCode: string
+): Promise<boolean> {
+  try {
+    const acceptUrl = `https://aok.care/admin/invite?code=${inviteCode}`;
+    const firstName = name.split(" ")[0];
+
+    await sendEmail(
+      email,
+      `You've been invited to join the aok admin team`,
+      `You've been invited to join the aok admin team. Visit ${acceptUrl} to accept.`,
+      `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #1a1a1a; font-size: 24px; margin: 0;">aok</h1>
+          <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Admin Platform</p>
+        </div>
+        
+        <div style="background: #f8f9fa; border-radius: 8px; padding: 24px; margin-bottom: 20px;">
+          <h2 style="color: #1a1a1a; font-size: 20px; margin: 0 0 16px 0;">Hello ${firstName},</h2>
+          <p style="color: #333; font-size: 16px; line-height: 1.5; margin: 0 0 16px 0;">
+            You've been invited to join the aok admin team. Click the button below to set up your account:
+          </p>
+          <div style="text-align: center;">
+            <a href="${acceptUrl}" style="display: inline-block; background: #dc2626; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-size: 16px; font-weight: 600;">
+              Accept Admin Invite
+            </a>
+          </div>
+        </div>
+        
+        <p style="color: #999; font-size: 12px; text-align: center; margin-top: 20px;">
+          This invite expires in 7 days. If you didn't expect this email, you can safely ignore it.
+        </p>
+      </div>
+      `
+    );
+
+    console.log(`[ADMIN INVITE] Email sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error(`[ADMIN INVITE] Failed to send invite email to ${email}:`, error);
+    return false;
+  }
+}

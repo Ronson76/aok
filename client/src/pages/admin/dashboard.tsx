@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { format, formatDistanceToNow } from "date-fns";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import type { DashboardStats, AdminOrganizationView, AdminOrganizationClientView, OrgClientStatus } from "@shared/schema";
+import AdminTeam from "@/pages/admin/team";
 
 const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -189,6 +190,7 @@ export default function AdminDashboard() {
   }, [orgClients, orgClientSearchRef, orgClientSearchPhone]);
   
   const isSuperAdmin = admin?.role === "super_admin";
+  const [activeView, setActiveView] = useState<"dashboard" | "team">("dashboard");
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/admin/dashboard/stats"],
@@ -584,6 +586,16 @@ export default function AdminDashboard() {
               >
                 Bundles
               </Button>
+              {isSuperAdmin && (
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setActiveView(activeView === "team" ? "dashboard" : "team")}
+                  data-testid="nav-team"
+                  className={activeView === "team" ? "bg-accent" : ""}
+                >
+                  Team
+                </Button>
+              )}
             </nav>
             {isSuperAdmin && (
               <Button 
@@ -609,6 +621,10 @@ export default function AdminDashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {activeView === "team" && isSuperAdmin ? (
+          <AdminTeam />
+        ) : (
+        <>
         <h2 className="text-2xl font-semibold mb-6">Overview</h2>
 
         {isLoading ? (
@@ -1696,6 +1712,8 @@ export default function AdminDashboard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </>
+        )}
       </main>
     </div>
   );

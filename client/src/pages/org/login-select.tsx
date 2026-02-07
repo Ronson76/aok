@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, ArrowLeft, Building2, User } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Building2, User, Users } from "lucide-react";
 
 export default function OrgLoginSelect() {
   return (
@@ -55,6 +55,24 @@ export default function OrgLoginSelect() {
                       <CardTitle className="text-lg">I'm from an Organisation</CardTitle>
                       <CardDescription>
                         Sign in to manage your organisation's clients
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            </Link>
+
+            <Link href="/org/team-login">
+              <Card className="cursor-pointer hover-elevate transition-all">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-full bg-orange-500/10 p-3">
+                      <Users className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">I'm a Team Member</CardTitle>
+                      <CardDescription>
+                        Sign in to your organisation team account
                       </CardDescription>
                     </div>
                   </div>

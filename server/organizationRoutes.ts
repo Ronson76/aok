@@ -1,12 +1,11 @@
-import { Express, Request, Response } from "express";
-import { organizationStorage, storage } from "./storage";
+import { Express, Request, Response, NextFunction } from "express";
+import { organizationStorage, storage, orgMemberStorage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema } from "@shared/schema";
 import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail, sendStaffInviteSMS, sendEmergencyContactConfirmationForStaffInvite } from "./notifications";
 import { plantTreeForNewSubscriber } from "./ecologiService";
 
-// Generate a unique 6-character reference code
 function generateReferenceCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
@@ -16,11 +15,9 @@ function generateReferenceCode(): string {
   return code;
 }
 
-// Parse a time string (HH:MM) into a Date object for today
 function parseScheduleTime(timeStr: string): Date | null {
   if (!timeStr) return null;
   
-  // Handle HH:MM format
   const match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
   if (match) {
     const hours = parseInt(match[1], 10);
@@ -30,7 +27,6 @@ function parseScheduleTime(timeStr: string): Date | null {
     return now;
   }
   
-  // Try parsing as full date/time
   const date = new Date(timeStr);
   if (!isNaN(date.getTime())) {
     return date;
@@ -39,11 +35,28 @@ function parseScheduleTime(timeStr: string): Date | null {
   return null;
 }
 
-// Middleware to ensure user is an organization
-function requireOrganization(req: Request, res: Response, next: () => void) {
-  if (!req.user || (req.user as any).accountType !== "organization") {
-    return res.status(403).json({ error: "Access denied. Organization account required." });
+async function requireOrganization(req: Request, res: Response, next: NextFunction) {
+  const orgMemberSessionId = req.cookies?.org_member_session;
+  if (orgMemberSessionId) {
+    const session = await orgMemberStorage.getMemberSession(orgMemberSessionId);
+    if (session) {
+      const member = await orgMemberStorage.getMemberById(session.memberId);
+      if (member && member.status === "active") {
+        req.userId = member.organizationId;
+        req.orgId = member.organizationId;
+        req.orgMember = (() => { const { passwordHash, ...p } = member; return p; })();
+        req.orgRole = member.role;
+        return next();
+      }
+    }
   }
+
+  if (!req.user || (req.user as any).accountType !== "organization") {
+    return res.status(403).json({ error: "Access denied. Organisation account required." });
+  }
+  
+  req.orgId = req.userId;
+  req.orgRole = "owner";
   next();
 }
 
@@ -1824,6 +1837,165 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching staff audit trail:", error);
       res.status(500).json({ error: "Failed to fetch staff audit trail" });
+    }
+  });
+
+  // ===== TEAM MANAGEMENT (IAM) ENDPOINTS =====
+
+  app.get("/api/org/team", requireOrganization, async (req, res) => {
+    try {
+      if (req.orgRole !== "owner" && req.orgRole !== "manager") {
+        return res.status(403).json({ error: "Insufficient permissions" });
+      }
+      const members = await orgMemberStorage.getMembersByOrganization(req.orgId!);
+      const invites = await orgMemberStorage.getInvitesByOrganization(req.orgId!);
+      res.json({ members, invites });
+    } catch (error) {
+      console.error("[ORG_TEAM] Get team error:", error);
+      res.status(500).json({ error: "Failed to get team" });
+    }
+  });
+
+  app.post("/api/org/team/invite", requireOrganization, async (req, res) => {
+    try {
+      if (req.orgRole !== "owner") {
+        return res.status(403).json({ error: "Only the owner can invite team members" });
+      }
+      const schema = z.object({
+        email: z.string().email(),
+        name: z.string().min(1),
+        role: z.enum(["manager", "staff", "viewer"]),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
+      }
+
+      const existing = await orgMemberStorage.getMemberByEmail(req.orgId!, parsed.data.email);
+      if (existing) {
+        return res.status(400).json({ error: "A team member with this email already exists" });
+      }
+
+      const { sendTeamMemberInviteEmail } = await import("./notifications");
+      const invite = await orgMemberStorage.createInvite({
+        organizationId: req.orgId!,
+        email: parsed.data.email,
+        name: parsed.data.name,
+        role: parsed.data.role,
+        invitedById: req.orgMember?.id || req.userId,
+        invitedByType: req.orgMember ? "member" : "owner",
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      });
+
+      try {
+        await sendTeamMemberInviteEmail(parsed.data.email, parsed.data.name, invite.inviteCode);
+      } catch (emailError) {
+        console.error("[ORG_TEAM] Failed to send invite email:", emailError);
+      }
+
+      res.json({ invite });
+    } catch (error) {
+      console.error("[ORG_TEAM] Create invite error:", error);
+      res.status(500).json({ error: "Failed to create invite" });
+    }
+  });
+
+  app.patch("/api/org/team/:memberId/role", requireOrganization, async (req, res) => {
+    try {
+      if (req.orgRole !== "owner") {
+        return res.status(403).json({ error: "Only the owner can change roles" });
+      }
+      const { role } = req.body;
+      if (!role || !["manager", "staff", "viewer"].includes(role)) {
+        return res.status(400).json({ error: "Invalid role" });
+      }
+      const member = await orgMemberStorage.getMemberById(req.params.memberId);
+      if (!member || member.organizationId !== req.orgId) {
+        return res.status(404).json({ error: "Member not found" });
+      }
+      const updated = await orgMemberStorage.updateMemberRole(req.params.memberId, role);
+      res.json({ member: updated });
+    } catch (error) {
+      console.error("[ORG_TEAM] Update role error:", error);
+      res.status(500).json({ error: "Failed to update role" });
+    }
+  });
+
+  app.patch("/api/org/team/:memberId/status", requireOrganization, async (req, res) => {
+    try {
+      if (req.orgRole !== "owner") {
+        return res.status(403).json({ error: "Only the owner can change status" });
+      }
+      const { status } = req.body;
+      if (!status || !["active", "disabled"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+      const member = await orgMemberStorage.getMemberById(req.params.memberId);
+      if (!member || member.organizationId !== req.orgId) {
+        return res.status(404).json({ error: "Member not found" });
+      }
+      const updated = await orgMemberStorage.updateMemberStatus(req.params.memberId, status);
+      res.json({ member: updated });
+    } catch (error) {
+      console.error("[ORG_TEAM] Update status error:", error);
+      res.status(500).json({ error: "Failed to update status" });
+    }
+  });
+
+  app.delete("/api/org/team/:memberId", requireOrganization, async (req, res) => {
+    try {
+      if (req.orgRole !== "owner") {
+        return res.status(403).json({ error: "Only the owner can remove team members" });
+      }
+      const member = await orgMemberStorage.getMemberById(req.params.memberId);
+      if (!member || member.organizationId !== req.orgId) {
+        return res.status(404).json({ error: "Member not found" });
+      }
+      await orgMemberStorage.deleteMember(req.params.memberId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[ORG_TEAM] Delete member error:", error);
+      res.status(500).json({ error: "Failed to remove member" });
+    }
+  });
+
+  app.post("/api/org/team/invite/:inviteId/revoke", requireOrganization, async (req, res) => {
+    try {
+      if (req.orgRole !== "owner") {
+        return res.status(403).json({ error: "Only the owner can revoke invites" });
+      }
+      const invite = await orgMemberStorage.updateInviteStatus(req.params.inviteId, "revoked");
+      if (!invite) {
+        return res.status(404).json({ error: "Invite not found" });
+      }
+      res.json({ invite });
+    } catch (error) {
+      console.error("[ORG_TEAM] Revoke invite error:", error);
+      res.status(500).json({ error: "Failed to revoke invite" });
+    }
+  });
+
+  app.post("/api/org/team/invite/:inviteId/resend", requireOrganization, async (req, res) => {
+    try {
+      if (req.orgRole !== "owner") {
+        return res.status(403).json({ error: "Only the owner can resend invites" });
+      }
+      const invites = await orgMemberStorage.getInvitesByOrganization(req.orgId!);
+      const invite = invites.find(i => i.id === req.params.inviteId);
+      if (!invite) {
+        return res.status(404).json({ error: "Invite not found" });
+      }
+      const { sendTeamMemberInviteEmail } = await import("./notifications");
+      try {
+        await sendTeamMemberInviteEmail(invite.email, invite.name, invite.inviteCode);
+      } catch (emailError) {
+        console.error("[ORG_TEAM] Failed to resend invite email:", emailError);
+        return res.status(500).json({ error: "Failed to send email" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[ORG_TEAM] Resend invite error:", error);
+      res.status(500).json({ error: "Failed to resend invite" });
     }
   });
 
