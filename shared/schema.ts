@@ -3,6 +3,11 @@ import { pgTable, text, varchar, timestamp, boolean, date, integer, jsonb } from
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Password validation: minimum 8 characters, alphanumeric only
+export const passwordSchema = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/^[a-zA-Z0-9]+$/, "Password must contain only letters and numbers");
+
 // Check-in frequency options
 export const checkInFrequencies = ["daily", "every_two_days"] as const;
 export type CheckInFrequency = typeof checkInFrequencies[number];
@@ -59,7 +64,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   termsAcceptedAt: true, // Handled separately in backend to allow string input
 }).extend({
   accountType: z.enum(accountTypes),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: passwordSchema,
   confirmPassword: z.string(),
   name: z.string().min(1, "Name is required"),
   referenceId: z.string().optional(),
@@ -352,7 +357,7 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 // Reset password schema
 export const resetPasswordSchema = z.object({
   token: z.string().min(1, "Reset token is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: passwordSchema,
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -398,7 +403,7 @@ export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
   createdAt: true,
   lastLoginAt: true,
 }).extend({
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: passwordSchema,
   role: z.enum(adminRoles).optional(),
 });
 

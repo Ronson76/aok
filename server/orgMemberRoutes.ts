@@ -182,8 +182,8 @@ export function registerOrgMemberRoutes(app: Express) {
   app.post("/api/org-member/invite/:code/accept", async (req, res) => {
     try {
       const { password } = req.body;
-      if (!password || password.length < 8) {
-        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      if (!password || password.length < 8 || !/^[a-zA-Z0-9]+$/.test(password)) {
+        return res.status(400).json({ error: "Password must be at least 8 characters and contain only letters and numbers" });
       }
 
       const invite = await orgMemberStorage.getInviteByCode(req.params.code);

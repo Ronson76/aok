@@ -13,7 +13,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 
 const formSchema = z.object({
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/^[a-zA-Z0-9]+$/, "Password must contain only letters and numbers"),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",

@@ -2,7 +2,7 @@ import { Express, Request, Response, NextFunction } from "express";
 import { organizationStorage, storage, orgMemberStorage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema } from "@shared/schema";
+import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema } from "@shared/schema";
 import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail, sendStaffInviteSMS, sendEmergencyContactConfirmationForStaffInvite } from "./notifications";
 import { plantTreeForNewSubscriber } from "./ecologiService";
 
@@ -384,7 +384,7 @@ export function registerOrganizationRoutes(app: Express) {
 
   // Reset a client's password (organization can set a new password for their client)
   const resetClientPasswordSchema = z.object({
-    newPassword: z.string().min(8, "Password must be at least 8 characters"),
+    newPassword: passwordSchema,
     orgPassword: z.string().min(1, "Your password is required"),
   });
 
@@ -975,7 +975,7 @@ export function registerOrganizationRoutes(app: Express) {
     try {
       const schema = z.object({
         currentPassword: z.string().min(1, "Current password is required"),
-        newPassword: z.string().min(8, "New password must be at least 8 characters"),
+        newPassword: passwordSchema,
       });
 
       const parsed = schema.safeParse(req.body);
