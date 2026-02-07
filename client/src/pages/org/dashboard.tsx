@@ -181,6 +181,7 @@ export default function OrganizationDashboard() {
   const [showResendPasswordDialog, setShowResendPasswordDialog] = useState(false);
   const [resendPasswordClientId, setResendPasswordClientId] = useState<string | null>(null);
   const [resendPasswordClientName, setResendPasswordClientName] = useState<string>("");
+  const [resendPasswordIsRegistered, setResendPasswordIsRegistered] = useState(true);
   
   // Change own password dialog state
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
@@ -500,8 +501,11 @@ export default function OrganizationDashboard() {
   );
 
   const resendPasswordMutation = useMutation({
-    mutationFn: async ({ clientId }: { clientId: string }) => {
-      const response = await apiRequest("POST", `/api/org/clients/${clientId}/send-reference-code`);
+    mutationFn: async ({ clientId, isRegistered }: { clientId: string; isRegistered: boolean }) => {
+      const endpoint = isRegistered
+        ? `/api/org/clients/${clientId}/send-reference-code`
+        : `/api/org/clients/${clientId}/resend-invite`;
+      const response = await apiRequest("POST", endpoint);
       return response.json();
     },
     onSuccess: () => {
@@ -509,13 +513,13 @@ export default function OrganizationDashboard() {
       setResendPasswordClientId(null);
       setResendPasswordClientName("");
       toast({
-        title: "Reference code sent",
-        description: "The client will receive an SMS with their reference code.",
+        title: "SMS sent",
+        description: "The client will receive an SMS with their reference code and login link.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to send reference code",
+        title: "Failed to send SMS",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
@@ -959,9 +963,11 @@ export default function OrganizationDashboard() {
   };
 
   const handleResendPasswordClick = (client: OrganizationClientWithDetails) => {
-    if (!client.clientId || !client.client) return;
-    setResendPasswordClientId(client.clientId);
-    setResendPasswordClientName(client.nickname || client.client.name);
+    const isRegistered = !!(client.clientId && client.client);
+    const id = isRegistered ? client.clientId! : client.id;
+    setResendPasswordClientId(id);
+    setResendPasswordIsRegistered(isRegistered);
+    setResendPasswordClientName(client.nickname || client.clientName || client.client?.name || "Client");
     setShowResendPasswordDialog(true);
   };
 
@@ -969,6 +975,7 @@ export default function OrganizationDashboard() {
     if (resendPasswordClientId) {
       resendPasswordMutation.mutate({
         clientId: resendPasswordClientId,
+        isRegistered: resendPasswordIsRegistered,
       });
     }
   };
@@ -1622,8 +1629,13 @@ export default function OrganizationDashboard() {
                           </Badge>
                         )}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {client.client?.email || client.clientPhone || "No contact info"}
+                      <div className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+                        <span>{client.client?.email || client.clientPhone || "No contact info"}</span>
+                        {client.referenceCode && (
+                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded" title="Reference code">
+                            {client.referenceCode}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                         {client.status.lastCheckIn && (
@@ -1728,31 +1740,31 @@ export default function OrganizationDashboard() {
                     >
                       Emergency Contacts
                     </Button>
+                    {client.referenceCode && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleResendPasswordClick(client)}
+                        data-testid={`button-resend-password-${client.clientId || client.id}`}
+                      >
+                        Resend SMS
+                      </Button>
+                    )}
                     {client.client && client.clientId && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleResendPasswordClick(client)}
-                          data-testid={`button-resend-password-${client.clientId}`}
-                        >
-                          Resend SMS
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setScheduleClientId(client.id);
-                            setScheduleClientName(client.nickname || client.clientName || client.client?.name || "Client");
-                            setScheduleStartTime(client.scheduleStartTime ? new Date(client.scheduleStartTime).toTimeString().slice(0, 5) : "10:00");
-                            setScheduleIntervalHours(client.checkInIntervalHours || 24);
-                            setShowScheduleDialog(true);
-                          }}
-                          data-testid={`button-schedule-${client.clientId}`}
-                        >
-                          Adjust Check-in Time
-                        </Button>
-                      </>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setScheduleClientId(client.id);
+                          setScheduleClientName(client.nickname || client.clientName || client.client?.name || "Client");
+                          setScheduleStartTime(client.scheduleStartTime ? new Date(client.scheduleStartTime).toTimeString().slice(0, 5) : "10:00");
+                          setScheduleIntervalHours(client.checkInIntervalHours || 24);
+                          setShowScheduleDialog(true);
+                        }}
+                        data-testid={`button-schedule-${client.clientId}`}
+                      >
+                        Adjust Check-in Time
+                      </Button>
                     )}
                     <Button
                       variant="ghost"
