@@ -628,7 +628,7 @@ export default function OrganizationDashboard() {
     
     setSavingProfile(true);
     try {
-      const { phone, email, ...profile } = profileData;
+      const { phone, email, id, organizationClientId, updatedAt, ...profile } = profileData as any;
       
       // First save the profile data
       await updateProfileMutation.mutateAsync({ orgClientId: selectedClient.id, profile });
