@@ -609,6 +609,15 @@ export default function AdminDashboard() {
                   Workflows
                 </Button>
               )}
+              {isSuperAdmin && (
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setLocation("/admin/licence-agreements")}
+                  data-testid="nav-licence-agreements"
+                >
+                  Licence Agreements
+                </Button>
+              )}
             </nav>
             {isSuperAdmin && (
               <Button 

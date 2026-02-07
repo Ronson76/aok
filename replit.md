@@ -46,9 +46,20 @@ Preferred communication style: Simple, everyday language.
 - **Password Policy**: Minimum 8 characters, special characters allowed.
 - **Shake to SOS**: Enabled by default, can be disabled in settings.
 
+### Legal / Licence Agreements
+- **EULA** (`/eula`): Individual user licence agreement.
+- **Enterprise Licence** (`/enterprise-licence`): Organisation multi-user licence.
+- **Data Processing Addendum** (`/data-processing-addendum`): GDPR DPA for organisations.
+- **SLA** (`/sla`): Service level agreement (paid tiers only, 99.9% uptime target).
+- **Lone Worker Addendum** (`/lone-worker-addendum`): Additional terms for lone worker use.
+- **Privacy Policy** (`/privacy`): Data privacy policy for all users.
+- **Terms and Conditions** (`/terms`): General terms of service.
+- **Deployment Matrix**: Individuals get EULA + Privacy Policy; Organisations get Enterprise Licence + DPA; Lone Workers get Enterprise Licence + Lone Worker Addendum + SLA; Paid tiers only get SLA.
+
 ### Admin Dashboard
 - **Access**: Separate login (`/admin/login`) with role-based access (`super_admin`, `analyst`).
 - **Management**: User management, organization bundle creation, client oversight (viewing, pausing, resuming, removing clients), client safeguarding hub, full client management including check-in schedule and feature toggles.
+- **Licence Agreements Tab** (`/admin/licence-agreements`): Deployment matrix, document cards grouped by customer type, quick links to all legal documents (super_admin only).
 - **Security**: Audit logging for admin actions.
 
 ### Organization Features
