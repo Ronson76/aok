@@ -14,6 +14,20 @@ const PUSH_NOTIFICATION_COOLDOWN_MS = 30 * 1000;
 const smsCheckinSentCache = new Map<string, number>();
 const SMS_CHECKIN_COOLDOWN_MS = 30 * 60 * 1000;
 
+// Track user online status via heartbeat pings
+const userLastSeenCache = new Map<string, number>();
+const OFFLINE_THRESHOLD_MS = 3 * 60 * 1000; // Consider offline after 3 minutes without heartbeat
+
+export function recordUserHeartbeat(userId: string): void {
+  userLastSeenCache.set(userId, Date.now());
+}
+
+export function isUserOnline(userId: string): boolean {
+  const lastSeen = userLastSeenCache.get(userId);
+  if (!lastSeen) return false;
+  return (Date.now() - lastSeen) < OFFLINE_THRESHOLD_MS;
+}
+
 // Send push notifications to overdue users
 async function processOverduePushNotifications(): Promise<void> {
   try {
@@ -61,7 +75,7 @@ async function processOverduePushNotifications(): Promise<void> {
   }
 }
 
-// Send SMS check-in links to overdue users who are likely offline
+// Send SMS check-in links to overdue users who are offline (no heartbeat recently)
 async function processOverdueSmsCheckins(): Promise<void> {
   try {
     const overdueUsers = await storage.getOverdueUsersForSmsCheckin();
@@ -71,6 +85,11 @@ async function processOverdueSmsCheckins(): Promise<void> {
     const now = Date.now();
 
     for (const user of overdueUsers) {
+      // Only send SMS check-in when the user is offline (no heartbeat in last 3 minutes)
+      if (isUserOnline(user.userId)) {
+        continue;
+      }
+
       const lastSent = smsCheckinSentCache.get(user.userId);
       if (lastSent && now - lastSent < SMS_CHECKIN_COOLDOWN_MS) {
         continue;
@@ -87,7 +106,7 @@ async function processOverdueSmsCheckins(): Promise<void> {
 
         if (result.success) {
           smsCheckinSentCache.set(user.userId, now);
-          console.log(`[SMS CHECK-IN] Sent check-in link to ${user.userName} (${user.mobileNumber})`);
+          console.log(`[SMS CHECK-IN] Sent check-in link to ${user.userName} (${user.mobileNumber}) - user offline`);
         } else {
           console.error(`[SMS CHECK-IN] Failed to send to ${user.userName}: ${result.error}`);
         }
