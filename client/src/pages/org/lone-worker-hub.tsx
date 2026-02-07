@@ -143,6 +143,8 @@ export default function OrgLoneWorkerHub() {
   const [searchQuery, setSearchQuery] = useState("");
   const [inviteFilter, setInviteFilter] = useState("all");
   const [auditFilter, setAuditFilter] = useState("all");
+  const [expandedAuditUsers, setExpandedAuditUsers] = useState<Set<string>>(new Set());
+  const [expandedHistoryUsers, setExpandedHistoryUsers] = useState<Set<string>>(new Set());
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const logoutRef = useRef(logout);
@@ -370,6 +372,53 @@ export default function OrgLoneWorkerHub() {
     return true;
   });
 
+  const auditGroupedByUser = (() => {
+    const groups: Record<string, AuditEntry[]> = {};
+    for (const entry of filteredAudit) {
+      const name = entry.newData?.staffName || entry.newData?.userName || entry.userEmail;
+      if (!groups[name]) groups[name] = [];
+      groups[name].push(entry);
+    }
+    return Object.entries(groups).sort((a, b) => {
+      const latestA = new Date(a[1][0].createdAt).getTime();
+      const latestB = new Date(b[1][0].createdAt).getTime();
+      return latestB - latestA;
+    });
+  })();
+
+  const historyGroupedByUser = (() => {
+    const resolved = (sessionHistoryQuery.data || []).filter((s: any) => s.status === "resolved");
+    const groups: Record<string, typeof resolved> = {};
+    for (const s of resolved) {
+      const name = (s as any).userName || "Unknown";
+      if (!groups[name]) groups[name] = [];
+      groups[name].push(s);
+    }
+    return Object.entries(groups).sort((a, b) => {
+      const latestA = a[1][0]?.resolvedAt ? new Date(String(a[1][0].resolvedAt)).getTime() : 0;
+      const latestB = b[1][0]?.resolvedAt ? new Date(String(b[1][0].resolvedAt)).getTime() : 0;
+      return latestB - latestA;
+    });
+  })();
+
+  const toggleAuditUser = (name: string) => {
+    setExpandedAuditUsers(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
+  const toggleHistoryUser = (name: string) => {
+    setExpandedHistoryUsers(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
   const activeSessions = (activeSessionsQuery.data || []).sort((a, b) => statusPriority(a.status) - statusPriority(b.status));
   const panicCount = activeSessions.filter(s => s.status === "panic").length;
   const unresponsiveCount = activeSessions.filter(s => s.status === "unresponsive").length;
@@ -570,23 +619,43 @@ export default function OrgLoneWorkerHub() {
               </div>
             )}
 
-            {/* Recent resolved sessions */}
-            {sessionHistoryQuery.data && sessionHistoryQuery.data.filter((s: any) => s.status === "resolved").length > 0 && (
+            {historyGroupedByUser.length > 0 && (
               <div className="space-y-3 mt-6">
                 <h3 className="text-sm font-semibold text-muted-foreground">Recently Resolved</h3>
-                {sessionHistoryQuery.data.filter((s: any) => s.status === "resolved").slice(0, 10).map((s: any) => (
-                  <Card key={s.id} className="opacity-75">
-                    <CardContent className="py-3">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <div>
-                          <p className="text-sm font-medium">{s.userName}</p>
-                          <p className="text-xs text-muted-foreground">{JOB_LABELS[s.jobType] || s.jobType}</p>
+                {historyGroupedByUser.map(([userName, sessions]) => (
+                  <Card key={userName} className="opacity-75 overflow-visible">
+                    <CardContent className="py-0">
+                      <button
+                        onClick={() => toggleHistoryUser(userName)}
+                        className="w-full py-3 flex items-center justify-between gap-2 text-left"
+                        data-testid={`button-history-user-${userName.replace(/\s+/g, "-").toLowerCase()}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{userName}</span>
+                          <Badge variant="secondary">{sessions.length}</Badge>
                         </div>
-                        <div className="text-right text-xs text-muted-foreground">
-                          <p>{s.resolvedAt ? format(new Date(s.resolvedAt), "dd/MM/yyyy HH:mm") : "—"}</p>
-                          {s.outcome && <p className="capitalize">{s.outcome.replace(/_/g, " ")}</p>}
+                        {expandedHistoryUsers.has(userName) ? (
+                          <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </button>
+                      {expandedHistoryUsers.has(userName) && (
+                        <div className="space-y-2 pb-3 border-t pt-3">
+                          {sessions.map((s: any) => (
+                            <div key={s.id} className="flex items-center justify-between flex-wrap gap-2 p-2 rounded border text-sm">
+                              <div>
+                                <p className="text-sm">{JOB_LABELS[s.jobType] || s.jobType}</p>
+                                {s.jobDescription && <p className="text-xs text-muted-foreground">{s.jobDescription}</p>}
+                              </div>
+                              <div className="text-right text-xs text-muted-foreground">
+                                <p>{s.resolvedAt ? format(new Date(s.resolvedAt), "dd/MM/yyyy HH:mm") : "—"}</p>
+                                {s.outcome && <p className="capitalize">{s.outcome.replace(/_/g, " ")}</p>}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -697,49 +766,75 @@ export default function OrgLoneWorkerHub() {
                 </div>
               </CardHeader>
               <CardContent>
-                {filteredAudit.length > 0 ? (
-                  <div className="space-y-3">
-                    {filteredAudit.map((entry) => (
-                      <div key={entry.id} className="p-3 rounded-lg border flex items-start justify-between gap-4 flex-wrap" data-testid={`audit-entry-${entry.id}`}>
-                        <div className="space-y-1 min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {getAuditActionBadge(entry.action, entry.entityType)}
-                            <span className="text-sm font-medium capitalize">{entry.entityType.replace(/_/g, " ")}</span>
+                {auditGroupedByUser.length > 0 ? (
+                  <div className="space-y-2">
+                    {auditGroupedByUser.map(([userName, entries]) => (
+                      <div key={userName} className="rounded-lg border overflow-visible">
+                        <button
+                          onClick={() => toggleAuditUser(userName)}
+                          className="w-full p-3 flex items-center justify-between gap-2 text-left hover-elevate rounded-lg"
+                          data-testid={`button-audit-user-${userName.replace(/\s+/g, "-").toLowerCase()}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">{userName}</span>
+                            <Badge variant="secondary">{entries.length}</Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            By: {entry.newData?.staffName || entry.userEmail} ({entry.userRole})
-                          </p>
-                          {entry.entityType === "lone_worker_session" && entry.newData && (
-                            <div className="text-xs text-muted-foreground space-y-0.5">
-                              {entry.newData.jobType && <span className="mr-3">Job: {JOB_LABELS[entry.newData.jobType] || entry.newData.jobType}</span>}
-                              {entry.newData.expectedDurationMins && <span className="mr-3">Duration: {entry.newData.expectedDurationMins}m</span>}
-                              {entry.newData.outcome && <span className="mr-3">Outcome: {entry.newData.outcome.replace(/_/g, " ")}</span>}
-                              {entry.newData.notes && <p className="mt-1">Notes: {entry.newData.notes}</p>}
-                              {entry.newData.lat && entry.newData.lng && (
-                                <a
-                                  href={`https://maps.google.com/?q=${entry.newData.lat},${entry.newData.lng}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary underline inline-flex items-center gap-1"
-                                >
-                                  <MapPin className="w-3 h-3" /> Location
-                                </a>
-                              )}
-                              {entry.newData.what3words && <span className="ml-2">w3w: {entry.newData.what3words}</span>}
-                            </div>
-                          )}
-                          {entry.entityType === "staff_invite" && (
-                            <p className="text-xs text-muted-foreground">
-                              {(entry.newData?.staffName || entry.previousData?.staffName) && <span>Name: {entry.newData?.staffName || entry.previousData?.staffName}</span>}
-                              {(entry.newData?.staffPhone || entry.previousData?.staffPhone) && <span className="ml-3">Phone: {entry.newData?.staffPhone || entry.previousData?.staffPhone}</span>}
-                              {(entry.newData?.staffEmail || entry.previousData?.staffEmail) && <span className="ml-3">Email: {entry.newData?.staffEmail || entry.previousData?.staffEmail}</span>}
-                            </p>
-                          )}
-                          {entry.ipAddress && <p className="text-xs text-muted-foreground">IP: {entry.ipAddress}</p>}
-                        </div>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm")}
-                        </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">
+                              Latest: {format(new Date(entries[0].createdAt), "dd/MM/yyyy HH:mm")}
+                            </span>
+                            {expandedAuditUsers.has(userName) ? (
+                              <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                            )}
+                          </div>
+                        </button>
+                        {expandedAuditUsers.has(userName) && (
+                          <div className="border-t px-3 pb-3 space-y-2 pt-2">
+                            {entries.map((entry) => (
+                              <div key={entry.id} className="p-2 rounded border flex items-start justify-between gap-4 flex-wrap" data-testid={`audit-entry-${entry.id}`}>
+                                <div className="space-y-1 min-w-0 flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    {getAuditActionBadge(entry.action, entry.entityType)}
+                                    <span className="text-sm font-medium capitalize">{entry.entityType.replace(/_/g, " ")}</span>
+                                  </div>
+                                  {entry.entityType === "lone_worker_session" && entry.newData && (
+                                    <div className="text-xs text-muted-foreground space-y-0.5">
+                                      {entry.newData.jobType && <span className="mr-3">Job: {JOB_LABELS[entry.newData.jobType] || entry.newData.jobType}</span>}
+                                      {entry.newData.expectedDurationMins && <span className="mr-3">Duration: {entry.newData.expectedDurationMins}m</span>}
+                                      {entry.newData.outcome && <span className="mr-3">Outcome: {entry.newData.outcome.replace(/_/g, " ")}</span>}
+                                      {entry.newData.notes && <p className="mt-1">Notes: {entry.newData.notes}</p>}
+                                      {entry.newData.lat && entry.newData.lng && (
+                                        <a
+                                          href={`https://maps.google.com/?q=${entry.newData.lat},${entry.newData.lng}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-primary underline inline-flex items-center gap-1"
+                                        >
+                                          <MapPin className="w-3 h-3" /> Location
+                                        </a>
+                                      )}
+                                      {entry.newData.what3words && <span className="ml-2">w3w: {entry.newData.what3words}</span>}
+                                    </div>
+                                  )}
+                                  {entry.entityType === "staff_invite" && (
+                                    <p className="text-xs text-muted-foreground">
+                                      {(entry.newData?.staffName || entry.previousData?.staffName) && <span>Name: {entry.newData?.staffName || entry.previousData?.staffName}</span>}
+                                      {(entry.newData?.staffPhone || entry.previousData?.staffPhone) && <span className="ml-3">Phone: {entry.newData?.staffPhone || entry.previousData?.staffPhone}</span>}
+                                      {(entry.newData?.staffEmail || entry.previousData?.staffEmail) && <span className="ml-3">Email: {entry.newData?.staffEmail || entry.previousData?.staffEmail}</span>}
+                                    </p>
+                                  )}
+                                  {entry.ipAddress && <p className="text-xs text-muted-foreground">IP: {entry.ipAddress}</p>}
+                                </div>
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                  {format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm")}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
