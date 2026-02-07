@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,9 +8,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ShieldCheck, User, Building2, MoreVertical, Mail, ChevronRight, ArrowLeft } from "lucide-react";
+import { ShieldCheck, User, Building2, MoreVertical, Mail, ChevronRight, ArrowLeft, AlertTriangle } from "lucide-react";
 
 export default function LoginSelect() {
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("sessionExpired") === "true") {
+      setSessionExpired(true);
+      window.history.replaceState({}, "", "/login");
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b">
@@ -38,7 +49,21 @@ export default function LoginSelect() {
       </header>
       
       <div className="flex-1 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+      <div className="w-full max-w-md space-y-4">
+        {sessionExpired && (
+          <Card className="border-destructive bg-destructive/10" data-testid="card-session-expired">
+            <CardContent className="py-4">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-destructive text-sm">Session Timed Out</p>
+                  <p className="text-xs text-muted-foreground">You were logged out due to inactivity. Please sign in again to continue.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      <Card className="w-full">
         <CardHeader className="text-center space-y-2">
           <CardTitle className="text-2xl">Sign In</CardTitle>
           <CardDescription>
@@ -92,6 +117,7 @@ export default function LoginSelect() {
           </div>
         </CardContent>
       </Card>
+      </div>
       </div>
     </div>
   );
