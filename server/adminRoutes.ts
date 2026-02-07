@@ -1,7 +1,7 @@
 import { Express, Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
 import { adminStorage, organizationStorage, storage, adminInviteStorage } from "./storage";
-import { adminLoginSchema, AdminUserProfile, orgClientStatuses, updateUserFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, adminRoles } from "@shared/schema";
+import { adminLoginSchema, AdminUserProfile, orgClientStatuses, updateUserFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, adminRoles, passwordSchema } from "@shared/schema";
 import { z } from "zod";
 import { sendPasswordResetEmail, sendAdminInviteEmail } from "./notifications";
 
@@ -184,7 +184,7 @@ export function registerAdminRoutes(app: Express) {
   const createOrganizationSchema = z.object({
     name: z.string().min(1, "Name is required").max(100),
     email: z.string().email("Invalid email address"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    password: passwordSchema,
   });
 
   app.post("/api/admin/organizations", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
@@ -392,8 +392,8 @@ export function registerAdminRoutes(app: Express) {
         return res.status(400).json({ error: "email, password, and name are required" });
       }
 
-      if (password.length < 8) {
-        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      if (password.length < 8 || !/^[a-zA-Z0-9]+$/.test(password)) {
+        return res.status(400).json({ error: "Password must be at least 8 characters and contain only letters and numbers" });
       }
 
       const existingAdmin = await adminStorage.getAdminByEmail(email);
@@ -793,7 +793,7 @@ export function registerAdminRoutes(app: Express) {
 
   // Reset organisation password (super admin only)
   const resetOrgPasswordSchema = z.object({
-    newPassword: z.string().min(8, "Password must be at least 8 characters"),
+    newPassword: passwordSchema,
   });
 
   app.post("/api/admin/organizations/:organizationId/reset-password", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
@@ -900,7 +900,7 @@ export function registerAdminRoutes(app: Express) {
     try {
       const schema = z.object({
         currentPassword: z.string().min(1, "Current password is required"),
-        newPassword: z.string().min(8, "New password must be at least 8 characters"),
+        newPassword: passwordSchema,
       });
 
       const parsed = schema.safeParse(req.body);
@@ -1009,8 +1009,8 @@ export function registerAdminRoutes(app: Express) {
   app.post("/api/admin/invite/:code/accept", async (req, res) => {
     try {
       const { password } = req.body;
-      if (!password || password.length < 8) {
-        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      if (!password || password.length < 8 || !/^[a-zA-Z0-9]+$/.test(password)) {
+        return res.status(400).json({ error: "Password must be at least 8 characters and contain only letters and numbers" });
       }
 
       const invite = await adminInviteStorage.getInviteByCode(req.params.code);

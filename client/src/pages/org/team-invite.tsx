@@ -54,10 +54,10 @@ export default function OrgTeamInvite() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password.length < 8) {
+    if (password.length < 8 || !/^[a-zA-Z0-9]+$/.test(password)) {
       toast({
-        title: "Password too short",
-        description: "Password must be at least 8 characters.",
+        title: "Invalid password",
+        description: "Password must be at least 8 characters and contain only letters and numbers.",
         variant: "destructive",
       });
       return;
