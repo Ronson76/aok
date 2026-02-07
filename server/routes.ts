@@ -1140,6 +1140,8 @@ export async function registerRoutes(
 
     const user = await storage.getUserById(session.userId);
     if (!user) {
+      await storage.deleteSession(sessionId);
+      res.clearCookie("session");
       return res.status(401).json({ error: "User not found" });
     }
 
