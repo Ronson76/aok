@@ -100,7 +100,7 @@ Preferred communication style: Simple, everyday language.
   - Archived users excluded from login, dashboard stats, and all active queries
   - Admin endpoints: `GET /api/admin/users/archived`, `POST /api/admin/users/:id/restore`
   - Org endpoints: `GET /api/org/clients/archived`, `POST /api/org/clients/:clientId/restore`
-- **Password Policy**: All passwords must be alphanumeric, minimum 8 characters
+- **Password Policy**: Minimum 8 characters, special characters allowed
   - Shared `passwordSchema` in schema.ts enforced across all registration, reset, and change password flows
 - **Organisation & Admin IAM**: Role-based team management
   - 4 org roles (Owner, Manager, Staff, Viewer) with granular permissions
