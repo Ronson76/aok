@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { OrgHelpButton } from "@/components/org-help-center";
 import { Shield, ArrowLeft, AlertTriangle, FileWarning, Folder, Scale, Clock, ChevronDown, ChevronRight, Plus, Eye, Check, X, Search, Filter, AlertCircle, FileText, Users, Activity, TrendingUp, Loader2, MessageSquare, Download } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -2085,6 +2086,7 @@ export default function OrgSafeguardingPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <OrgHelpButton />
     </div>
   );
 }

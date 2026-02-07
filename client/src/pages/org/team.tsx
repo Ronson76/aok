@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useLocation } from "wouter";
+import { OrgHelpButton } from "@/components/org-help-center";
 import {
   Users, ArrowLeft, UserPlus, Loader2, Shield, ShieldCheck, LogOut,
   MoreHorizontal, Send, XCircle, Trash2, UserCog, Eye, Mail
@@ -549,6 +550,7 @@ export default function OrgTeam() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <OrgHelpButton />
     </div>
   );
 }
