@@ -159,7 +159,12 @@ export default function OrgLoneWorkerHub() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(async () => {
       toastRef.current({ title: "Session expired", description: "You have been logged out due to inactivity.", variant: "destructive" });
-      await logoutRef.current();
+      try {
+        await logoutRef.current();
+      } catch (e) {
+        // Session may already be expired on server - that's fine
+      }
+      queryClient.clear();
       setLocationRef.current("/org/login");
     }, 15 * 60 * 1000);
   }, []);

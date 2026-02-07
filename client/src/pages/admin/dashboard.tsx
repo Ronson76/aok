@@ -72,7 +72,12 @@ export default function AdminDashboard() {
         description: "You have been logged out due to inactivity.",
         variant: "destructive",
       });
-      await logoutRef.current();
+      try {
+        await logoutRef.current();
+      } catch (e) {
+        // Session may already be expired on server - that's fine
+      }
+      queryClient.clear();
       setLocationRef.current("/admin/login");
     }, SESSION_TIMEOUT_MS);
   }, []);
