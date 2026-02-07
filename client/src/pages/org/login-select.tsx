@@ -1,20 +1,16 @@
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, ArrowLeft, Building2, User, Users } from "lucide-react";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Building2, User, Users } from "lucide-react";
 
 export default function OrgLoginSelect() {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-center relative">
-          <Link href="/" className="absolute left-4 hover:opacity-80 transition-opacity" data-testid="link-back">
-            <ArrowLeft className="h-5 w-5 text-green-600" />
-          </Link>
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
-            <ShieldCheck className="h-9 w-9 text-green-600" />
-            <span className="text-2xl font-bold text-green-600">aok</span>
-          </Link>
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-background dark:from-indigo-950 dark:to-background flex flex-col">
+      <header className="bg-indigo-900 dark:bg-indigo-950 border-b border-indigo-800">
+        <div className="container mx-auto px-4 py-4 flex items-center gap-3">
+          <Building2 className="h-7 w-7 text-white" />
+          <span className="text-xl font-bold text-white">aok</span>
+          <Badge variant="outline" className="text-indigo-300 border-indigo-600">Organisation</Badge>
         </div>
       </header>
 
@@ -80,17 +76,10 @@ export default function OrgLoginSelect() {
               </Card>
             </Link>
           </div>
-
-          <div className="text-center pt-4">
-            <p className="text-sm text-muted-foreground">
-              Individual user?{" "}
-              <Link href="/login">
-                <span className="text-primary hover:underline cursor-pointer">Sign in here</span>
-              </Link>
-            </p>
-          </div>
         </div>
       </div>
+
+      <footer className="py-4 text-center"><p className="text-xs text-muted-foreground">aok Organisation Portal</p></footer>
     </div>
   );
 }

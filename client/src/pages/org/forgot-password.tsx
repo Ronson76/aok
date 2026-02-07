@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Loader2, ArrowLeft, CheckCircle, ShieldCheck } from "lucide-react";
+import { Building2, Loader2, ArrowLeft, CheckCircle } from "lucide-react";
 import { forgotPasswordSchema, type ForgotPasswordInput } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -50,14 +51,12 @@ export default function OrgForgotPassword() {
 
   if (emailSent) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <header className="border-b">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
-              <ArrowLeft className="h-5 w-5 text-green-600" />
-              <ShieldCheck className="h-9 w-9 text-green-600" />
-              <span className="text-2xl font-bold text-green-600">aok</span>
-            </Link>
+      <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-background dark:from-indigo-950 dark:to-background flex flex-col">
+        <header className="bg-indigo-900 dark:bg-indigo-950 border-b border-indigo-800">
+          <div className="container mx-auto px-4 py-4 flex items-center gap-3">
+            <Building2 className="h-7 w-7 text-white" />
+            <span className="text-xl font-bold text-white">aok</span>
+            <Badge variant="outline" className="text-indigo-300 border-indigo-600">Organisation</Badge>
           </div>
         </header>
         <div className="flex-1 flex items-center justify-center p-4">
@@ -81,25 +80,18 @@ export default function OrgForgotPassword() {
           </CardContent>
         </Card>
         </div>
+        <footer className="py-4 text-center"><p className="text-xs text-muted-foreground">aok Organisation Portal</p></footer>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
-            <ArrowLeft className="h-5 w-5 text-green-600" />
-            <ShieldCheck className="h-9 w-9 text-green-600" />
-            <span className="text-2xl font-bold text-green-600">aok</span>
-          </Link>
-          <Link href="/org/staff-login">
-            <Button variant="ghost" size="sm" data-testid="button-back">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Login
-            </Button>
-          </Link>
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-background dark:from-indigo-950 dark:to-background flex flex-col">
+      <header className="bg-indigo-900 dark:bg-indigo-950 border-b border-indigo-800">
+        <div className="container mx-auto px-4 py-4 flex items-center gap-3">
+          <Building2 className="h-7 w-7 text-white" />
+          <span className="text-xl font-bold text-white">aok</span>
+          <Badge variant="outline" className="text-indigo-300 border-indigo-600">Organisation</Badge>
         </div>
       </header>
       <div className="flex-1 flex items-center justify-center p-4">
@@ -161,6 +153,7 @@ export default function OrgForgotPassword() {
         </CardContent>
       </Card>
       </div>
+      <footer className="py-4 text-center"><p className="text-xs text-muted-foreground">aok Organisation Portal</p></footer>
     </div>
   );
 }

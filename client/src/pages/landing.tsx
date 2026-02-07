@@ -1134,11 +1134,6 @@ export default function Landing() {
                 Create Account
               </Button>
             </Link>
-            <Link href="/org/login">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto border-primary-foreground/30 text-primary-foreground" data-testid="button-org-signup">
-                Organisation Sign Up
-              </Button>
-            </Link>
           </div>
         </div>
       </section>
@@ -1180,7 +1175,6 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold mb-4">For Organisations</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/org/login"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-org-login">Organisation Login</span></Link></li>
                 <li><a href="mailto:organisations@aok.care?subject=Organisation%20Enquiry" className="hover:text-foreground transition-colors" data-testid="link-footer-sales">Contact Sales</a></li>
               </ul>
             </div>
@@ -1206,22 +1200,10 @@ export default function Landing() {
             </div>
           </div>
           
-          <div className="border-t pt-8 flex flex-col md:flex-row flex-wrap items-center justify-between gap-4">
+          <div className="border-t pt-8 flex flex-col md:flex-row flex-wrap items-center gap-4">
             <p className="text-sm text-muted-foreground" data-testid="text-copyright">
               &copy; {new Date().getFullYear()} aok by NaiyaTech. All rights reserved.
             </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <Link href="/admin/login">
-                <Button variant="outline" size="sm" data-testid="link-footer-admin">
-                  Admin Login
-                </Button>
-              </Link>
-              <Link href="/org/login">
-                <Button variant="outline" size="sm" data-testid="link-footer-org">
-                  Organisation Login
-                </Button>
-              </Link>
-            </div>
           </div>
           <div className="flex justify-center mt-8">
             <Button 

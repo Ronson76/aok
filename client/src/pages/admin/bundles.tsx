@@ -188,7 +188,7 @@ export default function AdminBundles() {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" data-testid="link-home-logo">
+            <Link href="/admin" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" data-testid="link-home-logo">
               <ArrowLeft className="h-5 w-5 text-green-600" />
               <ShieldCheck className="h-9 w-9 text-green-600" />
               <span className="text-2xl font-bold text-green-600">aok</span>

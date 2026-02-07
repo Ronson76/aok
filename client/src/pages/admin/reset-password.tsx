@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { PasswordInput } from "@/components/password-input";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck, Loader2, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -69,16 +70,16 @@ export default function AdminResetPassword() {
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <header className="border-b">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
-              <ArrowLeft className="h-5 w-5 text-green-600" />
-              <ShieldCheck className="h-9 w-9 text-green-600" />
-              <span className="text-2xl font-bold text-green-600">aok</span>
-            </Link>
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-background dark:from-slate-950 dark:to-background flex flex-col">
+        <header className="bg-slate-900 dark:bg-slate-950 border-b border-slate-800">
+          <div className="container mx-auto px-4 py-4 flex items-center gap-3 flex-wrap justify-between">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="h-7 w-7 text-white" />
+              <span className="text-xl font-bold text-white">aok</span>
+              <Badge variant="outline" className="text-slate-300 border-slate-600">Admin</Badge>
+            </div>
             <Link href="/admin/login">
-              <Button variant="ghost" size="sm" data-testid="button-back">
+              <Button variant="ghost" size="sm" className="text-slate-300" data-testid="button-back">
                 Back to Login
               </Button>
             </Link>
@@ -104,20 +105,21 @@ export default function AdminResetPassword() {
           </CardContent>
         </Card>
         </div>
+        <footer className="py-4 text-center">
+          <p className="text-xs text-muted-foreground">aok Admin Portal</p>
+        </footer>
       </div>
     );
   }
 
   if (resetSuccess) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <header className="border-b">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
-              <ArrowLeft className="h-5 w-5 text-green-600" />
-              <ShieldCheck className="h-9 w-9 text-green-600" />
-              <span className="text-2xl font-bold text-green-600">aok</span>
-            </Link>
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-background dark:from-slate-950 dark:to-background flex flex-col">
+        <header className="bg-slate-900 dark:bg-slate-950 border-b border-slate-800">
+          <div className="container mx-auto px-4 py-4 flex items-center gap-3">
+            <ShieldCheck className="h-7 w-7 text-white" />
+            <span className="text-xl font-bold text-white">aok</span>
+            <Badge variant="outline" className="text-slate-300 border-slate-600">Admin</Badge>
           </div>
         </header>
         <div className="flex-1 flex items-center justify-center p-4">
@@ -140,21 +142,24 @@ export default function AdminResetPassword() {
           </CardContent>
         </Card>
         </div>
+        <footer className="py-4 text-center">
+          <p className="text-xs text-muted-foreground">aok Admin Portal</p>
+        </footer>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
-            <ArrowLeft className="h-5 w-5 text-green-600" />
-            <ShieldCheck className="h-9 w-9 text-green-600" />
-            <span className="text-2xl font-bold text-green-600">aok</span>
-          </Link>
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-background dark:from-slate-950 dark:to-background flex flex-col">
+      <header className="bg-slate-900 dark:bg-slate-950 border-b border-slate-800">
+        <div className="container mx-auto px-4 py-4 flex items-center gap-3 flex-wrap justify-between">
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="h-7 w-7 text-white" />
+            <span className="text-xl font-bold text-white">aok</span>
+            <Badge variant="outline" className="text-slate-300 border-slate-600">Admin</Badge>
+          </div>
           <Link href="/admin/login">
-            <Button variant="ghost" size="sm" data-testid="button-back">
+            <Button variant="ghost" size="sm" className="text-slate-300" data-testid="button-back">
               Back to Login
             </Button>
           </Link>
@@ -164,9 +169,9 @@ export default function AdminResetPassword() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-2">
-            <ShieldCheck className="h-12 w-12 text-green-600" />
+            <ShieldCheck className="h-12 w-12 text-slate-600 dark:text-slate-400" />
           </div>
-          <span className="text-2xl font-bold text-green-600">aok</span>
+          <span className="text-2xl font-bold text-slate-600 dark:text-slate-400">aok</span>
           <span className="text-xs text-muted-foreground">Admin Portal</span>
           <CardTitle className="text-2xl">Reset Password</CardTitle>
           <CardDescription>
@@ -230,6 +235,9 @@ export default function AdminResetPassword() {
         </CardContent>
       </Card>
       </div>
+      <footer className="py-4 text-center">
+        <p className="text-xs text-muted-foreground">aok Admin Portal</p>
+      </footer>
     </div>
   );
 }
