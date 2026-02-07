@@ -69,6 +69,12 @@ import Pricing from "@/pages/pricing";
 import Onboarding from "@/pages/onboarding";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
+import EULA from "@/pages/eula";
+import EnterpriseLicence from "@/pages/enterprise-licence";
+import DataProcessingAddendum from "@/pages/data-processing-addendum";
+import SLA from "@/pages/sla";
+import LoneWorkerAddendum from "@/pages/lone-worker-addendum";
+import AdminLicenceAgreements from "@/pages/admin/licence-agreements";
 import Guide from "@/pages/guide";
 import ConfirmContact from "@/pages/confirm-contact";
 import WellbeingAI from "@/pages/wellbeing-ai";
@@ -603,6 +609,7 @@ function AdminRoutes() {
       <Route path="/admin/users" component={() => <AdminProtectedRoute component={AdminUsers} />} />
       <Route path="/admin/architecture" component={() => <AdminProtectedRoute component={AdminArchitecture} />} />
       <Route path="/admin/workflows" component={() => <AdminProtectedRoute component={AdminWorkflows} />} />
+      <Route path="/admin/licence-agreements" component={() => <AdminProtectedRoute component={AdminLicenceAgreements} />} />
       <Route path="/admin/bundles" component={() => <AdminProtectedRoute component={AdminBundles} />} />
       <Route path="/admin/dashboard" component={() => <AdminProtectedRoute component={AdminDashboard} />} />
       <Route path="/admin" component={() => <AdminProtectedRoute component={AdminDashboard} />} />
@@ -703,6 +710,26 @@ function Router() {
 
   if (location === "/privacy") {
     return <Privacy />;
+  }
+
+  if (location === "/eula") {
+    return <EULA />;
+  }
+
+  if (location === "/enterprise-licence") {
+    return <EnterpriseLicence />;
+  }
+
+  if (location === "/data-processing-addendum") {
+    return <DataProcessingAddendum />;
+  }
+
+  if (location === "/sla") {
+    return <SLA />;
+  }
+
+  if (location === "/lone-worker-addendum") {
+    return <LoneWorkerAddendum />;
   }
 
   if (location.startsWith("/confirm-contact")) {
