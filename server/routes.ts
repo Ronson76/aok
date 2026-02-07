@@ -11,7 +11,6 @@ import { registerWellbeingAIRoutes } from "./wellbeingAI";
 import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
 import { stripeService } from "./stripeService";
 import { getEcologiImpact, plantTreeForNewSubscriber, isTestMode as isEcologiTestMode } from "./ecologiService";
-import { recordUserHeartbeat } from "./emergencyScheduler";
 
 // Helper function to render a simple HTML confirmation page
 function renderConfirmationPage(success: boolean, message: string): string {
@@ -413,17 +412,7 @@ export async function registerRoutes(
 
   // Heartbeat/ping endpoint for connection monitoring
   // Client pings this every 60 seconds to ensure connectivity
-  // Also records user online status for SMS check-in gating
-  app.get("/api/heartbeat", async (req, res) => {
-    const sessionId = req.cookies?.session;
-    if (sessionId) {
-      try {
-        const session = await storage.getSession(sessionId);
-        if (session) {
-          recordUserHeartbeat(session.userId);
-        }
-      } catch (_) {}
-    }
+  app.get("/api/heartbeat", (_req, res) => {
     res.json({ 
       ok: true, 
       timestamp: Date.now(),

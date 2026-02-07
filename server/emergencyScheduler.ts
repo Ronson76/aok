@@ -1,32 +1,13 @@
 import { storage } from "./storage";
-import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder, sendSmsCheckinLink } from "./notifications";
+import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder } from "./notifications";
 
 let schedulerInterval: NodeJS.Timeout | null = null;
 let cleanupInterval: NodeJS.Timeout | null = null;
 let pushNotificationInterval: NodeJS.Timeout | null = null;
 let contactReminderInterval: NodeJS.Timeout | null = null;
-let smsCheckinInterval: NodeJS.Timeout | null = null;
-
 // Minimum interval between push notifications to same user (30 seconds)
 const PUSH_NOTIFICATION_COOLDOWN_MS = 30 * 1000;
 
-// Track which users have been sent SMS check-in links this overdue cycle
-const smsCheckinSentCache = new Map<string, number>();
-const SMS_CHECKIN_COOLDOWN_MS = 30 * 60 * 1000;
-
-// Track user online status via heartbeat pings
-const userLastSeenCache = new Map<string, number>();
-const OFFLINE_THRESHOLD_MS = 3 * 60 * 1000; // Consider offline after 3 minutes without heartbeat
-
-export function recordUserHeartbeat(userId: string): void {
-  userLastSeenCache.set(userId, Date.now());
-}
-
-export function isUserOnline(userId: string): boolean {
-  const lastSeen = userLastSeenCache.get(userId);
-  if (!lastSeen) return false;
-  return (Date.now() - lastSeen) < OFFLINE_THRESHOLD_MS;
-}
 
 // Send push notifications to overdue users
 async function processOverduePushNotifications(): Promise<void> {
@@ -75,57 +56,9 @@ async function processOverduePushNotifications(): Promise<void> {
   }
 }
 
-// Send SMS check-in links to overdue users who are offline (no heartbeat recently)
-async function processOverdueSmsCheckins(): Promise<void> {
-  try {
-    const overdueUsers = await storage.getOverdueUsersForSmsCheckin();
-
-    if (overdueUsers.length === 0) return;
-
-    const now = Date.now();
-
-    for (const user of overdueUsers) {
-      // Only send SMS check-in when the user is offline (no heartbeat in last 3 minutes)
-      if (isUserOnline(user.userId)) {
-        continue;
-      }
-
-      const lastSent = smsCheckinSentCache.get(user.userId);
-      if (lastSent && now - lastSent < SMS_CHECKIN_COOLDOWN_MS) {
-        continue;
-      }
-
-      try {
-        const tokenData = await storage.createSmsCheckinToken(user.userId);
-
-        const result = await sendSmsCheckinLink(
-          user.mobileNumber,
-          user.userName,
-          tokenData.token
-        );
-
-        if (result.success) {
-          smsCheckinSentCache.set(user.userId, now);
-          console.log(`[SMS CHECK-IN] Sent check-in link to ${user.userName} (${user.mobileNumber}) - user offline`);
-        } else {
-          console.error(`[SMS CHECK-IN] Failed to send to ${user.userName}: ${result.error}`);
-        }
-      } catch (error) {
-        console.error(`[SMS CHECK-IN] Error processing user ${user.userName}:`, error);
-      }
-    }
-
-    // Clean up cache entries for users who are no longer overdue
-    const overdueIds = new Set(overdueUsers.map(u => u.userId));
-    Array.from(smsCheckinSentCache.keys()).forEach(userId => {
-      if (!overdueIds.has(userId)) {
-        smsCheckinSentCache.delete(userId);
-      }
-    });
-  } catch (error) {
-    console.error('[SMS CHECK-IN] Error processing overdue SMS check-ins:', error);
-  }
-}
+// SMS check-in is reserved for when the server/app is offline
+// Since this scheduler runs on the server, it cannot detect its own downtime
+// SMS check-in links remain available as a manual/external fallback only
 
 // Cleanup old emergency alerts (location data privacy - runs daily)
 async function cleanupOldLocationData(): Promise<void> {
@@ -298,10 +231,9 @@ export function startEmergencyScheduler(): void {
     await sendContactReminders();
   }, 5 * 60 * 1000);
 
-  // SMS check-in links every 2 minutes for overdue users who are offline
-  smsCheckinInterval = setInterval(async () => {
-    await processOverdueSmsCheckins();
-  }, 2 * 60 * 1000);
+  // SMS check-in is disabled during normal server operation
+  // SMS check-ins are only needed when the server/app is offline, which
+  // this scheduler cannot detect since it runs on the server itself
 
   // Run cleanup daily (every 24 hours)
   cleanupInterval = setInterval(async () => {
@@ -314,7 +246,7 @@ export function startEmergencyScheduler(): void {
   cleanupOldLocationData();
   cleanupExpiredContacts();
   sendContactReminders();
-  console.log('[SMS CHECK-IN] Starting SMS check-in scheduler (checks every 2 minutes, 30min cooldown per user)');
+  console.log('[SMS CHECK-IN] SMS check-in scheduler disabled (only needed when server is offline)');
 }
 
 export function stopEmergencyScheduler(): void {
@@ -333,10 +265,6 @@ export function stopEmergencyScheduler(): void {
   if (contactReminderInterval) {
     clearInterval(contactReminderInterval);
     contactReminderInterval = null;
-  }
-  if (smsCheckinInterval) {
-    clearInterval(smsCheckinInterval);
-    smsCheckinInterval = null;
   }
   console.log('[EMERGENCY SCHEDULER] Scheduler stopped');
 }
