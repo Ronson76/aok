@@ -63,6 +63,7 @@ interface ChildrenData {
   numberOfChildren: string;
   ageRange: string;
   emergencyDetails: string;
+  schoolDetails: string;
 }
 
 interface PartnerTravelData {
@@ -183,7 +184,7 @@ export default function Onboarding() {
     pets: [
       { name: "", type: "", nutrition: "", vetName: "", vetPhone: "", emergencyInfo: "" },
     ],
-    childrenData: { numberOfChildren: "", ageRange: "", emergencyDetails: "" },
+    childrenData: { numberOfChildren: "", ageRange: "", emergencyDetails: "", schoolDetails: "" },
     partnerTravelData: { destinations: "", address: "", localPhone: "" },
     ruralData: { accessInstructions: "", lockedGates: "", specialNotes: "" },
     soloTravelData: { destinations: "", localAddress: "", localPhone: "" },
@@ -1051,6 +1052,16 @@ function Step6ContactName({ data, setData }: { data: OnboardingData; setData: (d
                   onChange={(e) => setData({ ...data, childrenData: { ...data.childrenData, emergencyDetails: e.target.value } })}
                   placeholder="e.g., School pickup at 3pm, allergies, special needs"
                   data-testid="input-children-emergency"
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">School email or details (optional)</label>
+                <Input
+                  value={data.childrenData.schoolDetails}
+                  onChange={(e) => setData({ ...data, childrenData: { ...data.childrenData, schoolDetails: e.target.value } })}
+                  placeholder="e.g., office@school.co.uk or St Mary's Primary"
+                  data-testid="input-children-school"
                 />
               </div>
             </div>
