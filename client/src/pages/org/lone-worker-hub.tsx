@@ -754,7 +754,7 @@ export default function OrgLoneWorkerHub() {
 
       {/* Invite Dialog */}
       <Dialog open={showInviteDialog} onOpenChange={(open) => { setShowInviteDialog(open); if (!open) resetInviteForm(); }}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{resendingInviteId ? "Resend Invite" : "Invite Staff Member"}</DialogTitle>
             <DialogDescription>
@@ -763,7 +763,7 @@ export default function OrgLoneWorkerHub() {
                 : "Send an SMS invitation to a staff member. They will go through the full onboarding process at no cost."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-y-auto flex-1 pr-1">
             <div className="space-y-2">
               <Label htmlFor="staffName">Full Name *</Label>
               <Input id="staffName" value={staffName} onChange={(e) => setStaffName(e.target.value)} placeholder="e.g. Jane Smith" data-testid="input-staff-name" />
