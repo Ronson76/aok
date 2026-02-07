@@ -1847,6 +1847,16 @@ export default function OrganizationDashboard() {
                       >
                         Copy
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleResendPasswordClick(selectedClient)}
+                        disabled={resendPasswordMutation.isPending}
+                        data-testid="button-resend-reference-sms"
+                      >
+                        <Phone className="h-4 w-4 mr-1" />
+                        Resend SMS
+                      </Button>
                     </div>
                   </div>
                 )}
