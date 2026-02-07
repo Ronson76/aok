@@ -119,8 +119,8 @@ export interface IStorage {
   getSmsCheckinTokenByToken(token: string): Promise<SmsCheckinToken | undefined>;
   consumeSmsCheckinToken(token: string): Promise<SmsCheckinToken | undefined>;
   getUserByMobileNumber(mobileNumber: string): Promise<User | undefined>;
-  getOverdueUsersForSmsCheckin(): Promise<Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date; lastSmsSentAt: Date | null }>>;
-  updateLastSmsSentAt(userId: string): Promise<void>;
+  getOverdueUsersForSmsCheckin(): Promise<Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date; lastSmsNotifiedDueAt: Date | null }>>;
+  updateLastSmsSentAt(userId: string, notifiedDueAt: Date): Promise<void>;
 
   // Active emergency alerts
   getActiveEmergencyAlert(userId: string): Promise<ActiveEmergencyAlert | undefined>;
@@ -1767,7 +1767,7 @@ class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getOverdueUsersForSmsCheckin(): Promise<Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date; lastSmsSentAt: Date | null }>> {
+  async getOverdueUsersForSmsCheckin(): Promise<Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date; lastSmsNotifiedDueAt: Date | null }>> {
     const now = new Date();
     const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
     const result = await getDb()
@@ -1776,7 +1776,7 @@ class DatabaseStorage implements IStorage {
         userName: users.name,
         mobileNumber: users.mobileNumber,
         nextCheckInDue: settings.nextCheckInDue,
-        lastSmsSentAt: settings.lastSmsSentAt,
+        lastSmsNotifiedDueAt: settings.lastSmsNotifiedDueAt,
       })
       .from(users)
       .innerJoin(settings, eq(users.id, settings.userId))
@@ -1790,13 +1790,13 @@ class DatabaseStorage implements IStorage {
           eq(users.accountType, "individual")
         )
       );
-    return result.filter(r => r.mobileNumber && r.nextCheckInDue) as Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date; lastSmsSentAt: Date | null }>;
+    return result.filter(r => r.mobileNumber && r.nextCheckInDue) as Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date; lastSmsNotifiedDueAt: Date | null }>;
   }
 
-  async updateLastSmsSentAt(userId: string): Promise<void> {
+  async updateLastSmsSentAt(userId: string, notifiedDueAt: Date): Promise<void> {
     await getDb()
       .update(settings)
-      .set({ lastSmsSentAt: new Date() })
+      .set({ lastSmsSentAt: new Date(), lastSmsNotifiedDueAt: notifiedDueAt })
       .where(eq(settings.userId, userId));
   }
 

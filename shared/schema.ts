@@ -195,6 +195,7 @@ export const settings = pgTable("settings", {
   lastAlertSentAt: timestamp("last_alert_sent_at"),
   lastPushSentAt: timestamp("last_push_sent_at"),
   lastSmsSentAt: timestamp("last_sms_sent_at"),
+  lastSmsNotifiedDueAt: timestamp("last_sms_notified_due_at"),
   alertsEnabled: boolean("alerts_enabled").notNull().default(true),
   pushStatus: text("push_status").notNull().$type<PushStatus>().default("unknown"),
   redAlertEnabled: boolean("red_alert_enabled").notNull().default(false),

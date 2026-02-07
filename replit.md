@@ -91,6 +91,17 @@ Preferred communication style: Simple, everyday language.
   - Set ECOLOGI_API_KEY and ECOLOGI_TEST_MODE=false to enable live tree purchases
 
 ### Recent Changes (Feb 2026)
+- **SMS Check-in Reminders ("No Data, No Problem")**: Automatic SMS fallback for overdue check-ins
+  - When a check-in is 10+ minutes overdue, sends SMS with a secure tokenised check-in link
+  - One SMS per check-in cycle (tracked via `lastSmsNotifiedDueAt` matching exact due timestamp)
+  - Auto-submitting page: tapping the link auto-checks-in immediately, no buttons needed
+  - Offline-resilient: if user has no signal, the page waits and retries every 5 seconds, fires instantly when signal returns
+  - `online`/`offline` event listeners for instant recovery
+  - Idempotent token endpoint: safe for retry (returns success if already consumed)
+  - Full server-side processing: creates check-in record, resets next due time, notifies primary contacts
+  - Schema fields: `lastSmsSentAt`, `lastSmsNotifiedDueAt` on settings table
+  - Scheduler runs every 2 minutes checking for overdue users
+  - Endpoint: `GET /sms-checkin/:token` (page), `POST /api/sms-checkin/:token` (API)
 - **Staff Invitation System**: Complete staff invite workflow for organisations
   - Database table: `organizationStaffInvites` with invite codes (ST + 6 chars)
   - API endpoints: `/api/org/staff/invite` (create), `/api/org/staff/invites` (list), `/api/org/staff/invite/:id/revoke`, `/api/org/staff/invite/:id/resend`, `/api/org/staff/stats`
