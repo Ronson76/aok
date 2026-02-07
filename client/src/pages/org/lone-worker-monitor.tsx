@@ -87,6 +87,7 @@ export default function OrgLoneWorkerMonitor() {
             <p className="text-sm text-muted-foreground">Real-time monitoring of staff on active shifts</p>
           </div>
         </div>
+        <OrgHelpButton />
       </div>
 
       <div className="grid grid-cols-3 gap-3">
@@ -240,7 +241,6 @@ export default function OrgLoneWorkerMonitor() {
           </div>
         );
       })()}
-      <OrgHelpButton />
     </div>
   );
 }

@@ -1027,10 +1027,13 @@ export default function OrganizationDashboard() {
             <ShieldCheck className="h-9 w-9 text-green-600" />
             <span className="text-2xl font-bold text-green-600">aok</span>
           </div>
-          <Button variant="outline" onClick={handleLogout} data-testid="button-org-logout">
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            <OrgHelpButton />
+            <Button variant="outline" onClick={handleLogout} data-testid="button-org-logout">
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
       
@@ -3211,7 +3214,6 @@ export default function OrganizationDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <OrgHelpButton />
       </div>
     </div>
   );

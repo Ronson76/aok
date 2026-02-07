@@ -141,21 +141,24 @@ export default function OrgMissedCheckInsReport() {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/org/dashboard">
-              <Button variant="ghost" size="icon" data-testid="button-back">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Clock className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">Missed Check-ins Report</h1>
-                <p className="text-sm text-muted-foreground">View all missed check-ins from your clients</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/org/dashboard">
+                <Button variant="ghost" size="icon" data-testid="button-back">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold">Missed Check-ins Report</h1>
+                  <p className="text-sm text-muted-foreground">View all missed check-ins from your clients</p>
+                </div>
               </div>
             </div>
+            <OrgHelpButton />
           </div>
         </div>
       </header>
@@ -301,7 +304,6 @@ export default function OrgMissedCheckInsReport() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <OrgHelpButton />
     </div>
   );
 }
