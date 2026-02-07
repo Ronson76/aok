@@ -195,9 +195,10 @@ export async function processOverdueEmergencyAlerts(): Promise<void> {
           continue;
         }
 
-        const contacts = await storage.getContacts(alert.userId);
+        const allContacts = await storage.getContacts(alert.userId);
+        const contacts = allContacts.filter(c => !!c.confirmedAt);
         if (contacts.length === 0) {
-          console.log(`[EMERGENCY SCHEDULER] No contacts for user ${alert.userId}, skipping`);
+          console.log(`[EMERGENCY SCHEDULER] No confirmed contacts for user ${alert.userId}, skipping`);
           continue;
         }
 

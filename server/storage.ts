@@ -493,7 +493,7 @@ class DatabaseStorage implements IStorage {
   
   async getPrimaryContacts(userId: string): Promise<Contact[]> {
     const result = await getDb().select().from(contacts).where(
-      and(eq(contacts.userId, userId), eq(contacts.isPrimary, true))
+      and(eq(contacts.userId, userId), eq(contacts.isPrimary, true), sql`${contacts.confirmedAt} IS NOT NULL`)
     );
     return result;
   }
@@ -863,9 +863,9 @@ class DatabaseStorage implements IStorage {
       return { wasMissed: false, alertSent: false };
     }
 
-    // Determine contacts to alert - only primary contacts receive missed check-in alerts
+    // Determine contacts to alert - only confirmed primary contacts receive missed check-in alerts
     // Non-primary contacts only receive emergency alerts
-    const primaryContacts = allContacts.filter(c => c.isPrimary);
+    const primaryContacts = allContacts.filter(c => c.isPrimary && !!c.confirmedAt);
     const alertsEnabled = row.alertsEnabled;
     const contactsToAlert = alertsEnabled ? primaryContacts : [];
     
