@@ -1,10 +1,11 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Shield, Radio, MapPin, Clock, AlertTriangle, CheckCircle,
-  Loader2, Siren, Users, ArrowLeft, Eye
+  Loader2, Siren, Users, ArrowLeft, Eye, ChevronDown, ChevronUp
 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
@@ -46,6 +47,16 @@ function statusPriority(status: string): number {
 
 export default function OrgLoneWorkerMonitor() {
   const { user } = useAuth();
+  const [expandedHistoryUsers, setExpandedHistoryUsers] = useState<Set<string>>(new Set());
+
+  const toggleHistoryUser = (name: string) => {
+    setExpandedHistoryUsers(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
 
   const activeQuery = useQuery<SessionWithUser[]>({
     queryKey: ["/api/org/lone-worker/active"],
@@ -171,27 +182,63 @@ export default function OrgLoneWorkerMonitor() {
         </div>
       )}
 
-      {historyQuery.data && historyQuery.data.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground">Recent History</h2>
-          {historyQuery.data.filter((s: any) => s.status === "resolved").slice(0, 10).map((s: any) => (
-            <Card key={s.id} className="opacity-75">
-              <CardContent className="py-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div>
-                    <p className="text-sm font-medium">{s.userName}</p>
-                    <p className="text-xs text-muted-foreground">{JOB_LABELS[s.jobType] || s.jobType}</p>
-                  </div>
-                  <div className="text-right text-xs text-muted-foreground">
-                    <p>{s.resolvedAt ? format(new Date(s.resolvedAt), "dd/MM/yyyy HH:mm") : "—"}</p>
-                    {s.outcome && <p>{s.outcome.replace(/_/g, " ")}</p>}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      {(() => {
+        const resolved = (historyQuery.data || []).filter((s: any) => s.status === "resolved");
+        const groups: Record<string, typeof resolved> = {};
+        for (const s of resolved) {
+          const name = (s as any).userName || "Unknown";
+          if (!groups[name]) groups[name] = [];
+          groups[name].push(s);
+        }
+        const grouped = Object.entries(groups).sort((a, b) => {
+          const latestA = a[1][0]?.resolvedAt ? new Date(String(a[1][0].resolvedAt)).getTime() : 0;
+          const latestB = b[1][0]?.resolvedAt ? new Date(String(b[1][0].resolvedAt)).getTime() : 0;
+          return latestB - latestA;
+        });
+        if (grouped.length === 0) return null;
+        return (
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-muted-foreground">Recent History</h2>
+            {grouped.map(([userName, sessions]) => (
+              <Card key={userName} className="opacity-75 overflow-visible">
+                <CardContent className="py-0">
+                  <button
+                    onClick={() => toggleHistoryUser(userName)}
+                    className="w-full py-3 flex items-center justify-between gap-2 text-left"
+                    data-testid={`button-history-user-${userName.replace(/\s+/g, "-").toLowerCase()}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{userName}</span>
+                      <Badge variant="secondary">{sessions.length}</Badge>
+                    </div>
+                    {expandedHistoryUsers.has(userName) ? (
+                      <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </button>
+                  {expandedHistoryUsers.has(userName) && (
+                    <div className="space-y-2 pb-3 border-t pt-3">
+                      {sessions.map((s: any) => (
+                        <div key={s.id} className="flex items-center justify-between flex-wrap gap-2 p-2 rounded border text-sm">
+                          <div>
+                            <p className="text-sm">{JOB_LABELS[s.jobType] || s.jobType}</p>
+                            {s.jobDescription && <p className="text-xs text-muted-foreground">{s.jobDescription}</p>}
+                          </div>
+                          <div className="text-right text-xs text-muted-foreground">
+                            <p>{s.resolvedAt ? format(new Date(s.resolvedAt), "dd/MM/yyyy HH:mm") : "—"}</p>
+                            {s.outcome && <p className="capitalize">{s.outcome.replace(/_/g, " ")}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 }
