@@ -634,17 +634,17 @@ export const insertOrganizationClientProfileSchema = createInsertSchema(organiza
 });
 
 export const updateOrganizationClientProfileSchema = z.object({
-  displayName: z.string().optional(),
-  addressLine1: z.string().optional(),
-  addressLine2: z.string().optional(),
-  city: z.string().optional(),
-  postalCode: z.string().optional(),
-  country: z.string().optional(),
-  dateOfBirth: z.string().optional(),
-  vulnerabilities: z.string().optional(),
-  medicalNotes: z.string().optional(),
-  emergencyInstructions: z.string().optional(),
-  notes: z.string().optional(),
+  displayName: z.string().nullish(),
+  addressLine1: z.string().nullish(),
+  addressLine2: z.string().nullish(),
+  city: z.string().nullish(),
+  postalCode: z.string().nullish(),
+  country: z.string().nullish(),
+  dateOfBirth: z.string().nullish(),
+  vulnerabilities: z.string().nullish(),
+  medicalNotes: z.string().nullish(),
+  emergencyInstructions: z.string().nullish(),
+  notes: z.string().nullish(),
 });
 
 export type InsertOrganizationClientProfile = z.infer<typeof insertOrganizationClientProfileSchema>;
