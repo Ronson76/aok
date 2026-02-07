@@ -645,7 +645,7 @@ function Step2Welcome({ data, setData, staffInviteInfo }: { data: OnboardingData
                   setData({ ...data, userPhone: value });
                 }}
                 onBlur={() => markTouched('phone')}
-                placeholder="7700900123"
+                placeholder="7XXX XXXXXX"
                 className={`flex-1 ${touched.phone && !phoneValid ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                 data-testid="input-user-phone"
               />
@@ -1950,7 +1950,7 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
                   }
                   updateCurrentContact('phone', value);
                 }}
-                placeholder={currentContact.phoneCountry === "+44" ? "7700 900000" : "Phone number"}
+                placeholder={currentContact.phoneCountry === "+44" ? "7XXX XXXXXX" : "Phone number"}
                 className="flex-1"
                 data-testid="input-contact-phone"
               />

@@ -1160,7 +1160,7 @@ export default function OrganizationDashboard() {
                     <Input
                       id="regClientPhone"
                       type="tel"
-                      placeholder="7700 900000"
+                      placeholder="7XXX XXXXXX"
                       value={regClientPhone}
                       onChange={(e) => {
                         let value = e.target.value.replace(/[^\d\s]/g, "");
@@ -1966,7 +1966,7 @@ export default function OrganizationDashboard() {
                             <div className="flex-1 relative">
                               <Input
                                 type="tel"
-                                placeholder="7700 900000"
+                                placeholder="7XXX XXXXXX"
                                 value={profileData.phone ?? ""}
                                 onChange={(e) => {
                                   let value = e.target.value.replace(/[^\d\s]/g, "");
@@ -2740,7 +2740,7 @@ export default function OrganizationDashboard() {
                       if (value.startsWith("0")) value = value.slice(1);
                       setContactFormData({ ...contactFormData, phone: value });
                     }}
-                    placeholder="7700 900000"
+                    placeholder="7XXX XXXXXX"
                     className={contactFormData.phone && !isValidUKPhone(contactFormData.phone) ? "border-yellow-500" : ""}
                     data-testid="input-contact-phone"
                   />
@@ -2972,7 +2972,7 @@ export default function OrganizationDashboard() {
                 <div className="flex-1 relative">
                   <Input
                     id="editClientPhone"
-                    placeholder="7700 900000"
+                    placeholder="7XXX XXXXXX"
                     value={editClientPhone}
                     onChange={(e) => {
                       let value = e.target.value.replace(/[^\d\s]/g, "");

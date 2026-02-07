@@ -407,7 +407,7 @@ export default function Pets() {
                         <FormItem>
                           <FormLabel>Vet Phone</FormLabel>
                           <FormControl>
-                            <Input placeholder="+44 1234 567890" {...field} value={field.value || ""} data-testid="input-vet-phone" />
+                            <Input placeholder="+44 XXXX XXXXXX" {...field} value={field.value || ""} data-testid="input-vet-phone" />
                           </FormControl>
                         </FormItem>
                       )}
