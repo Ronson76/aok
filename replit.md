@@ -1,7 +1,7 @@
 # aok
 
 ## Overview
-aok is a personal safety check-in application designed to keep users connected with loved ones. It enables users to set a check-in frequency (1-48 hours), and if a check-in is missed, automated alerts are sent to emergency contacts via email and voice calls. The application features a comprehensive dashboard for managing check-in status, tracking streaks, managing contacts, viewing history, and configuring settings. It also includes an emergency alert button with GPS sharing, an alarm system, and optional wellness features such as mood tracking, pet protection profiles, and secure digital document storage (e.g., wills). The project aims to provide a robust, reliable, and user-friendly solution for personal safety and peace of mind.
+aok is a personal safety check-in application designed to keep users connected with loved ones. It enables users to set a check-in frequency (1-48 hours), and if a check-in is missed, automated alerts are sent to emergency contacts via email and voice calls. The application features a comprehensive dashboard for managing check-in status, tracking streaks, managing contacts, viewing history, and configuring settings. It also includes an emergency alert button with GPS sharing, an alarm system, and optional wellness features such as mood tracking, pet protection profiles, and secure digital document storage. The project aims to provide a robust, reliable, and user-friendly solution for personal safety and peace of mind.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -39,24 +39,34 @@ Preferred communication style: Simple, everyday language.
 - **Primary Contact**: Designate one contact to receive notifications for every successful check-in.
 - **Contact Confirmation**: Emergency contacts must confirm via email within 10 minutes to be active.
 - **Wellness Features**: Optional Mood/Wellness Tracking, Pet Protection, and Digital Will Storage.
+- **SMS Check-in Reminders**: Automatic SMS fallback for overdue check-ins with a secure tokenised check-in link.
+- **Offline Emergency Overlay**: Displays primary contact quick-dial button and 999 emergency button if connection is lost.
+- **Subscription Management**: Displays subscription status, allows cancellation/reactivation.
+- **Forgot Password**: Complete password reset flow via email.
+- **Password Policy**: Minimum 8 characters, special characters allowed.
+- **Shake to SOS**: Enabled by default, can be disabled in settings.
 
 ### Admin Dashboard
 - **Access**: Separate login (`/admin/login`) with role-based access (`super_admin`, `analyst`).
-- **Management**: User management, organization bundle creation, client oversight (viewing, pausing, resuming, removing clients).
+- **Management**: User management, organization bundle creation, client oversight (viewing, pausing, resuming, removing clients), client safeguarding hub, full client management including check-in schedule and feature toggles.
 - **Security**: Audit logging for admin actions.
 
 ### Organization Features
 - **Bundles**: Organizations can purchase bundles of seats for their clients.
-- **Client Management**: Organizations add/manage clients (individual users) by email, assign to bundles.
+- **Client Management**: Organizations add/manage clients (individual users) by email, assign to bundles, manage emergency contacts, reset passwords, archive/restore clients.
 - **Monitoring**: Dashboard to view client check-in status (Safe/Pending/Overdue), seat usage, and emergency alerts.
-- **Client Control**: Organizations can manage client emergency contacts and reset client passwords.
 - **Dynamic Feature Control**: Organizations can enable/disable specific wellness features for individual clients.
+- **Safeguarding Hub**: Comprehensive system for incident reporting, welfare concerns, case files, and escalation rules.
+- **Staff Invitation System**: Workflow for inviting and managing staff with role-based access.
+- **Organisation Help Centre**: In-dashboard searchable help system with 25+ topics across 6 categories.
 
 ### Key Design Decisions
 - **Monorepo**: Client, server, and shared code in one repository.
 - **Shared Schema**: Zod for type-safe validation across client and server.
 - **Component Library**: shadcn/ui for accessible, customizable UI components.
-- **Theme System**: CSS custom properties for light/dark mode.
+- **Theme System**: CSS custom properties for light/dark mode with separate themes for Admin (slate) and Org (indigo) portals.
+- **Native App Support**: Capacitor for iOS and Android app build capability with native plugins.
+- **AI Integration**: In-app AI chat for wellbeing with mood pattern detection, streaming responses, and voice chat mode (OpenAI GPT-4o, TTS, Whisper API).
 
 ## External Dependencies
 
@@ -80,129 +90,8 @@ Preferred communication style: Simple, everyday language.
 
 ### APIs & Services
 - **Resend**: For all email notifications (contact confirmation, successful check-in, missed check-in alerts, password reset).
-- **Twilio**: For SMS alerts (mobile contacts) and automated voice calls (landline contacts) for emergencies and missed check-ins.
+- **Twilio**: For SMS alerts and automated voice calls for emergencies and missed check-ins.
 - **what3words**: Integrates precise location sharing (three-word addresses) into emergency alerts.
 - **Stripe**: Payment processing with subscription management, 7-day free trial, Apple Pay/Google Pay support.
 - **Ecologi**: Environmental impact tracking and automatic tree planting for new subscribers.
-  - Username: nghuman18
-  - Test mode enabled by default (ECOLOGI_TEST_MODE env var controls this)
-  - Public endpoint `/api/ecologi/impact` returns trees planted and carbon offset (cached 5 mins)
-  - Trees planted automatically for each new individual subscriber
-  - Set ECOLOGI_API_KEY and ECOLOGI_TEST_MODE=false to enable live tree purchases
-
-### Recent Changes (Feb 2026)
-- **User/Client Archive System**: Soft-delete with archive and restore capability
-  - Users and org clients are archived instead of hard-deleted, preserving data
-  - Archived users/clients moved to "Archived" tab in admin/org dashboards
-  - Email freed on archive (stored in `archivedEmail`) so re-registration doesn't conflict
-  - Restore button allows bringing archived users/clients back to active
-  - Schema fields: `archivedAt`, `archivedBy`, `archivedEmail` on users; `archivedAt`, `archivedBy` on organization_clients
-  - Archived users excluded from login, dashboard stats, and all active queries
-  - Admin endpoints: `GET /api/admin/users/archived`, `POST /api/admin/users/:id/restore`
-  - Org endpoints: `GET /api/org/clients/archived`, `POST /api/org/clients/:clientId/restore`
-- **Password Policy**: Minimum 8 characters, special characters allowed
-  - Shared `passwordSchema` in schema.ts enforced across all registration, reset, and change password flows
-- **Organisation & Admin IAM**: Role-based team management
-  - 4 org roles (Owner, Manager, Staff, Viewer) with granular permissions
-  - Admin invite system (AD-prefix codes) with team tab for super_admins
-  - Org invite system (TM-prefix codes) with team management page
-  - Dual session support for org members
-- **SMS Check-in Reminders ("No Data, No Problem")**: Automatic SMS fallback for overdue check-ins
-  - When a check-in is 10+ minutes overdue, sends SMS with a secure tokenised check-in link
-  - One SMS per check-in cycle (tracked via `lastSmsNotifiedDueAt` matching exact due timestamp)
-  - Auto-submitting page: tapping the link auto-checks-in immediately, no buttons needed
-  - Offline-resilient: if user has no signal, the page waits and retries every 5 seconds, fires instantly when signal returns
-  - `online`/`offline` event listeners for instant recovery
-  - Idempotent token endpoint: safe for retry (returns success if already consumed)
-  - Full server-side processing: creates check-in record, resets next due time, notifies primary contacts
-  - Schema fields: `lastSmsSentAt`, `lastSmsNotifiedDueAt` on settings table
-  - Scheduler runs every 2 minutes checking for overdue users
-  - Endpoint: `GET /sms-checkin/:token` (page), `POST /api/sms-checkin/:token` (API)
-- **Staff Invitation System**: Complete staff invite workflow for organisations
-  - Database table: `organizationStaffInvites` with invite codes (ST + 6 chars)
-  - API endpoints: `/api/org/staff/invite` (create), `/api/org/staff/invites` (list), `/api/org/staff/invite/:id/revoke`, `/api/org/staff/invite/:id/resend`, `/api/org/staff/stats`
-  - Public endpoint: `/api/staff-invite/:code` (verify invite code, no auth)
-  - Staff Hub page at `/org/staff-hub` with stats cards, invite management, search/filter tabs
-  - Registration flow: `?staff=CODE` URL parameter triggers staff registration (no payment, bundle seat consumed)
-  - SMS notification sent with invite link to staff member
-  - Staff members get full app access covered by organisation's bundle
-- **Capacitor Native App Support**: iOS and Android app build capability
-  - App ID: `care.aok.app`, configured for App Store and Play Store
-  - Native plugins: push notifications, local notifications, haptics, geolocation, motion (shake detection)
-  - Utility module at `client/src/lib/native.ts` with platform detection and plugin wrappers
-  - Build guide: `NATIVE_APP_BUILD.md` with full iOS/Android setup instructions
-  - Deep linking ready: `aok://` URL scheme for direct app opening from SMS invites
-- **Direct Client Login Links**: SMS invites now include clickable login links
-  - Format: `https://aok.care/org/client-login?ref=ABC123`
-  - Reference code auto-fills from URL parameter
-  - Universal Links / App Links ready for native apps
-- **Welcome Email for Individual Sign-ups**: Branded onboarding email
-  - Getting started guide with 4 steps
-  - Direct link to dashboard
-  - Sent automatically on registration
-- **Heartbeat Connection Monitor**: Offline emergency overlay system
-  - Pings server every 60 seconds to verify connectivity
-  - After 2 failed pings, displays offline emergency overlay
-  - Shows primary contact quick-dial button and 999 emergency button
-  - 999 requires confirmation before dialing for safety
-  - Auto-recovers when connection is restored
-- **Ecologi Environmental Integration**: Tree planting and carbon offset tracking
-  - Displays trees planted and CO₂ offset on landing page
-  - Automatically plants 1 tree for each new individual subscriber
-  - Test mode enabled during development (no real purchases)
-  - Server-side caching (5 mins) for API efficiency
-- **Native Wellbeing AI Chat**: In-app AI chat feature replacing external link at `/wellbeing-ai`
-  - GDPR-compliant ephemeral chat (no conversation storage - held only in client state)
-  - Mood pattern detection analyzing last 14 days of entries for concerning trends
-  - Proactive prompts for users with consecutive low mood days or declining patterns
-  - Streaming chat responses using OpenAI (gpt-4o) via Replit AI Integrations
-  - Compassionate support companion with British English, crisis helpline signposting
-  - **Voice Chat Mode**: Full voice interaction with AI
-    - Text-to-Speech: AI responses spoken aloud using OpenAI TTS (nova voice)
-    - Speech-to-Text: User can tap mic to speak instead of typing (Whisper API)
-    - Toggle button in header to enable/disable voice responses
-    - 60-second recording timeout for safety
-    - Stop button to interrupt AI speech
-
-### Recent Changes (Jan 2026)
-- **Subscription Management**: Settings page displays subscription status (Active/Trial/Cancelling) with plan details, cancel/reactivate buttons with password confirmation
-- **Forgot Password**: Complete password reset flow via email (`/forgot-password`, `/reset-password?token=xxx`)
-- **Auth Improvements**: Subscription endpoints protected with authMiddleware
-- **Org/Admin Password Management**: Both org dashboard and admin dashboard now have forgot password flows and change password functionality
-- **Feature Toggle Propagation**: Org dashboard feature restrictions now apply to client apps via merged feature flags in `/api/auth/me` endpoint (AND logic - features only enabled if both org allows AND user has enabled)
-- **Shake to SOS Default**: Enabled by default for all users (can be disabled in user settings)
-- **Check-in Timing Fix**: Next check-in now calculates based on scheduleStartTime + intervalHours instead of last check-in time (e.g., scheduled 10am daily, check in at 2pm, next due is still 10am next day)
-- **Safeguarding Hub**: Comprehensive safeguarding system for organisations at `/org/safeguarding` with:
-  - **Incident Reporting**: Log safety/safeguarding incidents with types (abuse, neglect, self-harm risk, medical issue, harassment, lone worker danger, missing person concern), severity levels, and what3words location
-  - **Welfare Concerns**: Third-party reporting with anonymous option, observed behaviours tracking
-  - **Case Files**: Individual client safeguarding histories with case notes, risk levels (red/amber/green), and status tracking
-  - **Escalation Rules**: Automated triggers based on missed check-ins, SOS alerts, or incident counts
-  - **Audit Trail**: Complete logging of all safeguarding actions for compliance
-  - **Risk Reports**: Automated risk indicators with review workflow
-- **Admin Client Management**: Super admins can fully manage organisation clients with:
-  - List all clients per organisation with search by ref # or code
-  - Flashing red alert icon for active emergencies
-  - Deactivate emergency alerts
-  - Reset client check-in state
-  - Edit check-in schedule (start time and interval)
-  - Toggle feature preferences (Wellbeing AI, Shake to Alert, Mood Tracking, Pet Protection, Digital Will)
-  - Pause/Resume client monitoring
-  - Remove clients
-  - Send reference number reminder via SMS
-
-### Future: Real-time Push Notifications
-When native apps are deployed, client-side changes from admin/org should trigger real-time push notifications:
-- Emergency alert deactivated → Notify client their alert was cancelled
-- Check-in schedule updated → Notify client of new schedule
-- Feature preferences changed → Refresh client app features
-- Client paused/resumed → Notify client of status change
-- Password reset sent → Deep link to password reset
-- Settings synced → Silent push to refresh app state
-
-Infrastructure already in place: Push scheduler (30s intervals), Service Worker, Web Push integration.
-
-### Build Tools
-- Vite
-- esbuild
-- tsx
-- Tailwind CSS
+- **OpenAI**: For AI chat features (GPT-4o for responses, TTS for voice output, Whisper API for speech-to-text).
