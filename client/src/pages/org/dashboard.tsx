@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -266,6 +266,10 @@ export default function OrganizationDashboard() {
     queryKey: ["/api/org/clients"],
   });
 
+  const { data: archivedClients } = useQuery<any[]>({
+    queryKey: ["/api/org/clients/archived"],
+  });
+
   // Filter and sort clients based on search terms
   const filteredClients = useMemo(() => {
     if (!clients) return [];
@@ -361,17 +365,32 @@ export default function OrganizationDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients/archived"] });
       toast({
-        title: "Client removed",
-        description: "The client has been removed from your organisation.",
+        title: "Client archived",
+        description: "The client has been moved to the archive.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to remove client",
+        title: "Failed to archive client",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
+    },
+  });
+
+  const restoreClientMutation = useMutation({
+    mutationFn: async (clientId: string) => {
+      await apiRequest("POST", `/api/org/clients/${clientId}/restore`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients/archived"] });
+      toast({ title: "Client restored", description: "The client has been restored from the archive." });
+    },
+    onError: (error: any) => {
+      toast({ variant: "destructive", title: "Restore failed", description: error.message || "Could not restore client" });
     },
   });
 
@@ -1783,7 +1802,7 @@ export default function OrganizationDashboard() {
                       onClick={() => removeClientMutation.mutate(client.clientId || client.id)}
                       disabled={removeClientMutation.isPending}
                       data-testid={`button-remove-client-${client.clientId || client.id}`}
-                      title="Remove client"
+                      title="Archive client"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -1794,6 +1813,46 @@ export default function OrganizationDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {archivedClients && archivedClients.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Archive className="w-5 h-5" />
+              Archived Clients ({archivedClients.length})
+            </CardTitle>
+            <CardDescription>Previously removed clients. You can restore them to make them active again.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {archivedClients.map((client: any) => (
+                <div key={client.id} className="flex items-center justify-between p-4 border rounded-lg" data-testid={`archived-client-${client.id}`}>
+                  <div>
+                    <p className="font-medium">{client.clientName || client.nickname || "Unknown"}</p>
+                    <p className="text-sm text-muted-foreground">{client.clientEmail || client.clientPhone || ""}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Archived: {client.archivedAt ? new Date(client.archivedAt).toLocaleDateString("en-GB") : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">Archived</Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => restoreClientMutation.mutate(client.id)}
+                      disabled={restoreClientMutation.isPending}
+                      data-testid={`button-restore-client-${client.id}`}
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Restore
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Dialog open={!!selectedClient} onOpenChange={() => { setSelectedClient(null); setEditingProfile(false); setClientAlerts(null); }}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">

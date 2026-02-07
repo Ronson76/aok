@@ -82,6 +82,17 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
+  // Get archived clients (must be before /api/org/clients/:clientId)
+  app.get("/api/org/clients/archived", requireOrganization, async (req, res) => {
+    try {
+      const archivedClients = await organizationStorage.listArchivedClients(req.userId!);
+      res.json(archivedClients);
+    } catch (error) {
+      console.error("[ORG] Error fetching archived clients:", error);
+      res.status(500).json({ error: "Failed to fetch archived clients" });
+    }
+  });
+
   // Get all clients for the organization
   app.get("/api/org/clients", requireOrganization, async (req, res) => {
     try {
@@ -247,11 +258,25 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
-  // Remove a client from the organization
+  // Restore an archived client
+  app.post("/api/org/clients/:clientId/restore", requireOrganization, async (req, res) => {
+    try {
+      const success = await organizationStorage.restoreClient(req.userId!, req.params.clientId);
+      if (!success) {
+        return res.status(400).json({ error: "Cannot restore client. Check bundle seat availability." });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[ORG] Error restoring client:", error);
+      res.status(500).json({ error: "Failed to restore client" });
+    }
+  });
+
+  // Archive a client from the organization (soft-delete)
   app.delete("/api/org/clients/:clientId", requireOrganization, async (req, res) => {
     try {
       const { clientId } = req.params;
-      const success = await organizationStorage.removeClient(req.userId!, clientId);
+      const success = await organizationStorage.archiveClient(req.userId!, clientId, req.userId!);
       
       if (!success) {
         return res.status(404).json({ error: "Client not found" });
@@ -259,8 +284,8 @@ export function registerOrganizationRoutes(app: Express) {
 
       res.json({ success: true });
     } catch (error) {
-      console.error("[ORG] Failed to remove client:", error);
-      res.status(500).json({ error: "Failed to remove client" });
+      console.error("[ORG] Failed to archive client:", error);
+      res.status(500).json({ error: "Failed to archive client" });
     }
   });
 

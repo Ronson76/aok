@@ -125,6 +125,18 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  // Get archived users (must be before /api/admin/users/:id)
+  app.get("/api/admin/users/archived", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const archivedUsers = await adminStorage.listArchivedUsers();
+      const profiles = archivedUsers.map(({ passwordHash, ...profile }: any) => profile);
+      res.json(profiles);
+    } catch (error) {
+      console.error("Error fetching archived users:", error);
+      res.status(500).json({ error: "Failed to fetch archived users" });
+    }
+  });
+
   // Get all users (basic)
   app.get("/api/admin/users", adminAuthMiddleware, async (req, res) => {
     try {
@@ -226,21 +238,36 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
-  // Delete user (super admin only)
+  // Restore archived user (super admin only)
+  app.post("/api/admin/users/:id/restore", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const success = await adminStorage.restoreUser(req.params.id);
+      if (!success) {
+        return res.status(400).json({ error: "Cannot restore user. The email may already be in use by another account." });
+      }
+      await adminStorage.createAuditLog(req.admin!.id, "restore", "user", req.params.id, "Restored archived user");
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error restoring user:", error);
+      res.status(500).json({ error: "Failed to restore user" });
+    }
+  });
+
+  // Archive user (super admin only)
   app.delete("/api/admin/users/:id", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const deleted = await adminStorage.deleteUser(id);
+      const archived = await adminStorage.archiveUser(id, req.admin!.id);
       
-      if (!deleted) {
+      if (!archived) {
         return res.status(404).json({ error: "User not found" });
       }
 
-      await adminStorage.createAuditLog(req.admin!.id, "delete", "user", id, `Deleted user ${id}`);
+      await adminStorage.createAuditLog(req.admin!.id, "archive", "user", id, `Archived user ${id}`);
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting user:", error);
-      res.status(500).json({ error: "Failed to delete user" });
+      console.error("Error archiving user:", error);
+      res.status(500).json({ error: "Failed to archive user" });
     }
   });
 
@@ -488,7 +515,7 @@ export function registerAdminRoutes(app: Express) {
         return res.status(404).json({ error: "Client not found in this organization" });
       }
 
-      const success = await organizationStorage.removeClient(organizationId, orgClient.clientId || clientId);
+      const success = await organizationStorage.archiveClient(organizationId, orgClient.clientId || clientId, req.admin!.id);
       
       if (!success) {
         return res.status(404).json({ error: "Failed to remove client" });
@@ -496,10 +523,10 @@ export function registerAdminRoutes(app: Express) {
 
       await adminStorage.createAuditLog(
         req.admin!.id,
-        "delete",
+        "archive",
         "organization_client",
         clientId,
-        `Removed client from organization ${organizationId}`
+        `Archived client from organization ${organizationId}`
       );
 
       res.json({ success: true });

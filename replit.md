@@ -91,6 +91,22 @@ Preferred communication style: Simple, everyday language.
   - Set ECOLOGI_API_KEY and ECOLOGI_TEST_MODE=false to enable live tree purchases
 
 ### Recent Changes (Feb 2026)
+- **User/Client Archive System**: Soft-delete with archive and restore capability
+  - Users and org clients are archived instead of hard-deleted, preserving data
+  - Archived users/clients moved to "Archived" tab in admin/org dashboards
+  - Email freed on archive (stored in `archivedEmail`) so re-registration doesn't conflict
+  - Restore button allows bringing archived users/clients back to active
+  - Schema fields: `archivedAt`, `archivedBy`, `archivedEmail` on users; `archivedAt`, `archivedBy` on organization_clients
+  - Archived users excluded from login, dashboard stats, and all active queries
+  - Admin endpoints: `GET /api/admin/users/archived`, `POST /api/admin/users/:id/restore`
+  - Org endpoints: `GET /api/org/clients/archived`, `POST /api/org/clients/:clientId/restore`
+- **Password Policy**: All passwords must be alphanumeric, minimum 8 characters
+  - Shared `passwordSchema` in schema.ts enforced across all registration, reset, and change password flows
+- **Organisation & Admin IAM**: Role-based team management
+  - 4 org roles (Owner, Manager, Staff, Viewer) with granular permissions
+  - Admin invite system (AD-prefix codes) with team tab for super_admins
+  - Org invite system (TM-prefix codes) with team management page
+  - Dual session support for org members
 - **SMS Check-in Reminders ("No Data, No Problem")**: Automatic SMS fallback for overdue check-ins
   - When a check-in is 10+ minutes overdue, sends SMS with a secure tokenised check-in link
   - One SMS per check-in cycle (tracked via `lastSmsNotifiedDueAt` matching exact due timestamp)

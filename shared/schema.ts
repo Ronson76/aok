@@ -54,6 +54,10 @@ export const users = pgTable("users", {
   latitude: text("latitude"),
   longitude: text("longitude"),
   lastLocationUpdatedAt: timestamp("last_location_updated_at"),
+  // Soft-delete / archive fields
+  archivedAt: timestamp("archived_at"),
+  archivedBy: text("archived_by"),
+  archivedEmail: text("archived_email"),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ 
@@ -556,6 +560,9 @@ export const organizationClients = pgTable("organization_clients", {
   featureMoodTracking: boolean("feature_mood_tracking").notNull().default(true),
   featurePetProtection: boolean("feature_pet_protection").notNull().default(true),
   featureDigitalWill: boolean("feature_digital_will").notNull().default(true),
+  // Soft-delete / archive fields
+  archivedAt: timestamp("archived_at"),
+  archivedBy: text("archived_by"),
 });
 
 export const insertOrganizationClientSchema = createInsertSchema(organizationClients).omit({
