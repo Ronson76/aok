@@ -1,5 +1,5 @@
 import { storage } from "./storage";
-import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder } from "./notifications";
+import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder, sendSmsCheckinLink } from "./notifications";
 
 let schedulerInterval: NodeJS.Timeout | null = null;
 let cleanupInterval: NodeJS.Timeout | null = null;
@@ -56,9 +56,49 @@ async function processOverduePushNotifications(): Promise<void> {
   }
 }
 
-// SMS check-in is reserved for when the server/app is offline
-// Since this scheduler runs on the server, it cannot detect its own downtime
-// SMS check-in links remain available as a manual/external fallback only
+let smsCheckinInterval: NodeJS.Timeout | null = null;
+const SMS_CHECKIN_INTERVAL_MS = 2 * 60 * 1000; // Check every 2 minutes
+
+async function processSmsCheckinReminders(): Promise<void> {
+  try {
+    const overdueUsers = await storage.getOverdueUsersForSmsCheckin();
+
+    if (overdueUsers.length === 0) {
+      return;
+    }
+
+    for (const user of overdueUsers) {
+      // Only send one SMS per check-in cycle:
+      // Compare the exact due timestamp — if we already notified for this due time, skip
+      if (user.lastSmsNotifiedDueAt && user.lastSmsNotifiedDueAt.getTime() === user.nextCheckInDue.getTime()) {
+        continue;
+      }
+
+      try {
+        const tokenRecord = await storage.createSmsCheckinToken(user.userId);
+
+        const result = await sendSmsCheckinLink(
+          user.mobileNumber,
+          user.userName,
+          tokenRecord.token
+        );
+
+        if (result.success) {
+          console.log(`[SMS CHECK-IN] Sent check-in link to ${user.userName} (${user.mobileNumber})`);
+        } else {
+          console.error(`[SMS CHECK-IN] Failed to send to ${user.userName}: ${result.error}`);
+        }
+        // Mark as sent for this cycle regardless of success/failure
+        // to prevent repeated attempts to invalid numbers
+        await storage.updateLastSmsSentAt(user.userId, user.nextCheckInDue);
+      } catch (error) {
+        console.error(`[SMS CHECK-IN] Error processing ${user.userName}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('[SMS CHECK-IN] Error processing SMS check-in reminders:', error);
+  }
+}
 
 // Cleanup old emergency alerts (location data privacy - runs daily)
 async function cleanupOldLocationData(): Promise<void> {
@@ -231,9 +271,11 @@ export function startEmergencyScheduler(): void {
     await sendContactReminders();
   }, 5 * 60 * 1000);
 
-  // SMS check-in is disabled during normal server operation
-  // SMS check-ins are only needed when the server/app is offline, which
-  // this scheduler cannot detect since it runs on the server itself
+  // SMS check-in reminders: 10 mins after overdue, one SMS per check-in cycle
+  console.log('[SMS CHECK-IN] Starting SMS check-in reminder scheduler (checks every 2 minutes)');
+  smsCheckinInterval = setInterval(async () => {
+    await processSmsCheckinReminders();
+  }, SMS_CHECKIN_INTERVAL_MS);
 
   // Run cleanup daily (every 24 hours)
   cleanupInterval = setInterval(async () => {
@@ -246,7 +288,7 @@ export function startEmergencyScheduler(): void {
   cleanupOldLocationData();
   cleanupExpiredContacts();
   sendContactReminders();
-  console.log('[SMS CHECK-IN] SMS check-in scheduler disabled (only needed when server is offline)');
+  processSmsCheckinReminders();
 }
 
 export function stopEmergencyScheduler(): void {
@@ -265,6 +307,10 @@ export function stopEmergencyScheduler(): void {
   if (contactReminderInterval) {
     clearInterval(contactReminderInterval);
     contactReminderInterval = null;
+  }
+  if (smsCheckinInterval) {
+    clearInterval(smsCheckinInterval);
+    smsCheckinInterval = null;
   }
   console.log('[EMERGENCY SCHEDULER] Scheduler stopped');
 }

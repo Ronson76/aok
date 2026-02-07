@@ -2666,32 +2666,52 @@ export async function registerRoutes(
   </div>
   <div class="card">
     ${isValid ? `
-    <div id="checkin-form">
-      <h1>Hi ${firstName}</h1>
-      <p>Your check-in is overdue. Tap below to let your contacts know you're safe.</p>
-      <button class="btn btn-check" id="checkin-btn" onclick="doCheckin()">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-        I'm OK
-      </button>
-      <div class="error" id="error-msg"></div>
+    <div id="loading-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin" style="margin:0 auto 16px;display:block"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+      <h1>Checking you in...</h1>
+      <p>Hold tight, ${firstName}. We're letting your contacts know you're safe.</p>
     </div>
     <div class="success" id="success-msg">
       <div class="tick"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
       <h1>You're checked in</h1>
       <p>Your contacts have been notified. Stay safe!</p>
     </div>
+    <div id="offline-state" style="display:none">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 16px;display:block"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M2.7 10.3a8 8 0 0 1 0 0"/><circle cx="12" cy="12" r="10"/></svg>
+      <h1 style="color:#f59e0b">Waiting for signal...</h1>
+      <p>No connection right now. Keep this page open &mdash; we'll check you in automatically as soon as you get signal.</p>
+    </div>
+    <div id="error-state" style="display:none">
+      <h1 class="expired" id="error-title">Something went wrong</h1>
+      <p id="error-detail">Please try again or open the aok app.</p>
+      <button class="btn btn-check" onclick="doCheckin()" style="margin-top:16px">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        Try Again
+      </button>
+    </div>
     <script>
+      var retryTimer=null;
+      var done=false;
+      function show(id){['loading-state','success-msg','offline-state','error-state'].forEach(function(s){document.getElementById(s).style.display=s===id?'block':'none'})}
+      function stopRetry(){if(retryTimer){clearInterval(retryTimer);retryTimer=null}}
       async function doCheckin(){
-        var btn=document.getElementById('checkin-btn'),err=document.getElementById('error-msg');
-        btn.disabled=true;
-        btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Checking in...';
+        if(done)return;
+        if(!navigator.onLine){show('offline-state');startRetry();return}
+        show('loading-state');
         try{
           var r=await fetch('/api/sms-checkin/${req.params.token}',{method:'POST'});
           var d=await r.json();
-          if(r.ok&&d.success){document.getElementById('checkin-form').style.display='none';document.getElementById('success-msg').classList.add('show')}
-          else{err.textContent=d.error||'Something went wrong.';err.classList.add('show');btn.disabled=false;btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> I\\u0027m OK'}
-        }catch(e){err.textContent='Connection error. Please try again.';err.classList.add('show');btn.disabled=false;btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> I\\u0027m OK'}
+          if(r.ok&&d.success){done=true;show('success-msg');stopRetry()}
+          else{document.getElementById('error-detail').textContent=d.error||'Something went wrong.';show('error-state');stopRetry()}
+        }catch(e){
+          show('offline-state');
+          startRetry();
+        }
       }
+      function startRetry(){if(!retryTimer&&!done){retryTimer=setInterval(doCheckin,5000)}}
+      window.addEventListener('online',function(){if(!done)doCheckin()});
+      window.addEventListener('offline',function(){if(!done)show('offline-state')});
+      doCheckin();
     </script>
     ` : `
     <h1 class="expired">Link Expired</h1>
@@ -2709,6 +2729,12 @@ export async function registerRoutes(
 
   app.post("/api/sms-checkin/:token", async (req, res) => {
     try {
+      // Check if token was already used (idempotent - return success if already consumed)
+      const existing = await storage.getSmsCheckinTokenByToken(req.params.token);
+      if (existing && existing.used) {
+        return res.json({ success: true });
+      }
+
       const consumed = await storage.consumeSmsCheckinToken(req.params.token);
       if (!consumed) {
         return res.status(400).json({ error: "This check-in link has expired or already been used." });
