@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
+import { OrgHelpButton } from "@/components/org-help-center";
 import {
   Users, ArrowLeft, Plus, Loader2, Send, XCircle, Clock, CheckCircle,
   Search, Phone, Mail, ShieldCheck, LogOut, UserPlus, Trash2, Shield,
@@ -979,6 +980,7 @@ export default function OrgLoneWorkerHub() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <OrgHelpButton />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { OrgHelpButton } from "@/components/org-help-center";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -239,6 +240,7 @@ export default function OrgLoneWorkerMonitor() {
           </div>
         );
       })()}
+      <OrgHelpButton />
     </div>
   );
 }
