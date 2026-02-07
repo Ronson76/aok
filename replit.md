@@ -58,7 +58,11 @@ Preferred communication style: Simple, everyday language.
 - **Dynamic Feature Control**: Organizations can enable/disable specific wellness features for individual clients.
 - **Safeguarding Hub**: Comprehensive system for incident reporting, welfare concerns, case files, and escalation rules.
 - **Staff Invitation System**: Workflow for inviting and managing staff with role-based access.
-- **Organisation Help Centre**: In-dashboard searchable help system with 25+ topics across 6 categories.
+- **Organisation Help Centre**: In-dashboard A-Z searchable help system with 40+ topics across 6 categories, alphabet quick-navigation bar. Floating indigo help button on all authenticated org pages.
+
+### Documentation & Guides (KEEP UPDATED)
+- **Public How-to Guide** (`client/src/pages/guide.tsx`): A-Z individual user guide at `/guide` with 30+ topics, alphabet navigation, search. Covers account creation, check-ins, emergency features, wellbeing, settings, troubleshooting. **Must be updated when any user-facing feature changes.**
+- **Organisation Help Centre** (`client/src/components/org-help-center.tsx`): A-Z org management guide with 40+ topics covering clients, staff, lone worker, safeguarding, reports, account settings. **Must be updated when any org-facing feature changes.**
 
 ### Key Design Decisions
 - **Monorepo**: Client, server, and shared code in one repository.
