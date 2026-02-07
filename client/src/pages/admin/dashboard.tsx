@@ -600,6 +600,15 @@ export default function AdminDashboard() {
                   VPC
                 </Button>
               )}
+              {isSuperAdmin && (
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setLocation("/admin/workflows")}
+                  data-testid="nav-workflows"
+                >
+                  Workflows
+                </Button>
+              )}
             </nav>
             {isSuperAdmin && (
               <Button 
