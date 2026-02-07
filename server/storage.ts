@@ -119,7 +119,8 @@ export interface IStorage {
   getSmsCheckinTokenByToken(token: string): Promise<SmsCheckinToken | undefined>;
   consumeSmsCheckinToken(token: string): Promise<SmsCheckinToken | undefined>;
   getUserByMobileNumber(mobileNumber: string): Promise<User | undefined>;
-  getOverdueUsersForSmsCheckin(): Promise<Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date }>>;
+  getOverdueUsersForSmsCheckin(): Promise<Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date; lastSmsSentAt: Date | null }>>;
+  updateLastSmsSentAt(userId: string): Promise<void>;
 
   // Active emergency alerts
   getActiveEmergencyAlert(userId: string): Promise<ActiveEmergencyAlert | undefined>;
@@ -1766,14 +1767,16 @@ class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getOverdueUsersForSmsCheckin(): Promise<Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date }>> {
+  async getOverdueUsersForSmsCheckin(): Promise<Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date; lastSmsSentAt: Date | null }>> {
     const now = new Date();
+    const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
     const result = await getDb()
       .select({
         userId: users.id,
         userName: users.name,
         mobileNumber: users.mobileNumber,
         nextCheckInDue: settings.nextCheckInDue,
+        lastSmsSentAt: settings.lastSmsSentAt,
       })
       .from(users)
       .innerJoin(settings, eq(users.id, settings.userId))
@@ -1781,13 +1784,20 @@ class DatabaseStorage implements IStorage {
         and(
           isNotNull(users.mobileNumber),
           isNotNull(settings.nextCheckInDue),
-          lt(settings.nextCheckInDue, now),
+          lt(settings.nextCheckInDue, tenMinutesAgo),
           eq(settings.alertsEnabled, true),
           eq(users.disabled, false),
           eq(users.accountType, "individual")
         )
       );
-    return result.filter(r => r.mobileNumber && r.nextCheckInDue) as Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date }>;
+    return result.filter(r => r.mobileNumber && r.nextCheckInDue) as Array<{ userId: string; userName: string; mobileNumber: string; nextCheckInDue: Date; lastSmsSentAt: Date | null }>;
+  }
+
+  async updateLastSmsSentAt(userId: string): Promise<void> {
+    await getDb()
+      .update(settings)
+      .set({ lastSmsSentAt: new Date() })
+      .where(eq(settings.userId, userId));
   }
 
   // ==================== LONE WORKER SESSIONS ====================

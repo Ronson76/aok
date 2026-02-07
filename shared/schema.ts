@@ -194,6 +194,7 @@ export const settings = pgTable("settings", {
   lastMissedDueAt: timestamp("last_missed_due_at"),
   lastAlertSentAt: timestamp("last_alert_sent_at"),
   lastPushSentAt: timestamp("last_push_sent_at"),
+  lastSmsSentAt: timestamp("last_sms_sent_at"),
   alertsEnabled: boolean("alerts_enabled").notNull().default(true),
   pushStatus: text("push_status").notNull().$type<PushStatus>().default("unknown"),
   redAlertEnabled: boolean("red_alert_enabled").notNull().default(false),
