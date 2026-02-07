@@ -1104,12 +1104,9 @@ export async function sendMissedCheckInAlert(
   }
   
   for (const contact of primaryContacts) {
-    // Alert confirmed contacts OR unconfirmed contacts within their confirmation window
-    const isConfirmed = !!contact.confirmedAt;
-    const isWithinConfirmationWindow = !contact.confirmedAt && contact.confirmationExpiry && new Date(contact.confirmationExpiry) > new Date();
-    
-    if (!isConfirmed && !isWithinConfirmationWindow) {
-      console.log(`[ALERT] Skipping expired unconfirmed contact ${contact.name}`);
+    // Only alert confirmed contacts
+    if (!contact.confirmedAt) {
+      console.log(`[ALERT] Skipping unconfirmed contact ${contact.name}`);
       continue;
     }
     

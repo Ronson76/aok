@@ -1107,9 +1107,8 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Incorrect password" });
       }
 
-      // Get all primary contacts and send logout notification to each with location
-      const contacts = await storage.getContacts(user.id);
-      const primaryContacts = contacts.filter(c => c.isPrimary);
+      // Get confirmed primary contacts and send logout notification to each with location
+      const primaryContacts = await storage.getPrimaryContacts(user.id);
       
       let notificationsSent = 0;
       for (const primaryContact of primaryContacts) {
@@ -1452,9 +1451,9 @@ export async function registerRoutes(
           `Emergency ended following confirmation by ${confirmation.contactName} at ${confirmationTime.toLocaleString('en-GB')}`
         );
         
-        // Send final notification to ALL contacts
-        const allContacts = await storage.getContacts(confirmation.userId);
-        const contactsWithEmail = allContacts.filter(c => c.email && c.email.trim() !== '');
+        // Send final notification to confirmed contacts only
+        const allContactsForEnd = await storage.getContacts(confirmation.userId);
+        const contactsWithEmail = allContactsForEnd.filter(c => !!c.confirmedAt && c.email && c.email.trim() !== '');
         
         if (contactsWithEmail.length > 0 && confirmation.user) {
           const { sendEmergencyEndedNotification } = await import("./notifications");
@@ -1736,10 +1735,12 @@ export async function registerRoutes(
         if (remainingContacts.length > 0) {
           await storage.setPrimaryContact(req.userId!, remainingContacts[0].id);
           
-          // Notify the newly promoted primary contact
-          const user = await storage.getUserById(req.userId!);
-          if (user) {
-            await sendPrimaryContactPromotionNotification(remainingContacts[0], user);
+          // Notify the newly promoted primary contact (only if confirmed)
+          if (remainingContacts[0].confirmedAt) {
+            const user = await storage.getUserById(req.userId!);
+            if (user) {
+              await sendPrimaryContactPromotionNotification(remainingContacts[0], user);
+            }
           }
         }
       }
@@ -1800,11 +1801,15 @@ export async function registerRoutes(
     try {
       console.log('[EMERGENCY] Request from userId:', req.userId);
       
-      const contacts = await storage.getContacts(req.userId!);
-      console.log('[EMERGENCY] Found contacts:', contacts.length, contacts.map(c => c.name));
+      const allContacts = await storage.getContacts(req.userId!);
+      const contacts = allContacts.filter(c => !!c.confirmedAt);
+      console.log('[EMERGENCY] Found contacts:', allContacts.length, 'confirmed:', contacts.length, contacts.map(c => c.name));
       
-      if (contacts.length === 0) {
+      if (allContacts.length === 0) {
         return res.status(400).json({ error: "No emergency contacts configured" });
+      }
+      if (contacts.length === 0) {
+        return res.status(400).json({ error: "No confirmed emergency contacts. Your contacts must accept their confirmation email first." });
       }
 
       const user = await storage.getUserById(req.userId!);
@@ -2095,8 +2100,9 @@ export async function registerRoutes(
       // DO NOT deactivate the alert yet - alerts continue until a contact confirms
       // Just send confirmation requests to contacts
       
-      // Get ALL contacts to notify them (emergency notifications go to all contacts, not just confirmed)
-      const contacts = await storage.getContacts(userId);
+      // Get confirmed contacts to notify them
+      const allContactsForDeactivation = await storage.getContacts(userId);
+      const contacts = allContactsForDeactivation.filter(c => !!c.confirmedAt);
       const contactsWithEmail = contacts.filter(c => c.email && c.email.trim() !== '');
       
       // Create confirmation records for each contact and generate links
@@ -2119,7 +2125,7 @@ export async function registerRoutes(
         confirmationLinks.set(contact.email, `${baseUrl}/api/confirm-safety?token=${token}`);
       }
       
-      // Send confirmation request notifications to ALL contacts
+      // Send confirmation request notifications to confirmed contacts
       // Alert will only stop when a contact confirms they've spoken to the user
       if (contactsWithEmail.length > 0) {
         const { sendEmergencyConfirmationRequest } = await import("./notifications");
