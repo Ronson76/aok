@@ -1200,10 +1200,22 @@ export default function Landing() {
             </div>
           </div>
           
-          <div className="border-t pt-8 flex flex-col md:flex-row flex-wrap items-center gap-4">
+          <div className="border-t pt-8 flex flex-col md:flex-row flex-wrap items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground" data-testid="text-copyright">
               &copy; {new Date().getFullYear()} aok by NaiyaTech. All rights reserved.
             </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href="/admin/login">
+                <Button variant="outline" size="sm" data-testid="link-footer-admin">
+                  Admin Login
+                </Button>
+              </Link>
+              <Link href="/org/login">
+                <Button variant="outline" size="sm" data-testid="link-footer-org">
+                  Organisation Login
+                </Button>
+              </Link>
+            </div>
           </div>
           <div className="flex justify-center mt-8">
             <Button 
