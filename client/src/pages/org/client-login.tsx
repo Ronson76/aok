@@ -6,15 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Loader2, Building2 } from "lucide-react";
+import { Loader2, Building2 } from "lucide-react";
 
 export default function OrganizationClientLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const searchString = useSearch();
   
-  // Parse URL parameters for reference code pre-fill
   const getRefFromUrl = () => {
     const params = new URLSearchParams(searchString);
     return params.get("ref")?.toUpperCase() || "";
@@ -22,7 +22,6 @@ export default function OrganizationClientLogin() {
   
   const [referenceCode, setReferenceCode] = useState(getRefFromUrl);
   
-  // Update reference code if URL parameter changes
   useEffect(() => {
     const refFromUrl = getRefFromUrl();
     if (refFromUrl) {
@@ -58,13 +57,12 @@ export default function OrganizationClientLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-center">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
-            <ShieldCheck className="h-9 w-9 text-green-600" />
-            <span className="text-2xl font-bold text-green-600">aok</span>
-          </Link>
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-background dark:from-indigo-950 dark:to-background flex flex-col">
+      <header className="bg-indigo-900 dark:bg-indigo-950 border-b border-indigo-800">
+        <div className="container mx-auto px-4 py-4 flex items-center gap-3">
+          <Building2 className="h-7 w-7 text-white" />
+          <span className="text-xl font-bold text-white">aok</span>
+          <Badge variant="outline" className="text-indigo-300 border-indigo-600">Organisation</Badge>
         </div>
       </header>
 
@@ -120,7 +118,7 @@ export default function OrganizationClientLogin() {
               </Button>
               <p className="text-sm text-muted-foreground text-center">
                 From an organisation?{" "}
-                <Link href="/org/staff-login">
+                <Link href="/org/login">
                   <span className="text-primary hover:underline cursor-pointer">Staff login</span>
                 </Link>
               </p>
@@ -129,14 +127,7 @@ export default function OrganizationClientLogin() {
         </Card>
       </div>
 
-      <footer className="border-t py-4 px-4">
-        <div className="container mx-auto text-center">
-          <Link href="/" className="flex items-center justify-center gap-2" data-testid="link-footer-logo-home">
-            <ShieldCheck className="h-5 w-5 text-green-600" />
-            <span className="text-sm font-bold text-green-600">aok</span>
-          </Link>
-        </div>
-      </footer>
+      <footer className="py-4 text-center"><p className="text-xs text-muted-foreground">aok Organisation Portal</p></footer>
     </div>
   );
 }

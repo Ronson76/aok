@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ShieldCheck, UserPlus, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Loader2, ShieldCheck, UserPlus, Eye, EyeOff } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function AdminLogin() {
@@ -71,29 +72,27 @@ export default function AdminLogin() {
 
   if (checkingAdmin) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-background dark:from-slate-950 dark:to-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
-            <ArrowLeft className="h-5 w-5 text-green-600" />
-            <ShieldCheck className="h-9 w-9 text-green-600" />
-            <span className="text-2xl font-bold text-green-600">aok</span>
-          </Link>
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-background dark:from-slate-950 dark:to-background flex flex-col">
+      <header className="bg-slate-900 dark:bg-slate-950 border-b border-slate-800">
+        <div className="container mx-auto px-4 py-4 flex items-center gap-3">
+          <ShieldCheck className="h-7 w-7 text-white" />
+          <span className="text-xl font-bold text-white">aok</span>
+          <Badge variant="outline" className="text-slate-300 border-slate-600">Admin</Badge>
         </div>
       </header>
       <div className="flex-1 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex flex-col items-center mb-4">
-            <ShieldCheck className="h-12 w-12 text-green-600" />
-            <span className="text-2xl font-bold text-green-600">aok</span>
+            <ShieldCheck className="h-12 w-12 text-slate-600 dark:text-slate-400" />
+            <span className="text-2xl font-bold text-slate-600 dark:text-slate-400">aok</span>
             <span className="text-xs text-muted-foreground mt-1">Admin Portal</span>
           </div>
           <CardTitle className="text-2xl">
@@ -189,6 +188,9 @@ export default function AdminLogin() {
         </CardContent>
       </Card>
       </div>
+      <footer className="py-4 text-center">
+        <p className="text-xs text-muted-foreground">aok Admin Portal</p>
+      </footer>
     </div>
   );
 }

@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Building2, ArrowLeft, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Loader2, Building2, Eye, EyeOff } from "lucide-react";
 
 export default function OrganizationStaffLogin() {
   const [, setLocation] = useLocation();
@@ -53,14 +54,12 @@ export default function OrganizationStaffLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
-            <ArrowLeft className="h-5 w-5 text-green-600" />
-            <ShieldCheck className="h-9 w-9 text-green-600" />
-            <span className="text-2xl font-bold text-green-600">aok</span>
-          </Link>
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-background dark:from-indigo-950 dark:to-background flex flex-col">
+      <header className="bg-indigo-900 dark:bg-indigo-950 border-b border-indigo-800">
+        <div className="container mx-auto px-4 py-4 flex items-center gap-3">
+          <Building2 className="h-7 w-7 text-white" />
+          <span className="text-xl font-bold text-white">aok</span>
+          <Badge variant="outline" className="text-indigo-300 border-indigo-600">Organisation</Badge>
         </div>
       </header>
 
@@ -143,7 +142,7 @@ export default function OrganizationStaffLogin() {
                 </Link>
                 <p className="text-sm text-muted-foreground">
                   Are you a client?{" "}
-                  <Link href="/org/client-login">
+                  <Link href="/org/login">
                     <span className="text-primary hover:underline cursor-pointer">Sign in here</span>
                   </Link>
                 </p>
@@ -152,6 +151,8 @@ export default function OrganizationStaffLogin() {
           </form>
         </Card>
       </div>
+
+      <footer className="py-4 text-center"><p className="text-xs text-muted-foreground">aok Organisation Portal</p></footer>
     </div>
   );
 }
