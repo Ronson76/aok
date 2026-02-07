@@ -596,6 +596,15 @@ export default function AdminDashboard() {
                   Team
                 </Button>
               )}
+              {isSuperAdmin && (
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setLocation("/admin/architecture")}
+                  data-testid="nav-architecture"
+                >
+                  VPC
+                </Button>
+              )}
             </nav>
             {isSuperAdmin && (
               <Button 
