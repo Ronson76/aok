@@ -10,7 +10,7 @@ import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
 import { HeartbeatProvider } from "@/contexts/heartbeat-context";
 import { OfflineEmergencyOverlay } from "@/components/offline-emergency-overlay";
-import { Loader2, ShieldCheck, Volume2, MoreVertical, Mail, QrCode, Share2, Plus, Heart } from "lucide-react";
+import { Loader2, ShieldCheck, Volume2, MoreVertical, Mail, QrCode, Share2, Plus, Heart, Search } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -485,6 +485,15 @@ function AppLayout() {
                     <span className="text-[10px] font-medium text-green-600 mt-0.5">Wellbeing AI</span>
                   </div>
                 )}
+                <div className="h-8 w-px bg-muted-foreground/30" />
+                <Link 
+                  href="/guide"
+                  className="flex flex-col items-center hover:opacity-80 transition-opacity"
+                  data-testid="link-help"
+                >
+                  <Search className="h-5 w-5 text-green-600" />
+                  <span className="text-[10px] font-medium text-green-600 mt-0.5">Help</span>
+                </Link>
               </>
             )}
           </div>
