@@ -68,6 +68,7 @@ import Pricing from "@/pages/pricing";
 import Onboarding from "@/pages/onboarding";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
+import Guide from "@/pages/guide";
 import ConfirmContact from "@/pages/confirm-contact";
 import WellbeingAI from "@/pages/wellbeing-ai";
 import LoneWorker from "@/pages/lone-worker";
@@ -671,6 +672,10 @@ function Router() {
 
   if (location.startsWith("/org/team-invite")) {
     return <OrgTeamInvite />;
+  }
+
+  if (location === "/guide") {
+    return <Guide />;
   }
 
   if (location === "/pricing") {
