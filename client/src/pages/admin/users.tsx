@@ -28,7 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
-  Users, LogOut, Shield, ShieldCheck, Trash2, ArrowLeft, Building2, User, Ban, CheckCircle, Plus, Loader2, Eye, EyeOff, Settings2, Search
+  Users, LogOut, Shield, ShieldCheck, Trash2, ArrowLeft, Building2, User, Ban, CheckCircle, Plus, Loader2, Eye, EyeOff, Settings2, Search, RotateCcw, Archive
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest } from "@/lib/queryClient";
@@ -40,6 +40,8 @@ export default function AdminUsers() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
   
   // Search state
   const [searchName, setSearchName] = useState("");
@@ -64,6 +66,11 @@ export default function AdminUsers() {
 
   const { data: users, isLoading } = useQuery<UserProfile[]>({
     queryKey: ["/api/admin/users"],
+  });
+
+  const { data: archivedUsers, isLoading: isArchivedLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/users/archived"],
+    enabled: activeTab === "archived",
   });
 
   // Filter and sort users based on search terms
@@ -116,10 +123,11 @@ export default function AdminUsers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/archived"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard/stats"] });
       toast({
-        title: "User deleted",
-        description: "The user has been permanently removed.",
+        title: "User archived",
+        description: "The user has been moved to the archive.",
       });
     },
     onError: (error: any) => {
@@ -128,6 +136,21 @@ export default function AdminUsers() {
         title: "Delete failed",
         description: error.message || "Could not delete user",
       });
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      await apiRequest("POST", `/api/admin/users/${userId}/restore`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/archived"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard/stats"] });
+      toast({ title: "User restored", description: "The user has been restored from the archive." });
+    },
+    onError: (error: any) => {
+      toast({ variant: "destructive", title: "Restore failed", description: error.message || "Could not restore user. The email may already be in use." });
     },
   });
 
@@ -318,158 +341,245 @@ export default function AdminUsers() {
               )}
             </div>
             
-            {/* Search Fields */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name..."
-                  value={searchName}
-                  onChange={(e) => setSearchName(e.target.value)}
-                  className="pl-9"
-                  data-testid="input-search-name"
-                />
-              </div>
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by email..."
-                  value={searchEmail}
-                  onChange={(e) => setSearchEmail(e.target.value)}
-                  className="pl-9"
-                  data-testid="input-search-email"
-                />
-              </div>
+            <div className="flex gap-2">
+              <Button 
+                variant={activeTab === "active" ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => setActiveTab("active")}
+                data-testid="tab-active-users"
+              >
+                Active ({users?.length || 0})
+              </Button>
+              <Button 
+                variant={activeTab === "archived" ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => setActiveTab("archived")}
+                data-testid="tab-archived-users"
+              >
+                Archived ({archivedUsers?.length || 0})
+              </Button>
             </div>
+
+            {activeTab === "active" && (
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name..."
+                    value={searchName}
+                    onChange={(e) => setSearchName(e.target.value)}
+                    className="pl-9"
+                    data-testid="input-search-name"
+                  />
+                </div>
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by email..."
+                    value={searchEmail}
+                    onChange={(e) => setSearchEmail(e.target.value)}
+                    className="pl-9"
+                    data-testid="input-search-email"
+                  />
+                </div>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-48" />
-                    </div>
-                    <Skeleton className="h-8 w-16" />
+            {activeTab === "active" ? (
+              <>
+                {isLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-48" />
+                        </div>
+                        <Skeleton className="h-8 w-16" />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : filteredUsers.length > 0 ? (
-              <div className="space-y-3">
-                {filteredUsers.map((user) => (
-                  <div 
-                    key={user.id} 
-                    className="flex items-center justify-between p-4 border rounded-lg hover-elevate"
-                    data-testid={`user-row-${user.id}`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                        {user.accountType === "organization" ? (
-                          <Building2 className="w-5 h-5 text-muted-foreground" />
-                        ) : (
-                          <User className="w-5 h-5 text-muted-foreground" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium">{user.name}</p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                        {user.mobileNumber && (
-                          <p className="text-xs text-muted-foreground">{user.mobileNumber}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant={user.accountType === "organization" ? "default" : "secondary"}>
-                        {user.accountType}
-                      </Badge>
-                      {user.disabled && (
-                        <Badge variant="destructive">Disabled</Badge>
-                      )}
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(user.createdAt?.toString() || "")}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openFeaturesDialog(user)}
-                        title="Manage features"
-                        data-testid={`button-features-user-${user.id}`}
+                ) : filteredUsers.length > 0 ? (
+                  <div className="space-y-3">
+                    {filteredUsers.map((user) => (
+                      <div 
+                        key={user.id} 
+                        className="flex items-center justify-between p-4 border rounded-lg hover-elevate"
+                        data-testid={`user-row-${user.id}`}
                       >
-                        <Settings2 className="w-4 h-4" />
-                      </Button>
-                      {isSuperAdmin && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => toggleDisabledMutation.mutate({ 
-                            userId: user.id, 
-                            disabled: !user.disabled 
-                          })}
-                          disabled={toggleDisabledMutation.isPending}
-                          title={user.disabled ? "Enable user" : "Disable user"}
-                          data-testid={`button-toggle-user-${user.id}`}
-                        >
-                          {user.disabled ? (
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <Ban className="w-4 h-4 text-amber-600" />
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                            {user.accountType === "organization" ? (
+                              <Building2 className="w-5 h-5 text-muted-foreground" />
+                            ) : (
+                              <User className="w-5 h-5 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium">{user.name}</p>
+                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                            {user.mobileNumber && (
+                              <p className="text-xs text-muted-foreground">{user.mobileNumber}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Badge variant={user.accountType === "organization" ? "default" : "secondary"}>
+                            {user.accountType}
+                          </Badge>
+                          {user.disabled && (
+                            <Badge variant="destructive">Disabled</Badge>
                           )}
-                        </Button>
-                      )}
-                      {isSuperAdmin && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
+                          <span className="text-xs text-muted-foreground">
+                            {formatDate(user.createdAt?.toString() || "")}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openFeaturesDialog(user)}
+                            title="Manage features"
+                            data-testid={`button-features-user-${user.id}`}
+                          >
+                            <Settings2 className="w-4 h-4" />
+                          </Button>
+                          {isSuperAdmin && (
+                            <Button
+                              variant="ghost"
                               size="icon"
-                              className="text-destructive hover:text-destructive"
-                              data-testid={`button-delete-user-${user.id}`}
+                              onClick={() => toggleDisabledMutation.mutate({ 
+                                userId: user.id, 
+                                disabled: !user.disabled 
+                              })}
+                              disabled={toggleDisabledMutation.isPending}
+                              title={user.disabled ? "Enable user" : "Disable user"}
+                              data-testid={`button-toggle-user-${user.id}`}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              {user.disabled ? (
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                              ) : (
+                                <Ban className="w-4 h-4 text-amber-600" />
+                              )}
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete User</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete <strong>{user.name}</strong>? 
-                                This action cannot be undone and will remove all their data including 
-                                contacts, check-ins, and settings.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                onClick={() => deleteMutation.mutate(user.id)}
-                                data-testid={`confirm-delete-user-${user.id}`}
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </div>
+                          )}
+                          {isSuperAdmin && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive"
+                                  data-testid={`button-delete-user-${user.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Archive User</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to archive <strong>{user.name}</strong>? 
+                                    Their data will be moved to the archive. You can restore them later if needed.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    onClick={() => deleteMutation.mutate(user.id)}
+                                    data-testid={`confirm-delete-user-${user.id}`}
+                                  >
+                                    Archive
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : (searchName || searchEmail) ? (
-              <div className="text-center py-8">
-                <Search className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <p className="text-muted-foreground">No users match your search</p>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="mt-2"
-                  onClick={() => { setSearchName(""); setSearchEmail(""); }}
-                >
-                  Clear search
-                </Button>
-              </div>
+                ) : (searchName || searchEmail) ? (
+                  <div className="text-center py-8">
+                    <Search className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">No users match your search</p>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="mt-2"
+                      onClick={() => { setSearchName(""); setSearchEmail(""); }}
+                    >
+                      Clear search
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">No users found</p>
+                )}
+              </>
             ) : (
-              <p className="text-muted-foreground text-center py-8">No users found</p>
+              <>
+                {isArchivedLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-48" />
+                        </div>
+                        <Skeleton className="h-8 w-16" />
+                      </div>
+                    ))}
+                  </div>
+                ) : archivedUsers && archivedUsers.length > 0 ? (
+                  <div className="space-y-3">
+                    {archivedUsers.map((user: any) => (
+                      <div 
+                        key={user.id} 
+                        className="flex items-center justify-between p-4 border rounded-lg"
+                        data-testid={`archived-user-row-${user.id}`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                            {user.accountType === "organization" ? (
+                              <Building2 className="w-5 h-5 text-muted-foreground" />
+                            ) : (
+                              <User className="w-5 h-5 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium">{user.name}</p>
+                            <p className="text-sm text-muted-foreground">{user.archivedEmail || user.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Badge variant={user.accountType === "organization" ? "default" : "secondary"}>
+                            {user.accountType}
+                          </Badge>
+                          <Badge variant="secondary">Archived</Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {user.archivedAt ? new Date(user.archivedAt).toLocaleDateString("en-GB") : ""}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => restoreMutation.mutate(user.id)}
+                            disabled={restoreMutation.isPending}
+                            data-testid={`button-restore-user-${user.id}`}
+                          >
+                            <RotateCcw className="w-4 h-4 mr-2" />
+                            Restore
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Archive className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">No archived users</p>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

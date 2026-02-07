@@ -257,7 +257,9 @@ class DatabaseStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const result = await getDb().select().from(users).where(eq(users.email, email.toLowerCase()));
+    const result = await getDb().select().from(users).where(
+      and(eq(users.email, email.toLowerCase()), isNull(users.archivedAt))
+    );
     return result[0];
   }
 
@@ -2064,6 +2066,9 @@ export interface IAdminStorage {
   getAllMissedCheckIns(): Promise<any[]>;
   getAllRegistrations(): Promise<{ date: string; count: number; users: any[] }[]>;
   deleteUser(userId: string): Promise<boolean>;
+  archiveUser(userId: string, archivedBy: string): Promise<boolean>;
+  listArchivedUsers(): Promise<any[]>;
+  restoreUser(userId: string): Promise<boolean>;
   setUserDisabled(userId: string, disabled: boolean): Promise<UserProfile | undefined>;
   
   // Organization bundles
@@ -2143,15 +2148,15 @@ class AdminStorage implements IAdminStorage {
   async getDashboardStats(): Promise<DashboardStats> {
     const db = getDb();
     
-    // Get organizations count
-    const orgsResult = await db.select({ count: count() }).from(users).where(eq(users.accountType, "organization"));
+    // Get organizations count (exclude archived)
+    const orgsResult = await db.select({ count: count() }).from(users).where(and(eq(users.accountType, "organization"), isNull(users.archivedAt)));
     const totalOrganizations = orgsResult[0]?.count || 0;
 
-    // Get individual users who are NOT organization clients
+    // Get individual users who are NOT organization clients (exclude archived)
     const orgClientIds = await db
       .select({ clientId: organizationClients.clientId })
       .from(organizationClients)
-      .where(isNotNull(organizationClients.clientId));
+      .where(and(isNotNull(organizationClients.clientId), isNull(organizationClients.archivedAt)));
     const clientIdList = orgClientIds.map(oc => oc.clientId).filter((id): id is string => id !== null);
     
     let independentIndividualsCount = 0;
@@ -2159,17 +2164,18 @@ class AdminStorage implements IAdminStorage {
       const indResult = await db.select({ count: count() }).from(users).where(
         and(
           eq(users.accountType, "individual"),
+          isNull(users.archivedAt),
           notInArray(users.id, clientIdList)
         )
       );
       independentIndividualsCount = indResult[0]?.count || 0;
     } else {
-      const indResult = await db.select({ count: count() }).from(users).where(eq(users.accountType, "individual"));
+      const indResult = await db.select({ count: count() }).from(users).where(and(eq(users.accountType, "individual"), isNull(users.archivedAt)));
       independentIndividualsCount = indResult[0]?.count || 0;
     }
 
-    // Get total organization clients count (all clients added to organizations)
-    const orgClientsResult = await db.select({ count: count() }).from(organizationClients);
+    // Get total organization clients count (exclude archived)
+    const orgClientsResult = await db.select({ count: count() }).from(organizationClients).where(isNull(organizationClients.archivedAt));
     const totalOrgClients = orgClientsResult[0]?.count || 0;
 
     // Total users = independent individuals + all org clients (grand total of people being monitored/using the app)
@@ -2194,9 +2200,9 @@ class AdminStorage implements IAdminStorage {
     const totalSeatsAllocated = seatsResult[0]?.totalSeats || 0;
     const totalSeatsUsed = seatsResult[0]?.usedSeats || 0;
 
-    // Get recent users (last 10) with org client info if applicable - exclude organisations
+    // Get recent users (last 10) with org client info if applicable - exclude organisations and archived
     const recentUsersData = await db.select().from(users)
-      .where(ne(users.accountType, "organization"))
+      .where(and(ne(users.accountType, "organization"), isNull(users.archivedAt)))
       .orderBy(desc(users.createdAt))
       .limit(10);
     
@@ -2331,18 +2337,19 @@ class AdminStorage implements IAdminStorage {
       .map(oc => oc.clientId)
       .filter((id): id is string => id !== null);
     
-    // Get all users except those who are organization clients, and exclude organizations
+    // Get all users except those who are organization clients, and exclude organizations and archived
     let query = getDb().select().from(users);
     
     if (clientIdList.length > 0) {
       query = query.where(
         and(
           notInArray(users.id, clientIdList),
-          eq(users.accountType, "individual")
+          eq(users.accountType, "individual"),
+          isNull(users.archivedAt)
         )
       ) as typeof query;
     } else {
-      query = query.where(eq(users.accountType, "individual")) as typeof query;
+      query = query.where(and(eq(users.accountType, "individual"), isNull(users.archivedAt))) as typeof query;
     }
     
     const result = await query.orderBy(desc(users.createdAt));
@@ -2354,9 +2361,9 @@ class AdminStorage implements IAdminStorage {
 
   async getAllUsersWithOrgInfo(): Promise<any[]> {
     const db = getDb();
-    // Filter out organisations - only return actual users
+    // Filter out organisations and archived - only return actual users
     const allUsers = await db.select().from(users)
-      .where(ne(users.accountType, "organization"))
+      .where(and(ne(users.accountType, "organization"), isNull(users.archivedAt)))
       .orderBy(desc(users.createdAt));
     
     const usersWithOrgInfo = await Promise.all(allUsers.map(async (u) => {
@@ -2499,8 +2506,8 @@ class AdminStorage implements IAdminStorage {
   async getAllRegistrations(): Promise<{ date: string; count: number; users: any[] }[]> {
     const db = getDb();
     
-    // Get all users grouped by registration date
-    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+    // Get all users grouped by registration date (exclude archived)
+    const allUsers = await db.select().from(users).where(isNull(users.archivedAt)).orderBy(desc(users.createdAt));
     
     // Group by date
     const dateMap: Record<string, any[]> = {};
@@ -2544,8 +2551,63 @@ class AdminStorage implements IAdminStorage {
     return result;
   }
 
+  async archiveUser(userId: string, archivedBy: string): Promise<boolean> {
+    const user = await getDb().select().from(users).where(eq(users.id, userId));
+    if (user.length === 0) return false;
+
+    const originalEmail = user[0].email;
+    const archivedEmailValue = `archived_${Date.now()}_${userId}@archived.local`;
+
+    const result = await getDb()
+      .update(users)
+      .set({
+        archivedAt: new Date(),
+        archivedBy: archivedBy,
+        archivedEmail: originalEmail,
+        email: archivedEmailValue,
+        disabled: true,
+      })
+      .where(eq(users.id, userId))
+      .returning();
+
+    await getDb().delete(sessions).where(eq(sessions.userId, userId));
+
+    return result.length > 0;
+  }
+
   async deleteUser(userId: string): Promise<boolean> {
-    const result = await getDb().delete(users).where(eq(users.id, userId)).returning();
+    return this.archiveUser(userId, "system");
+  }
+
+  async listArchivedUsers(): Promise<any[]> {
+    return await getDb()
+      .select()
+      .from(users)
+      .where(isNotNull(users.archivedAt))
+      .orderBy(desc(users.archivedAt));
+  }
+
+  async restoreUser(userId: string): Promise<boolean> {
+    const user = await getDb().select().from(users).where(eq(users.id, userId));
+    if (user.length === 0 || !user[0].archivedEmail) return false;
+
+    const existing = await getDb().select().from(users).where(
+      and(eq(users.email, user[0].archivedEmail), isNull(users.archivedAt))
+    );
+    if (existing.length > 0) return false;
+
+    const result = await getDb()
+      .update(users)
+      .set({
+        archivedAt: null,
+        archivedBy: null,
+        email: user[0].archivedEmail,
+        archivedEmail: null,
+        disabled: false,
+      })
+      .where(eq(users.id, userId))
+      .returning();
+
     return result.length > 0;
   }
 
@@ -2736,6 +2798,9 @@ export interface IOrganizationStorage {
   getOrganizationClientByClientId(organizationId: string, clientId: string): Promise<OrganizationClient | undefined>;
   addClient(organizationId: string, clientId: string, bundleId?: string, nickname?: string): Promise<OrganizationClient>;
   removeClient(organizationId: string, clientId: string): Promise<boolean>;
+  archiveClient(organizationId: string, clientId: string, archivedBy: string): Promise<boolean>;
+  listArchivedClients(organizationId: string): Promise<any[]>;
+  restoreClient(organizationId: string, clientRecordId: string): Promise<boolean>;
   isClientOfOrganization(organizationId: string, clientId: string): Promise<boolean>;
   getOrganizationClientsForUser(userId: string): Promise<OrganizationClient[]>;
   updateClientStatus(organizationClientId: string, status: OrgClientStatus): Promise<OrganizationClient | undefined>;
@@ -2842,12 +2907,12 @@ export interface IOrganizationStorage {
 }
 
 class OrganizationStorage implements IOrganizationStorage {
-  // Get all clients for an organization
+  // Get all clients for an organization (exclude archived)
   async getClients(organizationId: string): Promise<OrganizationClient[]> {
     return await getDb()
       .select()
       .from(organizationClients)
-      .where(eq(organizationClients.organizationId, organizationId))
+      .where(and(eq(organizationClients.organizationId, organizationId), isNull(organizationClients.archivedAt)))
       .orderBy(desc(organizationClients.addedAt));
   }
 
@@ -2860,7 +2925,7 @@ class OrganizationStorage implements IOrganizationStorage {
       })
       .from(organizationClients)
       .leftJoin(users, eq(organizationClients.clientId, users.id))
-      .where(eq(organizationClients.organizationId, organizationId))
+      .where(and(eq(organizationClients.organizationId, organizationId), isNull(organizationClients.archivedAt)))
       .orderBy(organizationClients.clientOrdinal);
 
     const results: OrganizationClientWithDetails[] = [];
@@ -3063,9 +3128,8 @@ class OrganizationStorage implements IOrganizationStorage {
     return result[0];
   }
 
-  // Remove a client from an organization
-  async removeClient(organizationId: string, clientId: string): Promise<boolean> {
-    // Get the client record first - try by clientId first, then by record ID
+  // Archive a client from an organization (soft-delete)
+  async archiveClient(organizationId: string, clientId: string, archivedBy: string): Promise<boolean> {
     let clientRecord = await getDb()
       .select()
       .from(organizationClients)
@@ -3074,7 +3138,6 @@ class OrganizationStorage implements IOrganizationStorage {
         eq(organizationClients.clientId, clientId)
       ));
     
-    // If not found by clientId, try by record ID (for unactivated clients)
     if (clientRecord.length === 0) {
       clientRecord = await getDb()
         .select()
@@ -3089,7 +3152,6 @@ class OrganizationStorage implements IOrganizationStorage {
       return false;
     }
 
-    // Decrement seats used if bundleId exists
     if (clientRecord[0].bundleId) {
       const bundle = await getDb()
         .select()
@@ -3104,34 +3166,72 @@ class OrganizationStorage implements IOrganizationStorage {
       }
     }
 
-    // Delete by the record ID we found
     const result = await getDb()
-      .delete(organizationClients)
+      .update(organizationClients)
+      .set({ archivedAt: new Date(), archivedBy: archivedBy })
       .where(eq(organizationClients.id, clientRecord[0].id))
       .returning();
     
     return result.length > 0;
   }
 
-  // Check if a client belongs to an organization
+  // Remove a client (backwards compat - calls archiveClient)
+  async removeClient(organizationId: string, clientId: string): Promise<boolean> {
+    return this.archiveClient(organizationId, clientId, "system");
+  }
+
+  async listArchivedClients(organizationId: string): Promise<any[]> {
+    return await getDb().select().from(organizationClients)
+      .where(and(
+        eq(organizationClients.organizationId, organizationId),
+        isNotNull(organizationClients.archivedAt)
+      ))
+      .orderBy(desc(organizationClients.archivedAt));
+  }
+
+  async restoreClient(organizationId: string, clientRecordId: string): Promise<boolean> {
+    const record = await getDb().select().from(organizationClients)
+      .where(and(eq(organizationClients.id, clientRecordId), eq(organizationClients.organizationId, organizationId)));
+    if (record.length === 0 || !record[0].archivedAt) return false;
+
+    if (record[0].bundleId) {
+      const bundle = await getDb().select().from(organizationBundles)
+        .where(eq(organizationBundles.id, record[0].bundleId));
+      if (bundle.length > 0) {
+        await getDb().update(organizationBundles)
+          .set({ seatsUsed: bundle[0].seatsUsed + 1 })
+          .where(eq(organizationBundles.id, record[0].bundleId));
+      }
+    }
+
+    const result = await getDb().update(organizationClients)
+      .set({ archivedAt: null, archivedBy: null, status: "active" as any })
+      .where(eq(organizationClients.id, clientRecordId))
+      .returning();
+
+    return result.length > 0;
+  }
+
+  // Check if a client belongs to an organization (exclude archived)
   async isClientOfOrganization(organizationId: string, clientId: string): Promise<boolean> {
     const result = await getDb()
       .select({ id: organizationClients.id })
       .from(organizationClients)
       .where(and(
         eq(organizationClients.organizationId, organizationId),
-        eq(organizationClients.clientId, clientId)
+        eq(organizationClients.clientId, clientId),
+        isNull(organizationClients.archivedAt)
       ));
     
     return result.length > 0;
   }
   
-  // Get all organization clients for a given user
+  // Get all organization clients for a given user (exclude archived)
   async getOrganizationClientsForUser(userId: string): Promise<OrganizationClient[]> {
     const result = await getDb()
       .select()
       .from(organizationClients)
-      .where(eq(organizationClients.clientId, userId));
+      .where(and(eq(organizationClients.clientId, userId), isNull(organizationClients.archivedAt)));
     
     return result;
   }
@@ -3342,7 +3442,7 @@ class OrganizationStorage implements IOrganizationStorage {
     const clients = await getDb()
       .select()
       .from(organizationClients)
-      .where(eq(organizationClients.organizationId, organizationId))
+      .where(and(eq(organizationClients.organizationId, organizationId), isNull(organizationClients.archivedAt)))
       .orderBy(organizationClients.clientOrdinal);
     
     const results: AdminOrganizationClientView[] = [];
@@ -3439,7 +3539,7 @@ class OrganizationStorage implements IOrganizationStorage {
     const rawClients = await getDb()
       .select({ id: organizationClients.id, bundleId: organizationClients.bundleId })
       .from(organizationClients)
-      .where(eq(organizationClients.organizationId, organizationId));
+      .where(and(eq(organizationClients.organizationId, organizationId), isNull(organizationClients.archivedAt)));
 
     const acceptedStaff = await getDb()
       .select()
@@ -3594,14 +3694,15 @@ class OrganizationStorage implements IOrganizationStorage {
     return result[0];
   }
 
-  // Get organization client by user's clientId
+  // Get organization client by user's clientId (exclude archived)
   async getOrganizationClientByClientId(organizationId: string, clientId: string): Promise<OrganizationClient | undefined> {
     const result = await getDb()
       .select()
       .from(organizationClients)
       .where(and(
         eq(organizationClients.organizationId, organizationId),
-        eq(organizationClients.clientId, clientId)
+        eq(organizationClients.clientId, clientId),
+        isNull(organizationClients.archivedAt)
       ));
     return result[0];
   }
