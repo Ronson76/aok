@@ -5,6 +5,7 @@ import {
   incidents, welfareConcerns, caseFiles, caseNotes, escalationRules, missedCheckInEscalations, auditTrail, riskReports,
   deactivationConfirmations, organizationStaffInvites, smsCheckinTokens,
   loneWorkerSessions, loneWorkerEscalations, loneWorkerCheckIns,
+  organizationMembers, orgMemberSessions, organizationMemberInvites, orgMemberClientAssignments, adminInvites,
   Contact, InsertContact, CheckIn, Settings, UpdateSettings, AlertLog, User, Session, PasswordResetToken,
   AdminUser, AdminSession, OrganizationBundle, BundleUsage, AdminAuditLog, DashboardStats, UserProfile, EmergencyAlertInfo,
   OrganizationClient, OrganizationClientWithDetails, OrganizationDashboardStats, StatusData, OrgClientStatus,
@@ -16,7 +17,10 @@ import {
   EscalationRule, InsertEscalationRule, MissedCheckInEscalation, AuditTrailEntry, RiskReport,
   CaseStatus, RiskLevel, OrganizationStaffInvite, SmsCheckinToken,
   LoneWorkerSession, InsertLoneWorkerSession, LoneWorkerEscalation, LoneWorkerCheckIn,
-  LoneWorkerSessionStatus, LoneWorkerOutcome, LoneWorkerEscalationLevel
+  LoneWorkerSessionStatus, LoneWorkerOutcome, LoneWorkerEscalationLevel,
+  OrgMember, OrgMemberProfile, OrgMemberSession, OrgMemberInvite, OrgMemberClientAssignment,
+  OrgMemberRole, OrgMemberStatus, OrgMemberInviteStatus,
+  AdminInvite, AdminRole
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, ne, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray, inArray } from "drizzle-orm";
@@ -4102,3 +4106,264 @@ class OrganizationStorage implements IOrganizationStorage {
 }
 
 export const organizationStorage = new OrganizationStorage();
+
+// ===== ORG MEMBER IAM STORAGE =====
+
+function generateInviteCode(prefix: string): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = prefix;
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+export interface IOrgMemberStorage {
+  createMember(data: { organizationId: string; email: string; name: string; role: OrgMemberRole; passwordHash?: string; status?: OrgMemberStatus }): Promise<OrgMember>;
+  getMemberById(id: string): Promise<OrgMember | undefined>;
+  getMemberByEmail(organizationId: string, email: string): Promise<OrgMember | undefined>;
+  getMembersByOrganization(organizationId: string): Promise<OrgMemberProfile[]>;
+  updateMemberRole(id: string, role: OrgMemberRole): Promise<OrgMemberProfile | undefined>;
+  updateMemberStatus(id: string, status: OrgMemberStatus): Promise<OrgMemberProfile | undefined>;
+  setMemberPassword(id: string, passwordHash: string): Promise<void>;
+  updateMemberLastLogin(id: string): Promise<void>;
+  deleteMember(id: string): Promise<boolean>;
+
+  createMemberSession(memberId: string): Promise<OrgMemberSession>;
+  getMemberSession(sessionId: string): Promise<OrgMemberSession | undefined>;
+  deleteMemberSession(sessionId: string): Promise<void>;
+
+  createInvite(data: { organizationId: string; email: string; name: string; role: OrgMemberRole; invitedById?: string; invitedByType?: "owner" | "member"; expiresAt: Date }): Promise<OrgMemberInvite>;
+  getInviteByCode(code: string): Promise<OrgMemberInvite | undefined>;
+  getInvitesByOrganization(organizationId: string): Promise<OrgMemberInvite[]>;
+  updateInviteStatus(id: string, status: OrgMemberInviteStatus): Promise<OrgMemberInvite | undefined>;
+  acceptInvite(id: string): Promise<OrgMemberInvite | undefined>;
+
+  assignClientToMember(memberId: string, clientId: string): Promise<OrgMemberClientAssignment>;
+  removeClientAssignment(memberId: string, clientId: string): Promise<boolean>;
+  getClientAssignments(memberId: string): Promise<OrgMemberClientAssignment[]>;
+  getMemberAssignmentsForClient(clientId: string): Promise<OrgMemberClientAssignment[]>;
+}
+
+class OrgMemberStorage implements IOrgMemberStorage {
+  async createMember(data: { organizationId: string; email: string; name: string; role: OrgMemberRole; passwordHash?: string; status?: OrgMemberStatus }): Promise<OrgMember> {
+    const [member] = await getDb().insert(organizationMembers).values({
+      organizationId: data.organizationId,
+      email: data.email.toLowerCase(),
+      name: data.name,
+      role: data.role,
+      passwordHash: data.passwordHash || null,
+      status: data.status || "pending",
+    }).returning();
+    return member;
+  }
+
+  async getMemberById(id: string): Promise<OrgMember | undefined> {
+    const [member] = await getDb().select().from(organizationMembers).where(eq(organizationMembers.id, id));
+    return member;
+  }
+
+  async getMemberByEmail(organizationId: string, email: string): Promise<OrgMember | undefined> {
+    const [member] = await getDb().select().from(organizationMembers).where(
+      and(eq(organizationMembers.organizationId, organizationId), eq(organizationMembers.email, email.toLowerCase()))
+    );
+    return member;
+  }
+
+  async getMembersByEmail(email: string): Promise<OrgMember[]> {
+    return await getDb().select().from(organizationMembers).where(eq(organizationMembers.email, email.toLowerCase()));
+  }
+
+  async getMembersByOrganization(organizationId: string): Promise<OrgMemberProfile[]> {
+    const members = await getDb().select().from(organizationMembers)
+      .where(eq(organizationMembers.organizationId, organizationId))
+      .orderBy(desc(organizationMembers.createdAt));
+    return members.map(({ passwordHash, ...profile }) => profile);
+  }
+
+  async updateMemberRole(id: string, role: OrgMemberRole): Promise<OrgMemberProfile | undefined> {
+    const [member] = await getDb().update(organizationMembers).set({ role }).where(eq(organizationMembers.id, id)).returning();
+    if (!member) return undefined;
+    const { passwordHash, ...profile } = member;
+    return profile;
+  }
+
+  async updateMemberStatus(id: string, status: OrgMemberStatus): Promise<OrgMemberProfile | undefined> {
+    const [member] = await getDb().update(organizationMembers).set({ status }).where(eq(organizationMembers.id, id)).returning();
+    if (!member) return undefined;
+    const { passwordHash, ...profile } = member;
+    return profile;
+  }
+
+  async setMemberPassword(id: string, passwordHash: string): Promise<void> {
+    await getDb().update(organizationMembers).set({ passwordHash, status: "active" }).where(eq(organizationMembers.id, id));
+  }
+
+  async updateMemberLastLogin(id: string): Promise<void> {
+    await getDb().update(organizationMembers).set({ lastLoginAt: new Date() }).where(eq(organizationMembers.id, id));
+  }
+
+  async deleteMember(id: string): Promise<boolean> {
+    const result = await getDb().delete(organizationMembers).where(eq(organizationMembers.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async createMemberSession(memberId: string): Promise<OrgMemberSession> {
+    const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
+    const [session] = await getDb().insert(orgMemberSessions).values({
+      memberId,
+      expiresAt,
+    }).returning();
+    return session;
+  }
+
+  async getMemberSession(sessionId: string): Promise<OrgMemberSession | undefined> {
+    const [session] = await getDb().select().from(orgMemberSessions).where(
+      and(eq(orgMemberSessions.id, sessionId), gt(orgMemberSessions.expiresAt, new Date()))
+    );
+    return session;
+  }
+
+  async deleteMemberSession(sessionId: string): Promise<void> {
+    await getDb().delete(orgMemberSessions).where(eq(orgMemberSessions.id, sessionId));
+  }
+
+  async createInvite(data: { organizationId: string; email: string; name: string; role: OrgMemberRole; invitedById?: string; invitedByType?: "owner" | "member"; expiresAt: Date }): Promise<OrgMemberInvite> {
+    const inviteCode = generateInviteCode("TM");
+    const [invite] = await getDb().insert(organizationMemberInvites).values({
+      organizationId: data.organizationId,
+      email: data.email.toLowerCase(),
+      name: data.name,
+      role: data.role,
+      inviteCode,
+      invitedById: data.invitedById || null,
+      invitedByType: data.invitedByType || "owner",
+      expiresAt: data.expiresAt,
+    }).returning();
+    return invite;
+  }
+
+  async getInviteByCode(code: string): Promise<OrgMemberInvite | undefined> {
+    const [invite] = await getDb().select().from(organizationMemberInvites).where(
+      eq(organizationMemberInvites.inviteCode, code.toUpperCase())
+    );
+    return invite;
+  }
+
+  async getInvitesByOrganization(organizationId: string): Promise<OrgMemberInvite[]> {
+    return await getDb().select().from(organizationMemberInvites)
+      .where(eq(organizationMemberInvites.organizationId, organizationId))
+      .orderBy(desc(organizationMemberInvites.createdAt));
+  }
+
+  async updateInviteStatus(id: string, status: OrgMemberInviteStatus): Promise<OrgMemberInvite | undefined> {
+    const [invite] = await getDb().update(organizationMemberInvites).set({ status }).where(eq(organizationMemberInvites.id, id)).returning();
+    return invite;
+  }
+
+  async acceptInvite(id: string): Promise<OrgMemberInvite | undefined> {
+    const [invite] = await getDb().update(organizationMemberInvites)
+      .set({ status: "accepted", acceptedAt: new Date() })
+      .where(eq(organizationMemberInvites.id, id))
+      .returning();
+    return invite;
+  }
+
+  async assignClientToMember(memberId: string, clientId: string): Promise<OrgMemberClientAssignment> {
+    const [assignment] = await getDb().insert(orgMemberClientAssignments).values({
+      memberId,
+      clientId,
+    }).returning();
+    return assignment;
+  }
+
+  async removeClientAssignment(memberId: string, clientId: string): Promise<boolean> {
+    const result = await getDb().delete(orgMemberClientAssignments).where(
+      and(eq(orgMemberClientAssignments.memberId, memberId), eq(orgMemberClientAssignments.clientId, clientId))
+    ).returning();
+    return result.length > 0;
+  }
+
+  async getClientAssignments(memberId: string): Promise<OrgMemberClientAssignment[]> {
+    return await getDb().select().from(orgMemberClientAssignments)
+      .where(eq(orgMemberClientAssignments.memberId, memberId));
+  }
+
+  async getMemberAssignmentsForClient(clientId: string): Promise<OrgMemberClientAssignment[]> {
+    return await getDb().select().from(orgMemberClientAssignments)
+      .where(eq(orgMemberClientAssignments.clientId, clientId));
+  }
+}
+
+export const orgMemberStorage = new OrgMemberStorage();
+
+// ===== ADMIN INVITE STORAGE =====
+
+export interface IAdminInviteStorage {
+  createInvite(data: { email: string; name: string; role: AdminRole; invitedById: string; expiresAt: Date }): Promise<AdminInvite>;
+  getInviteByCode(code: string): Promise<AdminInvite | undefined>;
+  getAllInvites(): Promise<AdminInvite[]>;
+  updateInviteStatus(id: string, status: "pending" | "accepted" | "expired" | "revoked"): Promise<AdminInvite | undefined>;
+  acceptInvite(id: string): Promise<AdminInvite | undefined>;
+  getAllAdmins(): Promise<Omit<AdminUser, "passwordHash">[]>;
+  updateAdminRole(id: string, role: AdminRole): Promise<Omit<AdminUser, "passwordHash"> | undefined>;
+  deleteAdmin(id: string): Promise<boolean>;
+}
+
+class AdminInviteStorage implements IAdminInviteStorage {
+  async createInvite(data: { email: string; name: string; role: AdminRole; invitedById: string; expiresAt: Date }): Promise<AdminInvite> {
+    const inviteCode = generateInviteCode("AD");
+    const [invite] = await getDb().insert(adminInvites).values({
+      email: data.email.toLowerCase(),
+      name: data.name,
+      role: data.role,
+      inviteCode,
+      invitedById: data.invitedById,
+      expiresAt: data.expiresAt,
+    }).returning();
+    return invite;
+  }
+
+  async getInviteByCode(code: string): Promise<AdminInvite | undefined> {
+    const [invite] = await getDb().select().from(adminInvites).where(
+      eq(adminInvites.inviteCode, code.toUpperCase())
+    );
+    return invite;
+  }
+
+  async getAllInvites(): Promise<AdminInvite[]> {
+    return await getDb().select().from(adminInvites).orderBy(desc(adminInvites.createdAt));
+  }
+
+  async updateInviteStatus(id: string, status: "pending" | "accepted" | "expired" | "revoked"): Promise<AdminInvite | undefined> {
+    const [invite] = await getDb().update(adminInvites).set({ status }).where(eq(adminInvites.id, id)).returning();
+    return invite;
+  }
+
+  async acceptInvite(id: string): Promise<AdminInvite | undefined> {
+    const [invite] = await getDb().update(adminInvites)
+      .set({ status: "accepted", acceptedAt: new Date() })
+      .where(eq(adminInvites.id, id))
+      .returning();
+    return invite;
+  }
+
+  async getAllAdmins(): Promise<Omit<AdminUser, "passwordHash">[]> {
+    const admins = await getDb().select().from(adminUsers).orderBy(desc(adminUsers.createdAt));
+    return admins.map(({ passwordHash, ...profile }) => profile);
+  }
+
+  async updateAdminRole(id: string, role: AdminRole): Promise<Omit<AdminUser, "passwordHash"> | undefined> {
+    const [admin] = await getDb().update(adminUsers).set({ role }).where(eq(adminUsers.id, id)).returning();
+    if (!admin) return undefined;
+    const { passwordHash, ...profile } = admin;
+    return profile;
+  }
+
+  async deleteAdmin(id: string): Promise<boolean> {
+    const result = await getDb().delete(adminUsers).where(eq(adminUsers.id, id)).returning();
+    return result.length > 0;
+  }
+}
+
+export const adminInviteStorage = new AdminInviteStorage();

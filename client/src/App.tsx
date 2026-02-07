@@ -51,12 +51,17 @@ import OrganizationDashboard from "@/pages/org/dashboard";
 import OrgLoginSelect from "@/pages/org/login-select";
 import OrganizationClientLogin from "@/pages/org/client-login";
 import OrganizationStaffLogin from "@/pages/org/staff-login";
+import OrgTeamLogin from "@/pages/org/team-login";
 import OrgForgotPassword from "@/pages/org/forgot-password";
 import OrgResetPassword from "@/pages/org/reset-password";
 import OrgSafeguarding from "@/pages/org/safeguarding";
 import OrgLoneWorkerHub from "@/pages/org/lone-worker-hub";
 import OrgMissedCheckInsReport from "@/pages/org/missed-checkins-report";
 import OrgEmergencyAlertsReport from "@/pages/org/emergency-alerts-report";
+import OrgTeamInvite from "@/pages/org/team-invite";
+import OrgTeam from "@/pages/org/team";
+import AdminTeam from "@/pages/admin/team";
+import AdminInvite from "@/pages/admin/invite";
 import Activate from "@/pages/activate";
 import Pricing from "@/pages/pricing";
 import Onboarding from "@/pages/onboarding";
@@ -209,6 +214,7 @@ function AppRoutes() {
       <Route path="/org/dashboard" component={() => <ProtectedRoute component={OrganizationDashboard} />} />
       <Route path="/org/safeguarding" component={() => <ProtectedRoute component={OrgSafeguarding} />} />
       <Route path="/org/lone-worker" component={() => <ProtectedRoute component={OrgLoneWorkerHub} />} />
+      <Route path="/org/team" component={() => <ProtectedRoute component={OrgTeam} />} />
       <Route path="/org/missed-checkins" component={() => <ProtectedRoute component={OrgMissedCheckInsReport} />} />
       <Route path="/org/emergency-alerts" component={() => <ProtectedRoute component={OrgEmergencyAlertsReport} />} />
       <Route path="/app/contacts" component={() => <ProtectedRoute component={Contacts} />} />
@@ -649,12 +655,20 @@ function Router() {
     return <OrganizationStaffLogin />;
   }
 
+  if (location === "/org/team-login") {
+    return <OrgTeamLogin />;
+  }
+
   if (location === "/org/forgot-password") {
     return <OrgForgotPassword />;
   }
 
   if (location.startsWith("/org/reset-password")) {
     return <OrgResetPassword />;
+  }
+
+  if (location.startsWith("/org/team-invite")) {
+    return <OrgTeamInvite />;
   }
 
   if (location === "/pricing") {
@@ -693,6 +707,10 @@ function Router() {
     return <AdminResetPassword />;
   }
 
+  if (location.startsWith("/admin/invite")) {
+    return <AdminInvite />;
+  }
+
   if (location.startsWith("/admin")) {
     return (
       <AdminProvider>
@@ -702,7 +720,7 @@ function Router() {
   }
 
   // Org pages have their own layout/header, don't use AppLayout
-  if (location.startsWith("/org/dashboard") || location.startsWith("/org/safeguarding") || location.startsWith("/org/lone-worker") || location.startsWith("/org/missed-checkins") || location.startsWith("/org/emergency-alerts")) {
+  if (location.startsWith("/org/dashboard") || location.startsWith("/org/safeguarding") || location.startsWith("/org/lone-worker") || location.startsWith("/org/team") || location.startsWith("/org/missed-checkins") || location.startsWith("/org/emergency-alerts")) {
     return <AppRoutes />;
   }
 

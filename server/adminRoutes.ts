@@ -1,9 +1,9 @@
 import { Express, Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
-import { adminStorage, organizationStorage, storage } from "./storage";
-import { adminLoginSchema, AdminUserProfile, orgClientStatuses, updateUserFeaturesSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
+import { adminStorage, organizationStorage, storage, adminInviteStorage } from "./storage";
+import { adminLoginSchema, AdminUserProfile, orgClientStatuses, updateUserFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, adminRoles } from "@shared/schema";
 import { z } from "zod";
-import { sendPasswordResetEmail } from "./notifications";
+import { sendPasswordResetEmail, sendAdminInviteEmail } from "./notifications";
 
 const ADMIN_SESSION_COOKIE = "admin_session";
 
@@ -932,6 +932,192 @@ export function registerAdminRoutes(app: Express) {
     } catch (error) {
       console.error("Admin change password error:", error);
       res.status(500).json({ error: "Failed to change password" });
+    }
+  });
+
+  // ===== ADMIN TEAM MANAGEMENT (IAM) =====
+
+  app.get("/api/admin/team", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const admins = await adminInviteStorage.getAllAdmins();
+      const invites = await adminInviteStorage.getAllInvites();
+      res.json({ admins, invites });
+    } catch (error) {
+      console.error("[ADMIN_TEAM] Get team error:", error);
+      res.status(500).json({ error: "Failed to get admin team" });
+    }
+  });
+
+  app.post("/api/admin/team/invite", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const schema = z.object({
+        email: z.string().email(),
+        name: z.string().min(1),
+        role: z.enum(adminRoles),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
+      }
+
+      const existing = await adminStorage.getAdminByEmail(parsed.data.email);
+      if (existing) {
+        return res.status(400).json({ error: "An admin with this email already exists" });
+      }
+
+      const invite = await adminInviteStorage.createInvite({
+        email: parsed.data.email,
+        name: parsed.data.name,
+        role: parsed.data.role,
+        invitedById: req.admin!.id,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      });
+
+      try {
+        await sendAdminInviteEmail(parsed.data.email, parsed.data.name, invite.inviteCode);
+      } catch (emailError) {
+        console.error("[ADMIN_TEAM] Failed to send invite email:", emailError);
+      }
+
+      await adminStorage.createAuditLog(req.admin!.id, "invite", "admin", invite.id, `Invited ${parsed.data.email} as ${parsed.data.role}`);
+      res.json({ invite });
+    } catch (error) {
+      console.error("[ADMIN_TEAM] Create invite error:", error);
+      res.status(500).json({ error: "Failed to create invite" });
+    }
+  });
+
+  app.get("/api/admin/invite/:code", async (req, res) => {
+    try {
+      const invite = await adminInviteStorage.getInviteByCode(req.params.code);
+      if (!invite) {
+        return res.status(404).json({ error: "Invite not found" });
+      }
+      if (invite.status !== "pending") {
+        return res.status(400).json({ error: `This invite has already been ${invite.status}` });
+      }
+      if (new Date(invite.expiresAt) < new Date()) {
+        return res.status(400).json({ error: "This invite has expired" });
+      }
+      res.json({ invite: { email: invite.email, name: invite.name, role: invite.role } });
+    } catch (error) {
+      console.error("[ADMIN_TEAM] Verify invite error:", error);
+      res.status(500).json({ error: "Failed to verify invite" });
+    }
+  });
+
+  app.post("/api/admin/invite/:code/accept", async (req, res) => {
+    try {
+      const { password } = req.body;
+      if (!password || password.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      }
+
+      const invite = await adminInviteStorage.getInviteByCode(req.params.code);
+      if (!invite || invite.status !== "pending") {
+        return res.status(400).json({ error: "Invalid or expired invite" });
+      }
+      if (new Date(invite.expiresAt) < new Date()) {
+        return res.status(400).json({ error: "This invite has expired" });
+      }
+
+      const passwordHash = await bcrypt.hash(password, 10);
+      const admin = await adminStorage.createAdminUser({
+        email: invite.email,
+        passwordHash,
+        name: invite.name,
+        role: invite.role,
+      });
+
+      await adminInviteStorage.acceptInvite(invite.id);
+
+      const session = await adminStorage.createAdminSession(admin.id);
+      await adminStorage.updateAdminLastLogin(admin.id);
+
+      res.cookie(ADMIN_SESSION_COOKIE, session.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 12 * 60 * 60 * 1000,
+      });
+
+      const { passwordHash: _, ...profile } = admin;
+      res.json({ admin: profile });
+    } catch (error) {
+      console.error("[ADMIN_TEAM] Accept invite error:", error);
+      res.status(500).json({ error: "Failed to accept invite" });
+    }
+  });
+
+  app.patch("/api/admin/team/:adminId/role", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { role } = req.body;
+      if (!role || !adminRoles.includes(role)) {
+        return res.status(400).json({ error: "Invalid role" });
+      }
+      if (req.params.adminId === req.admin!.id) {
+        return res.status(400).json({ error: "You cannot change your own role" });
+      }
+      const updated = await adminInviteStorage.updateAdminRole(req.params.adminId, role);
+      if (!updated) {
+        return res.status(404).json({ error: "Admin not found" });
+      }
+      await adminStorage.createAuditLog(req.admin!.id, "update_role", "admin", req.params.adminId, `Changed role to ${role}`);
+      res.json({ admin: updated });
+    } catch (error) {
+      console.error("[ADMIN_TEAM] Update role error:", error);
+      res.status(500).json({ error: "Failed to update role" });
+    }
+  });
+
+  app.delete("/api/admin/team/:adminId", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      if (req.params.adminId === req.admin!.id) {
+        return res.status(400).json({ error: "You cannot remove yourself" });
+      }
+      const deleted = await adminInviteStorage.deleteAdmin(req.params.adminId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Admin not found" });
+      }
+      await adminStorage.createAuditLog(req.admin!.id, "delete", "admin", req.params.adminId, "Removed admin user");
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[ADMIN_TEAM] Delete admin error:", error);
+      res.status(500).json({ error: "Failed to remove admin" });
+    }
+  });
+
+  app.post("/api/admin/team/invite/:inviteId/revoke", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const invite = await adminInviteStorage.updateInviteStatus(req.params.inviteId, "revoked");
+      if (!invite) {
+        return res.status(404).json({ error: "Invite not found" });
+      }
+      await adminStorage.createAuditLog(req.admin!.id, "revoke_invite", "admin", req.params.inviteId, "Revoked admin invite");
+      res.json({ invite });
+    } catch (error) {
+      console.error("[ADMIN_TEAM] Revoke invite error:", error);
+      res.status(500).json({ error: "Failed to revoke invite" });
+    }
+  });
+
+  app.post("/api/admin/team/invite/:inviteId/resend", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const invites = await adminInviteStorage.getAllInvites();
+      const invite = invites.find(i => i.id === req.params.inviteId);
+      if (!invite) {
+        return res.status(404).json({ error: "Invite not found" });
+      }
+      try {
+        await sendAdminInviteEmail(invite.email, invite.name, invite.inviteCode);
+      } catch (emailError) {
+        console.error("[ADMIN_TEAM] Failed to resend invite email:", emailError);
+        return res.status(500).json({ error: "Failed to send email" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[ADMIN_TEAM] Resend invite error:", error);
+      res.status(500).json({ error: "Failed to resend invite" });
     }
   });
 }

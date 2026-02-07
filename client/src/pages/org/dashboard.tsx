@@ -1038,6 +1038,12 @@ export default function OrganizationDashboard() {
                 Safeguarding Hub
               </Button>
             </Link>
+            <Link href="/org/team">
+              <Button variant="outline" data-testid="button-team-management">
+                <Users className="h-4 w-4 mr-2" />
+                Team
+              </Button>
+            </Link>
             <Button 
               data-testid="button-register-client" 
               disabled={!hasSeatsAvailable}

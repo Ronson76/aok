@@ -7,6 +7,7 @@ import bcrypt from "bcrypt";
 import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification, sendContactRemovedNotification, sendWelcomeEmail } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
+import { registerOrgMemberRoutes } from "./orgMemberRoutes";
 import { registerWellbeingAIRoutes } from "./wellbeingAI";
 import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
 import { stripeService } from "./stripeService";
@@ -684,15 +685,18 @@ export async function registerRoutes(
   // Register admin routes
   registerAdminRoutes(app);
 
-  // Register organization routes (requires auth middleware for /api/org/* routes except auth routes)
   app.use("/api/org", (req, res, next) => {
-    // Allow public auth routes without authentication
     if (req.path.startsWith("/auth/forgot-password") || req.path.startsWith("/auth/reset-password")) {
+      return next();
+    }
+    if (req.cookies?.org_member_session) {
       return next();
     }
     return authMiddleware(req, res, next);
   });
   registerOrganizationRoutes(app);
+  
+  registerOrgMemberRoutes(app);
   
   // Wellbeing AI routes (uses session auth)
   registerWellbeingAIRoutes(app);

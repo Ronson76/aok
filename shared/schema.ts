@@ -1317,5 +1317,112 @@ export const loneWorkerCheckIns = pgTable("lone_worker_check_ins", {
 
 export type LoneWorkerCheckIn = typeof loneWorkerCheckIns.$inferSelect;
 
+// ===== ORGANIZATION IAM =====
+
+export const orgMemberRoles = ["owner", "manager", "staff", "viewer"] as const;
+export type OrgMemberRole = typeof orgMemberRoles[number];
+
+export const orgMemberStatuses = ["active", "disabled", "pending"] as const;
+export type OrgMemberStatus = typeof orgMemberStatuses[number];
+
+export const organizationMembers = pgTable("organization_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  name: text("name").notNull(),
+  role: text("role").notNull().$type<OrgMemberRole>().default("viewer"),
+  passwordHash: text("password_hash"),
+  status: text("status").notNull().$type<OrgMemberStatus>().default("pending"),
+  lastLoginAt: timestamp("last_login_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertOrgMemberSchema = createInsertSchema(organizationMembers).omit({
+  id: true,
+  passwordHash: true,
+  lastLoginAt: true,
+  createdAt: true,
+});
+
+export type InsertOrgMember = z.infer<typeof insertOrgMemberSchema>;
+export type OrgMember = typeof organizationMembers.$inferSelect;
+export type OrgMemberProfile = Omit<OrgMember, "passwordHash">;
+
+export const orgMemberSessions = pgTable("org_member_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  memberId: varchar("member_id").notNull().references(() => organizationMembers.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type OrgMemberSession = typeof orgMemberSessions.$inferSelect;
+
+export const orgMemberInviteStatuses = ["pending", "accepted", "expired", "revoked"] as const;
+export type OrgMemberInviteStatus = typeof orgMemberInviteStatuses[number];
+
+export const organizationMemberInvites = pgTable("organization_member_invites", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  name: text("name").notNull(),
+  role: text("role").notNull().$type<OrgMemberRole>().default("viewer"),
+  inviteCode: text("invite_code").notNull().unique(),
+  invitedById: varchar("invited_by_id"),
+  invitedByType: text("invited_by_type").$type<"owner" | "member">().default("owner"),
+  status: text("status").notNull().$type<OrgMemberInviteStatus>().default("pending"),
+  acceptedAt: timestamp("accepted_at"),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertOrgMemberInviteSchema = createInsertSchema(organizationMemberInvites).omit({
+  id: true,
+  inviteCode: true,
+  status: true,
+  acceptedAt: true,
+  createdAt: true,
+});
+
+export type InsertOrgMemberInvite = z.infer<typeof insertOrgMemberInviteSchema>;
+export type OrgMemberInvite = typeof organizationMemberInvites.$inferSelect;
+
+export const orgMemberClientAssignments = pgTable("org_member_client_assignments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  memberId: varchar("member_id").notNull().references(() => organizationMembers.id, { onDelete: "cascade" }),
+  clientId: varchar("client_id").notNull(),
+  assignedAt: timestamp("assigned_at").notNull().defaultNow(),
+});
+
+export type OrgMemberClientAssignment = typeof orgMemberClientAssignments.$inferSelect;
+
+// ===== ADMIN IAM =====
+
+export const adminInviteStatuses = ["pending", "accepted", "expired", "revoked"] as const;
+export type AdminInviteStatus = typeof adminInviteStatuses[number];
+
+export const adminInvites = pgTable("admin_invites", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull(),
+  name: text("name").notNull(),
+  role: text("role").notNull().$type<AdminRole>().default("analyst"),
+  inviteCode: text("invite_code").notNull().unique(),
+  invitedById: varchar("invited_by_id").notNull(),
+  status: text("status").notNull().$type<AdminInviteStatus>().default("pending"),
+  acceptedAt: timestamp("accepted_at"),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertAdminInviteSchema = createInsertSchema(adminInvites).omit({
+  id: true,
+  inviteCode: true,
+  status: true,
+  acceptedAt: true,
+  createdAt: true,
+});
+
+export type InsertAdminInvite = z.infer<typeof insertAdminInviteSchema>;
+export type AdminInvite = typeof adminInvites.$inferSelect;
+
 // Re-export chat models for AI integrations (used by integration storage)
 export * from "./models/chat";
