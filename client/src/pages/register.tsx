@@ -302,7 +302,7 @@ export default function Register() {
           }
           
           // Children info
-          if (onboardingData.childrenData && (onboardingData.childrenData.numberOfChildren || onboardingData.childrenData.agesDescription)) {
+          if (onboardingData.childrenData && (onboardingData.childrenData.numberOfChildren || onboardingData.childrenData.ageRange || onboardingData.childrenData.schoolDetails)) {
             additionalInfoData.children = onboardingData.childrenData;
           }
           
