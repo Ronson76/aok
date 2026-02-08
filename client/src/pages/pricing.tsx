@@ -39,6 +39,7 @@ export default function Pricing() {
         { text: "SMS text message alerts", icon: Smartphone },
         { text: "Automated voice call alerts", icon: Phone },
         { text: "Emergency alert button with one-tap activation", icon: AlertTriangle },
+        { text: "Emergency recording (opt-in)", icon: Mic },
         { text: "Shake to SOS", icon: Smartphone },
         { text: "GPS location sharing with what3words", icon: MapPin },
         { text: "Push notifications & SMS reminders", icon: Bell },
@@ -90,6 +91,7 @@ export default function Pricing() {
     { name: "SMS text alerts", trial: true, complete: true, org: true },
     { name: "Automated voice calls", trial: true, complete: true, org: true },
     { name: "Emergency alert button", trial: true, complete: true, org: true },
+    { name: "Emergency recording (opt-in)", trial: true, complete: true, org: true },
     { name: "Shake to SOS", trial: true, complete: true, org: true },
     { name: "GPS + what3words location", trial: true, complete: true, org: true },
     { name: "SMS check-in reminders", trial: true, complete: true, org: true },
@@ -299,7 +301,7 @@ export default function Pricing() {
               { q: "Can I cancel at any time?", a: "Yes, you can cancel your subscription at any time from Settings. Your account stays active until the end of your current billing period." },
               { q: "What payment methods do you accept?", a: "We accept all major debit and credit cards, Apple Pay, and Google Pay for quick and easy payment." },
               { q: "How does the organisation plan work?", a: "Organisations purchase bundles of seats and manage clients through a dedicated dashboard. Contact us for custom pricing based on your team size." },
-              { q: "Is my data safe?", a: "Absolutely. We use encryption for all data, location is only shared during emergencies, AI conversations are never stored, and emergency contacts must give consent before receiving alerts." },
+              { q: "Is my data safe?", a: "Absolutely. We use encryption for all data, location is only shared during emergencies, AI conversations are never stored, and emergency contacts must give consent before receiving alerts. Our IP Ownership Agreement and NDA protect all confidential information. View our full legal documents including Privacy Policy, EULA, IP Ownership Agreement, and NDA from the footer links." },
               { q: "How am I helping the environment by using aok?", a: "Every time a new subscriber joins aok, we plant a tree on their behalf through our partnership with Ecologi. It's our small way of giving back to the planet and helping offset carbon emissions — just by being part of aok, you're making a positive impact." },
             ].map((faq, i) => (
               <Card key={i}>
