@@ -22,7 +22,7 @@ import {
   ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail, 
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
   ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles,
-  MessageCircle, MessageSquare, ArrowLeft, TreeDeciduous, Leaf
+  MessageCircle, MessageSquare, ArrowLeft, TreeDeciduous, Leaf, Timer
 } from "lucide-react";
 import { FaRunning } from "react-icons/fa";
 import { SiApple, SiGoogleplay } from "react-icons/si";
@@ -631,6 +631,18 @@ export default function Landing() {
                 <h3 className="text-lg font-semibold mb-2">Fitness Tracking</h3>
                 <p className="text-muted-foreground text-sm">
                   Record your runs, walks, and rides with GPS route mapping. Share activities with friends, follow other users, and track your progress.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-teal-500/10 p-3 w-fit mb-4">
+                  <Timer className="h-6 w-6 text-teal-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Activities Tracker</h3>
+                <p className="text-muted-foreground text-sm">
+                  Log everyday activities like walking, shopping, or appointments with a built-in timer and grace period. If you don't check back in, your contacts are alerted.
                 </p>
               </CardContent>
             </Card>
