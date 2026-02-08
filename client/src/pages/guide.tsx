@@ -186,6 +186,18 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "ip-ownership-agreement",
+    title: "IP Ownership Agreement",
+    content: [
+      "The **IP Ownership Agreement** is a legal document that governs intellectual property rights between Naiyatech Ltd and licensees of the A-OK platform.",
+      "All intellectual property relating to A-OK — including software, workflows, UI/UX, logic, data structures, analytics, reports, trademarks, and branding — remains the exclusive property of Naiyatech Ltd.",
+      "Licensees are granted a limited, non-exclusive, non-transferable, revocable licence solely to use A-OK.",
+      "Feedback, suggestions, enhancements, or derivative works provided by the Licensee automatically vest in Naiyatech Ltd.",
+      "This agreement applies to **organisations and pilot participants** accessing the A-OK platform.",
+      "You can read the full agreement at **IP Ownership Agreement** linked from the site footer.",
+    ],
+  },
+  {
     id: "forgot-password",
     title: "Forgot password",
     content: [
@@ -246,6 +258,19 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "nda-confidentiality",
+    title: "NDA (Non-Disclosure Agreement)",
+    content: [
+      "The **NDA (Mutual Non-Disclosure Agreement)** governs disclosure of confidential information relating to the A-OK platform.",
+      "It applies to evaluation, pilot use, licensing, or ongoing commercial use of A-OK.",
+      "**Confidential information** includes all non-public information: software, source code concepts, system architecture, workflows, safeguarding logic, data models, commercial terms, pricing, roadmaps, pilot results, user data, screenshots, recordings, and documentation.",
+      "Recipients must keep all confidential information strictly confidential, not disclose to third parties, limit access to employees on a need-to-know basis, and apply appropriate security measures.",
+      "Confidentiality obligations survive for **five (5) years** following termination.",
+      "This agreement applies to **organisations and pilot participants** accessing the A-OK platform.",
+      "You can read the full agreement at **NDA** linked from the site footer.",
+    ],
+  },
+  {
     id: "mood-tracking",
     title: "Mood tracking",
     content: [
@@ -302,7 +327,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "aok offers simple, transparent pricing with all features included:",
       "**7-Day Free Trial** — full access to every feature, no payment details required upfront. Cancel anytime during the trial.",
       "**Complete Protection** — £6.99/month or £69.99/year (save 2 months). Includes check-ins, emergency alerts, SMS and voice call alerts, GPS location sharing, wellbeing AI chat, mood tracking, pet protection, digital will storage, and a tree planted via Ecologi.",
-      "**Organisations** — custom pricing for bundles of seats. Includes everything in Complete Protection plus a dedicated organisation dashboard, bulk client management, staff roles, safeguarding hub, lone worker monitoring, Call Supervisor, and reports.",
+      "**Organisations** — custom pricing for bundles of seats. Includes everything in Complete Protection plus a dedicated organisation dashboard, bulk client management, staff roles, safeguarding hub, lone worker monitoring, Call Supervisor, reports, and emergency recording per-client controls.",
       "Apple Pay and Google Pay are supported for quick and easy payment.",
       "You can cancel at any time — your account stays active until the end of your billing period.",
       "If you're managed by an organisation, your access is included at no cost to you.",
@@ -317,7 +342,9 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "**Emergency contacts** must confirm consent before receiving any alerts (GDPR compliance).",
       "**AI conversations** are ephemeral — they are never stored or saved.",
       "**Location data** is only shared when you trigger an emergency alert.",
+      "**Emergency recordings** are encrypted, shared only with contacts, and automatically deleted after 90 days.",
       "**Mood tracking** is completely private to you.",
+      "Organisations are covered by our **IP Ownership Agreement** and **NDA** for full confidentiality protection.",
       "You can view and manage your data at any time in Settings.",
     ],
   },

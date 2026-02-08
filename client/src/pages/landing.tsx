@@ -124,6 +124,7 @@ export default function Landing() {
         { text: "Up to 5 emergency contacts", icon: Users },
         { text: "Email, SMS & voice call alerts", icon: Bell },
         { text: "Emergency alert button", icon: AlertTriangle },
+        { text: "Emergency recording (opt-in)", icon: Lock },
         { text: "GPS location with what3words", icon: MapPin },
         { text: "Push notifications", icon: Smartphone },
         { text: "Primary contact updates", icon: Heart },
@@ -584,6 +585,18 @@ export default function Landing() {
                 <h3 className="text-lg font-semibold mb-2">Digital Will Storage</h3>
                 <p className="text-muted-foreground text-sm">
                   Securely store important documents like wills, power of attorney, and healthcare directives.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-red-500/10 p-3 w-fit mb-4">
+                  <Play className="h-6 w-6 text-red-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Emergency Recording</h3>
+                <p className="text-muted-foreground text-sm">
+                  Opt-in feature that activates your camera and microphone during emergencies. Recordings are encrypted, shared only with your contacts, and deleted after 90 days.
                 </p>
               </CardContent>
             </Card>
@@ -1175,6 +1188,8 @@ export default function Landing() {
                 <li><Link href="/privacy"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-privacy">Privacy Policy</span></Link></li>
                 <li><Link href="/eula"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-eula">EULA</span></Link></li>
                 <li><Link href="/sla"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-sla">Service Level Agreement</span></Link></li>
+                <li><Link href="/ip-ownership"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-ip-ownership">IP Ownership Agreement</span></Link></li>
+                <li><Link href="/nda"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-nda">NDA</span></Link></li>
               </ul>
             </div>
             
