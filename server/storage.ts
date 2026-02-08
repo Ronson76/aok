@@ -266,6 +266,13 @@ export interface IStorage {
   getDocumentSignatures(documentId: string): Promise<Array<{ id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }>>;
   getDocumentSignaturesByOrg(organisationId: string): Promise<Array<{ id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }>>;
   getAllDocumentSignatures(): Promise<Array<{ id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }>>;
+
+  // Assigned documents (docs required by an org)
+  assignDocumentsToOrg(organisationId: string, organisationName: string, documentIds: string[]): Promise<void>;
+  getAssignedDocuments(organisationId: string): Promise<Array<{ id: string; organisationId: string; organisationName: string; documentId: string; assignedAt: Date; signedAt?: Date; signatureId?: string }>>;
+  getAllAssignedDocuments(): Promise<Array<{ id: string; organisationId: string; organisationName: string; documentId: string; assignedAt: Date; signedAt?: Date; signatureId?: string }>>;
+  markAssignedDocumentSigned(organisationId: string, documentId: string, signatureId: string): Promise<void>;
+  isOrgFullySigned(organisationId: string): Promise<boolean>;
 }
 
 class DatabaseStorage implements IStorage {
@@ -2404,6 +2411,7 @@ class DatabaseStorage implements IStorage {
   }
 
   private documentSignatures: Map<string, { id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }> = new Map();
+  private assignedDocuments: Map<string, { id: string; organisationId: string; organisationName: string; documentId: string; assignedAt: Date; signedAt?: Date; signatureId?: string }> = new Map();
 
   async createDocumentSignature(data: { documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }): Promise<{ id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }> {
     const id = randomUUID();
@@ -2422,6 +2430,44 @@ class DatabaseStorage implements IStorage {
 
   async getAllDocumentSignatures(): Promise<Array<{ id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }>> {
     return Array.from(this.documentSignatures.values());
+  }
+
+  async assignDocumentsToOrg(organisationId: string, organisationName: string, documentIds: string[]): Promise<void> {
+    for (const documentId of documentIds) {
+      const id = randomUUID();
+      this.assignedDocuments.set(id, {
+        id,
+        organisationId,
+        organisationName,
+        documentId,
+        assignedAt: new Date(),
+      });
+    }
+  }
+
+  async getAssignedDocuments(organisationId: string): Promise<Array<{ id: string; organisationId: string; organisationName: string; documentId: string; assignedAt: Date; signedAt?: Date; signatureId?: string }>> {
+    return Array.from(this.assignedDocuments.values()).filter(d => d.organisationId === organisationId);
+  }
+
+  async getAllAssignedDocuments(): Promise<Array<{ id: string; organisationId: string; organisationName: string; documentId: string; assignedAt: Date; signedAt?: Date; signatureId?: string }>> {
+    return Array.from(this.assignedDocuments.values());
+  }
+
+  async markAssignedDocumentSigned(organisationId: string, documentId: string, signatureId: string): Promise<void> {
+    for (const [key, doc] of this.assignedDocuments) {
+      if (doc.organisationId === organisationId && doc.documentId === documentId) {
+        doc.signedAt = new Date();
+        doc.signatureId = signatureId;
+        this.assignedDocuments.set(key, doc);
+        break;
+      }
+    }
+  }
+
+  async isOrgFullySigned(organisationId: string): Promise<boolean> {
+    const assigned = await this.getAssignedDocuments(organisationId);
+    if (assigned.length === 0) return true;
+    return assigned.every(d => !!d.signedAt);
   }
 }
 

@@ -198,6 +198,7 @@ export function registerAdminRoutes(app: Express) {
     email: z.string().email("Invalid email address"),
     password: passwordSchema,
     featureDefaults: orgFeatureDefaultsSchema.optional(),
+    requiredDocuments: z.array(z.string()).optional(),
   });
 
   app.post("/api/admin/organizations", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
@@ -207,7 +208,7 @@ export function registerAdminRoutes(app: Express) {
         return res.status(400).json({ error: validation.error.errors[0].message });
       }
 
-      const { name, email, password, featureDefaults } = validation.data;
+      const { name, email, password, featureDefaults, requiredDocuments } = validation.data;
 
       const existingUser = await storage.getUserByEmail(email.toLowerCase());
       if (existingUser) {
@@ -227,12 +228,16 @@ export function registerAdminRoutes(app: Express) {
         await storage.updateOrgFeatureDefaults(user.id, featureDefaults);
       }
 
+      if (requiredDocuments && requiredDocuments.length > 0) {
+        await storage.assignDocumentsToOrg(user.id, name, requiredDocuments);
+      }
+
       await adminStorage.createAuditLog(
         req.admin!.id,
         "create",
         "organization",
         user.id,
-        `Created organization: ${name} (${email})`
+        `Created organization: ${name} (${email})${requiredDocuments?.length ? ` with ${requiredDocuments.length} required documents` : ""}`
       );
 
       const { passwordHash: _, ...profile } = user;
@@ -1263,7 +1268,7 @@ export function registerAdminRoutes(app: Express) {
   });
 
   app.post("/api/admin/document-signatures", adminAuthMiddleware, async (req, res) => {
-    const { documentId, signerName, signerEmail, signerRole } = req.body;
+    const { documentId, signerName, signerEmail, signerRole, organisationId, organisationName } = req.body;
     if (!documentId || !signerName || !signerEmail || !signerRole) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -1274,17 +1279,76 @@ export function registerAdminRoutes(app: Express) {
       signerRole,
       signedAt: new Date(),
       ipAddress: req.ip,
+      organisationId,
+      organisationName,
     });
+    if (organisationId) {
+      await storage.markAssignedDocumentSigned(organisationId, documentId, signature.id);
+    }
     res.json(signature);
   });
 
   app.get("/api/admin/document-signatures", adminAuthMiddleware, async (req, res) => {
-    const { documentId } = req.query;
+    const { documentId, organisationId } = req.query;
+    if (organisationId) {
+      const sigs = await storage.getDocumentSignaturesByOrg(organisationId as string);
+      return res.json(sigs);
+    }
     if (documentId) {
       const sigs = await storage.getDocumentSignatures(documentId as string);
       return res.json(sigs);
     }
     const sigs = await storage.getAllDocumentSignatures();
     res.json(sigs);
+  });
+
+  // Assigned documents routes
+  app.get("/api/admin/organizations/:orgId/assigned-documents", adminAuthMiddleware, async (req, res) => {
+    try {
+      const docs = await storage.getAssignedDocuments(req.params.orgId);
+      res.json(docs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch assigned documents" });
+    }
+  });
+
+  app.post("/api/admin/organizations/:orgId/assigned-documents", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { documentIds } = req.body;
+      if (!documentIds || !Array.isArray(documentIds) || documentIds.length === 0) {
+        return res.status(400).json({ error: "documentIds array required" });
+      }
+      const org = await storage.getUserById(req.params.orgId);
+      if (!org) {
+        return res.status(404).json({ error: "Organisation not found" });
+      }
+      await storage.assignDocumentsToOrg(req.params.orgId, org.name || "Unknown", documentIds);
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "update",
+        "organization",
+        req.params.orgId,
+        `Assigned ${documentIds.length} documents to ${org.name}`
+      );
+      const docs = await storage.getAssignedDocuments(req.params.orgId);
+      res.json(docs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to assign documents" });
+    }
+  });
+
+  app.get("/api/admin/organizations/:orgId/validation-status", adminAuthMiddleware, async (req, res) => {
+    try {
+      const assigned = await storage.getAssignedDocuments(req.params.orgId);
+      const fullySigned = await storage.isOrgFullySigned(req.params.orgId);
+      res.json({ 
+        totalRequired: assigned.length, 
+        totalSigned: assigned.filter(d => !!d.signedAt).length, 
+        isValid: fullySigned,
+        documents: assigned 
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch validation status" });
+    }
   });
 }
