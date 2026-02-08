@@ -542,6 +542,18 @@ export default function Landing() {
 
             <Card className="border-0 shadow-lg">
               <CardContent className="pt-6">
+                <div className="rounded-full bg-orange-500/10 p-3 w-fit mb-4">
+                  <Phone className="h-6 w-6 text-orange-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Call Supervisor</h3>
+                <p className="text-muted-foreground text-sm">
+                  Organisation clients can ring their supervisor directly from the app. No app needed on the other end — it's a normal phone call.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
                 <div className="rounded-full bg-emerald-500/10 p-3 w-fit mb-4">
                   <TrendingUp className="h-6 w-6 text-emerald-500" />
                 </div>

@@ -72,6 +72,7 @@ export default function Pricing() {
         { text: "Lone worker monitoring", icon: MapPin },
         { text: "Per-client feature toggles", icon: TrendingUp },
         { text: "Emergency alerts & missed check-in reports", icon: FileText },
+        { text: "Call Supervisor — clients ring their supervisor directly", icon: Phone },
         { text: "In-dashboard help centre", icon: Headphones },
         { text: "Volume discounts on seat bundles", icon: TrendingUp },
       ],
@@ -105,6 +106,7 @@ export default function Pricing() {
     { name: "Safeguarding hub", trial: false, complete: false, org: true },
     { name: "Lone worker monitoring", trial: false, complete: false, org: true },
     { name: "Per-client feature controls", trial: false, complete: false, org: true },
+    { name: "Call Supervisor (one-tap calling)", trial: false, complete: false, org: true },
     { name: "Reports & analytics", trial: false, complete: false, org: true },
   ];
 
