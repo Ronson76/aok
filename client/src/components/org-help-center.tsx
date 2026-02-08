@@ -395,6 +395,20 @@ const HELP_TOPICS: HelpTopic[] = [
     relatedTopics: ["lone-worker-overview", "panic-alerts"],
   },
   {
+    id: "call-supervisor",
+    title: "Call Supervisor feature for clients",
+    category: "lone-worker",
+    keywords: ["call", "supervisor", "phone", "ring", "contact", "speak", "talk", "twilio", "voice"],
+    content: [
+      "Organisation-managed clients can tap a **Call Supervisor** button on their dashboard to ring your phone directly.",
+      "When a client taps the button, Twilio places a call to the organisation's phone number and plays a message identifying who is trying to reach you.",
+      "The supervisor does **not** need to be in the app — the call comes through as a normal incoming phone call.",
+      "This uses the mobile number set on your organisation account. Make sure it's up to date in your account settings.",
+      "A confirmation dialog prevents accidental calls — the client must tap **Call Now** to proceed.",
+    ],
+    relatedTopics: ["lone-worker-overview", "alerts-emergency"],
+  },
+  {
     id: "lone-worker-overview",
     title: "Lone worker sessions — how they work",
     category: "lone-worker",

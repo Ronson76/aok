@@ -89,6 +89,17 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "call-supervisor",
+    title: "Call Supervisor (organisation clients)",
+    content: [
+      "If you're managed by an organisation, you'll see a **Call Supervisor** button on your dashboard.",
+      "Tapping it will ring your supervisor's phone and play a message letting them know you need to speak with them.",
+      "Your supervisor doesn't need to be in the app — their phone rings like a normal incoming call.",
+      "A confirmation dialog appears before the call is placed, so you won't accidentally call them.",
+      "This feature is only available if your organisation has set up a contact phone number.",
+    ],
+  },
+  {
     id: "contact-adding",
     title: "Contacts — adding emergency contacts",
     content: [
