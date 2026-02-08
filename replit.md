@@ -5,6 +5,7 @@ aok is a personal safety check-in application designed to keep users connected w
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
+Update policy: Always update the public How-to Guide (`/guide`) and Organisation Help Centre with every feature change or update.
 
 ## System Architecture
 
