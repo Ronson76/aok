@@ -1583,5 +1583,55 @@ export const insertActivityCommentSchema = createInsertSchema(activityComments).
 export type InsertActivityComment = z.infer<typeof insertActivityCommentSchema>;
 export type ActivityComment = typeof activityComments.$inferSelect;
 
+// ===== ACTIVITY / ERRANDS =====
+
+export const errandActivityTypes = ["walking", "shopping", "errands", "appointment", "visiting", "commute", "dog_walking", "exercise", "other"] as const;
+export type ErrandActivityType = typeof errandActivityTypes[number];
+
+export const errandSessionStatuses = ["active", "grace", "overdue", "completed", "cancelled"] as const;
+export type ErrandSessionStatus = typeof errandSessionStatuses[number];
+
+export const errandSessions = pgTable("errand_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  activityType: text("activity_type").notNull().$type<ErrandActivityType>(),
+  customLabel: text("custom_label"),
+  expectedDurationMins: integer("expected_duration_mins").notNull(),
+  status: text("status").notNull().$type<ErrandSessionStatus>().default("active"),
+  startedAt: timestamp("started_at").notNull().defaultNow(),
+  expectedEndAt: timestamp("expected_end_at").notNull(),
+  graceEndsAt: timestamp("grace_ends_at").notNull(),
+  lastCheckInAt: timestamp("last_check_in_at"),
+  lastKnownLat: text("last_known_lat"),
+  lastKnownLng: text("last_known_lng"),
+  lastLocationAt: timestamp("last_location_at"),
+  notifiedAt: timestamp("notified_at"),
+  completedAt: timestamp("completed_at"),
+  gpsPoints: jsonb("gps_points").$type<Array<{ lat: number; lng: number; timestamp: number }>>().default([]),
+});
+
+export const insertErrandSessionSchema = createInsertSchema(errandSessions).omit({
+  id: true,
+  userId: true,
+  status: true,
+  startedAt: true,
+  expectedEndAt: true,
+  graceEndsAt: true,
+  lastCheckInAt: true,
+  lastKnownLat: true,
+  lastKnownLng: true,
+  lastLocationAt: true,
+  notifiedAt: true,
+  completedAt: true,
+  gpsPoints: true,
+}).extend({
+  activityType: z.enum(errandActivityTypes),
+  expectedDurationMins: z.number().min(5).max(480),
+  customLabel: z.string().optional(),
+});
+
+export type InsertErrandSession = z.infer<typeof insertErrandSessionSchema>;
+export type ErrandSession = typeof errandSessions.$inferSelect;
+
 // Re-export chat models for AI integrations (used by integration storage)
 export * from "./models/chat";
