@@ -139,7 +139,7 @@ interface OnboardingData {
   testMode?: boolean;
 }
 
-const TOTAL_STEPS = 16;
+const TOTAL_STEPS = 17;
 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
@@ -207,6 +207,7 @@ export default function Onboarding() {
     if (!isStaffFlow) return currentStep;
     if (currentStep <= 13) return currentStep;
     if (currentStep === 16) return 14;
+    if (currentStep === 17) return 15;
     return currentStep;
   };
   const progress = Math.round((getDisplayStep() / effectiveSteps) * 100);
@@ -241,6 +242,7 @@ export default function Onboarding() {
     const dataWithTerms = {
       ...data,
       termsAcceptedAt: new Date().toISOString(),
+      complianceConsentsAcceptedAt: new Date().toISOString(),
       ...(staffInviteCode ? { staffInviteCode } : {}),
     };
     localStorage.setItem("onboardingData", JSON.stringify(dataWithTerms));
@@ -251,6 +253,7 @@ export default function Onboarding() {
   };
 
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [complianceConsents, setComplianceConsents] = useState({ fitness: false, noReliance: false, emergency: false });
 
   const canProceed = useCallback(() => {
     switch (currentStep) {
@@ -290,10 +293,11 @@ export default function Onboarding() {
       }
       case 14: return true;
       case 15: return true;
-      case 16: return termsAccepted;
+      case 16: return complianceConsents.fitness && complianceConsents.noReliance && complianceConsents.emergency;
+      case 17: return termsAccepted;
       default: return true;
     }
-  }, [currentStep, data, termsAccepted]);
+  }, [currentStep, data, termsAccepted, complianceConsents]);
 
   // Handle Enter key to proceed to next step
   useEffect(() => {
@@ -332,7 +336,8 @@ export default function Onboarding() {
       case 13: return <Step14ContactDetails data={data} setData={setData} />;
       case 14: return <Step15Plan data={data} setData={setData} />;
       case 15: return <Step16Payment data={data} setData={setData} onNext={handleNext} />;
-      case 16: return <Step1Terms accepted={termsAccepted} setAccepted={setTermsAccepted} onComplete={handleComplete} />;
+      case 16: return <StepComplianceConsent consents={complianceConsents} setConsents={setComplianceConsents} />;
+      case 17: return <Step1Terms accepted={termsAccepted} setAccepted={setTermsAccepted} onComplete={handleComplete} />;
       default: return null;
     }
   };
@@ -422,6 +427,69 @@ function OptionButton({ selected, onClick, icon, label, description, testId }: O
         {selected && <Check className="h-4 w-4 text-primary flex-shrink-0" />}
       </div>
     </button>
+  );
+}
+
+function StepComplianceConsent({ consents, setConsents }: { 
+  consents: { fitness: boolean; noReliance: boolean; emergency: boolean };
+  setConsents: (c: { fitness: boolean; noReliance: boolean; emergency: boolean }) => void;
+}) {
+  return (
+    <Card className="border-0 shadow-lg">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <AlertTriangle className="h-5 w-5 text-amber-500" />
+          <h1 className="text-xl sm:text-2xl font-bold" data-testid="text-compliance-title">Important Notice</h1>
+        </div>
+        <p className="text-sm text-muted-foreground mb-6" data-testid="text-compliance-subtitle">
+          Please read and acknowledge each statement below before continuing.
+        </p>
+        
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-4 border rounded-lg bg-background">
+            <Checkbox
+              id="consent-fitness"
+              checked={consents.fitness}
+              onCheckedChange={(checked) => setConsents({ ...consents, fitness: checked === true })}
+              data-testid="checkbox-consent-fitness"
+            />
+            <label htmlFor="consent-fitness" className="text-sm cursor-pointer leading-relaxed">
+              I understand that fitness and activity features are for personal wellbeing only and do not provide medical advice, diagnosis, or health monitoring.
+            </label>
+          </div>
+
+          <div className="flex items-start gap-3 p-4 border rounded-lg bg-background">
+            <Checkbox
+              id="consent-no-reliance"
+              checked={consents.noReliance}
+              onCheckedChange={(checked) => setConsents({ ...consents, noReliance: checked === true })}
+              data-testid="checkbox-consent-no-reliance"
+            />
+            <label htmlFor="consent-no-reliance" className="text-sm cursor-pointer leading-relaxed">
+              I understand aok does not monitor my activity or wellbeing and I must not rely on it for my personal safety or health.
+            </label>
+          </div>
+
+          <div className="flex items-start gap-3 p-4 border rounded-lg bg-background">
+            <Checkbox
+              id="consent-emergency"
+              checked={consents.emergency}
+              onCheckedChange={(checked) => setConsents({ ...consents, emergency: checked === true })}
+              data-testid="checkbox-consent-emergency"
+            />
+            <label htmlFor="consent-emergency" className="text-sm cursor-pointer leading-relaxed">
+              I understand emergency features do not replace emergency services and may fail due to connectivity, device, or technical issues.
+            </label>
+          </div>
+        </div>
+
+        <div className="mt-6 p-3 rounded-lg bg-muted/50">
+          <p className="text-xs text-muted-foreground">
+            By proceeding, your acknowledgement of these statements will be recorded.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -1486,7 +1554,7 @@ function Step9WhatMatters({ data, setData }: { data: OnboardingData; setData: (d
   const options = [
     { value: "peace-myself", label: "Peace of mind for myself", description: "Know someone will notice if I need help", icon: <Smile className="h-6 w-6" /> },
     { value: "peace-contact", label: `Peace of mind for ${formatContactNames(data.contacts, "my contacts")}`, description: "They won't have to worry from afar", icon: <Heart className="h-6 w-6" /> },
-    { value: "independence", label: "Stay independent", description: "Live on my terms, stay safe", icon: <Home className="h-6 w-6" /> },
+    { value: "independence", label: "Stay independent", description: "Live on my terms, stay connected", icon: <Home className="h-6 w-6" /> },
   ];
 
   const toggleOption = (value: string) => {

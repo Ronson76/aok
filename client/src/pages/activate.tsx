@@ -63,7 +63,7 @@ export default function Activate() {
         <Link href="/" className="flex flex-col items-center mb-6 cursor-pointer" data-testid="link-logo-home">
           <ShieldCheck className="h-12 w-12 text-green-600" />
           <span className="text-2xl font-bold text-green-600">aok</span>
-          <p className="text-muted-foreground text-sm">Personal Safety Check-In</p>
+          <p className="text-muted-foreground text-sm">Personal Check-In</p>
         </Link>
         
         <Card>

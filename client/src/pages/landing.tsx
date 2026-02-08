@@ -56,7 +56,7 @@ export default function Landing() {
 
   const handleShare = async () => {
     const shareData = {
-      title: 'aok - Personal Safety Check-In App',
+      title: 'aok - Personal Check-In App',
       text: 'Stay connected with your loved ones. Check in regularly and get help when you need it.',
       url: window.location.origin,
     };
@@ -116,8 +116,8 @@ export default function Landing() {
       isTrial: true,
     },
     {
-      name: "Essential Safety",
-      description: "Core safety features to keep you protected.",
+      name: "Essential",
+      description: "Core check-in and alert tools for peace of mind.",
       monthlyPrice: TIER1_MONTHLY_PRICE,
       yearlyPrice: TIER1_YEARLY_PRICE,
       features: [
@@ -138,12 +138,12 @@ export default function Landing() {
       priceProtected: true,
     },
     {
-      name: "Complete Protection",
-      description: "Everything in Essential Safety plus wellness, AI, and more.",
+      name: "Complete Wellbeing",
+      description: "Everything in Essential plus wellness, AI, and more.",
       monthlyPrice: TIER2_MONTHLY_PRICE,
       yearlyPrice: TIER2_YEARLY_PRICE,
       features: [
-        { text: "Everything in Essential Safety", icon: Check },
+        { text: "Everything in Essential", icon: Check },
         { text: "Emergency recording (opt-in)", icon: Lock },
         { text: "Mood & wellness tracking", icon: TrendingUp },
         { text: "Pet protection profiles", icon: PawPrint },
@@ -160,11 +160,11 @@ export default function Landing() {
     },
     {
       name: "Organisations",
-      description: "Protect your staff, clients, or residents.",
+      description: "Support your staff, clients, or residents with wellbeing tools.",
       monthlyPrice: null,
       yearlyPrice: null,
       features: [
-        { text: "All Complete Protection features", icon: Check },
+        { text: "All Complete Wellbeing features", icon: Check },
         { text: "Dedicated organisation dashboard", icon: Building2 },
         { text: "Bulk user management", icon: Users },
         { text: "Custom bundles & packages", icon: Heart },
@@ -294,14 +294,14 @@ export default function Landing() {
             <div className="text-center md:text-left">
               <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1 md:py-1.5 rounded-full bg-primary/10 text-primary text-sm md:text-lg font-medium mb-6">
                 <Shield className="h-4 w-4 md:h-5 md:w-5" />
-                Personal Safety Made Simple
+                Personal Wellbeing Made Simple
               </div>
               <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-                Stay Safe.<br />
-                <span className="text-primary">Stay Connected.</span>
+                Stay Connected.<br />
+                <span className="text-primary">Stay Well.</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-lg mx-auto md:mx-0">
-                A safeguarding and risk mitigation platform for individuals and organisations with a duty of care, alerting contacts via email, SMS, and phone calls in an emergency - with unlimited access to our AI-powered wellbeing assistant.
+                A check-in and wellbeing platform for individuals and organisations, notifying contacts via email, SMS, and phone calls if a check-in is missed — with unlimited access to our AI-powered wellbeing assistant.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                 <Link href="/onboarding">
@@ -413,9 +413,9 @@ export default function Landing() {
       <section id="features" className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything You Need to Stay Safe</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything You Need to Stay Connected</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Comprehensive safety features designed to give you and your loved ones complete peace of mind.
+              Comprehensive check-in and wellbeing tools designed to give you and your loved ones peace of mind.
             </p>
           </div>
           
@@ -694,7 +694,7 @@ export default function Landing() {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Key Features in Motion</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              See how aok keeps you safe - the only safety app with built-in wellbeing support.
+              See aok in action — personal wellbeing and safety tools, all in one place.
             </p>
           </div>
           
@@ -1035,8 +1035,8 @@ export default function Landing() {
                 Is aok free to use?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-1">
-                The app gives you 7 days free. After that, our Essential Safety plan starts at £{TIER1_MONTHLY_PRICE.toFixed(2)} per month, 
-                or upgrade to Complete Protection at £{TIER2_MONTHLY_PRICE.toFixed(2)} per month for wellness, AI, and more.
+                The app gives you 7 days free. After that, our Essential plan starts at £{TIER1_MONTHLY_PRICE.toFixed(2)} per month, 
+                or upgrade to Complete Wellbeing at £{TIER2_MONTHLY_PRICE.toFixed(2)} per month for wellness, AI, and more.
               </AccordionContent>
             </AccordionItem>
             
@@ -1204,7 +1204,7 @@ export default function Landing() {
                 <span className="font-bold text-green-600">aok</span>
               </Link>
               <p className="text-sm text-muted-foreground">
-                Your personal safety check-in companion. Stay safe, stay connected.
+                Your personal check-in companion. Stay connected, stay in touch.
               </p>
             </div>
             

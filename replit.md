@@ -48,7 +48,9 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Password Policy**: Minimum 8 characters, special characters allowed.
 - **Shake to SOS**: Enabled by default, can be disabled in settings.
 - **Call Supervisor**: Org-managed clients can tap a button to ring their supervisor's phone via Twilio. Supervisor doesn't need to be in the app.
-- **Emergency Recording**: Opt-in feature (default OFF) that activates phone camera and microphone during emergency alerts. Recordings are encrypted, stored securely, and shared only with emergency contacts. 90-day retention policy. Consent captured via: onboarding page 1, individual settings, org dashboard (per-client feature toggle), and lone worker invite flow.
+- **Emergency Recording**: Opt-in feature (default OFF) that activates phone camera and microphone during user-initiated emergency alerts for documentation purposes only. Recordings are not monitored in real time. Encrypted, stored securely, and accessed only by authorised parties. 90-day retention policy. Consent captured via: onboarding compliance step, individual settings, org dashboard (per-client feature toggle), and lone worker invite flow.
+- **Compliance Consent**: Non-skippable onboarding step with 3 separate checkboxes (fitness disclaimer, no-reliance clause, emergency limitation). All must be acknowledged before account creation. Timestamps logged.
+- **Service Limitation Notice**: Visible disclaimer in settings stating aok may not function in all circumstances due to network, device, battery, or software issues. Not a substitute for emergency services or medical advice.
 
 ### Legal / Licence Agreements
 - **EULA** (`/eula`): Individual user licence agreement.

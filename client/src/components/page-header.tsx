@@ -18,13 +18,13 @@ export function PageHeader({ title, rightContent }: PageHeaderProps) {
 
   const handleShare = async () => {
     const shareUrl = "https://aok.care";
-    const shareText = "Stay safe with aok - a personal safety check-in app that alerts your emergency contacts if something happens to you.";
+    const shareText = "Stay connected with aok — a personal check-in app that notifies your emergency contacts if you miss a check-in.";
     
     // Try Web Share API first (works on mobile)
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "aok - Personal Safety Check-in",
+          title: "aok - Personal Check-in App",
           text: shareText,
           url: shareUrl,
         });

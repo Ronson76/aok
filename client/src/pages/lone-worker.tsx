@@ -145,7 +145,7 @@ function PreShiftSetup({ onStart }: { onStart: () => void }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/lone-worker/active"] });
-      toast({ title: "Session started", description: "Your lone worker session is now active. Stay safe." });
+      toast({ title: "Session started", description: "Your lone worker session is now active." });
       onStart();
     },
     onError: (err: any) => {

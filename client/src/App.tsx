@@ -258,13 +258,13 @@ function AppLayout() {
   const isOrgManagedClient = !!user?.referenceId;
 
   const handleShareLink = async () => {
-    const shareText = "Stay safe with aok - a personal safety check-in app that alerts your emergency contacts if something happens to you.";
+    const shareText = "Stay connected with aok — a personal check-in app that notifies your emergency contacts if you miss a check-in.";
     
     // Try Web Share API first (works on mobile)
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "aok - Personal Safety Check-in",
+          title: "aok - Personal Check-in App",
           text: shareText,
           url: shareUrl,
         });
@@ -546,7 +546,7 @@ function AppLayout() {
           <DialogHeader>
             <DialogTitle>Share aok</DialogTitle>
             <DialogDescription>
-              Scan this QR code to download the aok app and stay safe with your loved ones.
+              Scan this QR code to download the aok app and stay connected with your loved ones.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">

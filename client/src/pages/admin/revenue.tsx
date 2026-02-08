@@ -377,8 +377,8 @@ export default function AdminRevenue() {
                       { feature: "GPS fitness tracking", driver: "Built-in (Leaflet/OSM)", cost: "£0.00" },
                       { feature: "Ecologi tree planting", driver: "Ecologi", cost: "£0.60 (one-off)" },
                       { feature: "Payment processing", driver: "Stripe", cost: "1.4% + 20p" },
-                      { feature: "Essential Safety subscription", driver: "Tier 1", cost: "£6.99/mo or £69.99/yr" },
-                      { feature: "Complete Protection subscription", driver: "Tier 2", cost: "£9.99/mo or £99.99/yr" },
+                      { feature: "Essential subscription", driver: "Tier 1", cost: "£6.99/mo or £69.99/yr" },
+                      { feature: "Complete Wellbeing subscription", driver: "Tier 2", cost: "£9.99/mo or £99.99/yr" },
                       { feature: "Organisation seat (avg.)", driver: "Custom bundles", cost: "£4.99/mo avg." },
                     ].map((row, i) => (
                       <tr key={i} className={i % 2 === 0 ? "bg-muted/30" : ""}>

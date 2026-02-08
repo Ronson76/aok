@@ -1797,7 +1797,7 @@ If you didn't request this, you can safely ignore this email.
   
   <p style="color: #9ca3af; font-size: 12px; text-align: center;">
     - The aok Team<br>
-    Stay Connected, Stay Safe, Stay Well
+    Personal wellbeing tools
   </p>
 </body>
 </html>`;
@@ -2425,9 +2425,9 @@ export async function sendPaymentFailedEmails(userEmail: string, userName: strin
   const userSubject = `${appName} - Action Required: Update Your Payment Details`;
   const userBody = `Hi ${userName || 'there'},
 
-We were unable to process your payment for your ${appName} Complete Protection subscription.
+We were unable to process your payment for your ${appName} Complete Wellbeing subscription.
 
-To continue using ${appName} and keep your loved ones updated on your safety, please update your payment details as soon as possible.
+To continue using ${appName}, please update your payment details as soon as possible.
 
 Your account will remain blocked until payment details are updated.
 
@@ -2435,15 +2435,15 @@ Update payment details: ${settingsUrl}
 
 If you have any questions, please don't hesitate to contact us.
 
-Stay safe,
+Best regards,
 The ${appName} Team`;
 
   const userHtml = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #dc2626;">Action Required: Update Your Payment Details</h2>
       <p>Hi ${userName || 'there'},</p>
-      <p>We were unable to process your payment for your <strong>${appName} Complete Protection</strong> subscription.</p>
-      <p>To continue using ${appName} and keep your loved ones updated on your safety, please update your payment details as soon as possible.</p>
+      <p>We were unable to process your payment for your <strong>${appName} Complete Wellbeing</strong> subscription.</p>
+      <p>To continue using ${appName}, please update your payment details as soon as possible.</p>
       <p style="background-color: #fef2f2; padding: 15px; border-radius: 8px; border-left: 4px solid #dc2626;">
         <strong>Your account will remain blocked until payment details are updated.</strong>
       </p>
@@ -2451,7 +2451,7 @@ The ${appName} Team`;
         <a href="${settingsUrl}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Update Payment Details</a>
       </p>
       <p>If you have any questions, please don't hesitate to contact us.</p>
-      <p>Stay safe,<br>The ${appName} Team</p>
+      <p>Best regards,<br>The ${appName} Team</p>
     </div>`;
 
   try {
@@ -2474,7 +2474,7 @@ The ${appName} Team`;
 
 You are the primary emergency contact for ${userName || 'a user'} on ${appName}.
 
-We wanted to let you know that their payment for ${appName} Complete Protection was unsuccessful. Their account will be temporarily blocked until payment details are updated.
+We wanted to let you know that their payment for ${appName} Complete Wellbeing was unsuccessful. Their account will be temporarily blocked until payment details are updated.
 
 This means they may not be able to check in or send emergency alerts during this time.
 
@@ -2488,7 +2488,7 @@ The ${appName} Team`;
             <h2 style="color: #f59e0b;">Payment Attention Required</h2>
             <p>Hi ${primaryContact.name},</p>
             <p>You are the primary emergency contact for <strong>${userName || 'a user'}</strong> on ${appName}.</p>
-            <p>We wanted to let you know that their payment for ${appName} Complete Protection was unsuccessful. Their account will be temporarily blocked until payment details are updated.</p>
+            <p>We wanted to let you know that their payment for ${appName} Complete Wellbeing was unsuccessful. Their account will be temporarily blocked until payment details are updated.</p>
             <p style="background-color: #fffbeb; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;">
               <strong>This means they may not be able to check in or send emergency alerts during this time.</strong>
             </p>
@@ -2536,7 +2536,7 @@ export async function sendWelcomeEmail(
       
       <p style="margin: 0 0 16px 0;"><strong>Need help?</strong> Visit our FAQ section or reach out to our support team at any time.</p>
       
-      <p style="margin: 0;">Stay safe!</p>
+      <p style="margin: 0;">Best regards!</p>
     `,
     ctaButton: {
       text: 'Open aok Dashboard',
@@ -2560,7 +2560,7 @@ HERE'S HOW TO GET STARTED:
 
 Need help? Visit our FAQ section or reach out to our support team at any time.
 
-Stay safe!
+Best regards,
 
 - The aok Team
 https://aok.care/app`;
