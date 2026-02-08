@@ -257,7 +257,7 @@ export default function Onboarding() {
         // Location is optional - users can enable later in Settings
         const hasName = data.name.trim().length > 0;
         const hasEmail = data.email.includes("@") && data.email.includes(".");
-        const hasPassword = data.password.length >= 8 && /^[a-zA-Z0-9]+$/.test(data.password);
+        const hasPassword = data.password.length >= 8;
         const passwordsMatch = data.password === data.confirmPassword;
         const hasPhone = isValidMobileNumber(data.userPhone, data.userPhoneCountry);
         return hasName && hasEmail && hasPassword && passwordsMatch && hasPhone;
@@ -499,7 +499,7 @@ function Step2Welcome({ data, setData, staffInviteInfo }: { data: OnboardingData
 
   const nameValid = data.name.trim().length > 0;
   const emailValid = data.email.includes("@") && data.email.includes(".");
-  const passwordValid = data.password.length >= 8 && /^[a-zA-Z0-9]+$/.test(data.password);
+  const passwordValid = data.password.length >= 8;
   const confirmPasswordValid = data.password === data.confirmPassword && data.confirmPassword.length > 0;
   const phoneValid = isValidMobileNumber(data.userPhone, data.userPhoneCountry);
 
@@ -568,7 +568,7 @@ function Step2Welcome({ data, setData, staffInviteInfo }: { data: OnboardingData
                 value={data.password}
                 onChange={(e) => setData({ ...data, password: e.target.value })}
                 onBlur={() => markTouched('password')}
-                placeholder="At least 8 characters, letters and numbers only"
+                placeholder="At least 8 characters"
                 className={touched.password && !passwordValid ? 'border-red-500 focus-visible:ring-red-500' : ''}
                 data-testid="input-password"
               />
@@ -584,10 +584,8 @@ function Step2Welcome({ data, setData, staffInviteInfo }: { data: OnboardingData
             <p className={`text-xs ${touched.password && !passwordValid ? 'text-red-500' : 'text-muted-foreground'}`}>
               {data.password.length > 0 && data.password.length < 8 
                 ? `${8 - data.password.length} more characters needed`
-                : data.password.length > 0 && !/^[a-zA-Z0-9]+$/.test(data.password)
-                ? 'Password must contain only letters and numbers'
                 : touched.password && !passwordValid 
-                ? 'Password must be at least 8 characters, letters and numbers only'
+                ? 'Password must be at least 8 characters'
                 : "Used to secure your account."}
             </p>
           </div>

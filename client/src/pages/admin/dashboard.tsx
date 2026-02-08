@@ -1426,7 +1426,7 @@ export default function AdminDashboard() {
                   <Input
                     id="org-password"
                     type={showNewOrgPassword ? "text" : "password"}
-                    placeholder="Min 8 characters, letters and numbers only"
+                    placeholder="Min 8 characters"
                     value={newOrgPassword}
                     onChange={(e) => setNewOrgPassword(e.target.value)}
                     className="pr-10"
@@ -1604,7 +1604,7 @@ export default function AdminDashboard() {
                   <Input
                     id="reset-org-password"
                     type={showResetOrgNewPassword ? "text" : "password"}
-                    placeholder="Enter new password (min 8 characters, letters and numbers only)"
+                    placeholder="Enter new password (min 8 characters)"
                     value={resetOrgNewPassword}
                     onChange={(e) => setResetOrgNewPassword(e.target.value)}
                     data-testid="input-reset-org-password"

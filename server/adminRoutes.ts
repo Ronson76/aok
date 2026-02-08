@@ -419,8 +419,8 @@ export function registerAdminRoutes(app: Express) {
         return res.status(400).json({ error: "email, password, and name are required" });
       }
 
-      if (password.length < 8 || !/^[a-zA-Z0-9]+$/.test(password)) {
-        return res.status(400).json({ error: "Password must be at least 8 characters and contain only letters and numbers" });
+      if (password.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
       }
 
       const existingAdmin = await adminStorage.getAdminByEmail(email);
@@ -1036,8 +1036,8 @@ export function registerAdminRoutes(app: Express) {
   app.post("/api/admin/invite/:code/accept", async (req, res) => {
     try {
       const { password } = req.body;
-      if (!password || password.length < 8 || !/^[a-zA-Z0-9]+$/.test(password)) {
-        return res.status(400).json({ error: "Password must be at least 8 characters and contain only letters and numbers" });
+      if (!password || password.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
       }
 
       const invite = await adminInviteStorage.getInviteByCode(req.params.code);

@@ -883,7 +883,7 @@ export default function Register() {
                       <FormItem>
                         <FormLabel>Password</FormLabel>
                         <FormControl>
-                          <PasswordInput placeholder="At least 8 characters, letters and numbers only" {...field} data-testid="input-password" />
+                          <PasswordInput placeholder="At least 8 characters" {...field} data-testid="input-password" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
