@@ -260,6 +260,12 @@ export interface IStorage {
   // Organisation feature defaults
   getOrgFeatureDefaults(orgId: string): Promise<OrgFeatureDefaults | undefined>;
   updateOrgFeatureDefaults(orgId: string, updates: OrgFeatureDefaults): Promise<void>;
+
+  // Document signatures
+  createDocumentSignature(data: { documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }): Promise<{ id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }>;
+  getDocumentSignatures(documentId: string): Promise<Array<{ id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }>>;
+  getDocumentSignaturesByOrg(organisationId: string): Promise<Array<{ id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }>>;
+  getAllDocumentSignatures(): Promise<Array<{ id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }>>;
 }
 
 class DatabaseStorage implements IStorage {
@@ -2395,6 +2401,27 @@ class DatabaseStorage implements IStorage {
 
   async updateOrgFeatureDefaults(orgId: string, updates: OrgFeatureDefaults): Promise<void> {
     await getDb().update(users).set(updates).where(eq(users.id, orgId));
+  }
+
+  private documentSignatures: Map<string, { id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }> = new Map();
+
+  async createDocumentSignature(data: { documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }): Promise<{ id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }> {
+    const id = randomUUID();
+    const signature = { id, ...data };
+    this.documentSignatures.set(id, signature);
+    return signature;
+  }
+
+  async getDocumentSignatures(documentId: string): Promise<Array<{ id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }>> {
+    return Array.from(this.documentSignatures.values()).filter(s => s.documentId === documentId);
+  }
+
+  async getDocumentSignaturesByOrg(organisationId: string): Promise<Array<{ id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }>> {
+    return Array.from(this.documentSignatures.values()).filter(s => s.organisationId === organisationId);
+  }
+
+  async getAllDocumentSignatures(): Promise<Array<{ id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }>> {
+    return Array.from(this.documentSignatures.values());
   }
 }
 
