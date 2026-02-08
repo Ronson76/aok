@@ -3322,7 +3322,9 @@ export async function registerRoutes(
       console.error("[STRAVA] STRAVA_CLIENT_ID not found in environment");
       return res.status(500).json({ error: "Strava integration not configured" });
     }
-    const redirectUri = `${req.protocol}://${req.get("host")}/api/strava/callback`;
+    const host = req.get("host") || "";
+    const protocol = req.get("x-forwarded-proto") || req.protocol || "https";
+    const redirectUri = `${protocol}://${host}/api/strava/callback`;
     const scope = "read,activity:read_all,profile:read_all";
     const stateNonce = randomBytes(32).toString("hex");
     stravaOAuthStates.set(req.userId!, { nonce: stateNonce, expiresAt: Date.now() + 10 * 60 * 1000 });
