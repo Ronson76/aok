@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -179,6 +179,25 @@ export default function OrganizationDashboard() {
     featureDigitalWill: true,
   });
   
+  // Excel import state
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importStep, setImportStep] = useState<"upload" | "preview" | "importing" | "results">("upload");
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importData, setImportData] = useState<Array<{
+    clientName: string;
+    clientPhone: string;
+    clientEmail: string;
+    dateOfBirth: string;
+    specialNeeds: string;
+    medicalNotes: string;
+    emergencyInstructions: string;
+    checkInIntervalHours: number;
+    emergencyContacts: Array<{ name: string; email: string; phone: string; relationship: string }>;
+  }>>([]);
+  const [importErrors, setImportErrors] = useState<Array<{ row: number; errors: string[] }>>([]);
+  const [importResults, setImportResults] = useState<Array<{ row: number; clientName: string; success: boolean; referenceCode?: string; error?: string }>>([]);
+  const [importBundleId, setImportBundleId] = useState("");
+
   const [showResendPasswordDialog, setShowResendPasswordDialog] = useState(false);
   const [resendPasswordClientId, setResendPasswordClientId] = useState<string | null>(null);
   const [resendPasswordClientName, setResendPasswordClientName] = useState<string>("");
@@ -474,6 +493,166 @@ export default function OrganizationDashboard() {
       });
     },
   });
+
+  const importClientsMutation = useMutation({
+    mutationFn: async ({ clients, bundleId }: { clients: typeof importData; bundleId?: string }) => {
+      const response = await apiRequest("POST", "/api/org/clients/bulk-import", {
+        clients,
+        bundleId: bundleId && bundleId !== "none" ? bundleId : undefined,
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      setImportResults(data.results || []);
+      setImportStep("results");
+      toast({
+        title: "Import complete",
+        description: `${data.successCount} of ${data.totalProcessed} clients imported successfully.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Import failed",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+      setImportStep("preview");
+    },
+  });
+
+  const resetImportForm = () => {
+    setImportFile(null);
+    setImportData([]);
+    setImportErrors([]);
+    setImportResults([]);
+    setImportStep("upload");
+    setImportBundleId("");
+  };
+
+  const handleFileUpload = async (file: File) => {
+    setImportFile(file);
+    try {
+      const XLSX = await import("xlsx");
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+      if (jsonData.length === 0) {
+        toast({ title: "Empty spreadsheet", description: "The spreadsheet contains no data rows.", variant: "destructive" });
+        return;
+      }
+
+      const parsedClients: typeof importData = [];
+      const errors: typeof importErrors = [];
+
+      for (let i = 0; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        const rowErrors: string[] = [];
+
+        const clientName = String(row["Client Name"] || row["client_name"] || row["Name"] || row["name"] || "").trim();
+        const clientPhone = String(row["Mobile Number"] || row["client_phone"] || row["Phone"] || row["phone"] || row["Mobile"] || row["mobile"] || "").trim();
+        const clientEmail = String(row["Email"] || row["client_email"] || row["email"] || "").trim();
+        const dateOfBirth = String(row["Date of Birth"] || row["date_of_birth"] || row["DOB"] || row["dob"] || "").trim();
+        const specialNeeds = String(row["Special Needs"] || row["special_needs"] || row["Vulnerabilities"] || row["vulnerabilities"] || "").trim();
+        const medicalNotes = String(row["Medical Notes"] || row["medical_notes"] || "").trim();
+        const emergencyInstructions = String(row["Emergency Instructions"] || row["emergency_instructions"] || "").trim();
+        const intervalStr = String(row["Check-in Interval (Hours)"] || row["check_in_interval_hours"] || row["Interval"] || "24").trim();
+        const checkInIntervalHours = parseInt(intervalStr) || 24;
+
+        if (!clientName) rowErrors.push("Client name is required");
+        if (!clientPhone) rowErrors.push("Mobile number is required");
+        else if (clientPhone.replace(/\D/g, "").length < 10) rowErrors.push("Mobile number must be at least 10 digits");
+
+        const emergencyContacts: Array<{ name: string; email: string; phone: string; relationship: string }> = [];
+        for (let c = 1; c <= 3; c++) {
+          const ecName = String(row[`Emergency Contact ${c} Name`] || row[`ec${c}_name`] || "").trim();
+          const ecEmail = String(row[`Emergency Contact ${c} Email`] || row[`ec${c}_email`] || "").trim();
+          const ecPhone = String(row[`Emergency Contact ${c} Phone`] || row[`ec${c}_phone`] || "").trim();
+          const ecRelationship = String(row[`Emergency Contact ${c} Relationship`] || row[`ec${c}_relationship`] || "").trim();
+          if (ecName && ecEmail) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(ecEmail)) {
+              rowErrors.push(`Emergency Contact ${c} email is invalid`);
+            }
+            emergencyContacts.push({ name: ecName, email: ecEmail, phone: ecPhone, relationship: ecRelationship });
+          } else if (ecName && !ecEmail) {
+            rowErrors.push(`Emergency Contact ${c} has a name but no email`);
+          }
+        }
+
+        if (emergencyContacts.length === 0) {
+          rowErrors.push("At least one emergency contact (name + email) is required");
+        }
+
+        if (rowErrors.length > 0) {
+          errors.push({ row: i + 2, errors: rowErrors });
+        }
+
+        parsedClients.push({
+          clientName,
+          clientPhone: clientPhone.replace(/\D/g, "").length >= 10 ? clientPhone : "",
+          clientEmail,
+          dateOfBirth,
+          specialNeeds,
+          medicalNotes,
+          emergencyInstructions,
+          checkInIntervalHours: Math.max(1, Math.min(48, checkInIntervalHours)),
+          emergencyContacts,
+        });
+      }
+
+      setImportData(parsedClients);
+      setImportErrors(errors);
+      setImportStep("preview");
+    } catch (err: any) {
+      toast({ title: "Failed to read file", description: err.message || "Please check the file format.", variant: "destructive" });
+    }
+  };
+
+  const downloadTemplate = () => {
+    import("xlsx").then((XLSX) => {
+      const templateData = [
+        {
+          "Client Name": "Jane Smith",
+          "Mobile Number": "+447700900123",
+          "Email": "jane@example.com",
+          "Date of Birth": "1990-01-15",
+          "Special Needs": "Mobility assistance required",
+          "Medical Notes": "Asthma, uses inhaler",
+          "Emergency Instructions": "Call GP first, then emergency services",
+          "Check-in Interval (Hours)": 24,
+          "Emergency Contact 1 Name": "John Smith",
+          "Emergency Contact 1 Email": "john@example.com",
+          "Emergency Contact 1 Phone": "+447700900456",
+          "Emergency Contact 1 Relationship": "Spouse",
+          "Emergency Contact 2 Name": "Mary Smith",
+          "Emergency Contact 2 Email": "mary@example.com",
+          "Emergency Contact 2 Phone": "+447700900789",
+          "Emergency Contact 2 Relationship": "Parent",
+          "Emergency Contact 3 Name": "",
+          "Emergency Contact 3 Email": "",
+          "Emergency Contact 3 Phone": "",
+          "Emergency Contact 3 Relationship": "",
+        },
+      ];
+      const ws = XLSX.utils.json_to_sheet(templateData);
+      const colWidths = [
+        { wch: 20 }, { wch: 18 }, { wch: 25 }, { wch: 14 },
+        { wch: 30 }, { wch: 30 }, { wch: 35 }, { wch: 24 },
+        { wch: 25 }, { wch: 25 }, { wch: 18 }, { wch: 20 },
+        { wch: 25 }, { wch: 25 }, { wch: 18 }, { wch: 20 },
+        { wch: 25 }, { wch: 25 }, { wch: 18 }, { wch: 20 },
+      ];
+      ws["!cols"] = colWidths;
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Clients");
+      XLSX.writeFile(wb, "aok-client-import-template.xlsx");
+    });
+  };
 
   const resetRegisterForm = () => {
     setRegClientName("");
@@ -1070,6 +1249,15 @@ export default function OrganizationDashboard() {
               <UserPlus className="h-4 w-4 mr-2" />
               Register Client
             </Button>
+            <Button 
+              variant="outline"
+              data-testid="button-import-clients"
+              disabled={!hasSeatsAvailable}
+              onClick={() => { resetImportForm(); setShowImportDialog(true); }}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Import Clients
+            </Button>
             <Button variant="outline" onClick={() => setShowChangePasswordDialog(true)} data-testid="button-org-change-password">
               <KeyRound className="h-4 w-4 mr-2" />
               Change Password
@@ -1474,6 +1662,295 @@ export default function OrganizationDashboard() {
                 "Register & Send SMS"
               )}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Clients Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={(open) => {
+        if (!open && importStep !== "importing") {
+          setShowImportDialog(false);
+          resetImportForm();
+        }
+      }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5" />
+              Import Clients from Spreadsheet
+            </DialogTitle>
+            <DialogDescription>
+              Upload an Excel spreadsheet (.xlsx, .xls) to register multiple clients at once.
+            </DialogDescription>
+          </DialogHeader>
+
+          {importStep === "upload" && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between">
+                <Button variant="outline" onClick={downloadTemplate} data-testid="button-download-template">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Template
+                </Button>
+                <p className="text-xs text-muted-foreground">Use our template for best results</p>
+              </div>
+
+              <div
+                className="border-2 border-dashed rounded-md p-8 text-center cursor-pointer transition-colors hover:border-primary/50"
+                onClick={() => document.getElementById("import-file-input")?.click()}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) handleFileUpload(file);
+                }}
+                data-testid="dropzone-import"
+              >
+                <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                <p className="text-sm font-medium">Click to upload or drag and drop</p>
+                <p className="text-xs text-muted-foreground mt-1">.xlsx or .xls files (max 100 clients)</p>
+                <input
+                  id="import-file-input"
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileUpload(file);
+                    e.target.value = "";
+                  }}
+                  data-testid="input-import-file"
+                />
+              </div>
+
+              <Card className="p-4">
+                <h4 className="text-sm font-semibold mb-2">Required Columns</h4>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <span>Client Name</span>
+                  <span>Mobile Number</span>
+                  <span>Emergency Contact 1 Name</span>
+                  <span>Emergency Contact 1 Email</span>
+                </div>
+                <h4 className="text-sm font-semibold mt-3 mb-2">Optional Columns</h4>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <span>Email</span>
+                  <span>Date of Birth</span>
+                  <span>Special Needs</span>
+                  <span>Medical Notes</span>
+                  <span>Emergency Instructions</span>
+                  <span>Check-in Interval (Hours)</span>
+                  <span>Emergency Contact 1 Phone</span>
+                  <span>Emergency Contact 1 Relationship</span>
+                  <span>Emergency Contact 2 (Name/Email/Phone/Relationship)</span>
+                  <span>Emergency Contact 3 (Name/Email/Phone/Relationship)</span>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {importStep === "preview" && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                  <Badge variant="secondary">{importData.length} client{importData.length !== 1 ? "s" : ""} found</Badge>
+                  {importErrors.length > 0 && (
+                    <Badge variant="destructive">{importErrors.length} row{importErrors.length !== 1 ? "s" : ""} with errors</Badge>
+                  )}
+                  {importErrors.length === 0 && (
+                    <Badge className="bg-green-600 text-white">All rows valid</Badge>
+                  )}
+                </div>
+                <Button variant="outline" size="sm" onClick={() => { setImportStep("upload"); setImportFile(null); setImportData([]); setImportErrors([]); }}>
+                  Choose Different File
+                </Button>
+              </div>
+
+              {importFile && (
+                <p className="text-xs text-muted-foreground">File: {importFile.name}</p>
+              )}
+
+              {importErrors.length > 0 && (
+                <Card className="p-3 border-destructive">
+                  <h4 className="text-sm font-semibold text-destructive mb-2 flex items-center gap-1">
+                    <AlertTriangle className="h-4 w-4" />
+                    Validation Errors
+                  </h4>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {importErrors.map((err, idx) => (
+                      <div key={idx} className="text-xs">
+                        <span className="font-medium">Row {err.row}:</span>{" "}
+                        <span className="text-muted-foreground">{err.errors.join("; ")}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
+              {activeBundles.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Assign to Bundle</Label>
+                  <Select value={importBundleId} onValueChange={setImportBundleId}>
+                    <SelectTrigger data-testid="select-import-bundle">
+                      <SelectValue placeholder="Select a bundle (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No bundle</SelectItem>
+                      {activeBundles.map((bundle) => (
+                        <SelectItem 
+                          key={bundle.id} 
+                          value={bundle.id}
+                          disabled={bundle.seatsUsed >= bundle.seatLimit}
+                        >
+                          {bundle.name} ({bundle.seatsUsed}/{bundle.seatLimit} seats)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="border rounded-md overflow-x-auto max-h-64">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50 sticky top-0">
+                    <tr>
+                      <th className="px-2 py-1.5 text-left font-medium">#</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Name</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Mobile</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Email</th>
+                      <th className="px-2 py-1.5 text-left font-medium">DOB</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Special Needs</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Emergency Contacts</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importData.map((client, idx) => {
+                      const rowError = importErrors.find(e => e.row === idx + 2);
+                      return (
+                        <tr key={idx} className={rowError ? "bg-destructive/5" : ""} data-testid={`row-import-client-${idx}`}>
+                          <td className="px-2 py-1.5">{idx + 1}</td>
+                          <td className="px-2 py-1.5 font-medium">{client.clientName || "-"}</td>
+                          <td className="px-2 py-1.5">{client.clientPhone || "-"}</td>
+                          <td className="px-2 py-1.5">{client.clientEmail || "-"}</td>
+                          <td className="px-2 py-1.5">{client.dateOfBirth || "-"}</td>
+                          <td className="px-2 py-1.5 max-w-[120px] truncate">{client.specialNeeds || "-"}</td>
+                          <td className="px-2 py-1.5">
+                            {client.emergencyContacts.length > 0
+                              ? client.emergencyContacts.map(ec => ec.name).join(", ")
+                              : "-"
+                            }
+                          </td>
+                          <td className="px-2 py-1.5">
+                            {rowError ? (
+                              <XOctagon className="h-3.5 w-3.5 text-destructive" />
+                            ) : (
+                              <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {importStep === "importing" && (
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <p className="text-sm font-medium">Importing {importData.filter((_, idx) => !importErrors.find(e => e.row === idx + 2)).length} clients...</p>
+              <p className="text-xs text-muted-foreground">Each client will receive an SMS with their reference code</p>
+            </div>
+          )}
+
+          {importStep === "results" && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center gap-3">
+                <Badge className="bg-green-600 text-white">
+                  {importResults.filter(r => r.success).length} imported
+                </Badge>
+                {importResults.filter(r => !r.success).length > 0 && (
+                  <Badge variant="destructive">
+                    {importResults.filter(r => !r.success).length} failed
+                  </Badge>
+                )}
+              </div>
+
+              <div className="border rounded-md overflow-x-auto max-h-64">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50 sticky top-0">
+                    <tr>
+                      <th className="px-2 py-1.5 text-left font-medium">#</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Client Name</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Reference Code</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importResults.map((result, idx) => (
+                      <tr key={idx} className={result.success ? "" : "bg-destructive/5"} data-testid={`row-import-result-${idx}`}>
+                        <td className="px-2 py-1.5">{result.row}</td>
+                        <td className="px-2 py-1.5 font-medium">{result.clientName}</td>
+                        <td className="px-2 py-1.5">
+                          {result.referenceCode ? (
+                            <Badge variant="secondary">{result.referenceCode}</Badge>
+                          ) : "-"}
+                        </td>
+                        <td className="px-2 py-1.5">
+                          {result.success ? (
+                            <span className="flex items-center gap-1 text-green-600">
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Imported
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-destructive">
+                              <XOctagon className="h-3.5 w-3.5" /> {result.error}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            {importStep === "upload" && (
+              <Button variant="outline" onClick={() => setShowImportDialog(false)}>
+                Cancel
+              </Button>
+            )}
+            {importStep === "preview" && (
+              <>
+                <Button variant="outline" onClick={() => { setShowImportDialog(false); resetImportForm(); }}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    const validClients = importData.filter((_, idx) => !importErrors.find(e => e.row === idx + 2));
+                    if (validClients.length === 0) {
+                      toast({ title: "No valid rows", description: "Please fix all errors before importing.", variant: "destructive" });
+                      return;
+                    }
+                    setImportData(validClients);
+                    setImportStep("importing");
+                    importClientsMutation.mutate({ clients: validClients, bundleId: importBundleId || undefined });
+                  }}
+                  disabled={importClientsMutation.isPending}
+                  data-testid="button-confirm-import"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import {importData.filter((_, idx) => !importErrors.find(e => e.row === idx + 2)).length} Client{importData.filter((_, idx) => !importErrors.find(e => e.row === idx + 2)).length !== 1 ? "s" : ""}
+                </Button>
+              </>
+            )}
+            {importStep === "results" && (
+              <Button onClick={() => { setShowImportDialog(false); resetImportForm(); }} data-testid="button-close-import-results">
+                Done
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

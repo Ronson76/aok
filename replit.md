@@ -64,7 +64,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Organization Features
 - **Bundles**: Organizations can purchase bundles of seats for their clients.
-- **Client Management**: Organizations add/manage clients (individual users) by email, assign to bundles, manage emergency contacts, reset passwords, archive/restore clients.
+- **Client Management**: Organizations add/manage clients (individual users) by email, assign to bundles, manage emergency contacts, reset passwords, archive/restore clients. Supports bulk import via Excel spreadsheet upload (POST /api/org/clients/bulk-import).
 - **Monitoring**: Dashboard to view client check-in status (Safe/Pending/Overdue), seat usage, and emergency alerts.
 - **Dynamic Feature Control**: Organizations can enable/disable specific wellness features for individual clients.
 - **Safeguarding Hub**: Comprehensive system for incident reporting, welfare concerns, case files, and escalation rules.

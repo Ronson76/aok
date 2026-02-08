@@ -227,6 +227,132 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
+  // Bulk import clients from spreadsheet data (parsed on frontend)
+  const bulkImportClientSchema = z.object({
+    clients: z.array(z.object({
+      clientName: z.string().min(1, "Client name is required"),
+      clientPhone: z.string().min(10, "Valid phone number is required"),
+      clientEmail: z.string().email("Valid email is required").optional().or(z.literal("")),
+      dateOfBirth: z.string().optional().or(z.literal("")),
+      specialNeeds: z.string().optional().or(z.literal("")),
+      medicalNotes: z.string().optional().or(z.literal("")),
+      emergencyInstructions: z.string().optional().or(z.literal("")),
+      checkInIntervalHours: z.number().min(1).max(48).default(24),
+      emergencyContacts: z.array(z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        phone: z.string().optional().or(z.literal("")),
+        relationship: z.string().optional().or(z.literal("")),
+      })).min(1, "At least one emergency contact is required"),
+    })).min(1, "At least one client is required").max(100, "Maximum 100 clients per import"),
+    bundleId: z.string().optional(),
+  });
+
+  app.post("/api/org/clients/bulk-import", requireOrganization, async (req, res) => {
+    try {
+      const parsed = bulkImportClientSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid import data" });
+      }
+
+      const { clients, bundleId } = parsed.data;
+      const org = await storage.getUserById(req.userId!);
+      if (!org) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+
+      const results: Array<{ row: number; clientName: string; success: boolean; referenceCode?: string; error?: string }> = [];
+
+      for (let i = 0; i < clients.length; i++) {
+        const client = clients[i];
+        try {
+          let referenceCode = generateReferenceCode();
+          let attempts = 0;
+          while (await organizationStorage.getClientByReferenceCode(referenceCode) && attempts < 10) {
+            referenceCode = generateReferenceCode();
+            attempts++;
+          }
+
+          if (attempts >= 10) {
+            results.push({ row: i + 1, clientName: client.clientName, success: false, error: "Failed to generate unique reference code" });
+            continue;
+          }
+
+          const orgClient = await organizationStorage.createPendingClient({
+            organizationId: req.userId!,
+            bundleId: bundleId || null,
+            clientName: client.clientName,
+            clientPhone: client.clientPhone,
+            referenceCode,
+            scheduleStartTime: null,
+            checkInIntervalHours: client.checkInIntervalHours || 24,
+            features: {
+              featureWellbeingAi: true,
+              featureShakeToAlert: true,
+              featureMoodTracking: true,
+              featurePetProtection: true,
+              featureDigitalWill: true,
+            },
+          });
+
+          if (client.dateOfBirth || client.specialNeeds || client.medicalNotes || client.emergencyInstructions) {
+            await organizationStorage.createOrUpdateClientProfile(orgClient.id, {
+              organizationClientId: orgClient.id,
+              dateOfBirth: client.dateOfBirth || undefined,
+            });
+            if (client.specialNeeds || client.medicalNotes || client.emergencyInstructions) {
+              await organizationStorage.updateClientProfile(orgClient.id, {
+                vulnerabilities: client.specialNeeds || null,
+                medicalNotes: client.medicalNotes || null,
+                emergencyInstructions: client.emergencyInstructions || null,
+              });
+            }
+          }
+
+          if (client.emergencyContacts && client.emergencyContacts.length > 0) {
+            for (const contact of client.emergencyContacts) {
+              if (contact.name && contact.email) {
+                await organizationStorage.addPendingClientContact(orgClient.id, {
+                  name: contact.name,
+                  email: contact.email,
+                  phone: contact.phone || undefined,
+                  relationship: contact.relationship || undefined,
+                });
+              }
+            }
+          }
+
+          const smsResult = await sendAppInviteSMS(client.clientPhone, referenceCode, org.name);
+          if (smsResult.success) {
+            await organizationStorage.updateClientRegistrationStatus(orgClient.id, "pending_registration");
+          }
+
+          plantTreeForNewSubscriber(client.clientPhone).catch(err => {
+            console.error("[ECOLOGI] Failed to plant tree for imported client:", err);
+          });
+
+          results.push({ row: i + 1, clientName: client.clientName, success: true, referenceCode });
+        } catch (err: any) {
+          results.push({ row: i + 1, clientName: client.clientName, success: false, error: err.message || "Unknown error" });
+        }
+      }
+
+      const successCount = results.filter(r => r.success).length;
+      const failCount = results.filter(r => !r.success).length;
+
+      res.status(201).json({
+        success: true,
+        totalProcessed: clients.length,
+        successCount,
+        failCount,
+        results,
+      });
+    } catch (error: any) {
+      console.error("[ORG] Bulk import failed:", error);
+      res.status(400).json({ error: error.message || "Bulk import failed" });
+    }
+  });
+
   // Resend SMS invite to a pending client
   app.post("/api/org/clients/:orgClientId/resend-invite", requireOrganization, async (req, res) => {
     try {
