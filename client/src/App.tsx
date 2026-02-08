@@ -75,6 +75,8 @@ import EnterpriseLicence from "@/pages/enterprise-licence";
 import DataProcessingAddendum from "@/pages/data-processing-addendum";
 import SLA from "@/pages/sla";
 import LoneWorkerAddendum from "@/pages/lone-worker-addendum";
+import IPOwnership from "@/pages/ip-ownership";
+import NDA from "@/pages/nda";
 import AdminLicenceAgreements from "@/pages/admin/licence-agreements";
 import Guide from "@/pages/guide";
 import ConfirmContact from "@/pages/confirm-contact";
@@ -732,6 +734,14 @@ function Router() {
 
   if (location === "/lone-worker-addendum") {
     return <LoneWorkerAddendum />;
+  }
+
+  if (location === "/ip-ownership") {
+    return <IPOwnership />;
+  }
+
+  if (location === "/nda") {
+    return <NDA />;
   }
 
   if (location.startsWith("/confirm-contact")) {

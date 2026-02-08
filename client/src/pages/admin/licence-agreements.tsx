@@ -18,6 +18,8 @@ import {
   ScrollText,
   Clock,
   AlertTriangle,
+  Lock,
+  KeyRound,
 } from "lucide-react";
 
 function DocumentCard({ icon: Icon, title, description, route, color, badges }: {
@@ -35,6 +37,8 @@ function DocumentCard({ icon: Icon, title, description, route, color, badges }: 
     amber: { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-600" },
     indigo: { bg: "bg-indigo-100 dark:bg-indigo-900/30", text: "text-indigo-600" },
     teal: { bg: "bg-teal-100 dark:bg-teal-900/30", text: "text-teal-600" },
+    red: { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-600" },
+    rose: { bg: "bg-rose-100 dark:bg-rose-900/30", text: "text-rose-600" },
   };
   const c = colorMap[color] || colorMap.green;
 
@@ -176,12 +180,26 @@ export default function AdminLicenceAgreements() {
                     <td className="text-center py-3 px-4"><Check /></td>
                     <td className="text-center py-3 px-4"><Cross /></td>
                   </tr>
-                  <tr data-testid="row-sla">
+                  <tr className="border-b" data-testid="row-sla">
                     <td className="py-3 pr-4 font-medium">SLA</td>
                     <td className="text-center py-3 px-4"><Cross /></td>
                     <td className="text-center py-3 px-4"><Cross /></td>
                     <td className="text-center py-3 px-4"><Check /></td>
                     <td className="text-center py-3 px-4"><Check /></td>
+                  </tr>
+                  <tr className="border-b" data-testid="row-ip-ownership">
+                    <td className="py-3 pr-4 font-medium">IP Ownership Agreement</td>
+                    <td className="text-center py-3 px-4"><Cross /></td>
+                    <td className="text-center py-3 px-4"><Check /></td>
+                    <td className="text-center py-3 px-4"><Check /></td>
+                    <td className="text-center py-3 px-4"><Cross /></td>
+                  </tr>
+                  <tr data-testid="row-nda">
+                    <td className="py-3 pr-4 font-medium">NDA</td>
+                    <td className="text-center py-3 px-4"><Cross /></td>
+                    <td className="text-center py-3 px-4"><Check /></td>
+                    <td className="text-center py-3 px-4"><Check /></td>
+                    <td className="text-center py-3 px-4"><Cross /></td>
                   </tr>
                 </tbody>
               </table>
@@ -223,7 +241,7 @@ export default function AdminLicenceAgreements() {
             Organisations
           </h2>
           <p className="text-sm text-muted-foreground mb-3">
-            Organisations licensing A-OK for multiple users must accept the Enterprise Licence and Data Processing Addendum.
+            Organisations licensing A-OK for multiple users must accept the Enterprise Licence, Data Processing Addendum, IP Ownership Agreement, and NDA.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <DocumentCard
@@ -242,6 +260,22 @@ export default function AdminLicenceAgreements() {
               color="purple"
               badges={["Organisations", "GDPR", "DPA"]}
             />
+            <DocumentCard
+              icon={KeyRound}
+              title="IP Ownership Agreement"
+              description="Intellectual property rights and ownership terms"
+              route="/ip-ownership"
+              color="red"
+              badges={["Organisations", "IP Protection"]}
+            />
+            <DocumentCard
+              icon={Lock}
+              title="NDA"
+              description="Mutual non-disclosure and confidentiality agreement"
+              route="/nda"
+              color="rose"
+              badges={["Organisations", "Confidentiality"]}
+            />
           </div>
         </div>
 
@@ -251,9 +285,9 @@ export default function AdminLicenceAgreements() {
             Lone Worker Customers
           </h2>
           <p className="text-sm text-muted-foreground mb-3">
-            Organisations using A-OK for lone worker monitoring require the Enterprise Licence, Lone Worker Addendum, and SLA.
+            Organisations using A-OK for lone worker monitoring require the Enterprise Licence, Lone Worker Addendum, SLA, IP Ownership Agreement, and NDA.
           </p>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <DocumentCard
               icon={FileText}
               title="Enterprise Licence"
@@ -277,6 +311,22 @@ export default function AdminLicenceAgreements() {
               route="/sla"
               color="amber"
               badges={["99.9% Uptime"]}
+            />
+            <DocumentCard
+              icon={KeyRound}
+              title="IP Ownership Agreement"
+              description="IP rights and ownership terms"
+              route="/ip-ownership"
+              color="red"
+              badges={["IP Protection"]}
+            />
+            <DocumentCard
+              icon={Lock}
+              title="NDA"
+              description="Non-disclosure and confidentiality"
+              route="/nda"
+              color="rose"
+              badges={["Confidentiality"]}
             />
           </div>
         </div>
@@ -314,6 +364,34 @@ export default function AdminLicenceAgreements() {
           </Card>
         </div>
 
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold flex items-center gap-2" data-testid="text-section-commercial">
+            <Lock className="w-5 h-5 text-red-600" />
+            Commercial &amp; Confidentiality
+          </h2>
+          <p className="text-sm text-muted-foreground mb-3">
+            These agreements protect Naiyatech Ltd's intellectual property and confidential information. They apply to organisations and pilot participants accessing the A-OK platform.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <DocumentCard
+              icon={KeyRound}
+              title="IP Ownership Agreement"
+              description="Intellectual property rights and ownership terms"
+              route="/ip-ownership"
+              color="red"
+              badges={["Organisations", "IP Protection"]}
+            />
+            <DocumentCard
+              icon={Lock}
+              title="NDA"
+              description="Mutual non-disclosure and confidentiality agreement"
+              route="/nda"
+              color="rose"
+              badges={["Organisations", "Pilots", "Confidentiality"]}
+            />
+          </div>
+        </div>
+
         <Card data-testid="card-all-documents">
           <CardHeader>
             <CardTitle className="text-lg">All Legal Documents</CardTitle>
@@ -329,6 +407,8 @@ export default function AdminLicenceAgreements() {
                 { title: "Data Processing Addendum (GDPR)", route: "/data-processing-addendum", icon: Shield },
                 { title: "Service Level Agreement (SLA)", route: "/sla", icon: Clock },
                 { title: "Lone Worker Licence Addendum", route: "/lone-worker-addendum", icon: HardHat },
+                { title: "IP Ownership Agreement", route: "/ip-ownership", icon: KeyRound },
+                { title: "NDA (Confidentiality)", route: "/nda", icon: Lock },
               ].map((doc) => (
                 <Link key={doc.route} href={doc.route}>
                   <div className="flex items-center gap-3 p-3 border rounded-md hover-elevate cursor-pointer" data-testid={`quicklink-${doc.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
