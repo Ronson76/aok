@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   Loader2, Clock, MapPin, TrendingUp, ArrowLeft, Lock, Bike, Footprints,
   Play, Pause, Square, ChevronRight, Activity, Navigation, Flame, Timer,
-  Zap, Target, BarChart3,
+  Zap, Target, BarChart3, Camera, Image, Trash2, Edit3, X, Check, Plus,
+  CalendarDays,
 } from "lucide-react";
 import { FaRunning } from "react-icons/fa";
 import { Link } from "wouter";
@@ -21,8 +22,9 @@ import {
   haversineDistance, computeDistance, computePace, computeSpeed,
 } from "@/lib/fitness-utils";
 import { StepCounter, estimateCalories, estimateStepsFromDistance } from "@/lib/step-counter";
-import type { FitnessActivity, ActivityType, PrivacyLevel } from "@shared/schema";
+import type { FitnessActivity, ActivityType, PrivacyLevel, ActivityMemory } from "@shared/schema";
 import RoutesTab from "@/components/route-planner";
+import { useUpload } from "@/hooks/use-upload";
 
 function getActivityIcon(type: string) {
   if (type === "cycle") return Bike;
@@ -719,6 +721,340 @@ function HistoryTab() {
   );
 }
 
+function MemoriesTab() {
+  const { toast } = useToast();
+  const [showCapture, setShowCapture] = useState(false);
+  const [note, setNote] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [uploadedPath, setUploadedPath] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editNote, setEditNote] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { uploadFile, isUploading, progress } = useUpload({
+    onSuccess: (response) => {
+      setUploadedPath(response.objectPath);
+    },
+    onError: () => {
+      toast({ title: "Upload failed", description: "Could not upload photo. Try again.", variant: "destructive" });
+    },
+  });
+
+  const { data: memories, isLoading } = useQuery<ActivityMemory[]>({
+    queryKey: ["/api/memories"],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      if (!uploadedPath) throw new Error("No photo");
+      const res = await apiRequest("POST", "/api/memories", {
+        photoPath: uploadedPath,
+        note: note || null,
+        lat: currentLocation?.lat || null,
+        lng: currentLocation?.lng || null,
+        locationName: locationName || null,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Memory saved", description: "Your moment has been captured." });
+      queryClient.invalidateQueries({ queryKey: ["/api/memories"] });
+      resetCapture();
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to save memory.", variant: "destructive" });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, note }: { id: string; note: string }) => {
+      const res = await apiRequest("PATCH", `/api/memories/${id}`, { note });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/memories"] });
+      setEditingId(null);
+      setEditNote("");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("DELETE", `/api/memories/${id}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Memory deleted" });
+      queryClient.invalidateQueries({ queryKey: ["/api/memories"] });
+    },
+  });
+
+  const resetCapture = () => {
+    setShowCapture(false);
+    setNote("");
+    setLocationName("");
+    setUploadedPath(null);
+    setCurrentLocation(null);
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file", description: "Please select an image file.", variant: "destructive" });
+      return;
+    }
+
+    await uploadFile(file);
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setCurrentLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&zoom=16&addressdetails=1`)
+            .then(r => r.json())
+            .then(data => {
+              if (data.display_name) {
+                const parts = data.display_name.split(",");
+                setLocationName(parts.slice(0, 3).join(",").trim());
+              }
+            })
+            .catch(() => {});
+        },
+        () => {},
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+  };
+
+  const groupedByDate = (memories || []).reduce<Record<string, ActivityMemory[]>>((acc, m) => {
+    const key = format(new Date(m.createdAt), "MMMM yyyy");
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(m);
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-4">
+      {!showCapture ? (
+        <Button className="w-full" onClick={() => setShowCapture(true)} data-testid="button-new-memory">
+          <Camera className="h-4 w-4 mr-2" />
+          Capture a Moment
+        </Button>
+      ) : (
+        <Card>
+          <CardContent className="py-4 px-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="font-semibold text-sm">New Memory</p>
+              <Button variant="ghost" size="icon" onClick={resetCapture} data-testid="button-cancel-memory">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {!uploadedPath ? (
+              <div
+                className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+                data-testid="area-photo-upload"
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                  data-testid="input-photo-file"
+                />
+                {isUploading ? (
+                  <div className="space-y-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                    <p className="text-sm text-muted-foreground">Uploading... {progress}%</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                      <Camera className="h-7 w-7 text-primary" />
+                    </div>
+                    <p className="text-sm font-medium">Take a photo or choose from gallery</p>
+                    <p className="text-xs text-muted-foreground">Your location will be tagged automatically</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="relative rounded-xl overflow-hidden">
+                <img
+                  src={uploadedPath}
+                  alt="Memory preview"
+                  className="w-full h-56 object-cover"
+                  data-testid="img-memory-preview"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 bg-black/40 text-white"
+                  onClick={() => {
+                    setUploadedPath(null);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }}
+                  data-testid="button-remove-photo"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                {currentLocation && (
+                  <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs flex items-center gap-1.5">
+                    <MapPin className="h-3 w-3" />
+                    {locationName || `${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <textarea
+              placeholder="Add a note... What were you doing? How did you feel?"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+              rows={3}
+              data-testid="input-memory-note"
+            />
+
+            {currentLocation && !locationName && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <MapPin className="h-3.5 w-3.5" />
+                <span>Location: {currentLocation.lat.toFixed(4)}, {currentLocation.lng.toFixed(4)}</span>
+              </div>
+            )}
+
+            <Button
+              className="w-full"
+              onClick={() => createMutation.mutate()}
+              disabled={!uploadedPath || createMutation.isPending}
+              data-testid="button-save-memory"
+            >
+              {createMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Check className="h-4 w-4 mr-2" />
+              )}
+              Save Memory
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {isLoading && (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
+
+      {!isLoading && (!memories || memories.length === 0) && !showCapture && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+              <Image className="h-8 w-8 text-muted-foreground/40" />
+            </div>
+            <p className="font-medium text-muted-foreground">No memories yet</p>
+            <p className="text-xs text-muted-foreground mt-1.5 max-w-[220px] mx-auto">Capture photos during your activities to build a visual journal</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {Object.entries(groupedByDate).map(([month, items]) => (
+        <div key={month} className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{month}</p>
+            <Badge variant="secondary">{items.length}</Badge>
+          </div>
+
+          {items.map((memory) => (
+            <Card key={memory.id} data-testid={`memory-card-${memory.id}`}>
+              <CardContent className="py-0 px-0">
+                <div className="relative">
+                  <img
+                    src={memory.photoPath}
+                    alt="Memory"
+                    className="w-full h-56 sm:h-64 object-cover rounded-t-xl"
+                    data-testid={`img-memory-${memory.id}`}
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4 pt-12">
+                    {memory.locationName && (
+                      <div className="flex items-center gap-1.5 text-white/90 text-xs mb-1">
+                        <MapPin className="h-3 w-3" />
+                        <span>{memory.locationName}</span>
+                      </div>
+                    )}
+                    <p className="text-white/70 text-xs">
+                      {format(new Date(memory.createdAt), "EEEE d MMMM yyyy, h:mm a")}
+                    </p>
+                  </div>
+                </div>
+
+                {editingId === memory.id ? (
+                  <div className="p-4 space-y-2">
+                    <textarea
+                      value={editNote}
+                      onChange={(e) => setEditNote(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                      rows={2}
+                      data-testid={`input-edit-note-${memory.id}`}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => updateMutation.mutate({ id: memory.id, note: editNote })}
+                        disabled={updateMutation.isPending}
+                        data-testid={`button-save-edit-${memory.id}`}
+                      >
+                        <Check className="h-3.5 w-3.5 mr-1" /> Save
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} data-testid={`button-cancel-edit-${memory.id}`}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4">
+                    {memory.note && (
+                      <p className="text-sm mb-3" data-testid={`text-note-${memory.id}`}>{memory.note}</p>
+                    )}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditingId(memory.id);
+                          setEditNote(memory.note || "");
+                        }}
+                        data-testid={`button-edit-${memory.id}`}
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteMutation.mutate(memory.id)}
+                        disabled={deleteMutation.isPending}
+                        data-testid={`button-delete-memory-${memory.id}`}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Fitness() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -787,14 +1123,17 @@ export default function Fitness() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full grid grid-cols-3 h-11">
-          <TabsTrigger value="record" className="gap-1.5" data-testid="tab-record">
+        <TabsList className="w-full grid grid-cols-4 h-11">
+          <TabsTrigger value="record" className="gap-1" data-testid="tab-record">
             <Play className="h-4 w-4" /> Record
           </TabsTrigger>
-          <TabsTrigger value="routes" className="gap-1.5" data-testid="tab-routes">
+          <TabsTrigger value="routes" className="gap-1" data-testid="tab-routes">
             <Navigation className="h-4 w-4" /> Routes
           </TabsTrigger>
-          <TabsTrigger value="history" className="gap-1.5" data-testid="tab-history">
+          <TabsTrigger value="memories" className="gap-1" data-testid="tab-memories">
+            <Camera className="h-4 w-4" /> Memories
+          </TabsTrigger>
+          <TabsTrigger value="history" className="gap-1" data-testid="tab-history">
             <BarChart3 className="h-4 w-4" /> History
           </TabsTrigger>
         </TabsList>
@@ -805,6 +1144,10 @@ export default function Fitness() {
 
         <TabsContent value="routes" className="mt-4">
           <RoutesTab />
+        </TabsContent>
+
+        <TabsContent value="memories" className="mt-4">
+          <MemoriesTab />
         </TabsContent>
 
         <TabsContent value="history" className="mt-4">

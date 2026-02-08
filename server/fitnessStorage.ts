@@ -2,11 +2,12 @@ import { db } from "./db";
 import { eq, and, or, desc, inArray, gte, lte, sql } from "drizzle-orm";
 import {
   fitnessActivities, follows, activityLikes, activityComments,
-  users, plannedRoutes,
+  users, plannedRoutes, activityMemories,
   type FitnessActivity, type InsertFitnessActivity,
   type Follow, type ActivityLike, type ActivityComment,
   type ActivityType, type PrivacyLevel,
   type PlannedRoute, type InsertPlannedRoute,
+  type ActivityMemory, type InsertActivityMemory,
 } from "@shared/schema";
 
 export const fitnessStorage = {
@@ -293,5 +294,35 @@ export const fitnessStorage = {
       .where(and(eq(plannedRoutes.id, id), eq(plannedRoutes.userId, userId)))
       .returning();
     return route;
+  },
+
+  async createMemory(userId: string, data: InsertActivityMemory): Promise<ActivityMemory> {
+    const [memory] = await db.insert(activityMemories).values({ ...data, userId }).returning();
+    return memory;
+  },
+
+  async getUserMemories(userId: string): Promise<ActivityMemory[]> {
+    return db.select().from(activityMemories)
+      .where(eq(activityMemories.userId, userId))
+      .orderBy(desc(activityMemories.createdAt));
+  },
+
+  async getMemory(id: string): Promise<ActivityMemory | undefined> {
+    const [memory] = await db.select().from(activityMemories).where(eq(activityMemories.id, id));
+    return memory;
+  },
+
+  async updateMemory(id: string, userId: string, updates: { note?: string; locationName?: string }): Promise<ActivityMemory | undefined> {
+    const [memory] = await db.update(activityMemories)
+      .set(updates)
+      .where(and(eq(activityMemories.id, id), eq(activityMemories.userId, userId)))
+      .returning();
+    return memory;
+  },
+
+  async deleteMemory(id: string, userId: string): Promise<boolean> {
+    const result = await db.delete(activityMemories)
+      .where(and(eq(activityMemories.id, id), eq(activityMemories.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
   },
 };

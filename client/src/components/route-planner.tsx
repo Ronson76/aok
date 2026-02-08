@@ -12,6 +12,8 @@ import {
   Search, X, LocateFixed, Route as RouteIcon, MousePointerClick,
   Battery, Headphones, Key, CheckCircle2, Timer, Play,
   Smartphone, ChevronDown, ChevronUp, Zap,
+  Store, Coffee, UtensilsCrossed, Beer, Fuel, ShoppingCart, Building2,
+  Heart, Pill, Eye, EyeOff,
 } from "lucide-react";
 import { FaRunning } from "react-icons/fa";
 import type { PlannedRoute, RoutePace } from "@shared/schema";
@@ -92,6 +94,119 @@ interface NominatimResult {
   display_name: string;
   lat: string;
   lon: string;
+}
+
+interface POI {
+  id: number;
+  lat: number;
+  lng: number;
+  name: string;
+  category: string;
+  type: string;
+}
+
+const POI_CATEGORIES: Record<string, { label: string; color: string; bgColor: string; darkBgColor: string; tags: string }> = {
+  cafe: { label: "Cafes", color: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-100", darkBgColor: "dark:bg-amber-900/30", tags: "amenity=cafe" },
+  restaurant: { label: "Restaurants", color: "text-orange-600 dark:text-orange-400", bgColor: "bg-orange-100", darkBgColor: "dark:bg-orange-900/30", tags: "amenity=restaurant" },
+  pub: { label: "Pubs & Bars", color: "text-yellow-700 dark:text-yellow-400", bgColor: "bg-yellow-100", darkBgColor: "dark:bg-yellow-900/30", tags: "amenity=pub|amenity=bar" },
+  shop: { label: "Shops", color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-100", darkBgColor: "dark:bg-blue-900/30", tags: "shop=supermarket|shop=convenience|shop=general" },
+  fuel: { label: "Fuel Stations", color: "text-red-600 dark:text-red-400", bgColor: "bg-red-100", darkBgColor: "dark:bg-red-900/30", tags: "amenity=fuel" },
+  pharmacy: { label: "Pharmacies", color: "text-emerald-600 dark:text-emerald-400", bgColor: "bg-emerald-100", darkBgColor: "dark:bg-emerald-900/30", tags: "amenity=pharmacy" },
+  attraction: { label: "Attractions", color: "text-purple-600 dark:text-purple-400", bgColor: "bg-purple-100", darkBgColor: "dark:bg-purple-900/30", tags: "tourism=attraction|tourism=museum|tourism=viewpoint|historic=monument" },
+};
+
+function getCategoryIcon(category: string) {
+  switch (category) {
+    case "cafe": return Coffee;
+    case "restaurant": return UtensilsCrossed;
+    case "pub": return Beer;
+    case "shop": return ShoppingCart;
+    case "fuel": return Fuel;
+    case "pharmacy": return Pill;
+    case "attraction": return Building2;
+    default: return Store;
+  }
+}
+
+function getPoiMarkerColor(category: string): string {
+  switch (category) {
+    case "cafe": return "#d97706";
+    case "restaurant": return "#ea580c";
+    case "pub": return "#a16207";
+    case "shop": return "#2563eb";
+    case "fuel": return "#dc2626";
+    case "pharmacy": return "#059669";
+    case "attraction": return "#9333ea";
+    default: return "#6b7280";
+  }
+}
+
+async function fetchPOIsAlongRoute(routeCoords: Array<[number, number]>): Promise<POI[]> {
+  if (routeCoords.length < 2) return [];
+
+  const lats = routeCoords.map(c => c[1]);
+  const lngs = routeCoords.map(c => c[0]);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+
+  const pad = 0.003;
+  const bbox = `${minLat - pad},${minLng - pad},${maxLat + pad},${maxLng + pad}`;
+
+  const query = `
+    [out:json][timeout:10];
+    (
+      node["amenity"="cafe"](${bbox});
+      node["amenity"="restaurant"](${bbox});
+      node["amenity"="pub"](${bbox});
+      node["amenity"="bar"](${bbox});
+      node["shop"="supermarket"](${bbox});
+      node["shop"="convenience"](${bbox});
+      node["amenity"="fuel"](${bbox});
+      node["amenity"="pharmacy"](${bbox});
+      node["tourism"="attraction"](${bbox});
+      node["tourism"="museum"](${bbox});
+      node["tourism"="viewpoint"](${bbox});
+      node["historic"="monument"](${bbox});
+    );
+    out body 100;
+  `;
+
+  try {
+    const res = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: `data=${encodeURIComponent(query)}`,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+
+    return (data.elements || [])
+      .filter((el: any) => el.tags?.name)
+      .map((el: any) => {
+        let category = "shop";
+        const tags = el.tags || {};
+        if (tags.amenity === "cafe") category = "cafe";
+        else if (tags.amenity === "restaurant") category = "restaurant";
+        else if (tags.amenity === "pub" || tags.amenity === "bar") category = "pub";
+        else if (tags.shop) category = "shop";
+        else if (tags.amenity === "fuel") category = "fuel";
+        else if (tags.amenity === "pharmacy") category = "pharmacy";
+        else if (tags.tourism || tags.historic) category = "attraction";
+
+        return {
+          id: el.id,
+          lat: el.lat,
+          lng: el.lon,
+          name: tags.name,
+          category,
+          type: tags.amenity || tags.shop || tags.tourism || tags.historic || "place",
+        };
+      });
+  } catch {
+    return [];
+  }
 }
 
 function AddressSearch({
@@ -267,6 +382,8 @@ function RouteMap({
   onMapClick,
   mapMode,
   settingPoint,
+  pois,
+  showPois,
 }: {
   startPoint: [number, number] | null;
   endPoint: [number, number] | null;
@@ -274,10 +391,13 @@ function RouteMap({
   onMapClick: (lat: number, lng: number) => void;
   mapMode: "search" | "pin";
   settingPoint: "start" | "end";
+  pois: POI[];
+  showPois: boolean;
 }) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const poiMarkersRef = useRef<any[]>([]);
   const polylineRef = useRef<any>(null);
 
   useEffect(() => {
@@ -385,6 +505,32 @@ function RouteMap({
     });
   }, [startPoint, endPoint, routeCoords]);
 
+  useEffect(() => {
+    if (!mapInstance.current) return;
+
+    import("leaflet").then((L) => {
+      const map = mapInstance.current;
+      poiMarkersRef.current.forEach((m) => map.removeLayer(m));
+      poiMarkersRef.current = [];
+
+      if (!showPois || pois.length === 0) return;
+
+      pois.forEach((poi) => {
+        const color = getPoiMarkerColor(poi.category);
+        const icon = L.divIcon({
+          html: `<div style="background:${color};width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div>`,
+          className: "",
+          iconSize: [12, 12],
+          iconAnchor: [6, 6],
+        });
+        const m = L.marker([poi.lat, poi.lng], { icon })
+          .bindPopup(`<div style="font-size:13px;font-weight:600">${poi.name}</div><div style="font-size:11px;color:#666;text-transform:capitalize">${poi.type}</div>`)
+          .addTo(map);
+        poiMarkersRef.current.push(m);
+      });
+    });
+  }, [pois, showPois]);
+
   return (
     <div className="relative">
       <div
@@ -447,6 +593,11 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [savedRouteId, setSavedRouteId] = useState<string | null>(null);
   const [mapMode, setMapMode] = useState<"search" | "pin">("search");
+  const [pois, setPois] = useState<POI[]>([]);
+  const [showPois, setShowPois] = useState(true);
+  const [loadingPois, setLoadingPois] = useState(false);
+  const [poisExpanded, setPoisExpanded] = useState(false);
+  const [poiFilter, setPoiFilter] = useState<string | null>(null);
   const initializedRef = useRef(false);
 
   useEffect(() => {
@@ -577,6 +728,18 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
     }
   }, [startPoint, endPoint]);
 
+  useEffect(() => {
+    if (routeCoords.length < 2) {
+      setPois([]);
+      return;
+    }
+    setLoadingPois(true);
+    fetchPOIsAlongRoute(routeCoords).then((results) => {
+      setPois(results);
+      setLoadingPois(false);
+    }).catch(() => setLoadingPois(false));
+  }, [routeCoords]);
+
   const distanceBand = distance > 0 ? getDistanceBand(distance) : null;
   const distanceKm = (distance / 1000).toFixed(2);
 
@@ -620,6 +783,9 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
     setSavedRouteId(null);
     setSettingPoint("start");
     setCheckedItems({});
+    setPois([]);
+    setPoiFilter(null);
+    setPoisExpanded(false);
     initializedRef.current = false;
     onClearRepeat?.();
   };
@@ -700,6 +866,8 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
         onMapClick={handleMapClick}
         mapMode={mapMode}
         settingPoint={settingPoint}
+        pois={poiFilter ? pois.filter(p => p.category === poiFilter) : pois}
+        showPois={showPois}
       />
 
       {(isPlanning || planMutation.isPending) && (
@@ -862,6 +1030,99 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
           <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <p className="text-sm text-amber-800 dark:text-amber-200" data-testid="text-safety-cue">{safetyCue}</p>
         </div>
+      )}
+
+      {distance > 0 && (
+        <Card>
+          <CardContent className="py-0 px-0">
+            <div className="px-5 py-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Store className="h-4 w-4 text-indigo-500" />
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nearby Places</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {loadingPois && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowPois(!showPois)}
+                    data-testid="button-toggle-pois"
+                  >
+                    {showPois ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              {pois.length === 0 && !loadingPois && (
+                <p className="text-sm text-muted-foreground text-center py-3">No places found along this route</p>
+              )}
+
+              {pois.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button
+                      variant={poiFilter === null ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setPoiFilter(null)}
+                      data-testid="button-poi-filter-all"
+                    >
+                      All ({pois.length})
+                    </Button>
+                    {Object.entries(POI_CATEGORIES).map(([key, cat]) => {
+                      const count = pois.filter(p => p.category === key).length;
+                      if (count === 0) return null;
+                      const IconComp = getCategoryIcon(key);
+                      return (
+                        <Button
+                          key={key}
+                          variant={poiFilter === key ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setPoiFilter(poiFilter === key ? null : key)}
+                          data-testid={`button-poi-filter-${key}`}
+                        >
+                          <IconComp className="h-3.5 w-3.5 mr-1" />
+                          {count}
+                        </Button>
+                      );
+                    })}
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setPoisExpanded(!poisExpanded)}
+                    data-testid="button-pois-expand"
+                  >
+                    {poisExpanded ? <ChevronUp className="h-3.5 w-3.5 mr-1" /> : <ChevronDown className="h-3.5 w-3.5 mr-1" />}
+                    {poisExpanded ? "Hide list" : `Show ${(poiFilter ? pois.filter(p => p.category === poiFilter) : pois).length} places`}
+                  </Button>
+
+                  {poisExpanded && (
+                    <div className="space-y-1 max-h-60 overflow-y-auto">
+                      {(poiFilter ? pois.filter(p => p.category === poiFilter) : pois).map((poi) => {
+                        const IconComp = getCategoryIcon(poi.category);
+                        const catInfo = POI_CATEGORIES[poi.category];
+                        return (
+                          <div key={poi.id} className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-muted/30 transition-colors" data-testid={`poi-item-${poi.id}`}>
+                            <div className={`w-8 h-8 rounded-full ${catInfo?.bgColor || "bg-muted"} ${catInfo?.darkBgColor || ""} flex items-center justify-center shrink-0`}>
+                              <IconComp className={`h-4 w-4 ${catInfo?.color || "text-muted-foreground"}`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{poi.name}</p>
+                              <p className="text-xs text-muted-foreground capitalize">{poi.type}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <Card>

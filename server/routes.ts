@@ -3961,6 +3961,54 @@ export async function registerRoutes(
     }
   });
 
+  // ===== ACTIVITY MEMORIES ROUTES =====
+
+  app.get("/api/memories", authMiddleware, async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    const { fitnessStorage } = await import("./fitnessStorage");
+    const memories = await fitnessStorage.getUserMemories(req.userId);
+    res.json(memories);
+  });
+
+  app.post("/api/memories", authMiddleware, async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { fitnessStorage } = await import("./fitnessStorage");
+      const { photoPath, note, lat, lng, locationName, activityId } = req.body;
+      if (!photoPath) return res.status(400).json({ error: "Photo path is required" });
+      const memory = await fitnessStorage.createMemory(req.userId, {
+        photoPath,
+        note: note || null,
+        lat: lat || null,
+        lng: lng || null,
+        locationName: locationName || null,
+        activityId: activityId || null,
+      });
+      res.json(memory);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message || "Failed to create memory" });
+    }
+  });
+
+  app.patch("/api/memories/:id", authMiddleware, async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { fitnessStorage } = await import("./fitnessStorage");
+      const memory = await fitnessStorage.updateMemory(req.params.id, req.userId, req.body);
+      if (!memory) return res.status(404).json({ error: "Not found" });
+      res.json(memory);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message || "Failed to update memory" });
+    }
+  });
+
+  app.delete("/api/memories/:id", authMiddleware, async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    const { fitnessStorage } = await import("./fitnessStorage");
+    const deleted = await fitnessStorage.deleteMemory(req.params.id, req.userId);
+    res.json({ success: deleted });
+  });
+
   // Backup download route
   app.get("/api/download-backup", async (_req, res) => {
     const path = require("path");
