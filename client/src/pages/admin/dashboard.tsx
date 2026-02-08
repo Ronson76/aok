@@ -1028,7 +1028,7 @@ export default function AdminDashboard() {
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground">
               <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No organizations registered yet</p>
+              <p>No organisations registered yet</p>
             </CardContent>
           </Card>
         )}
@@ -1423,7 +1423,7 @@ export default function AdminDashboard() {
                 <Input
                   id="org-email"
                   type="email"
-                  placeholder="e.g., admin@organization.com"
+                  placeholder="e.g., admin@organisation.com"
                   value={newOrgEmail}
                   onChange={(e) => setNewOrgEmail(e.target.value)}
                   data-testid="input-org-email"
