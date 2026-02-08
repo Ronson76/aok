@@ -2426,4 +2426,60 @@ export function registerOrganizationRoutes(app: Express) {
       res.status(500).json({ error: "Failed to verify invite code" });
     }
   });
+
+  // Org-facing: get assigned documents and their signature status (read-only)
+  app.get("/api/org/legal-documents", async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: "Not authenticated" });
+      const assigned = await storage.getAssignedDocuments(user.id);
+      const signatures = await storage.getDocumentSignaturesByOrg(user.id);
+      const fullySigned = await storage.isOrgFullySigned(user.id);
+      res.json({
+        assignedDocuments: assigned,
+        signatures,
+        isValid: fullySigned,
+        totalRequired: assigned.length,
+        totalSigned: assigned.filter((d: any) => !!d.signedAt).length,
+      });
+    } catch (error) {
+      console.error("[ORG] Error fetching legal documents:", error);
+      res.status(500).json({ error: "Failed to fetch legal documents" });
+    }
+  });
+
+  // Org-facing: sign a document
+  app.post("/api/org/legal-documents/sign", async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: "Not authenticated" });
+      const { documentId, signerName, signerEmail, signerRole } = req.body;
+      if (!documentId || !signerName || !signerEmail || !signerRole) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+      const assigned = await storage.getAssignedDocuments(user.id);
+      const isAssigned = assigned.find(d => d.documentId === documentId);
+      if (!isAssigned) {
+        return res.status(400).json({ error: "This document is not assigned to your organisation" });
+      }
+      if (isAssigned.signedAt) {
+        return res.status(400).json({ error: "This document has already been signed" });
+      }
+      const signature = await storage.createDocumentSignature({
+        documentId,
+        signerName,
+        signerEmail,
+        signerRole,
+        signedAt: new Date(),
+        ipAddress: req.ip,
+        organisationId: user.id,
+        organisationName: user.name || "Unknown",
+      });
+      await storage.markAssignedDocumentSigned(user.id, documentId, signature.id);
+      res.json(signature);
+    } catch (error) {
+      console.error("[ORG] Error signing document:", error);
+      res.status(500).json({ error: "Failed to sign document" });
+    }
+  });
 }
