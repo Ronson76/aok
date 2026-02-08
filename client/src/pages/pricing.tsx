@@ -298,7 +298,7 @@ export default function Pricing() {
               { q: "What payment methods do you accept?", a: "We accept all major debit and credit cards, Apple Pay, and Google Pay for quick and easy payment." },
               { q: "How does the organisation plan work?", a: "Organisations purchase bundles of seats and manage clients through a dedicated dashboard. Contact us for custom pricing based on your team size." },
               { q: "Is my data safe?", a: "Absolutely. We use encryption for all data, location is only shared during emergencies, AI conversations are never stored, and emergency contacts must give consent before receiving alerts." },
-              { q: "What is the Ecologi tree planting?", a: "When you subscribe, we plant a tree on your behalf through our partnership with Ecologi. It's our way of giving back to the planet and helping offset carbon emissions — at no extra cost to you." },
+              { q: "How am I helping the environment by using aok?", a: "Every time a new subscriber joins aok, we plant a tree on their behalf through our partnership with Ecologi. It's our small way of giving back to the planet and helping offset carbon emissions — just by being part of aok, you're making a positive impact." },
             ].map((faq, i) => (
               <Card key={i}>
                 <CardContent className="py-4">
