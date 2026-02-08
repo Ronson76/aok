@@ -13,7 +13,7 @@ import {
   AlertTriangle, Activity, Scissors, Accessibility, Calendar,
   Clock, RefreshCw, Sun, Sunset, Settings, Search, Bot, Smartphone,
   Mail, Star, Phone, X, Loader2, Wallet, ShieldCheck, Info, Plus,
-  Eye, EyeOff, MessageSquare, ArrowLeft
+  Eye, EyeOff, MessageSquare, ArrowLeft, Video
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -108,6 +108,7 @@ interface OnboardingData {
   userPhone: string;
   userPhoneCountry: string;
   locationSharingEnabled: boolean;
+  emergencyRecordingEnabled: boolean;
   ageGroup: string;
   livingSituation: string;
   whoWorries: string;
@@ -167,6 +168,7 @@ export default function Onboarding() {
     userPhone: "",
     userPhoneCountry: "+44",
     locationSharingEnabled: false,
+    emergencyRecordingEnabled: false,
     ageGroup: "",
     livingSituation: "",
     whoWorries: "",
@@ -674,8 +676,30 @@ function Step2Welcome({ data, setData, staffInviteInfo }: { data: OnboardingData
                 data-testid="switch-location-sharing"
               />
             </div>
+            <div className="flex items-center justify-between p-3 bg-card border rounded-lg">
+              <div className="flex items-center gap-3">
+                <Video className={`h-5 w-5 ${data.emergencyRecordingEnabled ? "text-red-500" : "text-muted-foreground"}`} />
+                <div>
+                  <p className="text-sm font-medium">Emergency recording</p>
+                  <p className="text-xs text-muted-foreground">Activate camera and microphone during emergencies</p>
+                </div>
+              </div>
+              <Switch
+                checked={data.emergencyRecordingEnabled}
+                onCheckedChange={(checked) => setData({ ...data, emergencyRecordingEnabled: checked })}
+                data-testid="switch-emergency-recording"
+              />
+            </div>
+            {data.emergencyRecordingEnabled && (
+              <div className="flex items-start gap-2 p-3 rounded-md bg-red-50 dark:bg-red-950/30">
+                <Info className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  When triggered, your phone's camera and microphone will record during an emergency alert. Recordings are stored securely and only shared with your emergency contacts. You can disable this at any time in Settings.
+                </p>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">
-              You can adjust this later in Settings.
+              You can adjust these later in Settings.
             </p>
           </div>
         </div>

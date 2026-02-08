@@ -820,6 +820,14 @@ export async function registerRoutes(
             await organizationStorage.incrementBundleSeatsUsed(acceptedInvite.bundleId);
             console.log(`[STAFF INVITE] User ${user.id} accepted staff invite ${staffInviteCode}, bundle ${acceptedInvite.bundleId} seat consumed`);
           }
+          if (invite?.emergencyRecordingEnabled) {
+            try {
+              await storage.updateSettings(user.id, { emergencyRecordingEnabled: true });
+              console.log(`[STAFF INVITE] Emergency recording enabled for staff user ${user.id}`);
+            } catch (recErr) {
+              console.error("[STAFF INVITE] Error enabling emergency recording:", recErr);
+            }
+          }
           if (invite?.emergencyContactName && invite?.emergencyContactPhone) {
             try {
               const { contact: newContact, confirmationToken: contactToken } = await storage.createContact(user.id, {

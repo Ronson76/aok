@@ -285,6 +285,11 @@ export default function Register() {
             settingsUpdate.redAlertEnabled = true;
           }
           
+          // Enable emergency recording if toggled during onboarding
+          if (onboardingData.emergencyRecordingEnabled === true) {
+            settingsUpdate.emergencyRecordingEnabled = true;
+          }
+          
           // Save living situation from onboarding
           if (onboardingData.livingSituation) {
             settingsUpdate.livingSituation = onboardingData.livingSituation;

@@ -667,6 +667,7 @@ class DatabaseStorage implements IStorage {
         additionalInfo: null,
         livingSituation: null,
         shakeToSOSEnabled: true,
+        emergencyRecordingEnabled: false,
       };
     }
 
@@ -684,6 +685,7 @@ class DatabaseStorage implements IStorage {
       additionalInfo: row.additionalInfo || null,
       livingSituation: row.livingSituation || null,
       shakeToSOSEnabled: row.shakeToSOSEnabled ?? true,
+      emergencyRecordingEnabled: row.emergencyRecordingEnabled ?? false,
     };
   }
 
@@ -695,6 +697,8 @@ class DatabaseStorage implements IStorage {
     if (updates.pushStatus !== undefined) dbUpdates.pushStatus = updates.pushStatus;
     if (updates.redAlertEnabled !== undefined) dbUpdates.redAlertEnabled = updates.redAlertEnabled;
     if (updates.trackingEnabled !== undefined) dbUpdates.trackingEnabled = updates.trackingEnabled;
+    if (updates.shakeToSOSEnabled !== undefined) dbUpdates.shakeToSOSEnabled = updates.shakeToSOSEnabled;
+    if (updates.emergencyRecordingEnabled !== undefined) dbUpdates.emergencyRecordingEnabled = updates.emergencyRecordingEnabled;
     if (updates.additionalInfo !== undefined) dbUpdates.additionalInfo = updates.additionalInfo;
     if (updates.livingSituation !== undefined) dbUpdates.livingSituation = updates.livingSituation;
     
@@ -2825,6 +2829,7 @@ export interface IOrganizationStorage {
       featureMoodTracking: boolean;
       featurePetProtection: boolean;
       featureDigitalWill: boolean;
+      featureEmergencyRecording: boolean;
     };
   }): Promise<OrganizationClient>;
   updateClientRegistrationStatus(orgClientId: string, status: OrgClientRegistrationStatus): Promise<void>;
@@ -3295,6 +3300,7 @@ class OrganizationStorage implements IOrganizationStorage {
         featureMoodTracking: organizationClients.featureMoodTracking,
         featurePetProtection: organizationClients.featurePetProtection,
         featureDigitalWill: organizationClients.featureDigitalWill,
+        featureEmergencyRecording: organizationClients.featureEmergencyRecording,
       })
       .from(organizationClients)
       .where(eq(organizationClients.clientId, userId));
@@ -3722,6 +3728,7 @@ class OrganizationStorage implements IOrganizationStorage {
       featureMoodTracking: boolean;
       featurePetProtection: boolean;
       featureDigitalWill: boolean;
+      featureEmergencyRecording: boolean;
     };
   }): Promise<OrganizationClient> {
     // Get next ordinal number
@@ -3746,6 +3753,7 @@ class OrganizationStorage implements IOrganizationStorage {
         featureMoodTracking: data.features?.featureMoodTracking ?? true,
         featurePetProtection: data.features?.featurePetProtection ?? true,
         featureDigitalWill: data.features?.featureDigitalWill ?? true,
+        featureEmergencyRecording: data.features?.featureEmergencyRecording ?? false,
       })
       .returning();
     

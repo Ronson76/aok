@@ -50,6 +50,7 @@ export default function DataProcessingAddendum() {
                 <li>Emergency contact information</li>
                 <li>Check-in records and scheduling data</li>
                 <li>Location data when emergency features are activated</li>
+                <li>Emergency recording data (audio and video captured via device camera and microphone during emergency alerts, processed only when the user has explicitly opted in)</li>
                 <li>Optional wellness data (mood entries, pet profiles, digital documents)</li>
                 <li>Call Supervisor records (call timestamps, caller identity, supervisor phone number)</li>
                 <li>Safeguarding records and case files (for organisation accounts)</li>
@@ -57,7 +58,22 @@ export default function DataProcessingAddendum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">3. Security</h2>
+              <h2 className="text-xl font-semibold mb-3">3. Emergency Recording Data</h2>
+              <p className="text-muted-foreground leading-relaxed">
+                Where the Emergency Recording feature is enabled by the data subject, the following additional processing terms apply:
+              </p>
+              <ul className="list-disc pl-6 text-muted-foreground space-y-2 mt-2">
+                <li><strong>Categories of Data:</strong> Audio and video recordings captured via the data subject's device camera and microphone during emergency alerts.</li>
+                <li><strong>Legal Basis:</strong> Explicit consent (Article 6(1)(a) and, where applicable, Article 9(2)(a) UK GDPR). The data subject must actively opt in to the Emergency Recording feature before any recording data is processed.</li>
+                <li><strong>Purpose:</strong> To capture and securely transmit audio/video evidence to the data subject's designated emergency contacts during an emergency event.</li>
+                <li><strong>Retention Period:</strong> Emergency recordings are retained for a maximum of 90 days from the date of capture, after which they are automatically and permanently deleted. Data subjects may request earlier deletion at any time.</li>
+                <li><strong>Security Measures:</strong> Emergency recordings are encrypted end-to-end during transmission and encrypted at rest using AES-256 encryption. Access is restricted to designated emergency contacts only, with all access events logged and auditable.</li>
+                <li><strong>Sub-processors:</strong> Emergency recording data may be processed by cloud infrastructure sub-processors listed in Section 5, subject to the same security and data protection obligations.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-semibold mb-3">4. Security</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Appropriate technical measures in place. Naiyatech Ltd implements and maintains appropriate technical and organisational measures to protect personal data, including:
               </p>
@@ -71,7 +87,7 @@ export default function DataProcessingAddendum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">4. Breach Notification</h2>
+              <h2 className="text-xl font-semibold mb-3">5. Breach Notification</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Within 72 hours. In the event of a personal data breach, Naiyatech Ltd shall notify the Customer without undue delay and in any event within 72 hours of becoming aware of the breach. The notification shall include:
               </p>
@@ -84,7 +100,7 @@ export default function DataProcessingAddendum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">5. Sub-processors</h2>
+              <h2 className="text-xl font-semibold mb-3">6. Sub-processors</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Naiyatech Ltd engages the following categories of sub-processors to deliver the A-OK service:
               </p>
@@ -101,14 +117,14 @@ export default function DataProcessingAddendum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">6. Data Subject Rights</h2>
+              <h2 className="text-xl font-semibold mb-3">7. Data Subject Rights</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Naiyatech Ltd shall assist the Customer in responding to data subject requests, including requests for access, rectification, erasure, data portability, and restriction of processing.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">7. Governing Law</h2>
+              <h2 className="text-xl font-semibold mb-3">8. Governing Law</h2>
               <p className="text-muted-foreground leading-relaxed">
                 This addendum shall be governed by and construed in accordance with the laws of England and Wales, and is subject to the UK GDPR and Data Protection Act 2018.
               </p>

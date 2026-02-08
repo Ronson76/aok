@@ -292,6 +292,7 @@ export function registerOrganizationRoutes(app: Express) {
               featureMoodTracking: true,
               featurePetProtection: true,
               featureDigitalWill: true,
+              featureEmergencyRecording: false,
             },
           });
 
@@ -1767,6 +1768,7 @@ export function registerOrganizationRoutes(app: Express) {
     emergencyContactPhone: z.string().min(10, "Emergency contact phone is required"),
     emergencyContactEmail: z.string().email("Valid email is required").min(1, "Emergency contact email is required"),
     emergencyContactRelationship: z.string().min(1, "Emergency contact relationship is required"),
+    emergencyRecordingEnabled: z.boolean().optional().default(false),
   });
 
   app.get("/api/org/staff/invites", requireOrganization, async (req, res) => {
@@ -1790,7 +1792,7 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
       }
 
-      const { staffName, staffPhone, staffEmail, bundleId, emergencyContactName, emergencyContactPhone, emergencyContactEmail, emergencyContactRelationship } = parsed.data;
+      const { staffName, staffPhone, staffEmail, bundleId, emergencyContactName, emergencyContactPhone, emergencyContactEmail, emergencyContactRelationship, emergencyRecordingEnabled } = parsed.data;
 
       const stats = await organizationStorage.getOrganizationDashboardStats(orgId);
       const bundle = stats.bundles.find(b => b.id === bundleId);
@@ -1813,6 +1815,7 @@ export function registerOrganizationRoutes(app: Express) {
         emergencyContactPhone,
         emergencyContactEmail,
         emergencyContactRelationship,
+        emergencyRecordingEnabled: emergencyRecordingEnabled ?? false,
         inviteCode,
       });
 

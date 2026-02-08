@@ -7,7 +7,7 @@ import {
   Search, Phone, Mail, ShieldCheck, LogOut, UserPlus, Trash2, Shield,
   Radio, MapPin, AlertTriangle, Siren, Eye, History, Briefcase,
   FileText, ChevronDown, ChevronUp, Upload, Download, FileSpreadsheet,
-  CheckCircle2, XOctagon
+  CheckCircle2, XOctagon, Video
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format, formatDistanceToNow } from "date-fns";
@@ -142,6 +143,7 @@ export default function OrgLoneWorkerHub() {
   const [ecCountryCode, setEcCountryCode] = useState("+44");
   const [ecEmail, setEcEmail] = useState("");
   const [ecRelationship, setEcRelationship] = useState("");
+  const [emergencyRecordingEnabled, setEmergencyRecordingEnabled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [inviteFilter, setInviteFilter] = useState("all");
   const [auditFilter, setAuditFilter] = useState("all");
@@ -240,7 +242,7 @@ export default function OrgLoneWorkerHub() {
   };
 
   const createInviteMutation = useMutation({
-    mutationFn: async (data: { staffName: string; staffPhone: string; staffEmail: string; bundleId: string; emergencyContactName?: string; emergencyContactPhone?: string; emergencyContactEmail?: string; emergencyContactRelationship?: string }) => {
+    mutationFn: async (data: { staffName: string; staffPhone: string; staffEmail: string; bundleId: string; emergencyContactName?: string; emergencyContactPhone?: string; emergencyContactEmail?: string; emergencyContactRelationship?: string; emergencyRecordingEnabled?: boolean }) => {
       const res = await apiRequest("POST", "/api/org/staff/invite", data);
       return res.json();
     },
@@ -328,6 +330,7 @@ export default function OrgLoneWorkerHub() {
     setEcCountryCode("+44");
     setEcEmail("");
     setEcRelationship("");
+    setEmergencyRecordingEnabled(false);
     setResendingInviteId(null);
   };
 
@@ -495,6 +498,7 @@ export default function OrgLoneWorkerHub() {
         emergencyContactPhone: fullEcPhone,
         emergencyContactEmail: ecEmail.trim(),
         emergencyContactRelationship: ecRelationship.trim(),
+        emergencyRecordingEnabled,
       });
     }
   };
@@ -1109,6 +1113,30 @@ export default function OrgLoneWorkerHub() {
                 </div>
               </div>
             </div>
+            {!resendingInviteId && (
+              <div className="border-t pt-4 mt-2">
+                <p className="text-sm font-medium mb-3">Emergency Recording Consent</p>
+                <div className="flex items-center justify-between p-3 bg-card border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Video className={`h-5 w-5 ${emergencyRecordingEnabled ? "text-red-500" : "text-muted-foreground"}`} />
+                    <div>
+                      <p className="text-sm font-medium">Emergency recording</p>
+                      <p className="text-xs text-muted-foreground">Activate camera and microphone during emergencies</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={emergencyRecordingEnabled}
+                    onCheckedChange={setEmergencyRecordingEnabled}
+                    data-testid="switch-staff-emergency-recording"
+                  />
+                </div>
+                {emergencyRecordingEnabled && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    When enabled, the staff member's phone will record audio and video during emergency alerts. They can change this in their own settings after registration.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setShowInviteDialog(false); resetInviteForm(); }}>Cancel</Button>

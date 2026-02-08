@@ -62,21 +62,34 @@ export default function EULA() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">4. Disclaimer</h2>
+              <h2 className="text-xl font-semibold mb-3">4. Emergency Recording Feature</h2>
+              <p className="text-muted-foreground leading-relaxed">
+                The software includes an optional Emergency Recording feature that is licensed under the following additional terms:
+              </p>
+              <ul className="list-disc pl-6 text-muted-foreground space-y-2 mt-2">
+                <li><strong>Explicit Opt-In:</strong> The Emergency Recording feature is disabled by default. By enabling it, you explicitly grant the application permission to access your device's camera and microphone during emergency alerts.</li>
+                <li><strong>Scope of Use:</strong> Camera and microphone access is activated only when an emergency alert is triggered and the feature has been enabled by you. Recordings are used solely for safety purposes.</li>
+                <li><strong>Consent and Permissions:</strong> You acknowledge that enabling this feature constitutes your informed consent for the application to capture audio and video during emergencies. You may revoke this consent at any time by disabling the feature in your settings.</li>
+                <li><strong>Data Handling:</strong> All recordings are encrypted, stored securely, and shared only with your designated emergency contacts in accordance with the Privacy Policy.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-semibold mb-3">5. Disclaimer</h2>
               <p className="text-muted-foreground leading-relaxed">
                 The software is provided "as is" without warranties of any kind, either express or implied, including but not limited to the implied warranties of merchantability, fitness for a particular purpose, and non-infringement. A-OK is a personal safety support tool and is not a substitute for emergency services. Features such as Call Supervisor rely on third-party telephony services and network availability; Naiyatech Ltd does not guarantee that calls will always connect successfully. Naiyatech Ltd does not guarantee uninterrupted or error-free operation of the software.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">5. Limitation of Liability</h2>
+              <h2 className="text-xl font-semibold mb-3">6. Limitation of Liability</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Liability is limited to the fees paid in the last 12 months. In no event shall Naiyatech Ltd be liable for any indirect, incidental, special, consequential, or punitive damages, regardless of the cause of action or the theory of liability, even if Naiyatech Ltd has been advised of the possibility of such damages.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">6. Governing Law</h2>
+              <h2 className="text-xl font-semibold mb-3">7. Governing Law</h2>
               <p className="text-muted-foreground leading-relaxed">
                 This agreement shall be governed by and construed in accordance with the laws of England and Wales. Any disputes arising from or in connection with this agreement shall be subject to the exclusive jurisdiction of the courts of England and Wales.
               </p>

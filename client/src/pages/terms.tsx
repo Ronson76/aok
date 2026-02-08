@@ -52,6 +52,7 @@ export default function Terms() {
                 <li>Scheduled check-in reminders at intervals you choose</li>
                 <li>Automated alerts to your emergency contacts if you miss a check-in</li>
                 <li>Emergency alert functionality with optional GPS location sharing</li>
+                <li>Optional Emergency Recording feature that captures audio and video via your device's camera and microphone during emergency alerts (requires explicit opt-in)</li>
                 <li>Call Supervisor feature allowing organisation-managed users to contact their supervisor directly via voice call</li>
                 <li>Optional wellness features including mood tracking and pet protection profiles</li>
               </ul>
@@ -72,14 +73,28 @@ export default function Terms() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">5. Emergency Contact Consent</h2>
+              <h2 className="text-xl font-semibold mb-3">5. Emergency Recording</h2>
+              <p className="text-muted-foreground leading-relaxed">
+                aok offers an optional Emergency Recording feature. By enabling this feature, you agree to the following:
+              </p>
+              <ul className="list-disc pl-6 text-muted-foreground space-y-2 mt-2">
+                <li><strong>Explicit Consent Required:</strong> Emergency Recording is disabled by default and will only activate when you have explicitly opted in through your account settings.</li>
+                <li><strong>Recording During Emergencies:</strong> When enabled, the feature activates your device's camera and microphone during an emergency alert to capture audio and video recordings.</li>
+                <li><strong>Compliance with Local Laws:</strong> You are solely responsible for ensuring that your use of the Emergency Recording feature complies with all applicable local, regional, and national laws regarding audio and video recording, including consent requirements for recording other individuals.</li>
+                <li><strong>Sharing with Emergency Contacts:</strong> Recordings are shared only with your designated emergency contacts and are not used for any other purpose.</li>
+                <li><strong>No Guarantee:</strong> Recording functionality depends on device capabilities, permissions, and network conditions. We do not guarantee that recordings will always be successfully captured or delivered.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-semibold mb-3">6. Emergency Contact Consent</h2>
               <p className="text-muted-foreground leading-relaxed">
                 When you add emergency contacts, they will receive a confirmation request. Contacts must accept this request within 24 hours to be activated. You are responsible for obtaining verbal consent from your contacts before adding them to aok.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">6. Subscription and Payment</h2>
+              <h2 className="text-xl font-semibold mb-3">7. Subscription and Payment</h2>
               <p className="text-muted-foreground leading-relaxed">
                 aok offers subscription-based services with the following terms:
               </p>
@@ -92,42 +107,42 @@ export default function Terms() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">7. Limitation of Liability</h2>
+              <h2 className="text-xl font-semibold mb-3">8. Limitation of Liability</h2>
               <p className="text-muted-foreground leading-relaxed">
                 While we strive to provide a reliable service, aok is not a substitute for emergency services. In life-threatening situations, always contact 999 (UK) or your local emergency number directly. We are not liable for any failure to deliver notifications or connect voice calls (including Call Supervisor calls) due to network issues, device problems, or other circumstances beyond our control.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">8. Data Protection</h2>
+              <h2 className="text-xl font-semibold mb-3">9. Data Protection</h2>
               <p className="text-muted-foreground leading-relaxed">
                 We process your personal data in accordance with our Privacy Policy and applicable data protection laws, including the UK GDPR. Your data is stored securely and used only for the purposes of providing and improving our service.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">9. Service Modifications</h2>
+              <h2 className="text-xl font-semibold mb-3">10. Service Modifications</h2>
               <p className="text-muted-foreground leading-relaxed">
                 We reserve the right to modify, suspend, or discontinue any aspect of our service at any time. We will provide reasonable notice of significant changes that may affect your use of the service.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">10. Termination</h2>
+              <h2 className="text-xl font-semibold mb-3">11. Termination</h2>
               <p className="text-muted-foreground leading-relaxed">
                 We may terminate or suspend your account if you breach these terms or engage in conduct that we determine to be harmful to other users or our service. You may terminate your account at any time by contacting our support team.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">11. Governing Law</h2>
+              <h2 className="text-xl font-semibold mb-3">12. Governing Law</h2>
               <p className="text-muted-foreground leading-relaxed">
                 These Terms and Conditions are governed by and construed in accordance with the laws of England and Wales. Any disputes shall be subject to the exclusive jurisdiction of the courts of England and Wales.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">12. Contact Us</h2>
+              <h2 className="text-xl font-semibold mb-3">13. Contact Us</h2>
               <p className="text-muted-foreground leading-relaxed">
                 If you have any questions about these Terms and Conditions, please contact us at support@aok.care.
               </p>
