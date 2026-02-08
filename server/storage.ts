@@ -23,7 +23,8 @@ import {
   AdminInvite, AdminRole,
   emergencyRecordings, EmergencyRecording,
   stravaConnections, StravaConnection, InsertStravaConnection,
-  errandSessions, ErrandSession, InsertErrandSession, ErrandSessionStatus
+  errandSessions, ErrandSession, InsertErrandSession, ErrandSessionStatus,
+  tierPermissions, TierPermission, UpdateTierPermissions, SubscriptionTier, OrgFeatureDefaults
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, ne, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray, inArray } from "drizzle-orm";
@@ -250,6 +251,15 @@ export interface IStorage {
   getOverdueErrandSessions(): Promise<ErrandSession[]>;
   getGraceExpiredErrandSessions(): Promise<ErrandSession[]>;
   markErrandSessionNotified(id: string): Promise<void>;
+
+  // Tier Permissions
+  getTierPermissions(tier: SubscriptionTier): Promise<TierPermission | undefined>;
+  getAllTierPermissions(): Promise<TierPermission[]>;
+  upsertTierPermissions(tier: SubscriptionTier, updates: UpdateTierPermissions): Promise<TierPermission>;
+
+  // Organisation feature defaults
+  getOrgFeatureDefaults(orgId: string): Promise<OrgFeatureDefaults | undefined>;
+  updateOrgFeatureDefaults(orgId: string, updates: OrgFeatureDefaults): Promise<void>;
 }
 
 class DatabaseStorage implements IStorage {
@@ -2336,6 +2346,55 @@ class DatabaseStorage implements IStorage {
     await getDb().update(errandSessions)
       .set({ notifiedAt: new Date(), status: "overdue" as ErrandSessionStatus })
       .where(eq(errandSessions.id, id));
+  }
+
+  async getTierPermissions(tier: SubscriptionTier): Promise<TierPermission | undefined> {
+    const [result] = await getDb().select().from(tierPermissions).where(eq(tierPermissions.tier, tier));
+    return result;
+  }
+
+  async getAllTierPermissions(): Promise<TierPermission[]> {
+    return await getDb().select().from(tierPermissions).orderBy(tierPermissions.tier);
+  }
+
+  async upsertTierPermissions(tier: SubscriptionTier, updates: UpdateTierPermissions): Promise<TierPermission> {
+    const existing = await this.getTierPermissions(tier);
+    if (existing) {
+      const [updated] = await getDb().update(tierPermissions)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(tierPermissions.tier, tier))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await getDb().insert(tierPermissions)
+        .values({ tier, ...updates, updatedAt: new Date() })
+        .returning();
+      return created;
+    }
+  }
+
+  async getOrgFeatureDefaults(orgId: string): Promise<OrgFeatureDefaults | undefined> {
+    const [user] = await getDb().select({
+      orgFeatureCheckIn: users.orgFeatureCheckIn,
+      orgFeatureShakeToAlert: users.orgFeatureShakeToAlert,
+      orgFeatureEmergencyAlert: users.orgFeatureEmergencyAlert,
+      orgFeatureGpsLocation: users.orgFeatureGpsLocation,
+      orgFeaturePushNotifications: users.orgFeaturePushNotifications,
+      orgFeaturePrimaryContact: users.orgFeaturePrimaryContact,
+      orgFeatureSmsBackup: users.orgFeatureSmsBackup,
+      orgFeatureEmergencyRecording: users.orgFeatureEmergencyRecording,
+      orgFeatureMoodTracking: users.orgFeatureMoodTracking,
+      orgFeaturePetProtection: users.orgFeaturePetProtection,
+      orgFeatureDigitalWill: users.orgFeatureDigitalWill,
+      orgFeatureWellbeingAi: users.orgFeatureWellbeingAi,
+      orgFeatureFitnessTracking: users.orgFeatureFitnessTracking,
+      orgFeatureActivitiesTracker: users.orgFeatureActivitiesTracker,
+    }).from(users).where(eq(users.id, orgId));
+    return user || undefined;
+  }
+
+  async updateOrgFeatureDefaults(orgId: string, updates: OrgFeatureDefaults): Promise<void> {
+    await getDb().update(users).set(updates).where(eq(users.id, orgId));
   }
 }
 
