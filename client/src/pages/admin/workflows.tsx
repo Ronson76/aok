@@ -193,9 +193,31 @@ export default function AdminWorkflows() {
           <StepBox icon={Activity} label="Start Recording" sublabel="User selects run/walk/cycle and starts GPS tracking" />
           <StepBox icon={MapPin} label="GPS Capture" sublabel="Location points captured every few seconds during recording" />
           <StepBox icon={Clock} label="Pause / Resume" sublabel="User can pause and resume recording at any time" />
-          <StepBox icon={Activity} label="Stop & Save" sublabel="Activity saved with distance, duration, pace, route map" />
+          <StepBox icon={Activity} label="Stop & Save" sublabel="Activity saved with distance, duration, pace, steps, calories, route map" />
           <StepBox icon={Users} label="Social Feed" sublabel="Follow users, view feed, like and comment on activities" />
           <StepBox icon={Shield} label="Safety Link" sublabel="Live sharing toggle, route attached to emergency alerts" />
+        </WorkflowSection>
+
+        <FlowArrow />
+
+        <WorkflowSection icon={MapPin} title="Route Planning" description="Plan and share routes before heading out" color="orange">
+          <StepBox icon={MapPin} label="Set Start & End" sublabel="Tap map to place markers, route calculated via OSRM" badge="OSRM" />
+          <StepBox icon={Clock} label="Time Estimates" sublabel="Walk, run, and cycle times at easy/moderate/fast pace" />
+          <StepBox icon={Activity} label="Weather Snapshot" sublabel="Temperature, rain probability, and wind at route location" badge="Open-Meteo" />
+          <StepBox icon={AlertTriangle} label="Safety Cues" sublabel="Sunset warning if route could finish after dark" />
+          <StepBox icon={CheckCircle} label="Pre-Start Checklist" sublabel="Phone charged, headphones, weather checked, keys" />
+          <StepBox icon={Shield} label="Save & Share" sublabel="Save route, mark as usual, share with contacts via email" badge="Resend" />
+        </WorkflowSection>
+
+        <FlowArrow />
+
+        <WorkflowSection icon={Timer} title="Activities Tracker" description="Log everyday activities with GPS and auto-alert" color="teal">
+          <StepBox icon={Timer} label="Start Activity" sublabel="Select type, set expected duration, add custom label" />
+          <StepBox icon={MapPin} label="GPS Tracking" sublabel="Location tracked throughout activity session" />
+          <StepBox icon={Clock} label="Countdown Timer" sublabel="Visual timer shows remaining time" />
+          <StepBox icon={AlertTriangle} label="Grace Period" sublabel="10-minute grace if time expires, extend or complete" badge="10 min" />
+          <StepBox icon={Siren} label="Auto-Alert" sublabel="Contacts notified if grace period expires without check-in" badge="Resend" />
+          <StepBox icon={CheckCircle} label="Complete Activity" sublabel="Session saved to history with status and GPS data" />
         </WorkflowSection>
 
         <FlowArrow />
