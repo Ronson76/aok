@@ -34,6 +34,8 @@ import {
   Layers,
   Video,
   Lock,
+  Activity,
+  Unlink,
 } from "lucide-react";
 
 function FlowArrow() {
@@ -76,6 +78,7 @@ function WorkflowSection({ icon: Icon, title, description, color, children }: {
     emerald: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-600", border: "border-emerald-200 dark:border-emerald-800" },
     pink: { bg: "bg-pink-100 dark:bg-pink-900/30", text: "text-pink-600", border: "border-pink-200 dark:border-pink-800" },
     teal: { bg: "bg-teal-100 dark:bg-teal-900/30", text: "text-teal-600", border: "border-teal-200 dark:border-teal-800" },
+    orange: { bg: "bg-orange-100 dark:bg-orange-900/30", text: "text-orange-600", border: "border-orange-200 dark:border-orange-800" },
   };
   const c = colorMap[color] || colorMap.green;
 
@@ -182,6 +185,17 @@ export default function AdminWorkflows() {
           <StepBox icon={Lock} label="Encrypted Upload" sublabel="Recording uploaded to secure Object Storage" />
           <StepBox icon={Send} label="Shared with Contacts" sublabel="Recording shared only with confirmed emergency contacts" />
           <StepBox icon={Clock} label="90-Day Retention" sublabel="Recordings auto-deleted after 90 days" />
+        </WorkflowSection>
+
+        <FlowArrow />
+
+        <WorkflowSection icon={Activity} title="Fitness Tracking (Strava)" description="OAuth2 Strava integration for activity tracking" color="orange">
+          <StepBox icon={Activity} label="Connect Strava" sublabel="User authorises via Strava OAuth2" />
+          <StepBox icon={Lock} label="Token Exchange" sublabel="Auth code exchanged for access + refresh tokens" />
+          <StepBox icon={RefreshCw} label="Auto Token Refresh" sublabel="Tokens refreshed automatically when expired (6-hour expiry)" />
+          <StepBox icon={Activity} label="Fetch Activities" sublabel="Recent activities displayed with distance, duration, elevation" />
+          <StepBox icon={Layers} label="Athlete Stats" sublabel="All-time and 4-week summaries for rides, runs, swims" />
+          <StepBox icon={Unlink} label="Disconnect" sublabel="Deauthorise and remove stored tokens" />
         </WorkflowSection>
 
         <FlowArrow />

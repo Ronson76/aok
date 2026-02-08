@@ -324,12 +324,25 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "fitness-tracking",
+    title: "Fitness tracking (Strava)",
+    content: [
+      "Connect your Strava account to view your fitness activities and stats directly inside aok as part of your overall wellbeing picture.",
+      "Go to **Wellbeing > Fitness Tracking** from the bottom menu.",
+      "Tap **Connect with Strava** and log in to your Strava account to authorise the connection. aok only reads your activity data and never posts to Strava.",
+      "Once connected you can see your recent activities including distance, duration, elevation, and heart rate data.",
+      "Summary stats show your last 4 weeks and all-time totals for rides, runs, and swims.",
+      "To disconnect, tap the unlink icon next to your Strava profile and confirm. You can reconnect at any time.",
+      "If your organisation manages your account, fitness tracking may be enabled or disabled by your organisation administrator.",
+    ],
+  },
+  {
     id: "pricing",
     title: "Pricing and plans",
     content: [
       "aok offers simple, transparent pricing with all features included:",
       "**7-Day Free Trial** — full access to every feature, no payment details required upfront. Cancel anytime during the trial.",
-      "**Complete Protection** — £6.99/month or £69.99/year (save 2 months). Includes check-ins, emergency alerts, SMS and voice call alerts, GPS location sharing, wellbeing AI chat, mood tracking, pet protection, digital will storage, and a tree planted via Ecologi.",
+      "**Complete Protection** — £6.99/month or £69.99/year (save 2 months). Includes check-ins, emergency alerts, SMS and voice call alerts, GPS location sharing, wellbeing AI chat, mood tracking, pet protection, digital will storage, Strava fitness tracking, and a tree planted via Ecologi.",
       "**Organisations** — custom pricing for bundles of seats. Includes everything in Complete Protection plus a dedicated organisation dashboard, bulk client management, staff roles, safeguarding hub, lone worker monitoring, Call Supervisor, reports, and emergency recording per-client controls.",
       "Apple Pay and Google Pay are supported for quick and easy payment.",
       "You can cancel at any time — your account stays active until the end of your billing period.",

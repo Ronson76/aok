@@ -4,6 +4,7 @@ import { storage, organizationStorage, adminStorage } from "./storage";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, insertMoodEntrySchema, insertPetSchema, updatePetSchema, insertDigitalDocumentSchema, updateDigitalDocumentSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
+import { randomBytes } from "crypto";
 import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification, sendContactRemovedNotification, sendWelcomeEmail, makeVoiceCall } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
@@ -2469,6 +2470,7 @@ export async function registerRoutes(
           featureMoodTracking: false,
           featurePetProtection: false,
           featureDigitalWill: false,
+          featureFitnessTracking: false,
         });
       }
 
@@ -2492,6 +2494,7 @@ export async function registerRoutes(
         featureMoodTracking: user.featureWellness ?? true,
         featurePetProtection: user.featurePetProtection ?? true,
         featureDigitalWill: user.featureDigitalWill ?? true,
+        featureFitnessTracking: (user as any).featureFitnessTracking ?? true,
       });
     } catch (error) {
       console.error("[API] Failed to get features:", error);
@@ -3289,6 +3292,196 @@ export async function registerRoutes(
       res.json(sessions);
     } catch (error: any) {
       res.status(500).json({ error: "Failed to get session history" });
+    }
+  });
+
+  // ===== STRAVA FITNESS TRACKING =====
+
+  app.get("/api/strava/status", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const connection = await storage.getStravaConnection(req.session.userId);
+      if (!connection) return res.json({ connected: false });
+      res.json({
+        connected: true,
+        athleteId: connection.athleteId,
+        athleteFirstName: connection.athleteFirstName,
+        athleteLastName: connection.athleteLastName,
+        athleteProfileImage: connection.athleteProfileImage,
+        connectedAt: connection.connectedAt,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to check Strava status" });
+    }
+  });
+
+  app.get("/api/strava/auth-url", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    const clientId = process.env.STRAVA_CLIENT_ID;
+    if (!clientId) return res.status(500).json({ error: "Strava integration not configured" });
+    const redirectUri = `${req.protocol}://${req.get("host")}/api/strava/callback`;
+    const scope = "read,activity:read_all,profile:read_all";
+    const stateNonce = randomBytes(32).toString("hex");
+    (req.session as any).stravaOAuthState = stateNonce;
+    const url = `https://www.strava.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${stateNonce}&approval_prompt=auto`;
+    res.json({ url });
+  });
+
+  app.get("/api/strava/callback", async (req, res) => {
+    const { code, state, error: stravaError } = req.query;
+    if (stravaError) return res.redirect("/fitness?error=denied");
+    if (!code || !state) return res.redirect("/fitness?error=missing_params");
+
+    if (!req.session?.userId) return res.redirect("/fitness?error=not_authenticated");
+    const expectedState = (req.session as any).stravaOAuthState;
+    if (!expectedState || state !== expectedState) return res.redirect("/fitness?error=invalid_state");
+    delete (req.session as any).stravaOAuthState;
+
+    const userId = req.session.userId;
+    const clientId = process.env.STRAVA_CLIENT_ID;
+    const clientSecret = process.env.STRAVA_CLIENT_SECRET;
+    if (!clientId || !clientSecret) return res.redirect("/fitness?error=not_configured");
+
+    try {
+      const tokenRes = await fetch("https://www.strava.com/oauth/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          grant_type: "authorization_code",
+        }),
+      });
+      if (!tokenRes.ok) return res.redirect("/fitness?error=token_exchange");
+
+      const tokenData = await tokenRes.json();
+      const athlete = tokenData.athlete || {};
+      await storage.createStravaConnection({
+        userId,
+        athleteId: String(athlete.id),
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token,
+        expiresAt: new Date(tokenData.expires_at * 1000),
+        scope: "read,activity:read_all,profile:read_all",
+        athleteFirstName: athlete.firstname || null,
+        athleteLastName: athlete.lastname || null,
+        athleteProfileImage: athlete.profile || null,
+      });
+      res.redirect("/fitness?connected=true");
+    } catch (error: any) {
+      console.error("[STRAVA] OAuth callback error:", error);
+      res.redirect("/fitness?error=server_error");
+    }
+  });
+
+  async function refreshStravaToken(userId: string, refreshToken: string): Promise<{ accessToken: string; refreshToken: string; expiresAt: Date } | null> {
+    const clientId = process.env.STRAVA_CLIENT_ID;
+    const clientSecret = process.env.STRAVA_CLIENT_SECRET;
+    if (!clientId || !clientSecret) return null;
+    try {
+      const tokenRes = await fetch("https://www.strava.com/oauth/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          refresh_token: refreshToken,
+          grant_type: "refresh_token",
+        }),
+      });
+      if (!tokenRes.ok) return null;
+      const data = await tokenRes.json();
+      const newTokens = {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresAt: new Date(data.expires_at * 1000),
+      };
+      await storage.updateStravaConnection(userId, newTokens);
+      return newTokens;
+    } catch {
+      return null;
+    }
+  }
+
+  async function getValidStravaToken(userId: string): Promise<string | null> {
+    const conn = await storage.getStravaConnection(userId);
+    if (!conn) return null;
+    if (new Date() < conn.expiresAt) return conn.accessToken;
+    const refreshed = await refreshStravaToken(userId, conn.refreshToken);
+    return refreshed?.accessToken || null;
+  }
+
+  app.get("/api/strava/activities", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const token = await getValidStravaToken(req.session.userId);
+      if (!token) return res.status(401).json({ error: "Strava not connected or token expired" });
+
+      const page = parseInt(req.query.page as string) || 1;
+      const perPage = Math.min(parseInt(req.query.per_page as string) || 20, 50);
+      const after = req.query.after ? parseInt(req.query.after as string) : undefined;
+      const before = req.query.before ? parseInt(req.query.before as string) : undefined;
+
+      let url = `https://www.strava.com/api/v3/athlete/activities?page=${page}&per_page=${perPage}`;
+      if (after) url += `&after=${after}`;
+      if (before) url += `&before=${before}`;
+
+      const stravaRes = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!stravaRes.ok) {
+        if (stravaRes.status === 401) {
+          await storage.deleteStravaConnection(req.session.userId);
+          return res.status(401).json({ error: "Strava authorization revoked" });
+        }
+        return res.status(stravaRes.status).json({ error: "Strava API error" });
+      }
+      const activities = await stravaRes.json();
+      res.json(activities);
+    } catch (error: any) {
+      console.error("[STRAVA] Activities error:", error);
+      res.status(500).json({ error: "Failed to fetch activities" });
+    }
+  });
+
+  app.get("/api/strava/stats", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const conn = await storage.getStravaConnection(req.session.userId);
+      if (!conn) return res.status(401).json({ error: "Strava not connected" });
+      const token = await getValidStravaToken(req.session.userId);
+      if (!token) return res.status(401).json({ error: "Token expired" });
+
+      const stravaRes = await fetch(`https://www.strava.com/api/v3/athletes/${conn.athleteId}/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!stravaRes.ok) return res.status(stravaRes.status).json({ error: "Strava API error" });
+      const stats = await stravaRes.json();
+      res.json(stats);
+    } catch (error: any) {
+      console.error("[STRAVA] Stats error:", error);
+      res.status(500).json({ error: "Failed to fetch stats" });
+    }
+  });
+
+  app.delete("/api/strava/disconnect", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const conn = await storage.getStravaConnection(req.session.userId);
+      if (conn) {
+        try {
+          await fetch("https://www.strava.com/oauth/deauthorize", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `access_token=${conn.accessToken}`,
+          });
+        } catch {}
+      }
+      await storage.deleteStravaConnection(req.session.userId);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to disconnect Strava" });
     }
   });
 

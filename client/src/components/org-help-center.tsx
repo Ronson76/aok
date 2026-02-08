@@ -117,6 +117,7 @@ const HELP_TOPICS: HelpTopic[] = [
       "**Mood Tracking** — daily mood logging and pattern tracking.",
       "**Pet Protection** — store pet care details for emergencies.",
       "**Digital Will** — secure document storage.",
+      "**Fitness Tracking** — connect Strava to view fitness activities and stats.",
       "**Emergency Recording** — activate camera and microphone during emergency alerts (opt-in, off by default).",
       "Toggle these on or off from the client's detail view on your dashboard.",
       "Changes take effect immediately — the client will see features appear or disappear on their next visit.",

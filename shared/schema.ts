@@ -49,6 +49,7 @@ export const users = pgTable("users", {
   featureWellness: boolean("feature_wellness").notNull().default(true),
   featurePetProtection: boolean("feature_pet_protection").notNull().default(true),
   featureDigitalWill: boolean("feature_digital_will").notNull().default(true),
+  featureFitnessTracking: boolean("feature_fitness_tracking").notNull().default(true),
   // Last known location (updated on check-in if provided)
   latitude: text("latitude"),
   longitude: text("longitude"),
@@ -112,6 +113,7 @@ export const updateUserFeaturesSchema = z.object({
   featureWellness: z.boolean().optional(),
   featurePetProtection: z.boolean().optional(),
   featureDigitalWill: z.boolean().optional(),
+  featureFitnessTracking: z.boolean().optional(),
 });
 export type UpdateUserFeatures = z.infer<typeof updateUserFeaturesSchema>;
 
@@ -122,6 +124,7 @@ export type UserFeatureSettings = {
   featureWellness: boolean;
   featurePetProtection: boolean;
   featureDigitalWill: boolean;
+  featureFitnessTracking: boolean;
 };
 
 // Sessions table
@@ -563,6 +566,7 @@ export const organizationClients = pgTable("organization_clients", {
   featureMoodTracking: boolean("feature_mood_tracking").notNull().default(true),
   featurePetProtection: boolean("feature_pet_protection").notNull().default(true),
   featureDigitalWill: boolean("feature_digital_will").notNull().default(true),
+  featureFitnessTracking: boolean("feature_fitness_tracking").notNull().default(true),
   // Emergency recording consent (off by default, org must opt in per client)
   featureEmergencyRecording: boolean("feature_emergency_recording").notNull().default(false),
   // Soft-delete / archive fields
@@ -602,6 +606,7 @@ export const registerOrgClientSchema = z.object({
     featureMoodTracking: z.boolean().default(true),
     featurePetProtection: z.boolean().default(true),
     featureDigitalWill: z.boolean().default(true),
+    featureFitnessTracking: z.boolean().default(true),
     featureEmergencyRecording: z.boolean().default(false),
   }).optional(),
 });
@@ -616,6 +621,7 @@ export const updateClientFeaturesSchema = z.object({
   featureMoodTracking: z.boolean().optional(),
   featurePetProtection: z.boolean().optional(),
   featureDigitalWill: z.boolean().optional(),
+  featureFitnessTracking: z.boolean().optional(),
   featureEmergencyRecording: z.boolean().optional(),
 });
 export type UpdateClientFeatures = z.infer<typeof updateClientFeaturesSchema>;
@@ -627,6 +633,7 @@ export type ClientFeatureSettings = {
   featureMoodTracking: boolean;
   featurePetProtection: boolean;
   featureDigitalWill: boolean;
+  featureFitnessTracking: boolean;
   featureEmergencyRecording: boolean;
 };
 
@@ -1472,6 +1479,29 @@ export const insertEmergencyRecordingSchema = createInsertSchema(emergencyRecord
 
 export type InsertEmergencyRecording = z.infer<typeof insertEmergencyRecordingSchema>;
 export type EmergencyRecording = typeof emergencyRecordings.$inferSelect;
+
+// Strava connections table - stores OAuth tokens and athlete info
+export const stravaConnections = pgTable("strava_connections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  athleteId: text("athlete_id").notNull(),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  scope: text("scope"),
+  athleteFirstName: text("athlete_first_name"),
+  athleteLastName: text("athlete_last_name"),
+  athleteProfileImage: text("athlete_profile_image"),
+  connectedAt: timestamp("connected_at").notNull().defaultNow(),
+});
+
+export const insertStravaConnectionSchema = createInsertSchema(stravaConnections).omit({
+  id: true,
+  connectedAt: true,
+});
+
+export type InsertStravaConnection = z.infer<typeof insertStravaConnectionSchema>;
+export type StravaConnection = typeof stravaConnections.$inferSelect;
 
 // Re-export chat models for AI integrations (used by integration storage)
 export * from "./models/chat";
