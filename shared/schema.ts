@@ -1782,5 +1782,27 @@ export const insertErrandSessionSchema = createInsertSchema(errandSessions).omit
 export type InsertErrandSession = z.infer<typeof insertErrandSessionSchema>;
 export type ErrandSession = typeof errandSessions.$inferSelect;
 
+// ===== ACTIVITY MEMORIES =====
+
+export const activityMemories = pgTable("activity_memories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  activityId: varchar("activity_id").references(() => fitnessActivities.id, { onDelete: "set null" }),
+  photoPath: text("photo_path").notNull(),
+  note: text("note"),
+  lat: doublePrecision("lat"),
+  lng: doublePrecision("lng"),
+  locationName: text("location_name"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertActivityMemorySchema = createInsertSchema(activityMemories).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+});
+export type InsertActivityMemory = z.infer<typeof insertActivityMemorySchema>;
+export type ActivityMemory = typeof activityMemories.$inferSelect;
+
 // Re-export chat models for AI integrations (used by integration storage)
 export * from "./models/chat";
