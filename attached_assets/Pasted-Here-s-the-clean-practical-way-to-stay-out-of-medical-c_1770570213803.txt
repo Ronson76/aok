@@ -1,0 +1,240 @@
+Here’s the clean, practical way to stay out of medical-claim, negligence, and “duty of care” traps — with exact things to implement, not fluff.
+
+First: the core principle (burn this in)
+
+AOK must never:
+
+Diagnose
+
+Treat
+
+Monitor health for safety
+
+Promise outcomes
+
+Replace professional judgment
+
+You are providing tools, not care.
+
+Everything you implement should reinforce that separation.
+
+1. Hard boundary: language you MUST use (and avoid)
+Allowed language
+
+Use this everywhere (UI, T&Cs, onboarding, toggles):
+
+“Wellbeing”
+
+“Fitness activity”
+
+“Self-tracked”
+
+“Informational only”
+
+“User-initiated”
+
+“Not monitored”
+
+“Does not provide medical advice”
+
+Banned language
+
+Do not use:
+
+“Health monitoring”
+
+“Safety monitoring”
+
+“Early warning”
+
+“Detects issues”
+
+“Ensures safety”
+
+“Keeps you safe”
+
+“Alerts when something is wrong”
+
+Why:
+The moment you imply monitoring or detection, you inherit duty of care.
+
+2. Mandatory onboarding consent (non-skippable)
+
+Before fitness or emergency features activate, force this step.
+
+Screen: “Important Notice”
+
+Checkboxes must be separate (not one big “I agree”).
+
+Toggle 1 — Fitness data disclaimer
+
+☐ I understand that fitness and activity features are for personal wellbeing only and do not provide medical advice, diagnosis, or health monitoring.
+
+Toggle 2 — No reliance clause
+
+☐ I understand AOK does not monitor my activity or wellbeing and I must not rely on it for my personal safety or health.
+
+Toggle 3 — Emergency limitation
+
+☐ I understand emergency features do not replace emergency services and may fail due to connectivity, device, or technical issues.
+
+User cannot proceed without all three.
+
+Log:
+
+timestamp
+
+app version
+
+IP/device hash
+
+This matters later.
+
+3. Feature-level toggles (this is critical)
+
+Do not lump permissions together.
+
+A. Fitness tracking toggle
+
+Default: OFF
+
+“Enable fitness activity tracking”
+
+Below it, plain text:
+
+“This records your movement for personal wellbeing insights only. AOK does not monitor, analyse, or act on this data for health or safety purposes.”
+
+B. Social / sharing toggle
+
+“Share fitness activities with others”
+
+Clarify:
+
+“Shared activities are visible only to people you choose. AOK does not supervise or review shared activity.”
+
+C. Live activity / emergency link toggle
+
+This one is key.
+
+“Link fitness activities to emergency features”
+
+With warning text:
+
+“Emergency escalation is manual and user-triggered. AOK does not automatically detect danger, injury, or health events.”
+
+4. Emergency recording (camera + mic) safeguards
+
+This is powerful but risky if framed wrong.
+
+Required UI behaviour
+
+Visible indicator when recording (icon + text)
+
+On activation message:
+
+“Recording has started to document the situation. This is not monitored in real time.”
+
+Required consent (one-time, logged)
+
+☐ I consent to audio/video recording during emergencies for documentation purposes only.
+
+Storage disclaimer (must be explicit)
+
+“Recordings are stored securely and accessed only by authorised parties according to your organisation’s policies.”
+
+Never say:
+
+“for your protection”
+
+“to ensure safety”
+Say:
+
+“for documentation”
+
+That distinction matters legally.
+
+5. No automatic interpretation. Ever.
+
+This is where apps get sued.
+
+You must not:
+
+Flag abnormal behaviour
+
+Detect inactivity as a “problem”
+
+Trigger alerts based on pace, HR, stopping, falling, etc.
+
+Suggest injury, distress, or health risk
+
+You can:
+
+Allow the user to press SOS
+
+Allow the user to share live activity
+
+Allow manual escalation only
+
+If you later add automation, it must be:
+
+“User-configured reminder prompts”
+Not detection.
+
+6. Kill the “false reassurance” problem
+
+This is subtle but important.
+
+Always show (somewhere visible):
+
+“AOK may not function in all circumstances. Network coverage, device settings, battery life, or software issues may prevent features from working.”
+
+This protects you from:
+
+“Why didn’t the app save them?”
+
+“We relied on it.”
+
+7. Positioning for students & organisations
+Students
+
+“Personal wellbeing and safety tools”
+
+“Optional fitness motivation”
+
+“User-controlled sharing”
+
+Organisations (YMCA, universities)
+
+Your wording:
+
+“AOK supports safeguarding procedures but does not replace supervision, policies, or emergency response frameworks.”
+
+That one sentence saves you a world of pain.
+
+8. Absolute red line (do NOT cross)
+
+If you ever:
+
+analyse health metrics
+
+score risk
+
+flag concern
+
+notify someone without user action
+
+You move into:
+
+medical device territory (UK MHRA)
+
+professional negligence
+
+insurance requirements
+
+Right now, you are clean if you keep everything:
+
+optional
+
+user-triggered
+
+informational

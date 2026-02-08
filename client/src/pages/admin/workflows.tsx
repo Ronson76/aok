@@ -189,13 +189,13 @@ export default function AdminWorkflows() {
 
         <FlowArrow />
 
-        <WorkflowSection icon={Activity} title="Fitness Tracking (Strava)" description="OAuth2 Strava integration for activity tracking" color="orange">
-          <StepBox icon={Activity} label="Connect Strava" sublabel="User authorises via Strava OAuth2" />
-          <StepBox icon={Lock} label="Token Exchange" sublabel="Auth code exchanged for access + refresh tokens" />
-          <StepBox icon={RefreshCw} label="Auto Token Refresh" sublabel="Tokens refreshed automatically when expired (6-hour expiry)" />
-          <StepBox icon={Activity} label="Fetch Activities" sublabel="Recent activities displayed with distance, duration, elevation" />
-          <StepBox icon={Layers} label="Athlete Stats" sublabel="All-time and 4-week summaries for rides, runs, swims" />
-          <StepBox icon={Unlink} label="Disconnect" sublabel="Deauthorise and remove stored tokens" />
+        <WorkflowSection icon={Activity} title="Fitness Tracking (Built-in)" description="GPS-based activity recording with social features" color="orange">
+          <StepBox icon={Activity} label="Start Recording" sublabel="User selects run/walk/cycle and starts GPS tracking" />
+          <StepBox icon={MapPin} label="GPS Capture" sublabel="Location points captured every few seconds during recording" />
+          <StepBox icon={Clock} label="Pause / Resume" sublabel="User can pause and resume recording at any time" />
+          <StepBox icon={Activity} label="Stop & Save" sublabel="Activity saved with distance, duration, pace, route map" />
+          <StepBox icon={Users} label="Social Feed" sublabel="Follow users, view feed, like and comment on activities" />
+          <StepBox icon={Shield} label="Safety Link" sublabel="Live sharing toggle, route attached to emergency alerts" />
         </WorkflowSection>
 
         <FlowArrow />

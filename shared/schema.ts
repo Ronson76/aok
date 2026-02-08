@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, date, integer, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, date, integer, jsonb, doublePrecision } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -1502,6 +1502,86 @@ export const insertStravaConnectionSchema = createInsertSchema(stravaConnections
 
 export type InsertStravaConnection = z.infer<typeof insertStravaConnectionSchema>;
 export type StravaConnection = typeof stravaConnections.$inferSelect;
+
+// ─── Fitness Tracking ───────────────────────────────────────────────
+
+export const activityTypes = ["run", "walk", "cycle"] as const;
+export type ActivityType = typeof activityTypes[number];
+
+export const privacyLevels = ["private", "friends", "public"] as const;
+export type PrivacyLevel = typeof privacyLevels[number];
+
+export const activityStatuses = ["recording", "paused", "completed"] as const;
+export type ActivityStatus = typeof activityStatuses[number];
+
+export const fitnessActivities = pgTable("fitness_activities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: text("type").notNull().$type<ActivityType>(),
+  status: text("status").notNull().$type<ActivityStatus>().default("recording"),
+  title: text("title"),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  durationSec: integer("duration_sec").notNull().default(0),
+  distanceM: doublePrecision("distance_m").notNull().default(0),
+  avgPaceSecPerKm: doublePrecision("avg_pace_sec_per_km"),
+  avgSpeedKph: doublePrecision("avg_speed_kph"),
+  gpsPoints: jsonb("gps_points").$type<Array<{ lat: number; lng: number; timestamp: number; altitude?: number }>>().default([]),
+  privacyLevel: text("privacy_level").notNull().$type<PrivacyLevel>().default("private"),
+  liveShareEnabled: boolean("live_share_enabled").notNull().default(false),
+  emergencyAlertId: varchar("emergency_alert_id").references(() => activeEmergencyAlerts.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertFitnessActivitySchema = createInsertSchema(fitnessActivities).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertFitnessActivity = z.infer<typeof insertFitnessActivitySchema>;
+export type FitnessActivity = typeof fitnessActivities.$inferSelect;
+
+export const follows = pgTable("follows", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  followerId: varchar("follower_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  followingId: varchar("following_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertFollowSchema = createInsertSchema(follows).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertFollow = z.infer<typeof insertFollowSchema>;
+export type Follow = typeof follows.$inferSelect;
+
+export const activityLikes = pgTable("activity_likes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  activityId: varchar("activity_id").notNull().references(() => fitnessActivities.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertActivityLikeSchema = createInsertSchema(activityLikes).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertActivityLike = z.infer<typeof insertActivityLikeSchema>;
+export type ActivityLike = typeof activityLikes.$inferSelect;
+
+export const activityComments = pgTable("activity_comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  activityId: varchar("activity_id").notNull().references(() => fitnessActivities.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertActivityCommentSchema = createInsertSchema(activityComments).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertActivityComment = z.infer<typeof insertActivityCommentSchema>;
+export type ActivityComment = typeof activityComments.$inferSelect;
 
 // Re-export chat models for AI integrations (used by integration storage)
 export * from "./models/chat";

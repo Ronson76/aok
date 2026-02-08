@@ -143,7 +143,7 @@ export default function AdminArchitecture() {
               <ServiceBox icon={Brain} label="Wellbeing AI" sublabel="Mood + Voice chat" />
               <ServiceBox icon={Smartphone} label="Shake to SOS" sublabel="Motion detection" />
               <ServiceBox icon={Video} label="Emergency Recording" sublabel="Camera + mic capture" />
-              <ServiceBox icon={Activity} label="Fitness Tracking" sublabel="Strava integration" />
+              <ServiceBox icon={Activity} label="Fitness Tracking" sublabel="Built-in GPS tracking" />
               <ServiceBox icon={CreditCard} label="Stripe Billing" sublabel="Subscriptions" />
             </CardContent>
           </Card>
@@ -280,7 +280,7 @@ export default function AdminArchitecture() {
               <ServiceBox icon={MapPin} label="what3words" sublabel="Location" />
               <ServiceBox icon={Brain} label="OpenAI" sublabel="AI + TTS + STT" />
               <ServiceBox icon={TreeDeciduous} label="Ecologi" sublabel="Tree planting" />
-              <ServiceBox icon={Activity} label="Strava" sublabel="Fitness tracking" />
+              <ServiceBox icon={MapPin} label="Leaflet/OSM" sublabel="Route maps" />
             </div>
           </CardContent>
         </Card>

@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ShieldCheck, Check, Lock, Phone, FileText, Heart, Users, Clock, Mail, Bell, AlertTriangle, MapPin, Smartphone, Building2, TrendingUp, PawPrint, Scroll, ArrowLeft, Mic, TreePine, Shield, Headphones, Activity } from "lucide-react";
-import { SiStrava } from "react-icons/si";
 
 export default function Pricing() {
   const [isYearly, setIsYearly] = useState(false);
@@ -66,7 +65,7 @@ export default function Pricing() {
         { text: "Pet protection profiles with vet info", icon: PawPrint },
         { text: "Digital will & document storage", icon: Scroll },
         { text: "Wellbeing AI chat with voice mode", icon: Headphones },
-        { text: "Strava fitness tracking", icon: SiStrava, isStrava: true },
+        { text: "GPS fitness tracking", icon: Activity },
         { text: "Tree planted via Ecologi on signup", icon: TreePine },
       ],
       cta: "Get Started",
@@ -118,7 +117,7 @@ export default function Pricing() {
     { name: "Pet protection profiles", trial: true, essential: false, complete: true, org: true },
     { name: "Digital will & document storage", trial: true, essential: false, complete: true, org: true },
     { name: "Wellbeing AI chat + voice mode", trial: true, essential: false, complete: true, org: true },
-    { name: "Strava fitness tracking", trial: true, essential: false, complete: true, org: true, hasStravaBadge: true },
+    { name: "GPS fitness tracking", trial: true, essential: false, complete: true, org: true },
     { name: "Ecologi tree planting", trial: false, essential: false, complete: true, org: true },
     { name: "Organisation dashboard", trial: false, essential: false, complete: false, org: true },
     { name: "Bulk client management", trial: false, essential: false, complete: false, org: true },
@@ -229,7 +228,7 @@ export default function Pricing() {
                   <ul className="space-y-3">
                     {plan.features.map((feature, featureIndex) => (
                       <li key={featureIndex} className="flex items-start gap-2">
-                        <feature.icon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${(feature as any).isStrava ? "text-[#FC4C02]" : "text-primary"}`} />
+                        <feature.icon className="h-5 w-5 mt-0.5 flex-shrink-0 text-primary" />
                         <span className="text-sm">{feature.text}</span>
                       </li>
                     ))}
@@ -284,11 +283,6 @@ export default function Pricing() {
                         <td className="py-3 px-4">
                           <span className="flex items-center gap-2 flex-wrap">
                             {feature.name}
-                            {(feature as any).hasStravaBadge && (
-                              <span className="inline-flex items-center gap-1 text-[#FC4C02]">
-                                <SiStrava className="h-3.5 w-3.5" />
-                              </span>
-                            )}
                           </span>
                         </td>
                         <td className="text-center py-3 px-4">
