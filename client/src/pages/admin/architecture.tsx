@@ -27,6 +27,8 @@ import {
   Video,
   HardDrive,
   Activity,
+  Timer,
+  Footprints,
 } from "lucide-react";
 
 function LayerDivider({ label, icon: Icon }: { label: string; icon?: typeof Lock }) {
@@ -144,6 +146,9 @@ export default function AdminArchitecture() {
               <ServiceBox icon={Smartphone} label="Shake to SOS" sublabel="Motion detection" />
               <ServiceBox icon={Video} label="Emergency Recording" sublabel="Camera + mic capture" />
               <ServiceBox icon={Activity} label="Fitness Tracking" sublabel="Built-in GPS tracking" />
+              <ServiceBox icon={MapPin} label="Route Planning" sublabel="OSRM + weather" />
+              <ServiceBox icon={Timer} label="Activities Tracker" sublabel="Errands + GPS" />
+              <ServiceBox icon={Footprints} label="Step Counting" sublabel="Motion sensors" />
               <ServiceBox icon={CreditCard} label="Stripe Billing" sublabel="Subscriptions" />
             </CardContent>
           </Card>
@@ -248,6 +253,7 @@ export default function AdminArchitecture() {
               <ServiceBox icon={Layers} label="Drizzle ORM" sublabel="Type-safe queries" />
               <ServiceBox icon={Users} label="Users + Contacts" sublabel="Core data" />
               <ServiceBox icon={ShieldCheck} label="Check-ins" sublabel="History + streaks" />
+              <ServiceBox icon={Activity} label="Fitness + Routes" sublabel="Activities data" />
               <ServiceBox icon={Shield} label="Safeguarding" sublabel="Incidents + cases" />
               <ServiceBox icon={Key} label="Sessions" sublabel="Auth state" />
               <ServiceBox icon={HardDrive} label="Object Storage" sublabel="Encrypted recordings" />
@@ -281,6 +287,8 @@ export default function AdminArchitecture() {
               <ServiceBox icon={Brain} label="OpenAI" sublabel="AI + TTS + STT" />
               <ServiceBox icon={TreeDeciduous} label="Ecologi" sublabel="Tree planting" />
               <ServiceBox icon={MapPin} label="Leaflet/OSM" sublabel="Route maps" />
+              <ServiceBox icon={MapPin} label="OSRM" sublabel="Route calculation" />
+              <ServiceBox icon={Activity} label="Open-Meteo" sublabel="Weather forecasts" />
             </div>
           </CardContent>
         </Card>
