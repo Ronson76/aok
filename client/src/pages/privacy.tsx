@@ -26,7 +26,7 @@ export default function Privacy() {
         <Card>
           <CardHeader>
             <CardTitle className="text-3xl" data-testid="text-privacy-title">Privacy Policy</CardTitle>
-            <p className="text-muted-foreground">Last updated: January 2026</p>
+            <p className="text-muted-foreground">Last updated: February 2026</p>
           </CardHeader>
           <CardContent className="prose prose-sm dark:prose-invert max-w-none space-y-6">
             <section>
@@ -46,6 +46,7 @@ export default function Privacy() {
                 <li><strong>Emergency Contact Details:</strong> Names, phone numbers, and email addresses of your designated contacts</li>
                 <li><strong>Check-in Data:</strong> Times and dates of your check-ins and any missed check-ins</li>
                 <li><strong>Location Data:</strong> GPS coordinates when you trigger an emergency alert (only with your permission)</li>
+                <li><strong>Organisation Data:</strong> Supervisor phone numbers provided by your organisation for the Call Supervisor feature</li>
                 <li><strong>Optional Wellness Data:</strong> Mood entries, pet information, and digital documents if you choose to use these features</li>
               </ul>
             </section>
@@ -59,6 +60,7 @@ export default function Privacy() {
                 <li>Provide the aok check-in service and send reminders</li>
                 <li>Alert your emergency contacts when you miss a check-in</li>
                 <li>Share your location with emergency contacts during emergencies (when enabled)</li>
+                <li>Connect you with your organisation's supervisor via voice call when you use the Call Supervisor feature</li>
                 <li>Process payments and manage your subscription</li>
                 <li>Improve our service and develop new features</li>
                 <li>Communicate important updates about the service</li>
@@ -72,7 +74,8 @@ export default function Privacy() {
               </p>
               <ul className="list-disc pl-6 text-muted-foreground space-y-2 mt-2">
                 <li><strong>Emergency Contacts:</strong> When you miss a check-in or trigger an emergency alert</li>
-                <li><strong>Service Providers:</strong> Trusted partners who help us deliver our service (e.g., email, SMS, and payment providers)</li>
+                <li><strong>Organisation Supervisors:</strong> Your name is shared with the supervisor when you use the Call Supervisor feature, so they know who is calling</li>
+                <li><strong>Service Providers:</strong> Trusted partners who help us deliver our service (e.g., email, SMS, voice calls, and payment providers)</li>
                 <li><strong>Legal Requirements:</strong> When required by law or to protect rights and safety</li>
               </ul>
               <p className="text-muted-foreground leading-relaxed mt-2">

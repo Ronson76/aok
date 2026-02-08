@@ -56,6 +56,7 @@ export default function LoneWorkerAddendum() {
                 <li>Check-ins and alerts require active network connectivity</li>
                 <li>GPS accuracy varies by device and environmental conditions</li>
                 <li>SMS fallback is available but depends on mobile network coverage</li>
+                <li>Call Supervisor voice calls require mobile or internet connectivity to initiate</li>
                 <li>Areas with poor or no signal may result in delayed or missed check-ins</li>
               </ul>
               <p className="text-muted-foreground leading-relaxed mt-2">
@@ -72,7 +73,7 @@ export default function LoneWorkerAddendum() {
                 <li>Conducting appropriate risk assessments for lone working activities</li>
                 <li>Implementing suitable safe systems of work</li>
                 <li>Providing adequate training on A-OK and emergency procedures</li>
-                <li>Maintaining alternative communication methods</li>
+                <li>Maintaining alternative communication methods beyond the Call Supervisor feature</li>
                 <li>Responding to alerts and escalations in a timely manner</li>
                 <li>Compliance with all applicable health and safety legislation</li>
               </ul>

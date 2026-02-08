@@ -51,6 +51,7 @@ export default function DataProcessingAddendum() {
                 <li>Check-in records and scheduling data</li>
                 <li>Location data when emergency features are activated</li>
                 <li>Optional wellness data (mood entries, pet profiles, digital documents)</li>
+                <li>Call Supervisor records (call timestamps, caller identity, supervisor phone number)</li>
                 <li>Safeguarding records and case files (for organisation accounts)</li>
               </ul>
             </section>
@@ -90,7 +91,7 @@ export default function DataProcessingAddendum() {
               <ul className="list-disc pl-6 text-muted-foreground space-y-2 mt-2">
                 <li>Cloud infrastructure providers (hosting and data storage)</li>
                 <li>Email delivery services (Resend)</li>
-                <li>SMS and voice call services (Twilio)</li>
+                <li>SMS and voice call services, including Call Supervisor calls (Twilio)</li>
                 <li>Payment processing (Stripe)</li>
                 <li>AI services (OpenAI) for optional wellbeing features</li>
               </ul>
