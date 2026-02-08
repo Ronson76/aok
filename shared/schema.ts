@@ -1641,6 +1641,8 @@ export const fitnessActivities = pgTable("fitness_activities", {
   distanceM: doublePrecision("distance_m").notNull().default(0),
   avgPaceSecPerKm: doublePrecision("avg_pace_sec_per_km"),
   avgSpeedKph: doublePrecision("avg_speed_kph"),
+  stepCount: integer("step_count").default(0),
+  caloriesEstimate: doublePrecision("calories_estimate").default(0),
   gpsPoints: jsonb("gps_points").$type<Array<{ lat: number; lng: number; timestamp: number; altitude?: number }>>().default([]),
   privacyLevel: text("privacy_level").notNull().$type<PrivacyLevel>().default("private"),
   liveShareEnabled: boolean("live_share_enabled").notNull().default(false),
