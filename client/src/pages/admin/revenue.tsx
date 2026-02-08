@@ -374,7 +374,7 @@ export default function AdminRevenue() {
                       { feature: "Call Supervisor (org clients)", driver: "Twilio Voice", cost: "£0.08 to £0.15" },
                       { feature: "AI Wellbeing Chat", driver: "OpenAI GPT-4o", cost: "£0.01 to £0.05" },
                       { feature: "AI Voice Chat", driver: "OpenAI Whisper + TTS", cost: "£0.02 to £0.06" },
-                      { feature: "Strava fitness tracking", driver: "Strava API (free)", cost: "£0.00" },
+                      { feature: "GPS fitness tracking", driver: "Built-in (Leaflet/OSM)", cost: "£0.00" },
                       { feature: "Ecologi tree planting", driver: "Ecologi", cost: "£0.60 (one-off)" },
                       { feature: "Payment processing", driver: "Stripe", cost: "1.4% + 20p" },
                       { feature: "Essential Safety subscription", driver: "Tier 1", cost: "£6.99/mo or £69.99/yr" },

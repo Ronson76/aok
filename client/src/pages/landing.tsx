@@ -24,7 +24,7 @@ import {
   ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles,
   MessageCircle, MessageSquare, ArrowLeft, TreeDeciduous, Leaf
 } from "lucide-react";
-import { SiApple, SiGoogleplay, SiStrava } from "react-icons/si";
+import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -149,7 +149,7 @@ export default function Landing() {
         { text: "Pet protection profiles", icon: PawPrint },
         { text: "Digital will storage", icon: Scroll },
         { text: "Wellbeing AI (Exclusive)", icon: Sparkles },
-        { text: "Strava fitness tracking", icon: SiStrava, isStrava: true },
+        { text: "GPS fitness tracking", icon: Activity },
       ],
       cta: "Get Started",
       ctaLink: "/onboarding",
@@ -621,14 +621,14 @@ export default function Landing() {
             <Card className="border-0 shadow-lg">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="rounded-full bg-[#FC4C02]/10 p-3 w-fit">
-                    <SiStrava className="h-6 w-6 text-[#FC4C02]" />
+                  <div className="rounded-full bg-green-500/10 p-3 w-fit">
+                    <Activity className="h-6 w-6 text-green-600" />
                   </div>
-                  <span className="text-xs text-muted-foreground font-medium">Powered by Strava</span>
+                  <span className="text-xs text-muted-foreground font-medium">Built-in GPS</span>
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Fitness Tracking</h3>
                 <p className="text-muted-foreground text-sm">
-                  Connect your Strava account to view your runs, rides, and workouts. Track your activity stats alongside your wellbeing data.
+                  Record your runs, walks, and rides with GPS route mapping. Share activities with friends, follow other users, and track your progress.
                 </p>
               </CardContent>
             </Card>
@@ -984,7 +984,7 @@ export default function Landing() {
                     <ul className="space-y-2">
                       {plan.features.map((feature, featureIndex) => (
                         <li key={featureIndex} className="flex items-start gap-2">
-                          <feature.icon className={`h-4 w-4 mt-0.5 flex-shrink-0 ${(feature as any).isStrava ? "text-[#FC4C02]" : "text-primary"}`} />
+                          <feature.icon className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
                           <span className="text-sm">{feature.text}</span>
                         </li>
                       ))}

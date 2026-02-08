@@ -3489,6 +3489,225 @@ export async function registerRoutes(
     }
   });
 
+  // ─── Fitness Tracking (built-in) ────────────────────────────────────
+  const { fitnessStorage } = await import("./fitnessStorage");
+
+  app.post("/api/fitness/activities", authMiddleware, async (req, res) => {
+    try {
+      const { type, title, privacyLevel } = req.body;
+      if (!["run", "walk", "cycle"].includes(type)) return res.status(400).json({ error: "Invalid activity type" });
+      const activity = await fitnessStorage.createActivity({
+        userId: req.userId!,
+        type,
+        title: title || null,
+        status: "recording",
+        startTime: new Date(),
+        durationSec: 0,
+        distanceM: 0,
+        gpsPoints: [],
+        privacyLevel: privacyLevel || "private",
+        liveShareEnabled: false,
+      });
+      res.json(activity);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to create activity" });
+    }
+  });
+
+  app.patch("/api/fitness/activities/:id", authMiddleware, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const activity = await fitnessStorage.updateActivity(id, req.userId!, updates);
+      if (!activity) return res.status(404).json({ error: "Activity not found" });
+      res.json(activity);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to update activity" });
+    }
+  });
+
+  app.get("/api/fitness/activities/recording", authMiddleware, async (req, res) => {
+    try {
+      const activity = await fitnessStorage.getActiveRecording(req.userId!);
+      res.json(activity || null);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get recording" });
+    }
+  });
+
+  app.get("/api/fitness/activities", authMiddleware, async (req, res) => {
+    try {
+      const { type, dateFrom, dateTo, page, limit } = req.query;
+      const activities = await fitnessStorage.getUserActivities(req.userId!, {
+        type: type as any,
+        dateFrom: dateFrom ? new Date(dateFrom as string) : undefined,
+        dateTo: dateTo ? new Date(dateTo as string) : undefined,
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 20,
+      });
+      res.json(activities);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get activities" });
+    }
+  });
+
+  app.get("/api/fitness/activities/:id", authMiddleware, async (req, res) => {
+    try {
+      const canView = await fitnessStorage.canViewActivity(req.params.id, req.userId!);
+      if (!canView) return res.status(403).json({ error: "Access denied" });
+      const activity = await fitnessStorage.getActivity(req.params.id);
+      if (!activity) return res.status(404).json({ error: "Activity not found" });
+      const likes = await fitnessStorage.getLikeCount(activity.id);
+      const hasLiked = await fitnessStorage.hasUserLiked(activity.id, req.userId!);
+      const comments = await fitnessStorage.getComments(activity.id);
+      const owner = await storage.getUserById(activity.userId);
+      res.json({ ...activity, likeCount: likes, hasLiked, comments, ownerName: owner?.name || "Unknown" });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get activity" });
+    }
+  });
+
+  app.delete("/api/fitness/activities/:id", authMiddleware, async (req, res) => {
+    try {
+      const deleted = await fitnessStorage.deleteActivity(req.params.id, req.userId!);
+      if (!deleted) return res.status(404).json({ error: "Activity not found" });
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to delete activity" });
+    }
+  });
+
+  app.get("/api/fitness/stats", authMiddleware, async (req, res) => {
+    try {
+      const stats = await fitnessStorage.getUserStats(req.userId!);
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get stats" });
+    }
+  });
+
+  app.get("/api/fitness/feed", authMiddleware, async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const activities = await fitnessStorage.getFeed(req.userId!, page);
+      const enriched = await Promise.all(activities.map(async (a) => {
+        const owner = await storage.getUserById(a.userId);
+        const likeCount = await fitnessStorage.getLikeCount(a.id);
+        const hasLiked = await fitnessStorage.hasUserLiked(a.id, req.userId!);
+        const commentCount = (await fitnessStorage.getComments(a.id)).length;
+        return { ...a, ownerName: owner?.name || "Unknown", likeCount, hasLiked, commentCount };
+      }));
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get feed" });
+    }
+  });
+
+  app.post("/api/fitness/follow/:userId", authMiddleware, async (req, res) => {
+    try {
+      if (req.params.userId === req.userId) return res.status(400).json({ error: "Cannot follow yourself" });
+      const follow = await fitnessStorage.follow(req.userId!, req.params.userId);
+      res.json(follow);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to follow user" });
+    }
+  });
+
+  app.delete("/api/fitness/follow/:userId", authMiddleware, async (req, res) => {
+    try {
+      const unfollowed = await fitnessStorage.unfollow(req.userId!, req.params.userId);
+      res.json({ success: unfollowed });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to unfollow user" });
+    }
+  });
+
+  app.get("/api/fitness/followers", authMiddleware, async (req, res) => {
+    try {
+      const followers = await fitnessStorage.getFollowers(req.userId!);
+      res.json(followers);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get followers" });
+    }
+  });
+
+  app.get("/api/fitness/following", authMiddleware, async (req, res) => {
+    try {
+      const following = await fitnessStorage.getFollowing(req.userId!);
+      res.json(following);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get following" });
+    }
+  });
+
+  app.get("/api/fitness/users/search", authMiddleware, async (req, res) => {
+    try {
+      const q = (req.query.q as string || "").trim();
+      if (q.length < 2) return res.json([]);
+      const users = await fitnessStorage.searchUsers(q, req.userId!);
+      const following = await fitnessStorage.getFollowingIds(req.userId!);
+      res.json(users.map(u => ({ ...u, isFollowing: following.includes(u.id) })));
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to search users" });
+    }
+  });
+
+  app.post("/api/fitness/activities/:id/like", authMiddleware, async (req, res) => {
+    try {
+      const canView = await fitnessStorage.canViewActivity(req.params.id, req.userId!);
+      if (!canView) return res.status(403).json({ error: "Access denied" });
+      const like = await fitnessStorage.likeActivity(req.params.id, req.userId!);
+      res.json(like);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to like activity" });
+    }
+  });
+
+  app.delete("/api/fitness/activities/:id/like", authMiddleware, async (req, res) => {
+    try {
+      const unliked = await fitnessStorage.unlikeActivity(req.params.id, req.userId!);
+      res.json({ success: unliked });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to unlike activity" });
+    }
+  });
+
+  app.post("/api/fitness/activities/:id/comments", authMiddleware, async (req, res) => {
+    try {
+      const canView = await fitnessStorage.canViewActivity(req.params.id, req.userId!);
+      if (!canView) return res.status(403).json({ error: "Access denied" });
+      const { content } = req.body;
+      if (!content?.trim()) return res.status(400).json({ error: "Comment cannot be empty" });
+      const comment = await fitnessStorage.addComment(req.params.id, req.userId!, content.trim());
+      res.json(comment);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to add comment" });
+    }
+  });
+
+  app.delete("/api/fitness/comments/:id", authMiddleware, async (req, res) => {
+    try {
+      const deleted = await fitnessStorage.deleteComment(req.params.id, req.userId!);
+      if (!deleted) return res.status(404).json({ error: "Comment not found" });
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to delete comment" });
+    }
+  });
+
+  app.post("/api/fitness/activities/:id/emergency-attach", authMiddleware, async (req, res) => {
+    try {
+      const { emergencyAlertId } = req.body;
+      if (!emergencyAlertId) return res.status(400).json({ error: "Emergency alert ID required" });
+      const activity = await fitnessStorage.getActivity(req.params.id);
+      if (!activity || activity.userId !== req.userId) return res.status(404).json({ error: "Activity not found" });
+      await fitnessStorage.attachActivityToEmergency(req.params.id, emergencyAlertId);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to attach activity to emergency" });
+    }
+  });
+
   // Backup download route
   app.get("/api/download-backup", async (_req, res) => {
     const path = require("path");
