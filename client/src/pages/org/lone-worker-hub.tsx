@@ -6,7 +6,8 @@ import {
   Users, ArrowLeft, Plus, Loader2, Send, XCircle, Clock, CheckCircle,
   Search, Phone, Mail, ShieldCheck, LogOut, UserPlus, Trash2, Shield,
   Radio, MapPin, AlertTriangle, Siren, Eye, History, Briefcase,
-  FileText, ChevronDown, ChevronUp
+  FileText, ChevronDown, ChevronUp, Upload, Download, FileSpreadsheet,
+  CheckCircle2, XOctagon
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -146,6 +147,21 @@ export default function OrgLoneWorkerHub() {
   const [auditFilter, setAuditFilter] = useState("all");
   const [expandedAuditUsers, setExpandedAuditUsers] = useState<Set<string>>(new Set());
   const [expandedHistoryUsers, setExpandedHistoryUsers] = useState<Set<string>>(new Set());
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importStep, setImportStep] = useState<"upload" | "preview" | "importing" | "results">("upload");
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importBundleId, setImportBundleId] = useState("");
+  const [importData, setImportData] = useState<Array<{
+    staffName: string;
+    staffPhone: string;
+    staffEmail: string;
+    emergencyContactName: string;
+    emergencyContactEmail: string;
+    emergencyContactPhone: string;
+    emergencyContactRelationship: string;
+  }>>([]);
+  const [importErrors, setImportErrors] = useState<Array<{ row: number; errors: string[] }>>([]);
+  const [importResults, setImportResults] = useState<Array<{ row: number; staffName: string; success: boolean; inviteCode?: string; error?: string }>>([]);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const logoutRef = useRef(logout);
@@ -315,6 +331,132 @@ export default function OrgLoneWorkerHub() {
     setResendingInviteId(null);
   };
 
+  const importStaffMutation = useMutation({
+    mutationFn: async ({ staff, bundleId }: { staff: typeof importData; bundleId: string }) => {
+      const res = await apiRequest("POST", "/api/org/staff/bulk-import", { staff, bundleId });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/staff/invites"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/staff/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/staff/audit-trail"] });
+      setImportResults(data.results || []);
+      setImportStep("results");
+      toast({
+        title: "Import complete",
+        description: `${data.successCount} of ${data.totalProcessed} staff imported successfully.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Import failed", description: error.message, variant: "destructive" });
+      setImportStep("preview");
+    },
+  });
+
+  const resetImportForm = () => {
+    setImportFile(null);
+    setImportData([]);
+    setImportErrors([]);
+    setImportResults([]);
+    setImportStep("upload");
+    setImportBundleId("");
+  };
+
+  const handleImportFileUpload = async (file: File) => {
+    setImportFile(file);
+    try {
+      const XLSX = await import("xlsx");
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+      if (jsonData.length === 0) {
+        toast({ title: "Empty spreadsheet", description: "The spreadsheet contains no data rows.", variant: "destructive" });
+        return;
+      }
+
+      const parsedStaff: typeof importData = [];
+      const errors: typeof importErrors = [];
+
+      for (let i = 0; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        const rowErrors: string[] = [];
+
+        const staffName = String(row["Staff Name"] || row["staff_name"] || row["Name"] || row["name"] || "").trim();
+        const staffPhone = String(row["Mobile Number"] || row["staff_phone"] || row["Phone"] || row["phone"] || row["Mobile"] || row["mobile"] || "").trim();
+        const staffEmail = String(row["Email"] || row["staff_email"] || row["email"] || "").trim();
+        const ecName = String(row["Emergency Contact Name"] || row["ec_name"] || row["Emergency Name"] || "").trim();
+        const ecEmail = String(row["Emergency Contact Email"] || row["ec_email"] || row["Emergency Email"] || "").trim();
+        const ecPhone = String(row["Emergency Contact Phone"] || row["ec_phone"] || row["Emergency Phone"] || "").trim();
+        const ecRelationship = String(row["Emergency Contact Relationship"] || row["ec_relationship"] || row["Relationship"] || "").trim();
+
+        if (!staffName) rowErrors.push("Staff name is required");
+        if (!staffPhone) rowErrors.push("Mobile number is required");
+        else if (staffPhone.replace(/\D/g, "").length < 10) rowErrors.push("Mobile number must be at least 10 digits");
+        if (!staffEmail) rowErrors.push("Email is required");
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(staffEmail)) rowErrors.push("Invalid email address");
+        if (!ecName) rowErrors.push("Emergency contact name is required");
+        if (!ecEmail) rowErrors.push("Emergency contact email is required");
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ecEmail)) rowErrors.push("Invalid emergency contact email");
+
+        if (rowErrors.length > 0) {
+          errors.push({ row: i + 2, errors: rowErrors });
+        }
+
+        parsedStaff.push({
+          staffName,
+          staffPhone: staffPhone.replace(/\D/g, "").length >= 10 ? staffPhone : "",
+          staffEmail,
+          emergencyContactName: ecName,
+          emergencyContactEmail: ecEmail,
+          emergencyContactPhone: ecPhone,
+          emergencyContactRelationship: ecRelationship,
+        });
+      }
+
+      setImportData(parsedStaff);
+      setImportErrors(errors);
+      setImportStep("preview");
+    } catch (err: any) {
+      toast({ title: "Failed to read file", description: err.message || "Please check the file format.", variant: "destructive" });
+    }
+  };
+
+  const downloadStaffTemplate = () => {
+    import("xlsx").then((XLSX) => {
+      const templateData = [
+        {
+          "Staff Name": "Jane Smith",
+          "Mobile Number": "+447700900123",
+          "Email": "jane@example.com",
+          "Emergency Contact Name": "John Smith",
+          "Emergency Contact Email": "john@example.com",
+          "Emergency Contact Phone": "+447700900456",
+          "Emergency Contact Relationship": "Partner",
+        },
+        {
+          "Staff Name": "Bob Jones",
+          "Mobile Number": "+447700900789",
+          "Email": "bob@example.com",
+          "Emergency Contact Name": "Alice Jones",
+          "Emergency Contact Email": "alice@example.com",
+          "Emergency Contact Phone": "+447700900012",
+          "Emergency Contact Relationship": "Colleague",
+        },
+      ];
+      const ws = XLSX.utils.json_to_sheet(templateData);
+      ws["!cols"] = [
+        { wch: 20 }, { wch: 18 }, { wch: 25 },
+        { wch: 25 }, { wch: 25 }, { wch: 18 }, { wch: 20 },
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Staff");
+      XLSX.writeFile(wb, "aok-staff-import-template.xlsx");
+    });
+  };
+
   const openResendDialog = (invite: StaffInvite) => {
     const parsed = parsePhoneForForm(invite.staffPhone);
     setStaffName(invite.staffName);
@@ -425,7 +567,7 @@ export default function OrgLoneWorkerHub() {
   const unresponsiveCount = activeSessions.filter(s => s.status === "unresponsive").length;
   const activeCount = activeSessions.filter(s => s.status === "active" || s.status === "check_in_due").length;
 
-  const isMutating = createInviteMutation.isPending || resendMutation.isPending;
+  const isMutating = createInviteMutation.isPending || resendMutation.isPending || importStaffMutation.isPending;
   const isLoading = statsLoading || invitesLoading;
 
   if (isLoading) {
@@ -473,14 +615,25 @@ export default function OrgLoneWorkerHub() {
               <p className="text-muted-foreground">Monitor active shifts, manage staff, and view audit trail</p>
             </div>
           </div>
-          <Button
-            onClick={() => setShowInviteDialog(true)}
-            disabled={!stats?.availableSeats || stats.availableSeats <= 0}
-            data-testid="button-invite-staff"
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            Invite Staff
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              onClick={() => setShowInviteDialog(true)}
+              disabled={!stats?.availableSeats || stats.availableSeats <= 0}
+              data-testid="button-invite-staff"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Invite Staff
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => { resetImportForm(); setShowImportDialog(true); }}
+              disabled={!stats?.availableSeats || stats.availableSeats <= 0}
+              data-testid="button-import-staff"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Import Staff
+            </Button>
+          </div>
         </div>
 
         {/* Summary cards */}
@@ -980,6 +1133,284 @@ export default function OrgLoneWorkerHub() {
               {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
               Delete
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Staff Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={(open) => {
+        if (!open && importStep !== "importing") {
+          setShowImportDialog(false);
+          resetImportForm();
+        }
+      }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5" />
+              Import Staff from Spreadsheet
+            </DialogTitle>
+            <DialogDescription>
+              Upload an Excel spreadsheet (.xlsx, .xls) to invite multiple staff members at once.
+            </DialogDescription>
+          </DialogHeader>
+
+          {importStep === "upload" && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <Button variant="outline" onClick={downloadStaffTemplate} data-testid="button-download-staff-template">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Template
+                </Button>
+                <p className="text-xs text-muted-foreground">Use our template for best results</p>
+              </div>
+
+              <div
+                className="border-2 border-dashed rounded-md p-8 text-center cursor-pointer transition-colors hover:border-primary/50"
+                onClick={() => document.getElementById("staff-import-file-input")?.click()}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) handleImportFileUpload(file);
+                }}
+                data-testid="dropzone-staff-import"
+              >
+                <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                <p className="text-sm font-medium">Click to upload or drag and drop</p>
+                <p className="text-xs text-muted-foreground mt-1">.xlsx or .xls files (max 100 staff)</p>
+                <input
+                  id="staff-import-file-input"
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImportFileUpload(file);
+                    e.target.value = "";
+                  }}
+                  data-testid="input-staff-import-file"
+                />
+              </div>
+
+              <Card className="p-4">
+                <h4 className="text-sm font-semibold mb-2">Required Columns</h4>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <span>Staff Name</span>
+                  <span>Mobile Number</span>
+                  <span>Email</span>
+                  <span>Emergency Contact Name</span>
+                  <span>Emergency Contact Email</span>
+                </div>
+                <h4 className="text-sm font-semibold mt-3 mb-2">Optional Columns</h4>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <span>Emergency Contact Phone</span>
+                  <span>Emergency Contact Relationship</span>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {importStep === "preview" && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                  <Badge variant="secondary">{importData.length} staff found</Badge>
+                  {importErrors.length > 0 && (
+                    <Badge variant="destructive">{importErrors.length} row{importErrors.length !== 1 ? "s" : ""} with errors</Badge>
+                  )}
+                  {importErrors.length === 0 && (
+                    <Badge className="bg-green-600 text-white">All rows valid</Badge>
+                  )}
+                </div>
+                <Button variant="outline" size="sm" onClick={() => { setImportStep("upload"); setImportFile(null); setImportData([]); setImportErrors([]); }}>
+                  Choose Different File
+                </Button>
+              </div>
+
+              {importFile && (
+                <p className="text-xs text-muted-foreground">File: {importFile.name}</p>
+              )}
+
+              {importErrors.length > 0 && (
+                <Card className="p-3 border-destructive">
+                  <h4 className="text-sm font-semibold text-destructive mb-2 flex items-center gap-1">
+                    <AlertTriangle className="h-4 w-4" />
+                    Validation Errors
+                  </h4>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {importErrors.map((err, idx) => (
+                      <div key={idx} className="text-xs">
+                        <span className="font-medium">Row {err.row}:</span>{" "}
+                        <span className="text-muted-foreground">{err.errors.join("; ")}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
+              {stats?.bundles && stats.bundles.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Assign to Bundle *</Label>
+                  <Select value={importBundleId} onValueChange={setImportBundleId}>
+                    <SelectTrigger data-testid="select-staff-import-bundle">
+                      <SelectValue placeholder="Select a bundle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stats.bundles.filter(b => b.status === "active").map((bundle) => (
+                        <SelectItem
+                          key={bundle.id}
+                          value={bundle.id}
+                          disabled={bundle.seatsUsed >= bundle.seatLimit}
+                        >
+                          {bundle.name} ({bundle.seatLimit - bundle.seatsUsed} seats available)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="border rounded-md overflow-x-auto max-h-64">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50 sticky top-0">
+                    <tr>
+                      <th className="px-2 py-1.5 text-left font-medium">#</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Name</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Mobile</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Email</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Emergency Contact</th>
+                      <th className="px-2 py-1.5 text-left font-medium">EC Email</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importData.map((member, idx) => {
+                      const rowError = importErrors.find(e => e.row === idx + 2);
+                      return (
+                        <tr key={idx} className={rowError ? "bg-destructive/5" : ""} data-testid={`row-import-staff-${idx}`}>
+                          <td className="px-2 py-1.5">{idx + 1}</td>
+                          <td className="px-2 py-1.5 font-medium">{member.staffName || "-"}</td>
+                          <td className="px-2 py-1.5">{member.staffPhone || "-"}</td>
+                          <td className="px-2 py-1.5">{member.staffEmail || "-"}</td>
+                          <td className="px-2 py-1.5">{member.emergencyContactName || "-"}</td>
+                          <td className="px-2 py-1.5">{member.emergencyContactEmail || "-"}</td>
+                          <td className="px-2 py-1.5">
+                            {rowError ? (
+                              <XOctagon className="h-3.5 w-3.5 text-destructive" />
+                            ) : (
+                              <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {importStep === "importing" && (
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <p className="text-sm font-medium">Importing {importData.filter((_, idx) => !importErrors.find(e => e.row === idx + 2)).length} staff members...</p>
+              <p className="text-xs text-muted-foreground">Each staff member will receive an SMS with their invite code</p>
+            </div>
+          )}
+
+          {importStep === "results" && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center gap-3">
+                <Badge className="bg-green-600 text-white">
+                  {importResults.filter(r => r.success).length} invited
+                </Badge>
+                {importResults.filter(r => !r.success).length > 0 && (
+                  <Badge variant="destructive">
+                    {importResults.filter(r => !r.success).length} failed
+                  </Badge>
+                )}
+              </div>
+
+              <div className="border rounded-md overflow-x-auto max-h-64">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50 sticky top-0">
+                    <tr>
+                      <th className="px-2 py-1.5 text-left font-medium">#</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Staff Name</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Invite Code</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importResults.map((result, idx) => (
+                      <tr key={idx} className={result.success ? "" : "bg-destructive/5"} data-testid={`row-staff-import-result-${idx}`}>
+                        <td className="px-2 py-1.5">{result.row}</td>
+                        <td className="px-2 py-1.5 font-medium">{result.staffName}</td>
+                        <td className="px-2 py-1.5">
+                          {result.inviteCode ? (
+                            <Badge variant="secondary">{result.inviteCode}</Badge>
+                          ) : "-"}
+                        </td>
+                        <td className="px-2 py-1.5">
+                          {result.success ? (
+                            <span className="flex items-center gap-1 text-green-600">
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Invited
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-destructive">
+                              <XOctagon className="h-3.5 w-3.5" /> {result.error}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            {importStep === "upload" && (
+              <Button variant="outline" onClick={() => setShowImportDialog(false)}>
+                Cancel
+              </Button>
+            )}
+            {importStep === "preview" && (
+              <>
+                <Button variant="outline" onClick={() => { setShowImportDialog(false); resetImportForm(); }}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    const validStaff = importData.filter((_, idx) => !importErrors.find(e => e.row === idx + 2));
+                    if (validStaff.length === 0) {
+                      toast({ title: "No valid rows", description: "Please fix all errors before importing.", variant: "destructive" });
+                      return;
+                    }
+                    if (!importBundleId) {
+                      toast({ title: "Bundle required", description: "Please select a bundle to assign staff to.", variant: "destructive" });
+                      return;
+                    }
+                    setImportData(validStaff);
+                    setImportStep("importing");
+                    importStaffMutation.mutate({ staff: validStaff, bundleId: importBundleId });
+                  }}
+                  disabled={importStaffMutation.isPending}
+                  data-testid="button-confirm-staff-import"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import {importData.filter((_, idx) => !importErrors.find(e => e.row === idx + 2)).length} Staff
+                </Button>
+              </>
+            )}
+            {importStep === "results" && (
+              <Button onClick={() => { setShowImportDialog(false); resetImportForm(); }} data-testid="button-close-staff-import-results">
+                Done
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
