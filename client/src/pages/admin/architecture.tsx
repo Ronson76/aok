@@ -161,6 +161,7 @@ export default function AdminArchitecture() {
               <ServiceBox icon={Shield} label="Safeguarding Hub" sublabel="Incidents + case files" />
               <ServiceBox icon={Layers} label="Lone Worker" sublabel="7-phase sessions" />
               <ServiceBox icon={Key} label="Staff Invites" sublabel="Role-based access" />
+              <ServiceBox icon={Phone} label="Call Supervisor" sublabel="Twilio voice call" />
               <ServiceBox icon={Mail} label="Branded Comms" sublabel="Org notifications" />
               <ServiceBox icon={TreeDeciduous} label="Ecologi Impact" sublabel="Tree planting" />
             </CardContent>
