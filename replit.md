@@ -34,13 +34,14 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Core**: Contact, CheckIn, Settings, AlertLog
 - **Wellness**: MoodEntry, Pet, DigitalDocument
 - **Fitness**: FitnessActivity, FitnessFollow, ActivityLike, ActivityComment
+- **Activities**: ErrandSession (activity type, duration, GPS points, grace period, status)
 
 ### Core Features
 - **Check-in System**: Users set frequency; missed check-ins trigger alerts.
 - **Alert System**: Detects overdue check-ins, creates "missed" records, and sends email/voice alerts.
 - **Primary Contact**: Designate one contact to receive notifications for every successful check-in.
 - **Contact Confirmation**: Emergency contacts must confirm via email within 10 minutes to be active.
-- **Wellness Features**: Optional Mood/Wellness Tracking, Pet Protection, Digital Will Storage, and Built-in GPS Fitness Tracking.
+- **Wellness Features**: Optional Mood/Wellness Tracking, Pet Protection, Digital Will Storage, Built-in GPS Fitness Tracking, and Activities Tracker.
 - **SMS Check-in Reminders**: Automatic SMS fallback for overdue check-ins with a secure tokenised check-in link.
 - **Offline Emergency Overlay**: Displays primary contact quick-dial button and 999 emergency button if connection is lost.
 - **Subscription Management**: Displays subscription status, allows cancellation/reactivation.

@@ -1,5 +1,5 @@
 import { storage } from "./storage";
-import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder, sendSmsCheckinLink } from "./notifications";
+import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder, sendSmsCheckinLink, sendMissedCheckInAlert } from "./notifications";
 import { ObjectStorageService } from "./replit_integrations/object_storage";
 
 let schedulerInterval: NodeJS.Timeout | null = null;
@@ -7,6 +7,7 @@ let cleanupInterval: NodeJS.Timeout | null = null;
 let pushNotificationInterval: NodeJS.Timeout | null = null;
 let contactReminderInterval: NodeJS.Timeout | null = null;
 let recordingCleanupInterval: NodeJS.Timeout | null = null;
+let errandCheckInterval: NodeJS.Timeout | null = null;
 // Minimum interval between push notifications to same user (30 seconds)
 const PUSH_NOTIFICATION_COOLDOWN_MS = 30 * 1000;
 
@@ -291,6 +292,11 @@ export function startEmergencyScheduler(): void {
     await cleanupExpiredRecordings();
   }, 24 * 60 * 60 * 1000);
 
+  console.log('[ERRAND SCHEDULER] Starting errand session monitor (checks every 60 seconds)');
+  errandCheckInterval = setInterval(async () => {
+    await processOverdueErrandSessions();
+  }, 60 * 1000);
+
   // Run initial checks
   processOverdueEmergencyAlerts();
   processOverduePushNotifications();
@@ -299,6 +305,7 @@ export function startEmergencyScheduler(): void {
   sendContactReminders();
   processSmsCheckinReminders();
   cleanupExpiredRecordings();
+  processOverdueErrandSessions();
 }
 
 async function cleanupExpiredRecordings(): Promise<void> {
@@ -353,5 +360,49 @@ export function stopEmergencyScheduler(): void {
     clearInterval(recordingCleanupInterval);
     recordingCleanupInterval = null;
   }
+  if (errandCheckInterval) {
+    clearInterval(errandCheckInterval);
+    errandCheckInterval = null;
+  }
   console.log('[EMERGENCY SCHEDULER] Scheduler stopped');
+}
+
+async function processOverdueErrandSessions(): Promise<void> {
+  try {
+    const overdueSessions = await storage.getOverdueErrandSessions();
+    for (const session of overdueSessions) {
+      try {
+        await storage.updateErrandSessionStatus(session.id, "grace");
+        console.log(`[ERRAND] Session ${session.id} moved to grace period`);
+      } catch (e) {
+        console.error(`[ERRAND] Error moving session ${session.id} to grace:`, e);
+      }
+    }
+
+    const graceExpired = await storage.getGraceExpiredErrandSessions();
+    for (const session of graceExpired) {
+      try {
+        const user = await storage.getUserById(session.userId);
+        if (!user) continue;
+        const contacts = await storage.getConfirmedContacts(session.userId);
+        if (contacts.length > 0) {
+          const activityLabel = session.customLabel || session.activityType.replace(/_/g, ' ');
+          let locationInfo = '';
+          if (session.lastKnownLat && session.lastKnownLng) {
+            locationInfo = ` Last known location: https://maps.google.com/?q=${session.lastKnownLat},${session.lastKnownLng}`;
+          }
+          const message = `${user.name} has not completed their activity (${activityLabel}) within the expected time and grace period has expired.${locationInfo}`;
+          const contactEmails = contacts.map(c => c.email);
+          await storage.createAlertLog(session.userId, contactEmails, `Activity overdue: ${activityLabel}`);
+          await sendMissedCheckInAlert(user.name, contacts, message, session.lastKnownLat || undefined, session.lastKnownLng || undefined);
+          console.log(`[ERRAND] Contacts notified for overdue session ${session.id}`);
+        }
+        await storage.markErrandSessionNotified(session.id);
+      } catch (e) {
+        console.error(`[ERRAND] Error processing grace-expired session ${session.id}:`, e);
+      }
+    }
+  } catch (error) {
+    console.error('[ERRAND] Error processing overdue errand sessions:', error);
+  }
 }

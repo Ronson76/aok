@@ -22,7 +22,8 @@ import {
   OrgMemberRole, OrgMemberStatus, OrgMemberInviteStatus,
   AdminInvite, AdminRole,
   emergencyRecordings, EmergencyRecording,
-  stravaConnections, StravaConnection, InsertStravaConnection
+  stravaConnections, StravaConnection, InsertStravaConnection,
+  errandSessions, ErrandSession, InsertErrandSession, ErrandSessionStatus
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, ne, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray, inArray } from "drizzle-orm";
@@ -235,6 +236,20 @@ export interface IStorage {
   getRiskReport(organizationId: string, id: string): Promise<RiskReport | undefined>;
   createRiskReport(organizationId: string, data: { clientId?: string; reportType: string; riskLevel: string; summary: string; dataPoints?: any; recommendation?: string }): Promise<RiskReport>;
   reviewRiskReport(organizationId: string, id: string, reviewedById: string, notes: string): Promise<RiskReport | undefined>;
+
+  // Errand Sessions
+  createErrandSession(userId: string, data: InsertErrandSession): Promise<ErrandSession>;
+  getActiveErrandSession(userId: string): Promise<ErrandSession | undefined>;
+  getErrandSessions(userId: string, limit?: number): Promise<ErrandSession[]>;
+  getErrandSession(userId: string, id: string): Promise<ErrandSession | undefined>;
+  updateErrandSessionStatus(id: string, status: ErrandSessionStatus): Promise<ErrandSession | undefined>;
+  extendErrandSession(id: string, newExpectedEnd: Date, newGraceEnd: Date): Promise<ErrandSession | undefined>;
+  updateErrandSessionGps(id: string, lat: string, lng: string, gpsPoint?: { lat: number; lng: number; timestamp: number }): Promise<ErrandSession | undefined>;
+  completeErrandSession(id: string): Promise<ErrandSession | undefined>;
+  cancelErrandSession(id: string): Promise<ErrandSession | undefined>;
+  getOverdueErrandSessions(): Promise<ErrandSession[]>;
+  getGraceExpiredErrandSessions(): Promise<ErrandSession[]>;
+  markErrandSessionNotified(id: string): Promise<void>;
 }
 
 class DatabaseStorage implements IStorage {
@@ -2193,6 +2208,134 @@ class DatabaseStorage implements IStorage {
       .orderBy(desc(loneWorkerSessions.createdAt))
       .limit(limit);
     return result.map(r => ({ ...r.session, userName: r.userName }));
+  }
+
+  // ===== ERRAND SESSIONS =====
+
+  async createErrandSession(userId: string, data: InsertErrandSession): Promise<ErrandSession> {
+    const now = new Date();
+    const expectedEnd = new Date(now.getTime() + data.expectedDurationMins * 60 * 1000);
+    const graceEnd = new Date(expectedEnd.getTime() + 10 * 60 * 1000);
+    const [session] = await getDb().insert(errandSessions).values({
+      userId,
+      activityType: data.activityType,
+      customLabel: data.customLabel || null,
+      expectedDurationMins: data.expectedDurationMins,
+      status: "active",
+      startedAt: now,
+      expectedEndAt: expectedEnd,
+      graceEndsAt: graceEnd,
+      gpsPoints: [],
+    }).returning();
+    return session;
+  }
+
+  async getActiveErrandSession(userId: string): Promise<ErrandSession | undefined> {
+    const [session] = await getDb().select().from(errandSessions)
+      .where(and(
+        eq(errandSessions.userId, userId),
+        inArray(errandSessions.status, ["active", "grace", "overdue"])
+      ))
+      .orderBy(desc(errandSessions.startedAt))
+      .limit(1);
+    return session;
+  }
+
+  async getErrandSessions(userId: string, limit = 50): Promise<ErrandSession[]> {
+    return await getDb().select().from(errandSessions)
+      .where(eq(errandSessions.userId, userId))
+      .orderBy(desc(errandSessions.startedAt))
+      .limit(limit);
+  }
+
+  async getErrandSession(userId: string, id: string): Promise<ErrandSession | undefined> {
+    const [session] = await getDb().select().from(errandSessions)
+      .where(and(eq(errandSessions.id, id), eq(errandSessions.userId, userId)));
+    return session;
+  }
+
+  async updateErrandSessionStatus(id: string, status: ErrandSessionStatus): Promise<ErrandSession | undefined> {
+    const [session] = await getDb().update(errandSessions)
+      .set({ status })
+      .where(eq(errandSessions.id, id))
+      .returning();
+    return session;
+  }
+
+  async extendErrandSession(id: string, newExpectedEnd: Date, newGraceEnd: Date): Promise<ErrandSession | undefined> {
+    const [session] = await getDb().update(errandSessions)
+      .set({
+        status: "active" as ErrandSessionStatus,
+        expectedEndAt: newExpectedEnd,
+        graceEndsAt: newGraceEnd,
+        lastCheckInAt: new Date(),
+        notifiedAt: null,
+      })
+      .where(eq(errandSessions.id, id))
+      .returning();
+    return session;
+  }
+
+  async updateErrandSessionGps(id: string, lat: string, lng: string, gpsPoint?: { lat: number; lng: number; timestamp: number }): Promise<ErrandSession | undefined> {
+    const now = new Date();
+    const updates: any = {
+      lastKnownLat: lat,
+      lastKnownLng: lng,
+      lastLocationAt: now,
+      lastCheckInAt: now,
+    };
+    if (gpsPoint) {
+      const [existing] = await getDb().select({ gpsPoints: errandSessions.gpsPoints }).from(errandSessions).where(eq(errandSessions.id, id));
+      const points = (existing?.gpsPoints || []) as Array<{ lat: number; lng: number; timestamp: number }>;
+      points.push(gpsPoint);
+      updates.gpsPoints = points;
+    }
+    const [session] = await getDb().update(errandSessions)
+      .set(updates)
+      .where(eq(errandSessions.id, id))
+      .returning();
+    return session;
+  }
+
+  async completeErrandSession(id: string): Promise<ErrandSession | undefined> {
+    const [session] = await getDb().update(errandSessions)
+      .set({ status: "completed" as ErrandSessionStatus, completedAt: new Date() })
+      .where(eq(errandSessions.id, id))
+      .returning();
+    return session;
+  }
+
+  async cancelErrandSession(id: string): Promise<ErrandSession | undefined> {
+    const [session] = await getDb().update(errandSessions)
+      .set({ status: "cancelled" as ErrandSessionStatus, completedAt: new Date() })
+      .where(eq(errandSessions.id, id))
+      .returning();
+    return session;
+  }
+
+  async getOverdueErrandSessions(): Promise<ErrandSession[]> {
+    const now = new Date();
+    return await getDb().select().from(errandSessions)
+      .where(and(
+        eq(errandSessions.status, "active"),
+        lt(errandSessions.expectedEndAt, now)
+      ));
+  }
+
+  async getGraceExpiredErrandSessions(): Promise<ErrandSession[]> {
+    const now = new Date();
+    return await getDb().select().from(errandSessions)
+      .where(and(
+        eq(errandSessions.status, "grace"),
+        lt(errandSessions.graceEndsAt, now),
+        isNull(errandSessions.notifiedAt)
+      ));
+  }
+
+  async markErrandSessionNotified(id: string): Promise<void> {
+    await getDb().update(errandSessions)
+      .set({ notifiedAt: new Date(), status: "overdue" as ErrandSessionStatus })
+      .where(eq(errandSessions.id, id));
   }
 }
 

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, Users, History, Settings, Building2, TrendingUp, PawPrint, FileText, Heart, Lock, Shield } from "lucide-react";
+import { Home, Users, History, Settings, Building2, TrendingUp, PawPrint, FileText, Heart, Lock, Shield, MapPin } from "lucide-react";
 import { FaRunning } from "react-icons/fa";
 import { useAuth } from "@/contexts/auth-context";
 import { useQuery } from "@tanstack/react-query";
@@ -90,6 +90,12 @@ export function BottomNav() {
       icon: FaRunning, 
       label: "Fitness Tracking", 
       enabled: features?.featureFitnessTracking !== false && isRegistrationComplete 
+    },
+    { 
+      path: "/app/errands", 
+      icon: MapPin, 
+      label: "Activities", 
+      enabled: isRegistrationComplete 
     },
   ];
   
