@@ -50,6 +50,21 @@ export const users = pgTable("users", {
   featurePetProtection: boolean("feature_pet_protection").notNull().default(true),
   featureDigitalWill: boolean("feature_digital_will").notNull().default(true),
   featureFitnessTracking: boolean("feature_fitness_tracking").notNull().default(true),
+  // Organisation-level feature defaults (only used when accountType = 'organization')
+  orgFeatureCheckIn: boolean("org_feature_check_in").notNull().default(true),
+  orgFeatureShakeToAlert: boolean("org_feature_shake_to_alert").notNull().default(true),
+  orgFeatureEmergencyAlert: boolean("org_feature_emergency_alert").notNull().default(true),
+  orgFeatureGpsLocation: boolean("org_feature_gps_location").notNull().default(true),
+  orgFeaturePushNotifications: boolean("org_feature_push_notifications").notNull().default(true),
+  orgFeaturePrimaryContact: boolean("org_feature_primary_contact").notNull().default(true),
+  orgFeatureSmsBackup: boolean("org_feature_sms_backup").notNull().default(true),
+  orgFeatureEmergencyRecording: boolean("org_feature_emergency_recording").notNull().default(false),
+  orgFeatureMoodTracking: boolean("org_feature_mood_tracking").notNull().default(true),
+  orgFeaturePetProtection: boolean("org_feature_pet_protection").notNull().default(true),
+  orgFeatureDigitalWill: boolean("org_feature_digital_will").notNull().default(true),
+  orgFeatureWellbeingAi: boolean("org_feature_wellbeing_ai").notNull().default(true),
+  orgFeatureFitnessTracking: boolean("org_feature_fitness_tracking").notNull().default(true),
+  orgFeatureActivitiesTracker: boolean("org_feature_activities_tracker").notNull().default(true),
   // Last known location (updated on check-in if provided)
   latitude: text("latitude"),
   longitude: text("longitude"),
@@ -480,6 +495,106 @@ export const adminLoginSchema = z.object({
 });
 
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
+
+// Subscription tiers
+export const subscriptionTiers = ["tier1", "tier2"] as const;
+export type SubscriptionTier = typeof subscriptionTiers[number];
+
+// Tier permissions table - controls which features are available per subscription tier
+export const tierPermissions = pgTable("tier_permissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tier: text("tier").notNull().$type<SubscriptionTier>().unique(),
+  featureCheckIn: boolean("feature_check_in").notNull().default(true),
+  featureShakeToAlert: boolean("feature_shake_to_alert").notNull().default(true),
+  featureEmergencyAlert: boolean("feature_emergency_alert").notNull().default(true),
+  featureGpsLocation: boolean("feature_gps_location").notNull().default(true),
+  featurePushNotifications: boolean("feature_push_notifications").notNull().default(true),
+  featurePrimaryContact: boolean("feature_primary_contact").notNull().default(true),
+  featureSmsBackup: boolean("feature_sms_backup").notNull().default(true),
+  featureEmergencyRecording: boolean("feature_emergency_recording").notNull().default(false),
+  featureMoodTracking: boolean("feature_mood_tracking").notNull().default(false),
+  featurePetProtection: boolean("feature_pet_protection").notNull().default(false),
+  featureDigitalWill: boolean("feature_digital_will").notNull().default(false),
+  featureWellbeingAi: boolean("feature_wellbeing_ai").notNull().default(false),
+  featureFitnessTracking: boolean("feature_fitness_tracking").notNull().default(false),
+  featureActivitiesTracker: boolean("feature_activities_tracker").notNull().default(false),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const updateTierPermissionsSchema = z.object({
+  featureCheckIn: z.boolean().optional(),
+  featureShakeToAlert: z.boolean().optional(),
+  featureEmergencyAlert: z.boolean().optional(),
+  featureGpsLocation: z.boolean().optional(),
+  featurePushNotifications: z.boolean().optional(),
+  featurePrimaryContact: z.boolean().optional(),
+  featureSmsBackup: z.boolean().optional(),
+  featureEmergencyRecording: z.boolean().optional(),
+  featureMoodTracking: z.boolean().optional(),
+  featurePetProtection: z.boolean().optional(),
+  featureDigitalWill: z.boolean().optional(),
+  featureWellbeingAi: z.boolean().optional(),
+  featureFitnessTracking: z.boolean().optional(),
+  featureActivitiesTracker: z.boolean().optional(),
+});
+
+export type UpdateTierPermissions = z.infer<typeof updateTierPermissionsSchema>;
+export type TierPermission = typeof tierPermissions.$inferSelect;
+
+// All feature keys for tier permissions (used in UI)
+export const allTierFeatureKeys = [
+  "featureCheckIn",
+  "featureShakeToAlert",
+  "featureEmergencyAlert",
+  "featureGpsLocation",
+  "featurePushNotifications",
+  "featurePrimaryContact",
+  "featureSmsBackup",
+  "featureEmergencyRecording",
+  "featureMoodTracking",
+  "featurePetProtection",
+  "featureDigitalWill",
+  "featureWellbeingAi",
+  "featureFitnessTracking",
+  "featureActivitiesTracker",
+] as const;
+
+export const featureLabels: Record<string, string> = {
+  featureCheckIn: "Check-in System",
+  featureShakeToAlert: "Shake to Alert",
+  featureEmergencyAlert: "Emergency Alert Button",
+  featureGpsLocation: "GPS Location Sharing",
+  featurePushNotifications: "Push Notifications",
+  featurePrimaryContact: "Primary Contact Updates",
+  featureSmsBackup: "SMS Check-in Backup",
+  featureEmergencyRecording: "Emergency Recording",
+  featureMoodTracking: "Mood & Wellness Tracking",
+  featurePetProtection: "Pet Protection Profiles",
+  featureDigitalWill: "Digital Will Storage",
+  featureWellbeingAi: "Wellbeing AI Chat",
+  featureFitnessTracking: "GPS Fitness Tracking",
+  featureActivitiesTracker: "Activities Tracker",
+};
+
+// Organisation-level feature defaults (stored on users table for org accounts)
+export const orgFeatureDefaultsSchema = z.object({
+  orgFeatureCheckIn: z.boolean().optional(),
+  orgFeatureShakeToAlert: z.boolean().optional(),
+  orgFeatureEmergencyAlert: z.boolean().optional(),
+  orgFeatureGpsLocation: z.boolean().optional(),
+  orgFeaturePushNotifications: z.boolean().optional(),
+  orgFeaturePrimaryContact: z.boolean().optional(),
+  orgFeatureSmsBackup: z.boolean().optional(),
+  orgFeatureEmergencyRecording: z.boolean().optional(),
+  orgFeatureMoodTracking: z.boolean().optional(),
+  orgFeaturePetProtection: z.boolean().optional(),
+  orgFeatureDigitalWill: z.boolean().optional(),
+  orgFeatureWellbeingAi: z.boolean().optional(),
+  orgFeatureFitnessTracking: z.boolean().optional(),
+  orgFeatureActivitiesTracker: z.boolean().optional(),
+});
+
+export type OrgFeatureDefaults = z.infer<typeof orgFeatureDefaultsSchema>;
 
 // Bundle status options
 export const bundleStatuses = ["active", "expired", "cancelled"] as const;

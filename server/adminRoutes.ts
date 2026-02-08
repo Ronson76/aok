@@ -1,7 +1,7 @@
 import { Express, Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
 import { adminStorage, organizationStorage, storage, adminInviteStorage } from "./storage";
-import { adminLoginSchema, AdminUserProfile, orgClientStatuses, updateUserFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, adminRoles, passwordSchema } from "@shared/schema";
+import { adminLoginSchema, AdminUserProfile, orgClientStatuses, updateUserFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, adminRoles, passwordSchema, updateTierPermissionsSchema, subscriptionTiers, orgFeatureDefaultsSchema, SubscriptionTier } from "@shared/schema";
 import { z } from "zod";
 import { sendPasswordResetEmail, sendAdminInviteEmail } from "./notifications";
 
@@ -197,6 +197,7 @@ export function registerAdminRoutes(app: Express) {
     name: z.string().min(1, "Name is required").max(100),
     email: z.string().email("Invalid email address"),
     password: passwordSchema,
+    featureDefaults: orgFeatureDefaultsSchema.optional(),
   });
 
   app.post("/api/admin/organizations", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
@@ -206,7 +207,7 @@ export function registerAdminRoutes(app: Express) {
         return res.status(400).json({ error: validation.error.errors[0].message });
       }
 
-      const { name, email, password } = validation.data;
+      const { name, email, password, featureDefaults } = validation.data;
 
       const existingUser = await storage.getUserByEmail(email.toLowerCase());
       if (existingUser) {
@@ -221,6 +222,10 @@ export function registerAdminRoutes(app: Express) {
         accountType: "organization",
         name,
       });
+
+      if (featureDefaults) {
+        await storage.updateOrgFeatureDefaults(user.id, featureDefaults);
+      }
 
       await adminStorage.createAuditLog(
         req.admin!.id,
