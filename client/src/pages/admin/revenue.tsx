@@ -25,8 +25,12 @@ const COST_MODEL = {
   ecologiPerSignup: 0.60,
   stripeFeePercent: 1.4,
   stripeFeeFixed: 0.20,
-  individualMonthlyPrice: 6.99,
-  individualYearlyPrice: 69.99,
+  tier1MonthlyPrice: 6.99,
+  tier1YearlyPrice: 69.99,
+  tier2MonthlyPrice: 9.99,
+  tier2YearlyPrice: 99.99,
+  individualMonthlyPrice: 8.49,
+  individualYearlyPrice: 84.99,
   orgSeatAveragePrice: 4.99,
 };
 
@@ -370,8 +374,12 @@ export default function AdminRevenue() {
                       { feature: "Call Supervisor (org clients)", driver: "Twilio Voice", cost: "£0.08 to £0.15" },
                       { feature: "AI Wellbeing Chat", driver: "OpenAI GPT-4o", cost: "£0.01 to £0.05" },
                       { feature: "AI Voice Chat", driver: "OpenAI Whisper + TTS", cost: "£0.02 to £0.06" },
+                      { feature: "Strava fitness tracking", driver: "Strava API (free)", cost: "£0.00" },
                       { feature: "Ecologi tree planting", driver: "Ecologi", cost: "£0.60 (one-off)" },
                       { feature: "Payment processing", driver: "Stripe", cost: "1.4% + 20p" },
+                      { feature: "Essential Safety subscription", driver: "Tier 1", cost: "£6.99/mo or £69.99/yr" },
+                      { feature: "Complete Protection subscription", driver: "Tier 2", cost: "£9.99/mo or £99.99/yr" },
+                      { feature: "Organisation seat (avg.)", driver: "Custom bundles", cost: "£4.99/mo avg." },
                     ].map((row, i) => (
                       <tr key={i} className={i % 2 === 0 ? "bg-muted/30" : ""}>
                         <td className="py-3 px-4 font-medium">{row.feature}</td>

@@ -29,8 +29,8 @@ export default function Pricing() {
       isTrial: true,
     },
     {
-      name: "Complete Protection",
-      description: "Everything you need to stay safe and connected with your loved ones.",
+      name: "Essential Safety",
+      description: "Core safety features to keep you and your loved ones protected.",
       monthlyPrice: 6.99,
       yearlyPrice: 69.99,
       features: [
@@ -40,24 +40,39 @@ export default function Pricing() {
         { text: "SMS text message alerts", icon: Smartphone },
         { text: "Automated voice call alerts", icon: Phone },
         { text: "Emergency alert button with one-tap activation", icon: AlertTriangle },
-        { text: "Emergency recording (opt-in)", icon: Mic },
         { text: "Shake to SOS", icon: Smartphone },
         { text: "GPS location sharing with what3words", icon: MapPin },
         { text: "Push notifications & SMS reminders", icon: Bell },
         { text: "Primary contact updates on every check-in", icon: Heart },
         { text: "Privacy protection with auto session timeout", icon: Lock },
+        { text: "Offline emergency overlay", icon: Shield },
+        { text: "Offline SMS check-in backup", icon: Smartphone },
+      ],
+      cta: "Get Started",
+      ctaLink: "/onboarding",
+      highlight: false,
+      launchNote: "Launch pricing - Lock in today's special rate forever",
+      priceProtected: true,
+    },
+    {
+      name: "Complete Protection",
+      description: "Everything in Essential Safety plus wellness, AI, and more.",
+      monthlyPrice: 9.99,
+      yearlyPrice: 99.99,
+      features: [
+        { text: "Everything in Essential Safety", icon: Check },
+        { text: "Emergency recording (opt-in)", icon: Mic },
         { text: "Mood & wellness tracking", icon: TrendingUp },
         { text: "Pet protection profiles with vet info", icon: PawPrint },
         { text: "Digital will & document storage", icon: Scroll },
         { text: "Wellbeing AI chat with voice mode", icon: Headphones },
         { text: "Strava fitness tracking", icon: SiStrava, isStrava: true },
-        { text: "Offline emergency overlay", icon: Shield },
         { text: "Tree planted via Ecologi on signup", icon: TreePine },
       ],
       cta: "Get Started",
       ctaLink: "/onboarding",
       highlight: true,
-      badge: "All Features Included",
+      badge: "Most Popular",
       launchNote: "Launch pricing - Lock in today's special rate forever",
       priceProtected: true,
     },
@@ -87,32 +102,32 @@ export default function Pricing() {
   ];
 
   const comparisonFeatures = [
-    { name: "Check-in timer (5 min to 48 hours)", trial: true, complete: true, org: true },
-    { name: "Up to 5 emergency contacts", trial: true, complete: true, org: true },
-    { name: "Email alerts", trial: true, complete: true, org: true },
-    { name: "SMS text alerts", trial: true, complete: true, org: true },
-    { name: "Automated voice calls", trial: true, complete: true, org: true },
-    { name: "Emergency alert button", trial: true, complete: true, org: true },
-    { name: "Emergency recording (opt-in)", trial: true, complete: true, org: true },
-    { name: "Shake to SOS", trial: true, complete: true, org: true },
-    { name: "GPS + what3words location", trial: true, complete: true, org: true },
-    { name: "SMS check-in reminders", trial: true, complete: true, org: true },
-    { name: "Offline emergency overlay", trial: true, complete: true, org: true },
-    { name: "Primary contact notifications", trial: true, complete: true, org: true },
-    { name: "Mood & wellness tracking", trial: true, complete: true, org: true },
-    { name: "Pet protection profiles", trial: true, complete: true, org: true },
-    { name: "Digital will & document storage", trial: true, complete: true, org: true },
-    { name: "Wellbeing AI chat + voice mode", trial: true, complete: true, org: true },
-    { name: "Strava fitness tracking", trial: true, complete: true, org: true, hasStravaBadge: true },
-    { name: "Ecologi tree planting", trial: false, complete: true, org: true },
-    { name: "Organisation dashboard", trial: false, complete: false, org: true },
-    { name: "Bulk client management", trial: false, complete: false, org: true },
-    { name: "Staff roles & team management", trial: false, complete: false, org: true },
-    { name: "Safeguarding hub", trial: false, complete: false, org: true },
-    { name: "Lone worker monitoring", trial: false, complete: false, org: true },
-    { name: "Per-client feature controls", trial: false, complete: false, org: true },
-    { name: "Call Supervisor (one-tap calling)", trial: false, complete: false, org: true },
-    { name: "Reports & analytics", trial: false, complete: false, org: true },
+    { name: "Check-in timer (5 min to 48 hours)", trial: true, essential: true, complete: true, org: true },
+    { name: "Up to 5 emergency contacts", trial: true, essential: true, complete: true, org: true },
+    { name: "Email alerts", trial: true, essential: true, complete: true, org: true },
+    { name: "SMS text alerts", trial: true, essential: true, complete: true, org: true },
+    { name: "Automated voice calls", trial: true, essential: true, complete: true, org: true },
+    { name: "Emergency alert button", trial: true, essential: true, complete: true, org: true },
+    { name: "Shake to SOS", trial: true, essential: true, complete: true, org: true },
+    { name: "GPS + what3words location", trial: true, essential: true, complete: true, org: true },
+    { name: "SMS check-in reminders", trial: true, essential: true, complete: true, org: true },
+    { name: "Offline emergency overlay", trial: true, essential: true, complete: true, org: true },
+    { name: "Primary contact notifications", trial: true, essential: true, complete: true, org: true },
+    { name: "Emergency recording (opt-in)", trial: true, essential: false, complete: true, org: true },
+    { name: "Mood & wellness tracking", trial: true, essential: false, complete: true, org: true },
+    { name: "Pet protection profiles", trial: true, essential: false, complete: true, org: true },
+    { name: "Digital will & document storage", trial: true, essential: false, complete: true, org: true },
+    { name: "Wellbeing AI chat + voice mode", trial: true, essential: false, complete: true, org: true },
+    { name: "Strava fitness tracking", trial: true, essential: false, complete: true, org: true, hasStravaBadge: true },
+    { name: "Ecologi tree planting", trial: false, essential: false, complete: true, org: true },
+    { name: "Organisation dashboard", trial: false, essential: false, complete: false, org: true },
+    { name: "Bulk client management", trial: false, essential: false, complete: false, org: true },
+    { name: "Staff roles & team management", trial: false, essential: false, complete: false, org: true },
+    { name: "Safeguarding hub", trial: false, essential: false, complete: false, org: true },
+    { name: "Lone worker monitoring", trial: false, essential: false, complete: false, org: true },
+    { name: "Per-client feature controls", trial: false, essential: false, complete: false, org: true },
+    { name: "Call Supervisor (one-tap calling)", trial: false, essential: false, complete: false, org: true },
+    { name: "Reports & analytics", trial: false, essential: false, complete: false, org: true },
   ];
 
   return (
@@ -167,11 +182,11 @@ export default function Pricing() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
           {plans.map((plan, index) => (
             <Card 
               key={index} 
-              className={`relative flex flex-col ${plan.highlight ? "border-primary shadow-lg md:scale-105" : ""}`}
+              className={`relative flex flex-col ${plan.highlight ? "border-primary shadow-lg" : ""}`}
               data-testid={`card-plan-${plan.name.toLowerCase().replace(/\s+/g, '-')}`}
             >
               {plan.badge && (
@@ -258,6 +273,7 @@ export default function Pricing() {
                     <tr className="border-b">
                       <th className="text-left py-3 px-4 font-medium">Feature</th>
                       <th className="text-center py-3 px-4 font-medium">7 Day Trial</th>
+                      <th className="text-center py-3 px-4 font-medium">Essential Safety</th>
                       <th className="text-center py-3 px-4 font-medium text-primary">Complete Protection</th>
                       <th className="text-center py-3 px-4 font-medium">Organisations</th>
                     </tr>
@@ -277,6 +293,13 @@ export default function Pricing() {
                         </td>
                         <td className="text-center py-3 px-4">
                           {feature.trial ? (
+                            <Check className="h-4 w-4 text-green-600 mx-auto" />
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {feature.essential ? (
                             <Check className="h-4 w-4 text-green-600 mx-auto" />
                           ) : (
                             <span className="text-muted-foreground">-</span>
@@ -309,7 +332,7 @@ export default function Pricing() {
           <h2 className="text-2xl font-bold text-center mb-8" data-testid="text-faq-title">Frequently Asked Questions</h2>
           <div className="space-y-4">
             {[
-              { q: "What happens after my free trial?", a: "After 7 days, your subscription starts at just £6.99/month (or £69.99/year if you choose annual billing). You can cancel anytime during the trial without being charged." },
+              { q: "What happens after my free trial?", a: "After 7 days, choose from Essential Safety at £6.99/month (£69.99/year) or Complete Protection at £9.99/month (£99.99/year). You can cancel anytime during the trial without being charged." },
               { q: "Can I cancel at any time?", a: "Yes, you can cancel your subscription at any time from Settings. Your account stays active until the end of your current billing period." },
               { q: "What payment methods do you accept?", a: "We accept all major debit and credit cards, Apple Pay, and Google Pay for quick and easy payment." },
               { q: "How does the organisation plan work?", a: "Organisations purchase bundles of seats and manage clients through a dedicated dashboard. Contact us for custom pricing based on your team size." },
