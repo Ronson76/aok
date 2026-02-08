@@ -24,7 +24,7 @@ import {
   ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles,
   MessageCircle, MessageSquare, ArrowLeft, TreeDeciduous, Leaf
 } from "lucide-react";
-import { SiApple, SiGoogleplay } from "react-icons/si";
+import { SiApple, SiGoogleplay, SiStrava } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -133,6 +133,7 @@ export default function Landing() {
         { text: "Digital will storage", icon: Scroll },
         { text: "Offline SMS check-in backup", icon: MessageSquare },
         { text: "Wellbeing AI (Exclusive)", icon: Sparkles },
+        { text: "Strava fitness tracking", icon: TrendingUp },
       ],
       cta: "Get Started",
       ctaLink: "/onboarding",
@@ -597,6 +598,21 @@ export default function Landing() {
                 <h3 className="text-lg font-semibold mb-2">Emergency Recording</h3>
                 <p className="text-muted-foreground text-sm">
                   Opt-in feature that activates your camera and microphone during emergencies. Recordings are encrypted, shared only with your contacts, and deleted after 90 days.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="rounded-full bg-[#FC4C02]/10 p-3 w-fit">
+                    <SiStrava className="h-6 w-6 text-[#FC4C02]" />
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">Powered by Strava</span>
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Fitness Tracking</h3>
+                <p className="text-muted-foreground text-sm">
+                  Connect your Strava account to view your runs, rides, and workouts. Track your activity stats alongside your wellbeing data.
                 </p>
               </CardContent>
             </Card>
