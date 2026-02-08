@@ -22,7 +22,7 @@ import {
   ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail, 
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
   ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles,
-  MessageCircle, MessageSquare, ArrowLeft, TreeDeciduous, Leaf
+  MessageCircle, MessageSquare, ArrowLeft, TreeDeciduous, Leaf, Activity
 } from "lucide-react";
 import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
