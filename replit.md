@@ -33,7 +33,7 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 ### Data Models
 - **Core**: Contact, CheckIn, Settings, AlertLog
 - **Wellness**: MoodEntry, Pet, DigitalDocument
-- **Fitness**: FitnessActivity, FitnessFollow, ActivityLike, ActivityComment
+- **Fitness**: FitnessActivity, FitnessFollow, ActivityLike, ActivityComment, PlannedRoute
 - **Activities**: ErrandSession (activity type, duration, GPS points, grace period, status)
 
 ### Core Features
@@ -41,7 +41,7 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Alert System**: Detects overdue check-ins, creates "missed" records, and sends email/voice alerts.
 - **Primary Contact**: Designate one contact to receive notifications for every successful check-in.
 - **Contact Confirmation**: Emergency contacts must confirm via email within 10 minutes to be active.
-- **Wellness Features**: Optional Mood/Wellness Tracking, Pet Protection, Digital Will Storage, Built-in GPS Fitness Tracking with step counting and calorie estimation, and Activities Tracker.
+- **Wellness Features**: Optional Mood/Wellness Tracking, Pet Protection, Digital Will Storage, Built-in GPS Fitness Tracking with step counting and calorie estimation, Route Planning with weather and safety cues, and Activities Tracker.
 - **SMS Check-in Reminders**: Automatic SMS fallback for overdue check-ins with a secure tokenised check-in link.
 - **Offline Emergency Overlay**: Displays primary contact quick-dial button and 999 emergency button if connection is lost.
 - **Subscription Management**: Displays subscription status, allows cancellation/reactivation.
@@ -120,6 +120,8 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Resend**: For all email notifications (contact confirmation, successful check-in, missed check-in alerts, password reset).
 - **Twilio**: For SMS alerts and automated voice calls for emergencies and missed check-ins.
 - **what3words**: Integrates precise location sharing (three-word addresses) into emergency alerts.
+- **OSRM**: Free routing engine for calculating route geometry and distances (no API key needed).
+- **Open-Meteo**: Free weather forecast API for route weather snapshots and sunset times (no API key needed).
 - **Stripe**: Payment processing with subscription management, 7-day free trial, Apple Pay/Google Pay support.
 - **Ecologi**: Environmental impact tracking and automatic tree planting for new subscribers.
 - **OpenAI**: For AI chat features (GPT-4o for responses, TTS for voice output, Whisper API for speech-to-text).

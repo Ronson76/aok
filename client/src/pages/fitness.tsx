@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Clock, MapPin, TrendingUp, ArrowLeft, Lock, Bike, Footprints, Play, Pause, Square, ChevronRight, ChevronDown, Activity } from "lucide-react";
+import { Loader2, Clock, MapPin, TrendingUp, ArrowLeft, Lock, Bike, Footprints, Play, Pause, Square, ChevronRight, ChevronDown, Activity, Navigation } from "lucide-react";
 import { FaRunning } from "react-icons/fa";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +18,7 @@ import {
 } from "@/lib/fitness-utils";
 import { StepCounter, estimateCalories, estimateStepsFromDistance } from "@/lib/step-counter";
 import type { FitnessActivity, ActivityType, PrivacyLevel } from "@shared/schema";
+import RoutesTab from "@/components/route-planner";
 
 function getActivityIcon(type: string) {
   if (type === "cycle") return Bike;
@@ -701,9 +702,12 @@ export default function Fitness() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full grid grid-cols-2">
+        <TabsList className="w-full grid grid-cols-3">
           <TabsTrigger value="record" data-testid="tab-record">
             <Play className="h-4 w-4 mr-1" /> Record
+          </TabsTrigger>
+          <TabsTrigger value="routes" data-testid="tab-routes">
+            <Navigation className="h-4 w-4 mr-1" /> Routes
           </TabsTrigger>
           <TabsTrigger value="history" data-testid="tab-history">
             <Clock className="h-4 w-4 mr-1" /> History
@@ -712,6 +716,10 @@ export default function Fitness() {
 
         <TabsContent value="record">
           <Recorder onFinish={() => setActiveTab("history")} />
+        </TabsContent>
+
+        <TabsContent value="routes">
+          <RoutesTab />
         </TabsContent>
 
         <TabsContent value="history">

@@ -1,7 +1,7 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, organizationStorage, adminStorage } from "./storage";
-import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, insertMoodEntrySchema, insertPetSchema, updatePetSchema, insertDigitalDocumentSchema, updateDigitalDocumentSchema, insertErrandSessionSchema, errandActivityTypes } from "@shared/schema";
+import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, insertMoodEntrySchema, insertPetSchema, updatePetSchema, insertDigitalDocumentSchema, updateDigitalDocumentSchema, insertErrandSessionSchema, errandActivityTypes, insertPlannedRouteSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { randomBytes } from "crypto";
@@ -3705,6 +3705,126 @@ export async function registerRoutes(
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: "Failed to attach activity to emergency" });
+    }
+  });
+
+  // ===== ROUTE PLANNING ROUTES =====
+
+  app.post("/api/routes/plan", authMiddleware, async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    const { startLat, startLng, endLat, endLng, mode } = req.body;
+    if (!startLat || !startLng || !endLat || !endLng) {
+      return res.status(400).json({ error: "Start and end coordinates required" });
+    }
+    const profile = mode === "bike" ? "bike" : "foot";
+    try {
+      const url = `https://router.project-osrm.org/route/v1/${profile}/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.code !== "Ok" || !data.routes?.length) {
+        return res.status(400).json({ error: "Could not find route" });
+      }
+      const route = data.routes[0];
+      res.json({
+        distance: route.distance,
+        duration: route.duration,
+        geometry: route.geometry.coordinates,
+      });
+    } catch (err) {
+      console.error("OSRM error:", err);
+      res.status(500).json({ error: "Routing service unavailable" });
+    }
+  });
+
+  app.get("/api/routes/weather", authMiddleware, async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    const { lat, lng } = req.query;
+    if (!lat || !lng) return res.status(400).json({ error: "lat and lng required" });
+    try {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,precipitation_probability,wind_speed_10m,weather_code&daily=sunset&timezone=auto&forecast_days=1`;
+      const response = await fetch(url);
+      const data = await response.json();
+      const current = data.current || {};
+      const daily = data.daily || {};
+      res.json({
+        temperature: current.temperature_2m,
+        precipitationProbability: current.precipitation_probability,
+        windSpeed: current.wind_speed_10m,
+        weatherCode: current.weather_code,
+        sunset: daily.sunset?.[0],
+        timezone: data.timezone,
+      });
+    } catch (err) {
+      console.error("Weather error:", err);
+      res.status(500).json({ error: "Weather service unavailable" });
+    }
+  });
+
+  app.post("/api/routes/share", authMiddleware, async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    const { contactId, routeId } = req.body;
+    if (!contactId || !routeId) return res.status(400).json({ error: "contactId and routeId required" });
+    try {
+      const contact = await storage.getContact(req.userId, contactId);
+      if (!contact || contact.userId !== req.userId) return res.status(404).json({ error: "Contact not found" });
+      const route = await fitnessStorage.getPlannedRoute(routeId);
+      if (!route || route.userId !== req.userId) return res.status(404).json({ error: "Route not found" });
+      const user = await storage.getUserById(req.userId);
+      const distanceKm = (route.distanceM / 1000).toFixed(1);
+      const { Resend } = await import("resend");
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      await resend.emails.send({
+        from: "aok <no-reply@aok.care>",
+        to: contact.email,
+        subject: `${user?.name || "Someone"} shared a route with you`,
+        html: `<h2>Route: ${route.name}</h2><p><strong>${user?.name}</strong> shared a planned route with you.</p><p><strong>Distance:</strong> ${distanceKm} km</p><p><strong>Band:</strong> ${route.distanceBand || "Unknown"}</p><p>This route was shared via aok - the personal safety check-in app.</p>`,
+      });
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("Share route error:", err);
+      res.status(500).json({ error: "Failed to share route" });
+    }
+  });
+
+  app.get("/api/routes", authMiddleware, async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    const routes = await fitnessStorage.getUserPlannedRoutes(req.userId);
+    res.json(routes);
+  });
+
+  app.post("/api/routes", authMiddleware, async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const parsed = insertPlannedRouteSchema.parse(req.body);
+      const route = await fitnessStorage.createPlannedRoute(req.userId, parsed);
+      res.json(route);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message || "Failed to save route" });
+    }
+  });
+
+  app.get("/api/routes/:id", authMiddleware, async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    const route = await fitnessStorage.getPlannedRoute(req.params.id);
+    if (!route || route.userId !== req.userId) return res.status(404).json({ error: "Not found" });
+    res.json(route);
+  });
+
+  app.delete("/api/routes/:id", authMiddleware, async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    const deleted = await fitnessStorage.deletePlannedRoute(req.params.id, req.userId);
+    res.json({ success: deleted });
+  });
+
+  app.patch("/api/routes/:id", authMiddleware, async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const parsed = insertPlannedRouteSchema.partial().parse(req.body);
+      const route = await fitnessStorage.updatePlannedRoute(req.params.id, req.userId, parsed);
+      if (!route) return res.status(404).json({ error: "Not found" });
+      res.json(route);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message || "Invalid update data" });
     }
   });
 
