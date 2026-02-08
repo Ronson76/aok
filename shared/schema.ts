@@ -214,6 +214,8 @@ export const settings = pgTable("settings", {
   livingSituation: text("living_situation"),
   // Shake-to-SOS feature (enabled by default, user can disable in settings)
   shakeToSOSEnabled: boolean("shake_to_sos_enabled").notNull().default(true),
+  // Emergency recording consent (off by default, user must opt in)
+  emergencyRecordingEnabled: boolean("emergency_recording_enabled").notNull().default(false),
 });
 
 export type Settings = {
@@ -229,6 +231,7 @@ export type Settings = {
   additionalInfo: string | null;
   livingSituation: string | null;
   shakeToSOSEnabled: boolean;
+  emergencyRecordingEnabled: boolean;
 };
 
 export const updateSettingsSchema = z.object({
@@ -242,6 +245,7 @@ export const updateSettingsSchema = z.object({
   redAlertEnabled: z.boolean().optional(),
   trackingEnabled: z.boolean().optional(),
   shakeToSOSEnabled: z.boolean().optional(),
+  emergencyRecordingEnabled: z.boolean().optional(),
   password: z.string().optional(),
   additionalInfo: z.string().optional(),
   livingSituation: z.string().optional(),
@@ -559,6 +563,8 @@ export const organizationClients = pgTable("organization_clients", {
   featureMoodTracking: boolean("feature_mood_tracking").notNull().default(true),
   featurePetProtection: boolean("feature_pet_protection").notNull().default(true),
   featureDigitalWill: boolean("feature_digital_will").notNull().default(true),
+  // Emergency recording consent (off by default, org must opt in per client)
+  featureEmergencyRecording: boolean("feature_emergency_recording").notNull().default(false),
   // Soft-delete / archive fields
   archivedAt: timestamp("archived_at"),
   archivedBy: text("archived_by"),
@@ -596,6 +602,7 @@ export const registerOrgClientSchema = z.object({
     featureMoodTracking: z.boolean().default(true),
     featurePetProtection: z.boolean().default(true),
     featureDigitalWill: z.boolean().default(true),
+    featureEmergencyRecording: z.boolean().default(false),
   }).optional(),
 });
 
@@ -609,6 +616,7 @@ export const updateClientFeaturesSchema = z.object({
   featureMoodTracking: z.boolean().optional(),
   featurePetProtection: z.boolean().optional(),
   featureDigitalWill: z.boolean().optional(),
+  featureEmergencyRecording: z.boolean().optional(),
 });
 export type UpdateClientFeatures = z.infer<typeof updateClientFeaturesSchema>;
 
@@ -619,6 +627,7 @@ export type ClientFeatureSettings = {
   featureMoodTracking: boolean;
   featurePetProtection: boolean;
   featureDigitalWill: boolean;
+  featureEmergencyRecording: boolean;
 };
 
 // Organization client profiles table (detailed info about clients, managed by org)
@@ -1191,6 +1200,7 @@ export const organizationStaffInvites = pgTable("organization_staff_invites", {
   emergencyContactPhone: text("emergency_contact_phone"),
   emergencyContactEmail: text("emergency_contact_email"),
   emergencyContactRelationship: text("emergency_contact_relationship"),
+  emergencyRecordingEnabled: boolean("emergency_recording_enabled").notNull().default(false),
   inviteCode: varchar("invite_code", { length: 10 }).notNull().unique(),
   status: text("status").notNull().$type<StaffInviteStatus>().default("pending"),
   acceptedByUserId: varchar("accepted_by_user_id").references(() => users.id, { onDelete: "set null" }),

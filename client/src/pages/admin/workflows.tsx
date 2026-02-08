@@ -32,6 +32,8 @@ import {
   Radio,
   RefreshCw,
   Layers,
+  Video,
+  Lock,
 } from "lucide-react";
 
 function FlowArrow() {
@@ -168,6 +170,17 @@ export default function AdminWorkflows() {
           <StepBox icon={Phone} label="Emergency Voice Calls" sublabel="Automated calls to all emergency contacts" badge="Twilio" />
           <StepBox icon={MessageSquare} label="Emergency SMS" sublabel="Text alerts with location link" badge="Twilio" />
           <StepBox icon={CheckCircle} label="Safety Confirmation" sublabel="Contacts can confirm user is safe via web link" />
+        </WorkflowSection>
+
+        <FlowArrow />
+
+        <WorkflowSection icon={Video} title="Emergency Recording" description="Opt-in camera and microphone capture during emergencies" color="red">
+          <StepBox icon={Shield} label="Recording Enabled" sublabel="User opts in via Settings, or org admin enables for client" />
+          <StepBox icon={Siren} label="Emergency Triggered" sublabel="SOS button, shake-to-SOS, or missed check-in activates recording" />
+          <StepBox icon={Video} label="Permission Request" sublabel="App requests camera and microphone access if not already granted" />
+          <StepBox icon={Video} label="Recording Starts" sublabel="Camera and microphone capture begins automatically" />
+          <StepBox icon={Lock} label="Encrypted Storage" sublabel="Recording encrypted and stored securely" />
+          <StepBox icon={Send} label="Shared with Contacts" sublabel="Recording shared only with confirmed emergency contacts" />
         </WorkflowSection>
 
         <FlowArrow />

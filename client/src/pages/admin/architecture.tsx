@@ -24,6 +24,7 @@ import {
   Layers,
   Monitor,
   Key,
+  Video,
 } from "lucide-react";
 
 function LayerDivider({ label, icon: Icon }: { label: string; icon?: typeof Lock }) {
@@ -139,6 +140,7 @@ export default function AdminArchitecture() {
               <ServiceBox icon={MapPin} label="GPS + what3words" sublabel="Location sharing" />
               <ServiceBox icon={Brain} label="Wellbeing AI" sublabel="Mood + Voice chat" />
               <ServiceBox icon={Smartphone} label="Shake to SOS" sublabel="Motion detection" />
+              <ServiceBox icon={Video} label="Emergency Recording" sublabel="Camera + mic capture" />
               <ServiceBox icon={CreditCard} label="Stripe Billing" sublabel="Subscriptions" />
             </CardContent>
           </Card>

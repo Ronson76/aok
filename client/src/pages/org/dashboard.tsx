@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon, Video } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -177,6 +177,7 @@ export default function OrganizationDashboard() {
     featureMoodTracking: true,
     featurePetProtection: true,
     featureDigitalWill: true,
+    featureEmergencyRecording: false,
   });
   
   // Excel import state
@@ -248,6 +249,7 @@ export default function OrganizationDashboard() {
     featureMoodTracking: true,
     featurePetProtection: true,
     featureDigitalWill: true,
+    featureEmergencyRecording: false,
   });
   const [loadingFeatures, setLoadingFeatures] = useState(false);
   const [savingFeatures, setSavingFeatures] = useState(false);
@@ -669,6 +671,7 @@ export default function OrganizationDashboard() {
       featureMoodTracking: true,
       featurePetProtection: true,
       featureDigitalWill: true,
+      featureEmergencyRecording: false,
     });
   };
 
@@ -908,6 +911,7 @@ export default function OrganizationDashboard() {
         featureMoodTracking: true,
         featurePetProtection: true,
         featureDigitalWill: true,
+        featureEmergencyRecording: false,
       });
     } finally {
       setLoadingFeatures(false);
@@ -1633,6 +1637,18 @@ export default function OrganizationDashboard() {
                 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
+                    <Video className="h-4 w-4 text-red-500" />
+                    <span className="text-sm">Emergency Recording</span>
+                  </div>
+                  <Switch
+                    checked={regFeatures.featureEmergencyRecording}
+                    onCheckedChange={(checked) => setRegFeatures({...regFeatures, featureEmergencyRecording: checked})}
+                    data-testid="switch-reg-feature-recording"
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
                     <Smartphone className="h-4 w-4 text-purple-500" />
                     <span className="text-sm">Shake to Alert</span>
                   </div>
@@ -2165,6 +2181,9 @@ export default function OrganizationDashboard() {
                             )}
                             {client.features.featureDigitalWill && (
                               <span title="Digital Will"><Scroll className="h-3 w-3 text-slate-500" /></span>
+                            )}
+                            {client.features.featureEmergencyRecording && (
+                              <span title="Emergency Recording"><Video className="h-3 w-3 text-red-500" /></span>
                             )}
                           </div>
                         )}
@@ -3095,6 +3114,23 @@ export default function OrganizationDashboard() {
                         onCheckedChange={(checked) => updateClientFeature(selectedClient.id, "featureDigitalWill", checked)}
                         disabled={savingFeatures}
                         data-testid="switch-feature-digital-will"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-full bg-red-500/10 p-2">
+                          <Video className="h-5 w-5 text-red-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Emergency Recording</p>
+                          <p className="text-sm text-muted-foreground">Activate camera and microphone during emergencies</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={clientFeatures.featureEmergencyRecording}
+                        onCheckedChange={(checked) => updateClientFeature(selectedClient.id, "featureEmergencyRecording", checked)}
+                        disabled={savingFeatures}
+                        data-testid="switch-feature-emergency-recording"
                       />
                     </div>
                   </div>

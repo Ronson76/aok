@@ -172,6 +172,20 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "emergency-recording",
+    title: "Emergency recording",
+    content: [
+      "Emergency recording is an opt-in feature that activates your phone's camera and microphone when an emergency alert is triggered.",
+      "This feature is **off by default** — you must enable it manually before it will activate.",
+      "To enable it, go to **Settings** and toggle on **Emergency Recording**.",
+      "When an emergency alert is triggered (via the emergency button, Shake to SOS, or a missed check-in escalation), your device will automatically begin recording audio and video.",
+      "Recordings are **encrypted** and stored securely. They are only shared with your confirmed emergency contacts.",
+      "Recordings are retained for **90 days** and then automatically deleted.",
+      "You can disable emergency recording at any time by returning to **Settings** and toggling it off.",
+      "If you're managed by an organisation, your organisation admin may also enable or disable this feature on your behalf.",
+    ],
+  },
+  {
     id: "forgot-password",
     title: "Forgot password",
     content: [

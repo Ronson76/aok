@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, AlertTriangle, Smartphone, Eye, EyeOff, ExternalLink, CreditCard, AlertCircle, MapPin, Vibrate } from "lucide-react";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, AlertTriangle, Smartphone, Eye, EyeOff, ExternalLink, CreditCard, AlertCircle, MapPin, Vibrate, Video } from "lucide-react";
 import ShakeDetector from "@/lib/shake-detector";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -527,7 +527,7 @@ export default function Settings() {
   }, []);
 
   const updateMutation = useMutation({
-    mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean; scheduleStartTime?: string; password?: string; redAlertEnabled?: boolean; shakeToSOSEnabled?: boolean }) =>
+    mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean; scheduleStartTime?: string; password?: string; redAlertEnabled?: boolean; shakeToSOSEnabled?: boolean; emergencyRecordingEnabled?: boolean }) =>
       apiRequest("PATCH", "/api/settings", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
@@ -834,6 +834,52 @@ export default function Settings() {
               </div>
             </>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className={settings?.emergencyRecordingEnabled ? "border-red-500 dark:border-red-600" : ""}>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Video className={`h-4 w-4 ${settings?.emergencyRecordingEnabled ? "text-red-500" : "text-muted-foreground"}`} />
+            Emergency Recording
+          </CardTitle>
+          <CardDescription>
+            Activate your phone's camera and microphone during emergencies.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="emergency-recording-enabled" className="font-medium">
+                Enable Emergency Recording
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Record audio and video when an emergency alert is triggered
+              </p>
+            </div>
+            <Switch
+              id="emergency-recording-enabled"
+              checked={settings?.emergencyRecordingEnabled ?? false}
+              onCheckedChange={(checked) => {
+                updateMutation.mutate({ emergencyRecordingEnabled: checked });
+              }}
+              disabled={updateMutation.isPending}
+              data-testid="switch-emergency-recording-enabled"
+            />
+          </div>
+
+          <div className="flex items-start gap-2 p-3 rounded-md bg-red-50 dark:bg-red-950/30">
+            <Video className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-muted-foreground space-y-2">
+              <p><strong>How it works:</strong></p>
+              <ul className="list-disc list-inside space-y-1 ml-1">
+                <li>When an emergency alert is triggered, your phone's camera and microphone activate</li>
+                <li>Recordings are stored securely and encrypted</li>
+                <li>Only shared with your emergency contacts</li>
+                <li>You maintain full control and can disable at any time</li>
+              </ul>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
