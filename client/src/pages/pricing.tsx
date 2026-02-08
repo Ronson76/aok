@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Check, Lock, Phone, FileText, Heart, Users, Clock, Mail, Bell, AlertTriangle, MapPin, Smartphone, Building2, TrendingUp, PawPrint, Scroll, ArrowLeft, Mic, TreePine, Shield, Headphones } from "lucide-react";
+import { ShieldCheck, Check, Lock, Phone, FileText, Heart, Users, Clock, Mail, Bell, AlertTriangle, MapPin, Smartphone, Building2, TrendingUp, PawPrint, Scroll, ArrowLeft, Mic, TreePine, Shield, Headphones, Activity } from "lucide-react";
+import { SiStrava } from "react-icons/si";
 
 export default function Pricing() {
   const [isYearly, setIsYearly] = useState(false);
@@ -49,6 +50,7 @@ export default function Pricing() {
         { text: "Pet protection profiles with vet info", icon: PawPrint },
         { text: "Digital will & document storage", icon: Scroll },
         { text: "Wellbeing AI chat with voice mode", icon: Headphones },
+        { text: "Strava fitness tracking", icon: Activity },
         { text: "Offline emergency overlay", icon: Shield },
         { text: "Tree planted via Ecologi on signup", icon: TreePine },
       ],
@@ -101,6 +103,7 @@ export default function Pricing() {
     { name: "Pet protection profiles", trial: true, complete: true, org: true },
     { name: "Digital will & document storage", trial: true, complete: true, org: true },
     { name: "Wellbeing AI chat + voice mode", trial: true, complete: true, org: true },
+    { name: "Strava fitness tracking", trial: true, complete: true, org: true, hasStravaBadge: true },
     { name: "Ecologi tree planting", trial: false, complete: true, org: true },
     { name: "Organisation dashboard", trial: false, complete: false, org: true },
     { name: "Bulk client management", trial: false, complete: false, org: true },
@@ -262,7 +265,16 @@ export default function Pricing() {
                   <tbody>
                     {comparisonFeatures.map((feature, i) => (
                       <tr key={i} className={i % 2 === 0 ? "bg-muted/30" : ""}>
-                        <td className="py-3 px-4">{feature.name}</td>
+                        <td className="py-3 px-4">
+                          <span className="flex items-center gap-2 flex-wrap">
+                            {feature.name}
+                            {(feature as any).hasStravaBadge && (
+                              <span className="inline-flex items-center gap-1 text-[#FC4C02]">
+                                <SiStrava className="h-3.5 w-3.5" />
+                              </span>
+                            )}
+                          </span>
+                        </td>
                         <td className="text-center py-3 px-4">
                           {feature.trial ? (
                             <Check className="h-4 w-4 text-green-600 mx-auto" />
