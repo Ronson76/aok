@@ -72,7 +72,9 @@ export const fitnessStorage = {
     totalActivities: number;
     totalDistanceM: number;
     totalDurationSec: number;
-    byType: Record<string, { count: number; distanceM: number; durationSec: number }>;
+    totalSteps: number;
+    totalCalories: number;
+    byType: Record<string, { count: number; distanceM: number; durationSec: number; steps: number; calories: number }>;
   }> {
     const activities = await db.select().from(fitnessActivities)
       .where(and(eq(fitnessActivities.userId, userId), eq(fitnessActivities.status, "completed")));
@@ -81,16 +83,22 @@ export const fitnessStorage = {
       totalActivities: activities.length,
       totalDistanceM: 0,
       totalDurationSec: 0,
-      byType: {} as Record<string, { count: number; distanceM: number; durationSec: number }>,
+      totalSteps: 0,
+      totalCalories: 0,
+      byType: {} as Record<string, { count: number; distanceM: number; durationSec: number; steps: number; calories: number }>,
     };
 
     for (const a of activities) {
       stats.totalDistanceM += a.distanceM;
       stats.totalDurationSec += a.durationSec;
-      if (!stats.byType[a.type]) stats.byType[a.type] = { count: 0, distanceM: 0, durationSec: 0 };
+      stats.totalSteps += a.stepCount || 0;
+      stats.totalCalories += a.caloriesEstimate || 0;
+      if (!stats.byType[a.type]) stats.byType[a.type] = { count: 0, distanceM: 0, durationSec: 0, steps: 0, calories: 0 };
       stats.byType[a.type].count++;
       stats.byType[a.type].distanceM += a.distanceM;
       stats.byType[a.type].durationSec += a.durationSec;
+      stats.byType[a.type].steps += a.stepCount || 0;
+      stats.byType[a.type].calories += a.caloriesEstimate || 0;
     }
 
     return stats;
