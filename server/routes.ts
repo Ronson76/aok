@@ -1,7 +1,7 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, organizationStorage, adminStorage } from "./storage";
-import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, insertMoodEntrySchema, insertPetSchema, updatePetSchema, insertDigitalDocumentSchema, updateDigitalDocumentSchema } from "@shared/schema";
+import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, insertMoodEntrySchema, insertPetSchema, updatePetSchema, insertDigitalDocumentSchema, updateDigitalDocumentSchema, insertErrandSessionSchema, errandActivityTypes } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { randomBytes } from "crypto";
@@ -3705,6 +3705,139 @@ export async function registerRoutes(
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: "Failed to attach activity to emergency" });
+    }
+  });
+
+  // ===== ACTIVITY / ERRANDS ROUTES =====
+
+  app.post("/api/errands/start", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const parsed = insertErrandSessionSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: "Invalid data", details: parsed.error.flatten() });
+      const existing = await storage.getActiveErrandSession(req.userId!);
+      if (existing) return res.status(409).json({ error: "You already have an active activity session. Complete or cancel it first." });
+      const session = await storage.createErrandSession(req.userId!, parsed.data);
+      res.status(201).json(session);
+    } catch (error: any) {
+      console.error("[ERRANDS] Start error:", error);
+      res.status(500).json({ error: "Failed to start activity session" });
+    }
+  });
+
+  app.get("/api/errands/active", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const session = await storage.getActiveErrandSession(req.userId!);
+      res.json(session || null);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get active session" });
+    }
+  });
+
+  app.get("/api/errands/history", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const sessions = await storage.getErrandSessions(req.userId!, limit);
+      res.json(sessions);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get session history" });
+    }
+  });
+
+  app.get("/api/errands/:id", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const session = await storage.getErrandSession(req.userId!, req.params.id);
+      if (!session) return res.status(404).json({ error: "Session not found" });
+      res.json(session);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get session" });
+    }
+  });
+
+  app.post("/api/errands/:id/gps", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const { lat, lng } = req.body;
+      if (lat == null || lng == null) return res.status(400).json({ error: "Latitude and longitude required" });
+      const session = await storage.getErrandSession(req.userId!, req.params.id);
+      if (!session) return res.status(404).json({ error: "Session not found" });
+      if (session.status === "completed" || session.status === "cancelled") {
+        return res.status(400).json({ error: "Session is no longer active" });
+      }
+      const gpsPoint = { lat: parseFloat(lat), lng: parseFloat(lng), timestamp: Date.now() };
+      const updated = await storage.updateErrandSessionGps(req.params.id, String(lat), String(lng), gpsPoint);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to update GPS" });
+    }
+  });
+
+  app.post("/api/errands/:id/checkin", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const session = await storage.getErrandSession(req.userId!, req.params.id);
+      if (!session) return res.status(404).json({ error: "Session not found" });
+      if (session.status === "completed" || session.status === "cancelled") {
+        return res.status(400).json({ error: "Session is no longer active" });
+      }
+      const now = new Date();
+      const newExpectedEnd = new Date(now.getTime() + session.expectedDurationMins * 60 * 1000);
+      const newGraceEnd = new Date(newExpectedEnd.getTime() + 10 * 60 * 1000);
+      const { lat, lng } = req.body;
+      if (lat != null && lng != null) {
+        const gpsPoint = { lat: parseFloat(lat), lng: parseFloat(lng), timestamp: Date.now() };
+        await storage.updateErrandSessionGps(req.params.id, String(lat), String(lng), gpsPoint);
+      }
+      const updated = await storage.extendErrandSession(req.params.id, newExpectedEnd, newGraceEnd);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to check in" });
+    }
+  });
+
+  app.post("/api/errands/:id/complete", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const session = await storage.getErrandSession(req.userId!, req.params.id);
+      if (!session) return res.status(404).json({ error: "Session not found" });
+      if (session.status === "completed" || session.status === "cancelled") {
+        return res.status(400).json({ error: "Session already ended" });
+      }
+      const completed = await storage.completeErrandSession(req.params.id);
+      res.json(completed);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to complete session" });
+    }
+  });
+
+  app.post("/api/errands/:id/cancel", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const session = await storage.getErrandSession(req.userId!, req.params.id);
+      if (!session) return res.status(404).json({ error: "Session not found" });
+      if (session.status === "completed" || session.status === "cancelled") {
+        return res.status(400).json({ error: "Session already ended" });
+      }
+      const cancelled = await storage.cancelErrandSession(req.params.id);
+      res.json(cancelled);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to cancel session" });
+    }
+  });
+
+  app.post("/api/errands/:id/extend", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const { additionalMins } = req.body;
+      if (!additionalMins || additionalMins < 5 || additionalMins > 480) {
+        return res.status(400).json({ error: "Additional minutes must be between 5 and 480" });
+      }
+      const session = await storage.getErrandSession(req.userId!, req.params.id);
+      if (!session) return res.status(404).json({ error: "Session not found" });
+      if (session.status === "completed" || session.status === "cancelled") {
+        return res.status(400).json({ error: "Session already ended" });
+      }
+      const now = new Date();
+      const newExpectedEnd = new Date(now.getTime() + additionalMins * 60 * 1000);
+      const newGraceEnd = new Date(newExpectedEnd.getTime() + 10 * 60 * 1000);
+      const updated = await storage.extendErrandSession(req.params.id, newExpectedEnd, newGraceEnd);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to extend session" });
     }
   });
 

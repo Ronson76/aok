@@ -151,6 +151,7 @@ export default function Landing() {
         { text: "Digital will storage", icon: Scroll },
         { text: "Wellbeing AI (Exclusive)", icon: Sparkles },
         { text: "GPS fitness tracking", icon: FaRunning },
+        { text: "Activities tracker", icon: MapPin },
       ],
       cta: "Get Started",
       ctaLink: "/onboarding",

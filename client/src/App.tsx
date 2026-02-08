@@ -83,6 +83,7 @@ import Guide from "@/pages/guide";
 import ConfirmContact from "@/pages/confirm-contact";
 import WellbeingAI from "@/pages/wellbeing-ai";
 import LoneWorker from "@/pages/lone-worker";
+import Errands from "@/pages/errands";
 import { TermsModal } from "@/components/terms-modal";
 
 function PaymentBlockedScreen() {
@@ -237,6 +238,7 @@ function AppRoutes() {
       <Route path="/app/pets" component={() => <ProtectedRoute component={Pets} />} />
       <Route path="/app/documents" component={() => <ProtectedRoute component={Documents} />} />
       <Route path="/fitness" component={() => <ProtectedRoute component={Fitness} />} />
+      <Route path="/app/errands" component={() => <ProtectedRoute component={Errands} />} />
       <Route path="/app/wellbeing-ai" component={() => <ProtectedRoute component={WellbeingAI} />} />
       <Route component={NotFound} />
     </Switch>

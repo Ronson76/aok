@@ -118,6 +118,7 @@ const HELP_TOPICS: HelpTopic[] = [
       "**Pet Protection** — store pet care details for emergencies.",
       "**Digital Will** — secure document storage.",
       "**Fitness Tracking** — record runs, walks, and rides with GPS tracking, route maps, and social features. For personal wellbeing only — does not provide medical advice or health monitoring.",
+      "**Activities Tracker** — log everyday activities (walking, shopping, errands, appointments, visiting, commuting, dog walking, exercise) with GPS tracking and automatic contact notification if the expected duration plus 10-minute grace period expires.",
       "**Emergency Recording** — activate camera and microphone during emergency alerts (opt-in, off by default).",
       "Toggle these on or off from the client's detail view on your dashboard.",
       "Changes take effect immediately — the client will see features appear or disappear on their next visit.",
