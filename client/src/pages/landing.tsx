@@ -31,8 +31,10 @@ import { useAuth } from "@/contexts/auth-context";
 import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_animation.mp4";
 import alertsVideo from "@assets/generated_videos/english_sms_alert_notification.mp4";
 
-const MONTHLY_PRICE = 6.99;
-const YEARLY_PRICE = 69.99;
+const TIER1_MONTHLY_PRICE = 6.99;
+const TIER1_YEARLY_PRICE = 69.99;
+const TIER2_MONTHLY_PRICE = 9.99;
+const TIER2_YEARLY_PRICE = 99.99;
 
 interface EcologiImpact {
   trees: number;
@@ -114,31 +116,45 @@ export default function Landing() {
       isTrial: true,
     },
     {
-      name: "Complete Protection",
-      description: "Everything you need to stay safe and connected.",
-      monthlyPrice: MONTHLY_PRICE,
-      yearlyPrice: YEARLY_PRICE,
+      name: "Essential Safety",
+      description: "Core safety features to keep you protected.",
+      monthlyPrice: TIER1_MONTHLY_PRICE,
+      yearlyPrice: TIER1_YEARLY_PRICE,
       features: [
         { text: "Shake to Alert - instant emergency help", icon: Zap },
         { text: "Flexible check-in timer (5 mins to 48 hours)", icon: Clock },
         { text: "Up to 5 emergency contacts", icon: Users },
         { text: "Email, SMS & voice call alerts", icon: Bell },
         { text: "Emergency alert button", icon: AlertTriangle },
-        { text: "Emergency recording (opt-in)", icon: Lock },
         { text: "GPS location with what3words", icon: MapPin },
         { text: "Push notifications", icon: Smartphone },
         { text: "Primary contact updates", icon: Heart },
+        { text: "Offline SMS check-in backup", icon: MessageSquare },
+      ],
+      cta: "Get Started",
+      ctaLink: "/onboarding",
+      highlight: false,
+      launchNote: "Launch pricing - Lock in today's rate forever",
+      priceProtected: true,
+    },
+    {
+      name: "Complete Protection",
+      description: "Everything in Essential Safety plus wellness, AI, and more.",
+      monthlyPrice: TIER2_MONTHLY_PRICE,
+      yearlyPrice: TIER2_YEARLY_PRICE,
+      features: [
+        { text: "Everything in Essential Safety", icon: Check },
+        { text: "Emergency recording (opt-in)", icon: Lock },
         { text: "Mood & wellness tracking", icon: TrendingUp },
         { text: "Pet protection profiles", icon: PawPrint },
         { text: "Digital will storage", icon: Scroll },
-        { text: "Offline SMS check-in backup", icon: MessageSquare },
         { text: "Wellbeing AI (Exclusive)", icon: Sparkles },
         { text: "Strava fitness tracking", icon: SiStrava, isStrava: true },
       ],
       cta: "Get Started",
       ctaLink: "/onboarding",
       highlight: true,
-      badge: "All Features Included",
+      badge: "Most Popular",
       launchNote: "Launch pricing - Lock in today's rate forever",
       priceProtected: true,
     },
@@ -921,12 +937,12 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {pricingPlans.map((plan, index) => (
               <Card 
                 key={index} 
-                className={`relative flex flex-col ${plan.highlight ? "border-primary shadow-lg md:scale-105" : ""}`}
-                data-testid={`card-landing-plan-${plan.name.toLowerCase()}`}
+                className={`relative flex flex-col ${plan.highlight ? "border-primary shadow-lg" : ""}`}
+                data-testid={`card-landing-plan-${plan.name.toLowerCase().replace(/\s+/g, '-')}`}
               >
                 {plan.badge && (
                   <Badge className="absolute -top-3 left-1/2 -translate-x-1/2" data-testid="badge-landing-most-popular">
@@ -1019,8 +1035,8 @@ export default function Landing() {
                 Is aok free to use?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-1">
-                The app gives you 7 days free and then we charge a nominal fee of £{MONTHLY_PRICE.toFixed(2)} per month 
-                for our Complete Protection package, which includes all features.
+                The app gives you 7 days free. After that, our Essential Safety plan starts at £{TIER1_MONTHLY_PRICE.toFixed(2)} per month, 
+                or upgrade to Complete Protection at £{TIER2_MONTHLY_PRICE.toFixed(2)} per month for wellness, AI, and more.
               </AccordionContent>
             </AccordionItem>
             
