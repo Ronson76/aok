@@ -1152,4 +1152,113 @@ export function registerAdminRoutes(app: Express) {
       res.status(500).json({ error: "Failed to resend invite" });
     }
   });
+
+  // ==================== TIER PERMISSIONS ====================
+
+  app.get("/api/admin/tier-permissions", adminAuthMiddleware, async (req, res) => {
+    try {
+      let permissions = await storage.getAllTierPermissions();
+      if (permissions.length === 0) {
+        const tier1 = await storage.upsertTierPermissions("tier1", {
+          featureCheckIn: true,
+          featureShakeToAlert: true,
+          featureEmergencyAlert: true,
+          featureGpsLocation: true,
+          featurePushNotifications: true,
+          featurePrimaryContact: true,
+          featureSmsBackup: true,
+          featureEmergencyRecording: false,
+          featureMoodTracking: false,
+          featurePetProtection: false,
+          featureDigitalWill: false,
+          featureWellbeingAi: false,
+          featureFitnessTracking: false,
+          featureActivitiesTracker: false,
+        });
+        const tier2 = await storage.upsertTierPermissions("tier2", {
+          featureCheckIn: true,
+          featureShakeToAlert: true,
+          featureEmergencyAlert: true,
+          featureGpsLocation: true,
+          featurePushNotifications: true,
+          featurePrimaryContact: true,
+          featureSmsBackup: true,
+          featureEmergencyRecording: true,
+          featureMoodTracking: true,
+          featurePetProtection: true,
+          featureDigitalWill: true,
+          featureWellbeingAi: true,
+          featureFitnessTracking: true,
+          featureActivitiesTracker: true,
+        });
+        permissions = [tier1, tier2];
+      }
+      res.json(permissions);
+    } catch (error) {
+      console.error("[TIER PERMISSIONS] Error fetching:", error);
+      res.status(500).json({ error: "Failed to fetch tier permissions" });
+    }
+  });
+
+  app.put("/api/admin/tier-permissions/:tier", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const tier = req.params.tier as SubscriptionTier;
+      if (!subscriptionTiers.includes(tier)) {
+        return res.status(400).json({ error: "Invalid tier. Must be 'tier1' or 'tier2'" });
+      }
+      const validation = updateTierPermissionsSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors[0].message });
+      }
+      const updated = await storage.upsertTierPermissions(tier, validation.data);
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "update",
+        "tier_permissions",
+        tier,
+        `Updated ${tier === "tier1" ? "Essential" : "Complete Wellbeing"} tier permissions`
+      );
+      res.json(updated);
+    } catch (error) {
+      console.error("[TIER PERMISSIONS] Error updating:", error);
+      res.status(500).json({ error: "Failed to update tier permissions" });
+    }
+  });
+
+  // ==================== ORGANISATION FEATURE DEFAULTS ====================
+
+  app.get("/api/admin/organizations/:orgId/feature-defaults", adminAuthMiddleware, async (req, res) => {
+    try {
+      const defaults = await storage.getOrgFeatureDefaults(req.params.orgId);
+      if (!defaults) {
+        return res.status(404).json({ error: "Organisation not found" });
+      }
+      res.json(defaults);
+    } catch (error) {
+      console.error("[ORG FEATURES] Error fetching:", error);
+      res.status(500).json({ error: "Failed to fetch organisation feature defaults" });
+    }
+  });
+
+  app.put("/api/admin/organizations/:orgId/feature-defaults", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const validation = orgFeatureDefaultsSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors[0].message });
+      }
+      await storage.updateOrgFeatureDefaults(req.params.orgId, validation.data);
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "update",
+        "organization_features",
+        req.params.orgId,
+        `Updated organisation feature defaults`
+      );
+      const updated = await storage.getOrgFeatureDefaults(req.params.orgId);
+      res.json(updated);
+    } catch (error) {
+      console.error("[ORG FEATURES] Error updating:", error);
+      res.status(500).json({ error: "Failed to update organisation feature defaults" });
+    }
+  });
 }
