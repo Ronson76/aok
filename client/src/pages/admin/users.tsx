@@ -268,7 +268,7 @@ export default function AdminUsers() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <Link href="/admin" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" data-testid="link-home-logo">
               <ArrowLeft className="h-5 w-5 text-green-600" />
@@ -280,35 +280,27 @@ export default function AdminUsers() {
               <p className="text-sm text-muted-foreground">Manage all registered users</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="secondary">{admin?.role}</Badge>
-            <nav className="flex gap-2">
-              <Button 
-                variant="ghost" 
-                onClick={() => setLocation("/admin")}
-                data-testid="nav-dashboard"
-              >
-                Dashboard
-              </Button>
-              <Button 
-                variant="secondary" 
-                onClick={() => setLocation("/admin/users")}
-                data-testid="nav-users"
-              >
-                Users
-              </Button>
-              <Button 
-                variant="ghost" 
-                onClick={() => setLocation("/admin/bundles")}
-                data-testid="nav-bundles"
-              >
-                Bundles
-              </Button>
-            </nav>
             <Button variant="outline" size="sm" onClick={handleLogout} data-testid="button-admin-logout">
               <LogOut className="w-4 h-4 mr-2" />
               Logout
             </Button>
+          </div>
+        </div>
+        <div className="border-t">
+          <div className="container mx-auto px-4">
+            <nav className="flex items-center gap-1 overflow-x-auto py-1 scrollbar-hide" data-testid="nav-admin-tabs">
+              <Button variant="ghost" size="sm" onClick={() => setLocation("/admin")} data-testid="nav-dashboard">
+                Dashboard
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => setLocation("/admin/users")} data-testid="nav-users">
+                Users
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setLocation("/admin/bundles")} data-testid="nav-bundles">
+                Bundles
+              </Button>
+            </nav>
           </div>
         </div>
       </header>
