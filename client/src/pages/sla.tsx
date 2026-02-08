@@ -48,7 +48,7 @@ export default function SLA() {
               <ul className="list-disc pl-6 text-muted-foreground space-y-2 mt-2">
                 <li>Scheduled maintenance (notified at least 48 hours in advance)</li>
                 <li>Force majeure events (natural disasters, government actions, pandemics)</li>
-                <li>Third-party service outages (Twilio, Resend, Stripe, OpenAI)</li>
+                <li>Third-party service outages affecting alerts, Call Supervisor calls, or AI features (Twilio, Resend, Stripe, OpenAI)</li>
                 <li>Issues caused by the Customer's own systems or network</li>
                 <li>DDoS attacks or other malicious external activity</li>
               </ul>

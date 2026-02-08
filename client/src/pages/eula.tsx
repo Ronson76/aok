@@ -64,7 +64,7 @@ export default function EULA() {
             <section>
               <h2 className="text-xl font-semibold mb-3">4. Disclaimer</h2>
               <p className="text-muted-foreground leading-relaxed">
-                The software is provided "as is" without warranties of any kind, either express or implied, including but not limited to the implied warranties of merchantability, fitness for a particular purpose, and non-infringement. A-OK is a personal safety support tool and is not a substitute for emergency services. Naiyatech Ltd does not guarantee uninterrupted or error-free operation of the software.
+                The software is provided "as is" without warranties of any kind, either express or implied, including but not limited to the implied warranties of merchantability, fitness for a particular purpose, and non-infringement. A-OK is a personal safety support tool and is not a substitute for emergency services. Features such as Call Supervisor rely on third-party telephony services and network availability; Naiyatech Ltd does not guarantee that calls will always connect successfully. Naiyatech Ltd does not guarantee uninterrupted or error-free operation of the software.
               </p>
             </section>
 

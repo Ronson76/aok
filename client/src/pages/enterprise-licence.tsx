@@ -36,7 +36,7 @@ export default function EnterpriseLicence() {
             <section>
               <h2 className="text-xl font-semibold mb-3">1. Licence Scope</h2>
               <p className="text-muted-foreground leading-relaxed">
-                Licence granted to the organisation. Naiyatech Ltd grants the organisation a non-exclusive, non-transferable licence to use the A-OK software for its authorised users. The licence scope is determined by the number of seats purchased and the specific bundle terms agreed upon.
+                Licence granted to the organisation. Naiyatech Ltd grants the organisation a non-exclusive, non-transferable licence to use the A-OK software for its authorised users. The licence scope is determined by the number of seats purchased and the specific bundle terms agreed upon. The licence includes access to all organisation features, including client management, safeguarding hub, Call Supervisor, and any optional wellness features enabled for clients.
               </p>
             </section>
 
@@ -50,6 +50,7 @@ export default function EnterpriseLicence() {
                 <li>Ensuring users comply with this licence agreement</li>
                 <li>Managing user access credentials and permissions</li>
                 <li>Maintaining accurate records of authorised users</li>
+                <li>Providing and maintaining an accurate supervisor phone number for the Call Supervisor feature</li>
                 <li>Promptly deactivating access for departing personnel</li>
               </ul>
             </section>

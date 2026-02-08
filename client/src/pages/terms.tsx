@@ -26,7 +26,7 @@ export default function Terms() {
         <Card>
           <CardHeader>
             <CardTitle className="text-3xl" data-testid="text-terms-title">Terms and Conditions</CardTitle>
-            <p className="text-muted-foreground">Last updated: January 2026</p>
+            <p className="text-muted-foreground">Last updated: February 2026</p>
           </CardHeader>
           <CardContent className="prose prose-sm dark:prose-invert max-w-none space-y-6">
             <section>
@@ -52,6 +52,7 @@ export default function Terms() {
                 <li>Scheduled check-in reminders at intervals you choose</li>
                 <li>Automated alerts to your emergency contacts if you miss a check-in</li>
                 <li>Emergency alert functionality with optional GPS location sharing</li>
+                <li>Call Supervisor feature allowing organisation-managed users to contact their supervisor directly via voice call</li>
                 <li>Optional wellness features including mood tracking and pet protection profiles</li>
               </ul>
             </section>
@@ -93,7 +94,7 @@ export default function Terms() {
             <section>
               <h2 className="text-xl font-semibold mb-3">7. Limitation of Liability</h2>
               <p className="text-muted-foreground leading-relaxed">
-                While we strive to provide a reliable service, aok is not a substitute for emergency services. In life-threatening situations, always contact 999 (UK) or your local emergency number directly. We are not liable for any failure to deliver notifications due to network issues, device problems, or other circumstances beyond our control.
+                While we strive to provide a reliable service, aok is not a substitute for emergency services. In life-threatening situations, always contact 999 (UK) or your local emergency number directly. We are not liable for any failure to deliver notifications or connect voice calls (including Call Supervisor calls) due to network issues, device problems, or other circumstances beyond our control.
               </p>
             </section>
 
