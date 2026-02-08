@@ -39,7 +39,7 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Alert System**: Detects overdue check-ins, creates "missed" records, and sends email/voice alerts.
 - **Primary Contact**: Designate one contact to receive notifications for every successful check-in.
 - **Contact Confirmation**: Emergency contacts must confirm via email within 10 minutes to be active.
-- **Wellness Features**: Optional Mood/Wellness Tracking, Pet Protection, and Digital Will Storage.
+- **Wellness Features**: Optional Mood/Wellness Tracking, Pet Protection, Digital Will Storage, and Strava Fitness Tracking.
 - **SMS Check-in Reminders**: Automatic SMS fallback for overdue check-ins with a secure tokenised check-in link.
 - **Offline Emergency Overlay**: Displays primary contact quick-dial button and 999 emergency button if connection is lost.
 - **Subscription Management**: Displays subscription status, allows cancellation/reactivation.
@@ -118,3 +118,4 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Stripe**: Payment processing with subscription management, 7-day free trial, Apple Pay/Google Pay support.
 - **Ecologi**: Environmental impact tracking and automatic tree planting for new subscribers.
 - **OpenAI**: For AI chat features (GPT-4o for responses, TTS for voice output, Whisper API for speech-to-text).
+- **Strava**: OAuth2 integration for fitness activity tracking (read-only access to activities, stats, athlete profile).

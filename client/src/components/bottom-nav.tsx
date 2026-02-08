@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, Users, History, Settings, Building2, TrendingUp, PawPrint, FileText, Heart, Lock, Shield } from "lucide-react";
+import { Home, Users, History, Settings, Building2, TrendingUp, PawPrint, FileText, Heart, Lock, Shield, Activity } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -38,6 +38,7 @@ interface FeatureFlags {
   featureMoodTracking: boolean;
   featurePetProtection: boolean;
   featureDigitalWill: boolean;
+  featureFitnessTracking: boolean;
 }
 
 export function BottomNav() {
@@ -82,6 +83,12 @@ export function BottomNav() {
       icon: FileText, 
       label: "Digital Will", 
       enabled: features?.featureDigitalWill !== false && isRegistrationComplete 
+    },
+    { 
+      path: "/fitness", 
+      icon: Activity, 
+      label: "Fitness Tracking", 
+      enabled: features?.featureFitnessTracking !== false && isRegistrationComplete 
     },
   ];
   

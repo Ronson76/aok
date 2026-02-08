@@ -36,6 +36,7 @@ import Settings from "@/pages/settings";
 import Mood from "@/pages/mood";
 import Pets from "@/pages/pets";
 import Documents from "@/pages/documents";
+import Fitness from "@/pages/fitness";
 import NotFound from "@/pages/not-found";
 import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/dashboard";
@@ -235,6 +236,7 @@ function AppRoutes() {
       <Route path="/app/mood" component={() => <ProtectedRoute component={Mood} />} />
       <Route path="/app/pets" component={() => <ProtectedRoute component={Pets} />} />
       <Route path="/app/documents" component={() => <ProtectedRoute component={Documents} />} />
+      <Route path="/fitness" component={() => <ProtectedRoute component={Fitness} />} />
       <Route path="/app/wellbeing-ai" component={() => <ProtectedRoute component={WellbeingAI} />} />
       <Route component={NotFound} />
     </Switch>

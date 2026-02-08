@@ -21,7 +21,8 @@ import {
   OrgMember, OrgMemberProfile, OrgMemberSession, OrgMemberInvite, OrgMemberClientAssignment,
   OrgMemberRole, OrgMemberStatus, OrgMemberInviteStatus,
   AdminInvite, AdminRole,
-  emergencyRecordings, EmergencyRecording
+  emergencyRecordings, EmergencyRecording,
+  stravaConnections, StravaConnection, InsertStravaConnection
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, ne, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray, inArray } from "drizzle-orm";
@@ -152,6 +153,12 @@ export interface IStorage {
   createDeactivationConfirmation(userId: string, alertId: string, contactEmail: string, contactName: string, latitude: string | null, longitude: string | null, what3words: string | null): Promise<{ id: string; token: string }>;
   getDeactivationConfirmationByToken(token: string): Promise<any | undefined>;
   confirmDeactivation(token: string, auditInfo?: { confirmedAt: Date; confirmedByIp: string; confirmedByUserAgent: string }): Promise<boolean>;
+
+  // Strava connections
+  getStravaConnection(userId: string): Promise<StravaConnection | undefined>;
+  createStravaConnection(data: InsertStravaConnection): Promise<StravaConnection>;
+  updateStravaConnection(userId: string, updates: { accessToken: string; refreshToken: string; expiresAt: Date }): Promise<StravaConnection | undefined>;
+  deleteStravaConnection(userId: string): Promise<boolean>;
 
   // Terms and conditions
   acceptTerms(userId: string): Promise<void>;
@@ -1318,6 +1325,58 @@ class DatabaseStorage implements IStorage {
   }
 
   // Terms and conditions
+  async getStravaConnection(userId: string): Promise<StravaConnection | undefined> {
+    const result = await getDb()
+      .select()
+      .from(stravaConnections)
+      .where(eq(stravaConnections.userId, userId))
+      .limit(1);
+    return result[0];
+  }
+
+  async createStravaConnection(data: InsertStravaConnection): Promise<StravaConnection> {
+    const existing = await this.getStravaConnection(data.userId);
+    if (existing) {
+      const result = await getDb()
+        .update(stravaConnections)
+        .set({
+          athleteId: data.athleteId,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          expiresAt: data.expiresAt,
+          scope: data.scope,
+          athleteFirstName: data.athleteFirstName,
+          athleteLastName: data.athleteLastName,
+          athleteProfileImage: data.athleteProfileImage,
+        })
+        .where(eq(stravaConnections.userId, data.userId))
+        .returning();
+      return result[0];
+    }
+    const result = await getDb()
+      .insert(stravaConnections)
+      .values(data)
+      .returning();
+    return result[0];
+  }
+
+  async updateStravaConnection(userId: string, updates: { accessToken: string; refreshToken: string; expiresAt: Date }): Promise<StravaConnection | undefined> {
+    const result = await getDb()
+      .update(stravaConnections)
+      .set(updates)
+      .where(eq(stravaConnections.userId, userId))
+      .returning();
+    return result[0];
+  }
+
+  async deleteStravaConnection(userId: string): Promise<boolean> {
+    const result = await getDb()
+      .delete(stravaConnections)
+      .where(eq(stravaConnections.userId, userId))
+      .returning({ id: stravaConnections.id });
+    return result.length > 0;
+  }
+
   async acceptTerms(userId: string): Promise<void> {
     await getDb()
       .update(users)
