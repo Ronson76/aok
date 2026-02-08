@@ -77,6 +77,8 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 ### Documentation & Guides (KEEP UPDATED)
 - **Public How-to Guide** (`client/src/pages/guide.tsx`): A-Z individual user guide at `/guide` with 30+ topics, alphabet navigation, search. Covers account creation, check-ins, emergency features, wellbeing, settings, troubleshooting. **Must be updated when any user-facing feature changes.**
 - **Organisation Help Centre** (`client/src/components/org-help-center.tsx`): A-Z org management guide with 40+ topics covering clients, staff, lone worker, safeguarding, reports, account settings. **Must be updated when any org-facing feature changes.**
+- **VPC Architecture Diagram** (`client/src/pages/admin/architecture.tsx`): Visual system architecture showing all layers (frontend, security, products, database, external services). **Must be updated when any architectural component changes.**
+- **Site Workflows Diagram** (`client/src/pages/admin/workflows.tsx`): Visual step-by-step workflow diagrams for all major features. **Must be updated when any workflow or feature flow changes.**
 
 ### Key Design Decisions
 - **Monorepo**: Client, server, and shared code in one repository.

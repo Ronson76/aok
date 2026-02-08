@@ -225,6 +225,16 @@ export default function AdminWorkflows() {
 
         <FlowArrow />
 
+        <WorkflowSection icon={Phone} title="Call Supervisor" description="Org clients ring their supervisor directly" color="indigo">
+          <StepBox icon={Phone} label="Client Taps Call Supervisor" sublabel="Button visible on org-managed client dashboard" />
+          <StepBox icon={Shield} label="Confirmation Dialog" sublabel="Client confirms they want to place the call" />
+          <StepBox icon={Phone} label="Twilio Voice Call" sublabel="Call placed to organisation's phone number" badge="Twilio" />
+          <StepBox icon={MessageSquare} label="Voice Message" sublabel="Supervisor hears client name and request to speak" />
+          <StepBox icon={CheckCircle} label="Normal Incoming Call" sublabel="Supervisor answers on their phone — no app needed" />
+        </WorkflowSection>
+
+        <FlowArrow />
+
         <WorkflowSection icon={Brain} title="Wellbeing AI Chat" description="AI-powered emotional support" color="pink">
           <StepBox icon={Brain} label="Chat Session" sublabel="GPT-4o powered conversational support" badge="OpenAI" />
           <StepBox icon={Heart} label="Mood Detection" sublabel="AI analyses mood patterns from conversations" />
