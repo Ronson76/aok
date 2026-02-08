@@ -23,6 +23,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "You'll set your name, date of birth, and phone number during a short onboarding flow.",
       "Choose your check-in frequency (how often you want to check in, from every 1 to 48 hours).",
       "Add at least one emergency contact — someone you'd like notified if you miss a check-in.",
+      "Before completing your account, you must acknowledge the **compliance consent** step — three separate checkboxes covering the fitness disclaimer, no-reliance clause, and emergency limitation notice. All three must be accepted before your account is created.",
       "Complete payment (7-day free trial, then just £6.99/month). Apple Pay and Google Pay are supported.",
       "You must be 16 or over to use aok.",
     ],
@@ -97,6 +98,18 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "Your supervisor doesn't need to be in the app — their phone rings like a normal incoming call.",
       "A confirmation dialog appears before the call is placed, so you won't accidentally call them.",
       "This feature is only available if your organisation has set up a contact phone number.",
+    ],
+  },
+  {
+    id: "compliance-consent",
+    title: "Compliance consent",
+    content: [
+      "During account creation, you must complete a **compliance consent** step before your account is activated.",
+      "This step includes three separate checkboxes that must all be acknowledged:",
+      "1. **Fitness disclaimer** — aok fitness and activity tracking is for personal wellbeing only and does not provide medical advice, diagnosis, or health monitoring.",
+      "2. **No-reliance clause** — aok is a communication and check-in tool, not a safety guarantee. It does not monitor, detect, or respond to health events, falls, or emergencies automatically.",
+      "3. **Emergency limitation** — aok relies on network connectivity, device power, GPS availability, and software updates. It may not function in all circumstances and is not a substitute for emergency services.",
+      "These checkboxes cannot be skipped. The date and time of your consent are recorded for compliance purposes.",
     ],
   },
   {
@@ -296,6 +309,19 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "organisation-managed-account",
+    title: "Organisation-managed account",
+    content: [
+      "If your account is managed by an organisation (such as an employer, care provider, or support service), some aspects of your experience may differ.",
+      "Your organisation sets your **check-in schedule** and can adjust it on your behalf.",
+      "Your organisation can **enable or disable features** such as mood tracking, pet protection, digital will, fitness tracking, activities tracker, wellbeing AI, and emergency recording.",
+      "You may have a **Call Supervisor** button on your dashboard to quickly ring your supervisor.",
+      "You log in using a unique **reference number** sent to you via SMS, rather than an email/password.",
+      "Your subscription is covered by your organisation at no cost to you.",
+      "Your organisation can view your check-in status but cannot read your private wellbeing data (mood entries, AI conversations).",
+    ],
+  },
+  {
     id: "offline-safety",
     title: "Offline safety",
     content: [
@@ -400,12 +426,34 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "reference-number-login",
+    title: "Reference number login (organisation clients)",
+    content: [
+      "If your account is managed by an organisation, you log in using a **reference number** instead of an email and password.",
+      "Your reference number is sent to you via SMS when your organisation registers you.",
+      "On the login page, tap **Log in with Reference Number** and enter your unique code.",
+      "If you've forgotten your reference number, ask your organisation to resend it to you. They can do this from their dashboard.",
+    ],
+  },
+  {
     id: "reactivating",
     title: "Reactivating your subscription",
     content: [
       "If you've cancelled your subscription, you can reactivate it before the current billing period ends.",
       "Go to **Settings** and tap **Reactivate Subscription**.",
       "Your service will continue without interruption.",
+    ],
+  },
+  {
+    id: "service-limitation-notice",
+    title: "Service limitation notice",
+    content: [
+      "aok includes a visible disclaimer in **Settings** about the limitations of the service.",
+      "aok relies on network connectivity, device battery, GPS availability, and software updates to function. It may not work in all circumstances.",
+      "aok is **not** a substitute for emergency services (999/112) or professional medical advice.",
+      "aok does not automatically detect danger, injury, falls, health events, or emergencies. All alerts are user-initiated or schedule-based.",
+      "GPS accuracy varies depending on environment, device, and signal conditions. Locations shared during emergencies are approximate.",
+      "By using aok, you acknowledge these limitations as part of the compliance consent during account creation.",
     ],
   },
   {
@@ -426,6 +474,17 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "Simply tap the link in the text and it will check you in automatically — no need to log in.",
       "The page will wait for signal and check you in as soon as it connects.",
       "This means you can check in even without a reliable internet connection.",
+    ],
+  },
+  {
+    id: "subscription-tiers",
+    title: "Subscription tiers",
+    content: [
+      "aok offers two feature tiers for individual users:",
+      "**Tier 1 — Essential** includes core safety features: check-ins, emergency alerts, SMS and voice call alerts, GPS location sharing, push notifications, primary contact notifications, SMS check-in fallback, and Shake to SOS.",
+      "**Tier 2 — Complete Wellbeing** includes everything in Tier 1 plus: mood tracking, pet protection, digital will storage, wellbeing AI chat, GPS fitness tracking, activities tracker, and emergency recording.",
+      "All individual subscribers get Tier 2 (Complete Wellbeing) by default at £6.99/month.",
+      "If you're managed by an organisation, your available features may vary depending on what your organisation has enabled for your account.",
     ],
   },
   {
