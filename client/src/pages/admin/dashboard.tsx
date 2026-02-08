@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { format, formatDistanceToNow } from "date-fns";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import type { DashboardStats, AdminOrganizationView, AdminOrganizationClientView, OrgClientStatus } from "@shared/schema";
+import { allTierFeatureKeys, featureLabels } from "@shared/schema";
 import AdminTeam from "@/pages/admin/team";
 
 const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
@@ -118,6 +119,16 @@ export default function AdminDashboard() {
   const [newOrgEmail, setNewOrgEmail] = useState("");
   const [newOrgPassword, setNewOrgPassword] = useState("");
   const [showNewOrgPassword, setShowNewOrgPassword] = useState(false);
+  const [showOrgFeatures, setShowOrgFeatures] = useState(false);
+  const [orgFeatureDefaults, setOrgFeatureDefaults] = useState<Record<string, boolean>>(() => {
+    const defaults: Record<string, boolean> = {};
+    for (const key of allTierFeatureKeys) {
+      const orgKey = "org" + key.charAt(0).toUpperCase() + key.slice(1);
+      defaults[orgKey] = true;
+    }
+    defaults["orgFeatureEmergencyRecording"] = false;
+    return defaults;
+  });
   
   // State for changing own password
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
@@ -350,6 +361,44 @@ export default function AdminDashboard() {
     },
   });
   
+  // Org feature defaults state and mutation
+  const [showOrgFeatureDefaults, setShowOrgFeatureDefaults] = useState(false);
+  const [orgFeatureDefaultsEditing, setOrgFeatureDefaultsEditing] = useState<Record<string, boolean>>({});
+
+  const { data: selectedOrgFeatureDefaults, refetch: refetchOrgFeatureDefaults, isLoading: isLoadingOrgDefaults } = useQuery<Record<string, boolean>>({
+    queryKey: [`/api/admin/organizations/${selectedOrg?.id}/feature-defaults`],
+    enabled: !!selectedOrg && showOrgFeatureDefaults,
+  });
+
+  useEffect(() => {
+    if (selectedOrgFeatureDefaults) {
+      setOrgFeatureDefaultsEditing(selectedOrgFeatureDefaults);
+    }
+  }, [selectedOrgFeatureDefaults]);
+
+  const updateOrgFeatureDefaultsMutation = useMutation({
+    mutationFn: async ({ orgId, updates }: { orgId: string; updates: Record<string, boolean> }) => {
+      const response = await apiRequest("PUT", `/api/admin/organizations/${orgId}/feature-defaults`, updates);
+      return response.json();
+    },
+    onSuccess: () => {
+      if (selectedOrg) {
+        refetchOrgFeatureDefaults();
+      }
+      toast({
+        title: "Feature defaults updated",
+        description: "Organisation feature defaults have been saved.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Mutation for sending reminder with reference number
   const sendReminderMutation = useMutation({
     mutationFn: async ({ organizationId, clientId }: { organizationId: string; clientId: string }) => {
@@ -372,7 +421,7 @@ export default function AdminDashboard() {
   });
   
   const createOrgMutation = useMutation({
-    mutationFn: async (data: { name: string; email: string; password: string }) => {
+    mutationFn: async (data: { name: string; email: string; password: string; featureDefaults?: Record<string, boolean> }) => {
       const response = await apiRequest("POST", "/api/admin/organizations", data);
       return response.json();
     },
@@ -384,6 +433,7 @@ export default function AdminDashboard() {
       setNewOrgName("");
       setNewOrgEmail("");
       setNewOrgPassword("");
+      setShowOrgFeatures(false);
       toast({
         title: "Organisation created",
         description: "The organisation account has been created successfully.",
@@ -458,6 +508,7 @@ export default function AdminDashboard() {
       name: newOrgName.trim(),
       email: newOrgEmail.trim(),
       password: newOrgPassword,
+      featureDefaults: orgFeatureDefaults,
     });
   };
   
@@ -625,6 +676,15 @@ export default function AdminDashboard() {
                   data-testid="nav-revenue"
                 >
                   Revenue
+                </Button>
+              )}
+              {isSuperAdmin && (
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setLocation("/admin/permissions")}
+                  data-testid="nav-permissions"
+                >
+                  Permissions
                 </Button>
               )}
             </nav>
@@ -1034,7 +1094,7 @@ export default function AdminDashboard() {
         )}
         
         {/* Organization Clients Dialog */}
-        <Dialog open={!!selectedOrg} onOpenChange={() => { setSelectedOrg(null); setOrgClients([]); setOrgClientSearchRef(""); setOrgClientSearchPhone(""); }}>
+        <Dialog open={!!selectedOrg} onOpenChange={() => { setSelectedOrg(null); setOrgClients([]); setOrgClientSearchRef(""); setOrgClientSearchPhone(""); setShowOrgFeatureDefaults(false); }}>
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -1046,6 +1106,54 @@ export default function AdminDashboard() {
               </DialogDescription>
             </DialogHeader>
             
+            {/* Organisation Feature Defaults */}
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => setShowOrgFeatureDefaults(!showOrgFeatureDefaults)}
+                data-testid="button-toggle-org-defaults"
+              >
+                <span className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Feature Defaults
+                </span>
+                <span className="text-xs text-muted-foreground">{showOrgFeatureDefaults ? "Hide" : "Show"}</span>
+              </Button>
+              {showOrgFeatureDefaults && (
+                <div className="border rounded-md p-3 space-y-1 max-h-64 overflow-y-auto">
+                  {isLoadingOrgDefaults ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : (
+                    allTierFeatureKeys.map((key) => {
+                      const orgKey = "org" + key.charAt(0).toUpperCase() + key.slice(1);
+                      const hasData = Object.keys(orgFeatureDefaultsEditing).length > 0;
+                      return (
+                        <div key={orgKey} className="flex items-center justify-between py-1.5 px-2 rounded-md" data-testid={`org-default-${key}`}>
+                          <span className="text-sm">{featureLabels[key] || key}</span>
+                          <Switch
+                            checked={hasData ? (orgFeatureDefaultsEditing[orgKey] ?? false) : false}
+                            onCheckedChange={(checked) => {
+                              const updates = { ...orgFeatureDefaultsEditing, [orgKey]: checked };
+                              setOrgFeatureDefaultsEditing(updates);
+                              if (selectedOrg) {
+                                updateOrgFeatureDefaultsMutation.mutate({ orgId: selectedOrg.id, updates: { [orgKey]: checked } });
+                              }
+                            }}
+                            disabled={updateOrgFeatureDefaultsMutation.isPending || !hasData}
+                            data-testid={`switch-org-default-${key}`}
+                          />
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Search Fields */}
             {orgClients.length > 0 && (
               <div className="flex flex-col sm:flex-row gap-3">
@@ -1457,6 +1565,38 @@ export default function AdminDashboard() {
                     )}
                   </Button>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-between"
+                  onClick={() => setShowOrgFeatures(!showOrgFeatures)}
+                  data-testid="button-toggle-org-features"
+                >
+                  <span className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Feature Defaults
+                  </span>
+                  <span className="text-xs text-muted-foreground">{showOrgFeatures ? "Hide" : "Show"}</span>
+                </Button>
+                {showOrgFeatures && (
+                  <div className="border rounded-md p-3 space-y-1 max-h-64 overflow-y-auto">
+                    {allTierFeatureKeys.map((key) => {
+                      const orgKey = "org" + key.charAt(0).toUpperCase() + key.slice(1);
+                      return (
+                        <div key={orgKey} className="flex items-center justify-between py-1.5 px-2 rounded-md" data-testid={`org-feature-${key}`}>
+                          <span className="text-sm">{featureLabels[key] || key}</span>
+                          <Switch
+                            checked={orgFeatureDefaults[orgKey] ?? true}
+                            onCheckedChange={(checked) => setOrgFeatureDefaults(prev => ({ ...prev, [orgKey]: checked }))}
+                            data-testid={`switch-org-${key}`}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
             <DialogFooter className="gap-2">

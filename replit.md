@@ -70,6 +70,7 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Management**: User management, organization bundle creation, client oversight (viewing, pausing, resuming, removing clients), client safeguarding hub, full client management including check-in schedule and feature toggles.
 - **Licence Agreements Tab** (`/admin/licence-agreements`): Deployment matrix, document cards grouped by customer type, quick links to all legal documents (super_admin only).
 - **Revenue Dashboard** (`/admin/revenue`): Revenue projections at scale (500 to 50,000 users), per-feature cost reference, current overview with live stats, detailed cost breakdown (hosting, Twilio, Resend, OpenAI, Stripe, Ecologi), custom calculator with adjustable org mix/missed rate/AI usage. Super_admin only.
+- **Permissions** (`/admin/permissions`): Tier-based feature control with Tier 1 (Essential) and Tier 2 (Complete Wellbeing) panels. All 14 features appear as toggles per tier. Organisation feature defaults configurable per org during creation and via org detail dialog. Super_admin only.
 - **Security**: Audit logging for admin actions.
 
 ### Organization Features
