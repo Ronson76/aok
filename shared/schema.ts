@@ -1445,5 +1445,33 @@ export const insertAdminInviteSchema = createInsertSchema(adminInvites).omit({
 export type InsertAdminInvite = z.infer<typeof insertAdminInviteSchema>;
 export type AdminInvite = typeof adminInvites.$inferSelect;
 
+// Emergency recordings table - stores metadata for recordings captured during emergencies
+export const emergencyRecordingStatuses = ["uploading", "ready", "failed", "expired"] as const;
+export type EmergencyRecordingStatus = typeof emergencyRecordingStatuses[number];
+
+export const emergencyRecordings = pgTable("emergency_recordings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  alertId: varchar("alert_id").notNull(),
+  objectPath: text("object_path"),
+  contentType: text("content_type").notNull().default("video/webm"),
+  fileSize: integer("file_size"),
+  durationSeconds: integer("duration_seconds"),
+  encrypted: boolean("encrypted").notNull().default(true),
+  status: text("status").notNull().$type<EmergencyRecordingStatus>().default("uploading"),
+  retentionExpiresAt: timestamp("retention_expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  lastAccessedAt: timestamp("last_accessed_at"),
+});
+
+export const insertEmergencyRecordingSchema = createInsertSchema(emergencyRecordings).omit({
+  id: true,
+  createdAt: true,
+  lastAccessedAt: true,
+});
+
+export type InsertEmergencyRecording = z.infer<typeof insertEmergencyRecordingSchema>;
+export type EmergencyRecording = typeof emergencyRecordings.$inferSelect;
+
 // Re-export chat models for AI integrations (used by integration storage)
 export * from "./models/chat";

@@ -179,8 +179,9 @@ export default function AdminWorkflows() {
           <StepBox icon={Siren} label="Emergency Triggered" sublabel="SOS button, shake-to-SOS, or missed check-in activates recording" />
           <StepBox icon={Video} label="Permission Request" sublabel="App requests camera and microphone access if not already granted" />
           <StepBox icon={Video} label="Recording Starts" sublabel="Camera and microphone capture begins automatically" />
-          <StepBox icon={Lock} label="Encrypted Storage" sublabel="Recording encrypted and stored securely" />
+          <StepBox icon={Lock} label="Encrypted Upload" sublabel="Recording uploaded to secure Object Storage" />
           <StepBox icon={Send} label="Shared with Contacts" sublabel="Recording shared only with confirmed emergency contacts" />
+          <StepBox icon={Clock} label="90-Day Retention" sublabel="Recordings auto-deleted after 90 days" />
         </WorkflowSection>
 
         <FlowArrow />

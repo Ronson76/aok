@@ -1,10 +1,12 @@
 import { storage } from "./storage";
 import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder, sendSmsCheckinLink } from "./notifications";
+import { ObjectStorageService } from "./replit_integrations/object_storage";
 
 let schedulerInterval: NodeJS.Timeout | null = null;
 let cleanupInterval: NodeJS.Timeout | null = null;
 let pushNotificationInterval: NodeJS.Timeout | null = null;
 let contactReminderInterval: NodeJS.Timeout | null = null;
+let recordingCleanupInterval: NodeJS.Timeout | null = null;
 // Minimum interval between push notifications to same user (30 seconds)
 const PUSH_NOTIFICATION_COOLDOWN_MS = 30 * 1000;
 
@@ -283,6 +285,12 @@ export function startEmergencyScheduler(): void {
     await cleanupOldLocationData();
   }, 24 * 60 * 60 * 1000);
 
+  // Recording retention cleanup daily
+  console.log('[RECORDING CLEANUP] Starting emergency recording retention scheduler (checks every 24 hours)');
+  recordingCleanupInterval = setInterval(async () => {
+    await cleanupExpiredRecordings();
+  }, 24 * 60 * 60 * 1000);
+
   // Run initial checks
   processOverdueEmergencyAlerts();
   processOverduePushNotifications();
@@ -290,6 +298,34 @@ export function startEmergencyScheduler(): void {
   cleanupExpiredContacts();
   sendContactReminders();
   processSmsCheckinReminders();
+  cleanupExpiredRecordings();
+}
+
+async function cleanupExpiredRecordings(): Promise<void> {
+  try {
+    const result = await storage.cleanupExpiredEmergencyRecordings();
+    if (result.deleted > 0) {
+      console.log(`[RECORDING CLEANUP] Cleaned up ${result.deleted} expired recording(s)`);
+      if (result.objectPaths.length > 0) {
+        try {
+          const objService = new ObjectStorageService();
+          for (const objectPath of result.objectPaths) {
+            try {
+              const objectFile = await objService.getObjectEntityFile(objectPath);
+              await objectFile.delete();
+              console.log(`[RECORDING CLEANUP] Deleted object: ${objectPath}`);
+            } catch (objErr) {
+              console.error(`[RECORDING CLEANUP] Failed to delete object ${objectPath}:`, objErr);
+            }
+          }
+        } catch (svcErr) {
+          console.error('[RECORDING CLEANUP] Failed to initialize object storage for cleanup:', svcErr);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('[RECORDING CLEANUP] Error cleaning up expired recordings:', error);
+  }
 }
 
 export function stopEmergencyScheduler(): void {
@@ -312,6 +348,10 @@ export function stopEmergencyScheduler(): void {
   if (smsCheckinInterval) {
     clearInterval(smsCheckinInterval);
     smsCheckinInterval = null;
+  }
+  if (recordingCleanupInterval) {
+    clearInterval(recordingCleanupInterval);
+    recordingCleanupInterval = null;
   }
   console.log('[EMERGENCY SCHEDULER] Scheduler stopped');
 }

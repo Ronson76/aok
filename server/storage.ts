@@ -20,7 +20,8 @@ import {
   LoneWorkerSessionStatus, LoneWorkerOutcome, LoneWorkerEscalationLevel,
   OrgMember, OrgMemberProfile, OrgMemberSession, OrgMemberInvite, OrgMemberClientAssignment,
   OrgMemberRole, OrgMemberStatus, OrgMemberInviteStatus,
-  AdminInvite, AdminRole
+  AdminInvite, AdminRole,
+  emergencyRecordings, EmergencyRecording
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, ne, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray, inArray } from "drizzle-orm";
@@ -135,6 +136,15 @@ export interface IStorage {
   deactivateEmergencyAlertByUserId(userId: string): Promise<boolean>;
   getOverdueActiveAlerts(): Promise<ActiveEmergencyAlert[]>;
   
+  // Emergency recordings
+  createEmergencyRecording(data: { userId: string; alertId: string; contentType?: string; retentionExpiresAt: Date }): Promise<EmergencyRecording>;
+  updateEmergencyRecording(id: string, updates: { objectPath?: string; fileSize?: number; durationSeconds?: number; status?: string }): Promise<EmergencyRecording | undefined>;
+  getEmergencyRecording(id: string): Promise<EmergencyRecording | undefined>;
+  getEmergencyRecordingsForUser(userId: string): Promise<EmergencyRecording[]>;
+  getEmergencyRecordingsForAlert(alertId: string): Promise<EmergencyRecording[]>;
+  deleteEmergencyRecording(id: string): Promise<boolean>;
+  cleanupExpiredEmergencyRecordings(): Promise<{ deleted: number; objectPaths: string[] }>;
+
   // User location
   updateUserLocation(userId: string, latitude: string, longitude: string): Promise<void>;
   
@@ -1137,6 +1147,90 @@ class DatabaseStorage implements IStorage {
         lt(activeEmergencyAlerts.lastDispatchAt, fiveMinutesAgo)
       ));
     return result;
+  }
+
+  // Emergency recordings
+  async createEmergencyRecording(data: { userId: string; alertId: string; contentType?: string; retentionExpiresAt: Date }): Promise<EmergencyRecording> {
+    const result = await getDb()
+      .insert(emergencyRecordings)
+      .values({
+        userId: data.userId,
+        alertId: data.alertId,
+        contentType: data.contentType || "video/webm",
+        encrypted: true,
+        status: "uploading",
+        retentionExpiresAt: data.retentionExpiresAt,
+      })
+      .returning();
+    return result[0];
+  }
+
+  async updateEmergencyRecording(id: string, updates: { objectPath?: string; fileSize?: number; durationSeconds?: number; status?: string }): Promise<EmergencyRecording | undefined> {
+    const result = await getDb()
+      .update(emergencyRecordings)
+      .set(updates)
+      .where(eq(emergencyRecordings.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getEmergencyRecording(id: string): Promise<EmergencyRecording | undefined> {
+    const result = await getDb()
+      .select()
+      .from(emergencyRecordings)
+      .where(eq(emergencyRecordings.id, id))
+      .limit(1);
+    if (result[0]) {
+      await getDb()
+        .update(emergencyRecordings)
+        .set({ lastAccessedAt: new Date() })
+        .where(eq(emergencyRecordings.id, id));
+    }
+    return result[0];
+  }
+
+  async getEmergencyRecordingsForUser(userId: string): Promise<EmergencyRecording[]> {
+    return getDb()
+      .select()
+      .from(emergencyRecordings)
+      .where(eq(emergencyRecordings.userId, userId))
+      .orderBy(desc(emergencyRecordings.createdAt));
+  }
+
+  async getEmergencyRecordingsForAlert(alertId: string): Promise<EmergencyRecording[]> {
+    return getDb()
+      .select()
+      .from(emergencyRecordings)
+      .where(eq(emergencyRecordings.alertId, alertId))
+      .orderBy(desc(emergencyRecordings.createdAt));
+  }
+
+  async deleteEmergencyRecording(id: string): Promise<boolean> {
+    const result = await getDb()
+      .delete(emergencyRecordings)
+      .where(eq(emergencyRecordings.id, id))
+      .returning({ id: emergencyRecordings.id });
+    return result.length > 0;
+  }
+
+  async cleanupExpiredEmergencyRecordings(): Promise<{ deleted: number; objectPaths: string[] }> {
+    const now = new Date();
+    const expired = await getDb()
+      .select({ id: emergencyRecordings.id, objectPath: emergencyRecordings.objectPath })
+      .from(emergencyRecordings)
+      .where(lt(emergencyRecordings.retentionExpiresAt, now));
+
+    const objectPaths = expired
+      .map(r => r.objectPath)
+      .filter((p): p is string => p !== null);
+
+    if (expired.length > 0) {
+      await getDb()
+        .delete(emergencyRecordings)
+        .where(lt(emergencyRecordings.retentionExpiresAt, now));
+    }
+
+    return { deleted: expired.length, objectPaths };
   }
 
   // User location update

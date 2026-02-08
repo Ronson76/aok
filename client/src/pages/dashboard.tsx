@@ -4,12 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon, Users, Moon, Sun, Lock, Eye, EyeOff, Phone } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon, Users, Moon, Sun, Lock, Eye, EyeOff, Phone, Video, VideoOff, Circle } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/components/theme-provider";
 import { useEmergencyContactCache } from "@/hooks/use-emergency-contact-cache";
+import { useEmergencyRecording } from "@/hooks/use-emergency-recording";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { StatusData, Settings } from "@shared/schema";
@@ -361,6 +362,9 @@ export default function Dashboard() {
   // Cache emergency contact for offline use
   useEmergencyContactCache();
 
+  // Emergency recording
+  const emergencyRecording = useEmergencyRecording();
+
   const { data: status, isLoading } = useQuery<StatusData>({
     queryKey: ["/api/status"],
     refetchInterval: 30000,
@@ -540,8 +544,11 @@ export default function Dashboard() {
     },
     onSuccess: (data: any) => {
       setShowEmergencyDialog(false);
-      // Refresh red alert status
       queryClient.invalidateQueries({ queryKey: ["/api/emergency/status"] });
+      
+      if (userSettings?.emergencyRecordingEnabled) {
+        emergencyRecording.startRecording();
+      }
       
       if (data.isRedAlert) {
         toast({
@@ -578,6 +585,9 @@ export default function Dashboard() {
       setDeactivatePassword("");
       setShowDeactivatePassword(false);
       queryClient.invalidateQueries({ queryKey: ["/api/emergency/status"] });
+      if (emergencyRecording.isRecording) {
+        emergencyRecording.stopRecording();
+      }
       toast({
         title: "Red Alert Mode Deactivated",
         description: "Your emergency alert has been cancelled. Location sharing has stopped.",
@@ -662,6 +672,9 @@ export default function Dashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/emergency/status"] });
+      if (emergencyRecording.isRecording) {
+        emergencyRecording.stopRecording();
+      }
       toast({
         title: "Emergency Alert Deactivated",
         description: "Your contacts have been notified that you are safe.",
@@ -885,6 +898,43 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground">
                     Started: {format(new Date(redAlertStatus.activatedAt), "dd/MM/yyyy HH:mm")}
                   </p>
+                )}
+
+                {emergencyRecording.isRecording && (
+                  <div className="flex items-center justify-center gap-2 p-2 rounded-md bg-red-100 dark:bg-red-950/40" data-testid="recording-indicator">
+                    <Circle className="h-3 w-3 text-red-600 fill-red-600 animate-pulse" />
+                    <span className="text-sm font-medium text-red-700 dark:text-red-400">
+                      Recording {Math.floor(emergencyRecording.durationSeconds / 60)}:{String(emergencyRecording.durationSeconds % 60).padStart(2, "0")}
+                    </span>
+                    <Video className="h-4 w-4 text-red-600" />
+                  </div>
+                )}
+
+                {emergencyRecording.status === "uploading" && (
+                  <div className="flex items-center justify-center gap-2 p-2 rounded-md bg-amber-100 dark:bg-amber-950/40" data-testid="recording-uploading">
+                    <Loader2 className="h-3 w-3 animate-spin text-amber-600" />
+                    <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                      Uploading recording...
+                    </span>
+                  </div>
+                )}
+
+                {emergencyRecording.status === "completed" && (
+                  <div className="flex items-center justify-center gap-2 p-2 rounded-md bg-green-100 dark:bg-green-950/40" data-testid="recording-completed">
+                    <CheckCircle className="h-3 w-3 text-green-600" />
+                    <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                      Recording saved securely
+                    </span>
+                  </div>
+                )}
+
+                {emergencyRecording.error && (
+                  <div className="flex items-center justify-center gap-2 p-2 rounded-md bg-red-100 dark:bg-red-950/40" data-testid="recording-error">
+                    <VideoOff className="h-3 w-3 text-red-600" />
+                    <span className="text-sm text-red-700 dark:text-red-400">
+                      {emergencyRecording.error}
+                    </span>
+                  </div>
                 )}
                 
                 {/* Greyed out emergency button */}
@@ -1239,6 +1289,43 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground">
                   Started: {format(new Date(redAlertStatus.activatedAt), "dd/MM/yyyy HH:mm")}
                 </p>
+              )}
+
+              {emergencyRecording.isRecording && (
+                <div className="flex items-center justify-center gap-2 p-2 rounded-md bg-red-100 dark:bg-red-950/40">
+                  <Circle className="h-3 w-3 text-red-600 fill-red-600 animate-pulse" />
+                  <span className="text-sm font-medium text-red-700 dark:text-red-400">
+                    Recording {Math.floor(emergencyRecording.durationSeconds / 60)}:{String(emergencyRecording.durationSeconds % 60).padStart(2, "0")}
+                  </span>
+                  <Video className="h-4 w-4 text-red-600" />
+                </div>
+              )}
+
+              {emergencyRecording.status === "uploading" && (
+                <div className="flex items-center justify-center gap-2 p-2 rounded-md bg-amber-100 dark:bg-amber-950/40">
+                  <Loader2 className="h-3 w-3 animate-spin text-amber-600" />
+                  <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                    Uploading recording...
+                  </span>
+                </div>
+              )}
+
+              {emergencyRecording.status === "completed" && (
+                <div className="flex items-center justify-center gap-2 p-2 rounded-md bg-green-100 dark:bg-green-950/40">
+                  <CheckCircle className="h-3 w-3 text-green-600" />
+                  <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                    Recording saved securely
+                  </span>
+                </div>
+              )}
+
+              {emergencyRecording.error && (
+                <div className="flex items-center justify-center gap-2 p-2 rounded-md bg-red-100 dark:bg-red-950/40">
+                  <VideoOff className="h-3 w-3 text-red-600" />
+                  <span className="text-sm text-red-700 dark:text-red-400">
+                    {emergencyRecording.error}
+                  </span>
+                </div>
               )}
               
               {/* Greyed out emergency button */}
