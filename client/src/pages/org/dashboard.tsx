@@ -1277,7 +1277,7 @@ export default function OrganizationDashboard() {
             <DialogHeader>
               <DialogTitle>Add a Client</DialogTitle>
               <DialogDescription>
-                Add a user to your organization to monitor their check-in status.
+                Add a user to your organisation to monitor their check-in status.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">

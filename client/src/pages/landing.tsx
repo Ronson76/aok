@@ -529,7 +529,7 @@ export default function Landing() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Multiple Contacts</h3>
                 <p className="text-muted-foreground text-sm">
-                  Add family, friends, neighbors, or anyone you trust. Set a primary contact for regular updates.
+                  Add family, friends, neighbours, or anyone you trust. Set a primary contact for regular updates.
                 </p>
               </CardContent>
             </Card>

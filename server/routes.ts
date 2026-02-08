@@ -3439,7 +3439,7 @@ export async function registerRoutes(
       if (!stravaRes.ok) {
         if (stravaRes.status === 401) {
           await storage.deleteStravaConnection(req.userId!);
-          return res.status(401).json({ error: "Strava authorization revoked" });
+          return res.status(401).json({ error: "Strava authorisation revoked" });
         }
         return res.status(stravaRes.status).json({ error: "Strava API error" });
       }
