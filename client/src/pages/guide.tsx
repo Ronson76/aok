@@ -272,12 +272,16 @@ const GUIDE_TOPICS: GuideTopic[] = [
   },
   {
     id: "pricing",
-    title: "Pricing",
+    title: "Pricing and plans",
     content: [
-      "aok costs **£6.99 per month** after a 7-day free trial.",
-      "Apple Pay and Google Pay are supported for easy payment.",
+      "aok offers simple, transparent pricing with all features included:",
+      "**7-Day Free Trial** — full access to every feature, no payment details required upfront. Cancel anytime during the trial.",
+      "**Complete Protection** — £6.99/month or £69.99/year (save 2 months). Includes check-ins, emergency alerts, SMS and voice call alerts, GPS location sharing, wellbeing AI chat, mood tracking, pet protection, digital will storage, and a tree planted via Ecologi.",
+      "**Organisations** — custom pricing for bundles of seats. Includes everything in Complete Protection plus a dedicated organisation dashboard, bulk client management, staff roles, safeguarding hub, lone worker monitoring, and reports.",
+      "Apple Pay and Google Pay are supported for quick and easy payment.",
       "You can cancel at any time — your account stays active until the end of your billing period.",
       "If you're managed by an organisation, your access is included at no cost to you.",
+      "Visit the **Pricing** page from the home screen to see a full feature comparison table.",
     ],
   },
   {
