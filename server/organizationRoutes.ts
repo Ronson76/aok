@@ -133,6 +133,15 @@ export function registerOrganizationRoutes(app: Express) {
         nickname
       );
 
+      await storage.createAuditEntry(req.userId!, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "create",
+        entityType: "client",
+        entityId: client.id,
+        newData: { clientEmail, bundleId, nickname },
+      });
+
       res.status(201).json(client);
     } catch (error: any) {
       console.error("[ORG] Failed to add client:", error);
@@ -392,6 +401,16 @@ export function registerOrganizationRoutes(app: Express) {
       if (!success) {
         return res.status(400).json({ error: "Cannot restore client. Check bundle seat availability." });
       }
+
+      await storage.createAuditEntry(req.userId!, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "restore",
+        entityType: "client",
+        entityId: req.params.clientId,
+        newData: { restored: true },
+      });
+
       res.json({ success: true });
     } catch (error) {
       console.error("[ORG] Error restoring client:", error);
@@ -408,6 +427,15 @@ export function registerOrganizationRoutes(app: Express) {
       if (!success) {
         return res.status(404).json({ error: "Client not found" });
       }
+
+      await storage.createAuditEntry(req.userId!, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "archive",
+        entityType: "client",
+        entityId: clientId,
+        newData: { archived: true },
+      });
 
       res.json({ success: true });
     } catch (error) {
@@ -441,6 +469,16 @@ export function registerOrganizationRoutes(app: Express) {
       }
 
       const updated = await organizationStorage.updateClientDetails(clientId, parsed.data);
+
+      await storage.createAuditEntry(req.userId!, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "update",
+        entityType: "client",
+        entityId: clientId,
+        newData: parsed.data,
+      });
+
       res.json(updated);
     } catch (error) {
       console.error("[ORG] Failed to update client details:", error);
@@ -474,6 +512,16 @@ export function registerOrganizationRoutes(app: Express) {
       }
 
       const updated = await organizationStorage.updateClientEmergencyContacts(clientId, parsed.data.emergencyContacts);
+
+      await storage.createAuditEntry(req.userId!, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "update",
+        entityType: "client_emergency_contacts",
+        entityId: clientId,
+        newData: { contactCount: parsed.data.emergencyContacts.length },
+      });
+
       res.json(updated);
     } catch (error) {
       console.error("[ORG] Failed to update client emergency contacts:", error);
@@ -575,6 +623,15 @@ export function registerOrganizationRoutes(app: Express) {
       // Invalidate all of the client's sessions for security
       await storage.deleteAllUserSessions(clientId);
 
+      await storage.createAuditEntry(req.userId!, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "reset_password",
+        entityType: "client",
+        entityId: clientId,
+        newData: { passwordReset: true },
+      });
+
       res.json({ success: true, message: "Client password has been reset" });
     } catch (error) {
       console.error("[ORG] Failed to reset client password:", error);
@@ -657,6 +714,15 @@ export function registerOrganizationRoutes(app: Express) {
         nextCheckInDue: nextDue.toISOString(),
       });
 
+      await storage.createAuditEntry(req.userId!, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "reset_scheduler",
+        entityType: "client",
+        entityId: clientId,
+        newData: { nextCheckInDue: nextDue.toISOString() },
+      });
+
       console.log(`[ORG] Reset scheduler for client ${clientId}: next due ${nextDue.toISOString()}`);
       res.json({ success: true, message: "Client scheduler has been reset", nextCheckInDue: nextDue });
     } catch (error) {
@@ -711,6 +777,15 @@ export function registerOrganizationRoutes(app: Express) {
         });
       }
 
+      await storage.createAuditEntry(req.userId!, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "update",
+        entityType: "client_schedule",
+        entityId: clientId,
+        newData: { scheduleStartTime: scheduleDate.toISOString(), checkInIntervalHours },
+      });
+
       console.log(`[ORG] Updated schedule for client ${clientId}: start ${scheduleDate.toISOString()}, interval ${checkInIntervalHours}h`);
       res.json({ success: true, message: "Client schedule has been updated", scheduleStartTime: scheduleDate, checkInIntervalHours });
     } catch (error) {
@@ -740,6 +815,15 @@ export function registerOrganizationRoutes(app: Express) {
       if (!deactivated) {
         return res.status(404).json({ error: "No active emergency alert found" });
       }
+
+      await storage.createAuditEntry(req.userId!, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "deactivate",
+        entityType: "emergency_alert",
+        entityId: clientId,
+        newData: { deactivated: true },
+      });
 
       console.log(`[ORG] Deactivated emergency alert for client ${clientId}`);
       res.json({ success: true, message: "Emergency alert deactivated" });
@@ -837,6 +921,16 @@ export function registerOrganizationRoutes(app: Express) {
       }
 
       const updated = await organizationStorage.updateClientStatus(orgClientId, parsed.data.status);
+
+      await storage.createAuditEntry(req.userId!, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "update",
+        entityType: "client_status",
+        entityId: orgClientId,
+        newData: { status: parsed.data.status },
+      });
+
       res.json(updated);
     } catch (error) {
       console.error("[ORG] Failed to update client status:", error);
@@ -860,6 +954,16 @@ export function registerOrganizationRoutes(app: Express) {
       }
 
       const updated = await organizationStorage.updateClientFeatures(orgClientId, parsed.data);
+
+      await storage.createAuditEntry(req.userId!, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "update",
+        entityType: "client_features",
+        entityId: orgClientId,
+        newData: parsed.data,
+      });
+
       res.json(updated);
     } catch (error) {
       console.error("[ORG] Failed to update client features:", error);
@@ -2158,6 +2262,15 @@ export function registerOrganizationRoutes(app: Express) {
         console.error("[ORG_TEAM] Failed to send invite email:", emailError);
       }
 
+      await storage.createAuditEntry(req.orgId!, {
+        userEmail: (req.user as any)?.email || "owner",
+        userRole: "organisation",
+        action: "create",
+        entityType: "team_invite",
+        entityId: invite.id,
+        newData: { email: parsed.data.email, role: parsed.data.role },
+      });
+
       res.json({ invite });
     } catch (error) {
       console.error("[ORG_TEAM] Create invite error:", error);
@@ -2179,6 +2292,16 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(404).json({ error: "Member not found" });
       }
       const updated = await orgMemberStorage.updateMemberRole(req.params.memberId, role);
+
+      await storage.createAuditEntry(req.orgId!, {
+        userEmail: (req.user as any)?.email || "owner",
+        userRole: "organisation",
+        action: "update",
+        entityType: "team_member_role",
+        entityId: req.params.memberId,
+        newData: { role },
+      });
+
       res.json({ member: updated });
     } catch (error) {
       console.error("[ORG_TEAM] Update role error:", error);
@@ -2200,6 +2323,16 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(404).json({ error: "Member not found" });
       }
       const updated = await orgMemberStorage.updateMemberStatus(req.params.memberId, status);
+
+      await storage.createAuditEntry(req.orgId!, {
+        userEmail: (req.user as any)?.email || "owner",
+        userRole: "organisation",
+        action: "update",
+        entityType: "team_member_status",
+        entityId: req.params.memberId,
+        newData: { status },
+      });
+
       res.json({ member: updated });
     } catch (error) {
       console.error("[ORG_TEAM] Update status error:", error);
@@ -2217,6 +2350,16 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(404).json({ error: "Member not found" });
       }
       await orgMemberStorage.deleteMember(req.params.memberId);
+
+      await storage.createAuditEntry(req.orgId!, {
+        userEmail: (req.user as any)?.email || "owner",
+        userRole: "organisation",
+        action: "delete",
+        entityType: "team_member",
+        entityId: req.params.memberId,
+        newData: { removed: true },
+      });
+
       res.json({ success: true });
     } catch (error) {
       console.error("[ORG_TEAM] Delete member error:", error);

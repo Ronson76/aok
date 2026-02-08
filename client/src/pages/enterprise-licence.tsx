@@ -36,7 +36,7 @@ export default function EnterpriseLicence() {
             <section>
               <h2 className="text-xl font-semibold mb-3">1. Licence Scope</h2>
               <p className="text-muted-foreground leading-relaxed">
-                Licence granted to the organisation. Naiyatech Ltd grants the organisation a non-exclusive, non-transferable licence to use the A-OK software for its authorised users. The licence scope is determined by the number of seats purchased and the specific bundle terms agreed upon. The licence includes access to all organisation features, including client management, safeguarding hub, Call Supervisor, and any optional wellness features enabled for clients.
+                Licence granted to the organisation. Naiyatech Ltd grants the organisation a non-exclusive, non-transferable licence to use the A-OK software for its authorised users. The licence scope is determined by the number of seats purchased and the specific bundle terms agreed upon. The licence includes access to all organisation features, including client management, safeguarding hub, Call Supervisor, Activity/Errands Tracker, GPS Fitness Tracking, and any optional wellness features enabled for clients.
               </p>
             </section>
 
@@ -51,26 +51,34 @@ export default function EnterpriseLicence() {
                 <li>Managing user access credentials and permissions</li>
                 <li>Maintaining accurate records of authorised users</li>
                 <li>Providing and maintaining an accurate supervisor phone number for the Call Supervisor feature</li>
+                <li>Configuring feature availability for clients through the organisation dashboard feature defaults</li>
                 <li>Promptly deactivating access for departing personnel</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">3. Fees and Payment</h2>
+              <h2 className="text-xl font-semibold mb-3">3. Feature Permissions and Tier Control</h2>
+              <p className="text-muted-foreground leading-relaxed">
+                Feature availability is governed by subscription tier (Tier 1: Essential or Tier 2: Complete Wellbeing) as determined by Naiyatech Ltd. Organisations may further customise which features are enabled or disabled for their clients through the organisation dashboard. Features subject to tier and organisation control include: Check-in System, Shake to Alert, Emergency Alert, GPS Location, Push Notifications, Primary Contact, SMS Backup, Emergency Recording, Mood and Wellness Tracking, Pet Protection, Digital Will, AI Wellbeing Chat, Fitness Tracking, and Activity/Errands Tracker. Naiyatech Ltd reserves the right to modify tier structures and feature assignments with reasonable notice.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-semibold mb-3">4. Fees and Payment</h2>
               <p className="text-muted-foreground leading-relaxed">
                 As agreed in commercial terms. Payment terms, pricing, and billing cycles are determined by the specific commercial agreement between the organisation and Naiyatech Ltd. All fees are exclusive of applicable taxes unless otherwise stated.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">4. Data Ownership</h2>
+              <h2 className="text-xl font-semibold mb-3">5. Data Ownership</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Customer retains ownership of data. All data entered into the A-OK platform by the organisation and its users remains the property of the organisation. Naiyatech Ltd acts as a data processor and will handle all data in accordance with the Data Processing Addendum and applicable data protection legislation.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">5. Termination</h2>
+              <h2 className="text-xl font-semibold mb-3">6. Termination</h2>
               <p className="text-muted-foreground leading-relaxed">
                 For breach or non-payment. Either party may terminate this agreement:
               </p>
@@ -86,7 +94,7 @@ export default function EnterpriseLicence() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">6. Governing Law</h2>
+              <h2 className="text-xl font-semibold mb-3">7. Governing Law</h2>
               <p className="text-muted-foreground leading-relaxed">
                 This agreement shall be governed by and construed in accordance with the laws of England and Wales. Any disputes arising from or in connection with this agreement shall be subject to the exclusive jurisdiction of the courts of England and Wales.
               </p>

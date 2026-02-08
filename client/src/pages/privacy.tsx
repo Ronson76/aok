@@ -49,6 +49,9 @@ export default function Privacy() {
                 <li><strong>Emergency Recording Data:</strong> Audio and video recordings captured via your device's camera and microphone during emergency alerts (only when you have explicitly opted in to the Emergency Recording feature)</li>
                 <li><strong>Organisation Data:</strong> Supervisor phone numbers provided by your organisation for the Call Supervisor feature</li>
                 <li><strong>Optional Wellness Data:</strong> Mood entries, pet information, and digital documents if you choose to use these features</li>
+                <li><strong>Fitness Tracking Data:</strong> GPS route coordinates, distance, duration, pace, speed, and activity type (run, walk, cycle) when you use the Fitness Tracking feature</li>
+                <li><strong>Activity/Errands Session Data:</strong> Activity type (walking, shopping, errands, appointments, visiting, commuting, dog walking, exercise), duration, GPS coordinates, grace period settings, and session status when you use the Activity/Errands Tracker</li>
+                <li><strong>AI Interaction Data:</strong> Chat messages and mood patterns shared with the AI Wellbeing Chat feature (processed via OpenAI)</li>
               </ul>
             </section>
 
@@ -64,6 +67,9 @@ export default function Privacy() {
                 <li>Capture and securely store audio/video recordings during emergency alerts to share with your emergency contacts (when Emergency Recording is enabled)</li>
                 <li>Connect you with your organisation's supervisor via voice call when you use the Call Supervisor feature</li>
                 <li>Process payments and manage your subscription</li>
+                <li>Track your fitness activities and display route maps, distance, and performance data when you use Fitness Tracking</li>
+                <li>Monitor your activity sessions and trigger safety alerts if a session exceeds its grace period when you use the Activity/Errands Tracker</li>
+                <li>Provide AI-powered wellbeing support and mood pattern analysis through the AI Wellbeing Chat feature</li>
                 <li>Improve our service and develop new features</li>
                 <li>Communicate important updates about the service</li>
               </ul>
@@ -77,7 +83,7 @@ export default function Privacy() {
               <ul className="list-disc pl-6 text-muted-foreground space-y-2 mt-2">
                 <li><strong>Emergency Contacts:</strong> When you miss a check-in or trigger an emergency alert, including any emergency recordings if the feature is enabled</li>
                 <li><strong>Organisation Supervisors:</strong> Your name is shared with the supervisor when you use the Call Supervisor feature, so they know who is calling</li>
-                <li><strong>Service Providers:</strong> Trusted partners who help us deliver our service (e.g., email, SMS, voice calls, and payment providers)</li>
+                <li><strong>Service Providers:</strong> Trusted partners who help us deliver our service (e.g., email, SMS, voice calls, payment providers, and AI services)</li>
                 <li><strong>Legal Requirements:</strong> When required by law or to protect rights and safety</li>
               </ul>
               <p className="text-muted-foreground leading-relaxed mt-2">
@@ -116,7 +122,7 @@ export default function Privacy() {
             <section>
               <h2 className="text-xl font-semibold mb-3">7. Data Retention</h2>
               <p className="text-muted-foreground leading-relaxed">
-                We retain your personal data for as long as your account is active or as needed to provide our services. Check-in history is retained for 12 months. When you close your account, we will delete your data within 30 days, except where we are required by law to retain it.
+                We retain your personal data for as long as your account is active or as needed to provide our services. Check-in history is retained for 12 months. Fitness activity data and activity/errand session data are retained for as long as your account is active. Emergency recordings are automatically deleted after 90 days. AI chat conversations are not stored beyond the active session. When you close your account, we will delete your data within 30 days, except where we are required by law to retain it.
               </p>
             </section>
 

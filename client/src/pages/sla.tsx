@@ -48,7 +48,7 @@ export default function SLA() {
               <ul className="list-disc pl-6 text-muted-foreground space-y-2 mt-2">
                 <li>Scheduled maintenance (notified at least 48 hours in advance)</li>
                 <li>Force majeure events (natural disasters, government actions, pandemics)</li>
-                <li>Third-party service outages affecting alerts, Call Supervisor calls, or AI features (Twilio, Resend, Stripe, OpenAI)</li>
+                <li>Third-party service outages affecting alerts, Call Supervisor calls, AI features, GPS mapping, or fitness tracking (Twilio, Resend, Stripe, OpenAI, OpenStreetMap)</li>
                 <li>Issues caused by the Customer's own systems or network</li>
                 <li>DDoS attacks or other malicious external activity</li>
               </ul>
@@ -86,14 +86,21 @@ export default function SLA() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">5. Monitoring and Reporting</h2>
+              <h2 className="text-xl font-semibold mb-3">5. Covered Features</h2>
+              <p className="text-muted-foreground leading-relaxed">
+                This SLA covers all core A-OK platform features including: Check-in System, Emergency Alerts, Call Supervisor, Push Notifications, SMS Backup, Fitness Tracking, Activity/Errands Tracker, AI Wellbeing Chat, Mood Tracking, Pet Protection, Digital Will Storage, and Organisation Management features. GPS accuracy and third-party mapping service availability (OpenStreetMap) are excluded from uptime calculations as they depend on external providers.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-semibold mb-3">6. Monitoring and Reporting</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Naiyatech Ltd continuously monitors the A-OK platform and will provide monthly uptime reports to enterprise customers upon request.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">6. Governing Law</h2>
+              <h2 className="text-xl font-semibold mb-3">7. Governing Law</h2>
               <p className="text-muted-foreground leading-relaxed">
                 This agreement shall be governed by and construed in accordance with the laws of England and Wales. Any disputes arising from or in connection with this agreement shall be subject to the exclusive jurisdiction of the courts of England and Wales.
               </p>
