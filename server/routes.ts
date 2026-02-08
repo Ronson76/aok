@@ -4,7 +4,7 @@ import { storage, organizationStorage, adminStorage } from "./storage";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, insertMoodEntrySchema, insertPetSchema, updatePetSchema, insertDigitalDocumentSchema, updateDigitalDocumentSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
-import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification, sendContactRemovedNotification, sendWelcomeEmail } from "./notifications";
+import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification, sendContactRemovedNotification, sendWelcomeEmail, makeVoiceCall } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
 import { registerOrgMemberRoutes } from "./orgMemberRoutes";
@@ -1577,6 +1577,78 @@ export async function registerRoutes(
       res.json(alerts);
     } catch (error) {
       res.status(500).json({ error: "Failed to get alerts" });
+    }
+  });
+
+  // =====================================================
+  // CALL SUPERVISOR (Org-managed clients only)
+  // =====================================================
+  app.post("/api/call-supervisor", async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const user = await storage.getUserById(userId);
+      if (!user || !user.referenceId) {
+        return res.status(403).json({ error: "Only organisation-managed clients can use this feature" });
+      }
+
+      const orgClient = await organizationStorage.getClientByReferenceCode(user.referenceId);
+      if (!orgClient) {
+        return res.status(404).json({ error: "Organisation record not found" });
+      }
+
+      const org = await storage.getUserById(orgClient.organizationId);
+      if (!org) {
+        return res.status(404).json({ error: "Organisation not found" });
+      }
+
+      if (!org.mobileNumber) {
+        return res.status(400).json({ error: "Your organisation has not set up a phone number for supervisor calls" });
+      }
+
+      const callerName = user.name || orgClient.clientName || "A client";
+      const message = `Hello, this is a call from A O K on behalf of ${callerName}. They are trying to reach their supervisor. Please call them back or check on them in the A O K dashboard.`;
+
+      const result = await makeVoiceCall(org.mobileNumber, message);
+
+      if (result.success) {
+        console.log(`[CALL SUPERVISOR] ${callerName} (${userId}) called supervisor at org ${orgClient.organizationId}`);
+        res.json({ success: true, message: "Call placed to your supervisor" });
+      } else {
+        console.error(`[CALL SUPERVISOR] Failed:`, result.error);
+        res.status(500).json({ error: "Failed to place the call. Please try again." });
+      }
+    } catch (error) {
+      console.error("[CALL SUPERVISOR] Error:", error);
+      res.status(500).json({ error: "Failed to call supervisor" });
+    }
+  });
+
+  // Get supervisor info for org-managed clients
+  app.get("/api/supervisor-info", async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const user = await storage.getUserById(userId);
+      if (!user || !user.referenceId) {
+        return res.status(403).json({ error: "Only organisation-managed clients can use this feature" });
+      }
+
+      const orgClient = await organizationStorage.getClientByReferenceCode(user.referenceId);
+      if (!orgClient) {
+        return res.status(404).json({ error: "Organisation record not found" });
+      }
+
+      const org = await storage.getUserById(orgClient.organizationId);
+      if (!org) {
+        return res.status(404).json({ error: "Organisation not found" });
+      }
+
+      res.json({
+        organizationName: org.name,
+        hasPhoneNumber: !!org.mobileNumber,
+      });
+    } catch (error) {
+      console.error("[SUPERVISOR INFO] Error:", error);
+      res.status(500).json({ error: "Failed to get supervisor info" });
     }
   });
 

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon, Users, Moon, Sun, Lock, Eye, EyeOff } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, ShieldCheck, Loader2, AlertOctagon, Users, Moon, Sun, Lock, Eye, EyeOff, Phone } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
@@ -242,6 +242,91 @@ function getStatusLabel(status: StatusData["status"]) {
     case "overdue":
       return { text: "Check-In Overdue", variant: "destructive" as const };
   }
+}
+
+function CallSupervisorCard() {
+  const { toast } = useToast();
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const supervisorQuery = useQuery<{ organizationName: string; hasPhoneNumber: boolean }>({
+    queryKey: ["/api/supervisor-info"],
+  });
+
+  const callMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/call-supervisor");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Call placed", description: "Your supervisor's phone is ringing now. They'll receive a message letting them know you're trying to reach them." });
+      setShowConfirm(false);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Call failed", description: error.message, variant: "destructive" });
+      setShowConfirm(false);
+    },
+  });
+
+  const info = supervisorQuery.data;
+  if (!info?.hasPhoneNumber) return null;
+
+  return (
+    <>
+      <Card className="border-primary/30">
+        <CardContent className="py-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Phone className="h-5 w-5 text-primary" />
+            <span className="font-medium text-sm">Call Supervisor</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Need to speak with someone at {info.organizationName}? Tap below and their phone will ring with a message from you.
+          </p>
+          <Button
+            className="w-full"
+            onClick={() => setShowConfirm(true)}
+            disabled={callMutation.isPending}
+            data-testid="button-call-supervisor"
+          >
+            {callMutation.isPending ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Calling...</>
+            ) : (
+              <><Phone className="h-4 w-4 mr-2" /> Call Supervisor</>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Phone className="h-5 w-5 text-primary" />
+              Call Supervisor
+            </DialogTitle>
+            <DialogDescription>
+              This will ring your supervisor at {info.organizationName} and let them know you're trying to reach them. They'll receive your name so they can call you back.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowConfirm(false)} data-testid="button-cancel-call">
+              Cancel
+            </Button>
+            <Button
+              onClick={() => callMutation.mutate()}
+              disabled={callMutation.isPending}
+              data-testid="button-confirm-call"
+            >
+              {callMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Calling...</>
+              ) : (
+                <><Phone className="h-4 w-4 mr-2" /> Call Now</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
 
 export default function Dashboard() {
@@ -889,6 +974,9 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         )}
+
+        {/* Call Supervisor */}
+        <CallSupervisorCard />
 
         {/* Theme Toggle */}
         <Card>

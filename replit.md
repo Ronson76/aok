@@ -46,6 +46,7 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Forgot Password**: Complete password reset flow via email.
 - **Password Policy**: Minimum 8 characters, special characters allowed.
 - **Shake to SOS**: Enabled by default, can be disabled in settings.
+- **Call Supervisor**: Org-managed clients can tap a button to ring their supervisor's phone via Twilio. Supervisor doesn't need to be in the app.
 
 ### Legal / Licence Agreements
 - **EULA** (`/eula`): Individual user licence agreement.
