@@ -68,7 +68,7 @@ Preferred communication style: Simple, everyday language.
 - **Monitoring**: Dashboard to view client check-in status (Safe/Pending/Overdue), seat usage, and emergency alerts.
 - **Dynamic Feature Control**: Organizations can enable/disable specific wellness features for individual clients.
 - **Safeguarding Hub**: Comprehensive system for incident reporting, welfare concerns, case files, and escalation rules.
-- **Staff Invitation System**: Workflow for inviting and managing staff with role-based access.
+- **Staff Invitation System**: Workflow for inviting and managing staff with role-based access. Supports bulk import via Excel spreadsheet upload (POST /api/org/staff/bulk-import).
 - **Organisation Help Centre**: In-dashboard A-Z searchable help system with 40+ topics across 6 categories, alphabet quick-navigation bar. Floating indigo help button on all authenticated org pages.
 
 ### Documentation & Guides (KEEP UPDATED)

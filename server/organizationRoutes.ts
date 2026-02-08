@@ -1849,6 +1849,117 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
+  const bulkStaffImportSchema = z.object({
+    staff: z.array(z.object({
+      staffName: z.string().min(1, "Staff name is required"),
+      staffPhone: z.string().min(10, "Valid phone number is required"),
+      staffEmail: z.string().email("Valid email is required"),
+      emergencyContactName: z.string().min(1, "Emergency contact name is required"),
+      emergencyContactEmail: z.string().email("Emergency contact email is required"),
+      emergencyContactPhone: z.string().optional().or(z.literal("")),
+      emergencyContactRelationship: z.string().optional().or(z.literal("")),
+    })).min(1, "At least one staff member is required").max(100, "Maximum 100 staff per import"),
+    bundleId: z.string().min(1, "Bundle is required"),
+  });
+
+  app.post("/api/org/staff/bulk-import", requireOrganization, async (req, res) => {
+    try {
+      const parsed = bulkStaffImportSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid import data" });
+      }
+
+      const { staff, bundleId } = parsed.data;
+      const orgId = (req.user as any).id;
+      const orgUser = req.user as any;
+
+      const stats = await organizationStorage.getOrganizationDashboardStats(orgId);
+      const bundle = stats.bundles.find(b => b.id === bundleId);
+      if (!bundle || bundle.status !== "active") {
+        return res.status(400).json({ error: "Invalid or inactive bundle" });
+      }
+
+      const availableSeats = bundle.seatLimit - bundle.seatsUsed;
+      if (staff.length > availableSeats) {
+        return res.status(400).json({ error: `Not enough seats. ${availableSeats} available, ${staff.length} requested.` });
+      }
+
+      const results: Array<{ row: number; staffName: string; success: boolean; inviteCode?: string; error?: string }> = [];
+
+      for (let i = 0; i < staff.length; i++) {
+        const member = staff[i];
+        try {
+          let inviteCode = "ST" + generateReferenceCode();
+          let codeAttempts = 0;
+          while (await organizationStorage.getStaffInviteByCode(inviteCode) && codeAttempts < 10) {
+            inviteCode = "ST" + generateReferenceCode();
+            codeAttempts++;
+          }
+          if (codeAttempts >= 10) {
+            results.push({ row: i + 1, staffName: member.staffName, success: false, error: "Failed to generate unique invite code" });
+            continue;
+          }
+
+          const invite = await organizationStorage.createStaffInvite({
+            organizationId: orgId,
+            bundleId,
+            staffName: member.staffName,
+            staffPhone: member.staffPhone,
+            staffEmail: member.staffEmail || undefined,
+            emergencyContactName: member.emergencyContactName,
+            emergencyContactPhone: member.emergencyContactPhone || undefined,
+            emergencyContactEmail: member.emergencyContactEmail,
+            emergencyContactRelationship: member.emergencyContactRelationship || undefined,
+            inviteCode,
+          });
+
+          await storage.createAuditEntry(orgId, {
+            userEmail: orgUser.email,
+            userRole: "organization",
+            action: "created",
+            entityType: "staff_invite",
+            entityId: invite.id,
+            newData: { staffName: member.staffName, staffPhone: member.staffPhone, staffEmail: member.staffEmail, bundleId, inviteCode, source: "bulk_import" },
+            ipAddress: req.ip || undefined,
+          });
+
+          const smsResult = await sendStaffInviteSMS(member.staffPhone, inviteCode, orgUser.name || "Your organisation");
+
+          if (member.emergencyContactEmail) {
+            try {
+              await sendEmergencyContactConfirmationForStaffInvite(
+                member.emergencyContactName,
+                member.emergencyContactEmail,
+                member.staffName,
+                orgUser.name || "Your organisation"
+              );
+            } catch (emailErr) {
+              console.error("[STAFF BULK IMPORT] Failed to send EC confirmation email:", emailErr);
+            }
+          }
+
+          results.push({ row: i + 1, staffName: member.staffName, success: true, inviteCode });
+        } catch (err: any) {
+          results.push({ row: i + 1, staffName: member.staffName, success: false, error: err.message || "Unknown error" });
+        }
+      }
+
+      const successCount = results.filter(r => r.success).length;
+      const failCount = results.filter(r => !r.success).length;
+
+      res.status(201).json({
+        success: true,
+        totalProcessed: staff.length,
+        successCount,
+        failCount,
+        results,
+      });
+    } catch (error: any) {
+      console.error("[ORG] Staff bulk import failed:", error);
+      res.status(400).json({ error: error.message || "Staff bulk import failed" });
+    }
+  });
+
   app.post("/api/org/staff/invite/:inviteId/revoke", requireOrganization, async (req, res) => {
     try {
       const orgId = (req.user as any).id;
