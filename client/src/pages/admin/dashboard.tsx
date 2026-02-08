@@ -12,8 +12,9 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Users, Building2, User, CheckCircle, XCircle, Package, 
-  LogOut, ShieldCheck, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff, KeyRound, ArrowLeft, RotateCcw, AlertTriangle, BellOff, Search, Settings, MessageSquare
+  LogOut, ShieldCheck, TrendingUp, Calendar, AlertOctagon, Eye, Pause, Play, Trash2, Mail, Phone, Plus, Loader2, Eye as EyeIcon, EyeOff, KeyRound, ArrowLeft, RotateCcw, AlertTriangle, BellOff, Search, Settings, MessageSquare, FileText, PenLine
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { format, formatDistanceToNow } from "date-fns";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
@@ -120,6 +121,24 @@ export default function AdminDashboard() {
   const [newOrgPassword, setNewOrgPassword] = useState("");
   const [showNewOrgPassword, setShowNewOrgPassword] = useState(false);
   const [showOrgFeatures, setShowOrgFeatures] = useState(false);
+  const [requiredDocuments, setRequiredDocuments] = useState<string[]>([]);
+  const legalDocumentOptions = [
+    { id: "enterprise-licence", label: "Enterprise Licence" },
+    { id: "data-processing-addendum", label: "Data Processing Addendum (GDPR)" },
+    { id: "sla", label: "Service Level Agreement (SLA)" },
+    { id: "lone-worker-addendum", label: "Lone Worker Addendum" },
+    { id: "ip-ownership", label: "IP Ownership Agreement" },
+    { id: "nda", label: "NDA (Confidentiality)" },
+    { id: "privacy", label: "Privacy Policy" },
+    { id: "eula", label: "EULA" },
+    { id: "terms", label: "Terms and Conditions" },
+  ];
+  const docIdToTitle: Record<string, string> = {
+    eula: "EULA", privacy: "Privacy Policy", terms: "Terms and Conditions",
+    "enterprise-licence": "Enterprise Licence", "data-processing-addendum": "Data Processing Addendum",
+    sla: "SLA", "lone-worker-addendum": "Lone Worker Addendum",
+    "ip-ownership": "IP Ownership Agreement", nda: "NDA",
+  };
   const [orgFeatureDefaults, setOrgFeatureDefaults] = useState<Record<string, boolean>>(() => {
     const defaults: Record<string, boolean> = {};
     for (const key of allTierFeatureKeys) {
@@ -129,6 +148,16 @@ export default function AdminDashboard() {
     defaults["orgFeatureEmergencyRecording"] = false;
     return defaults;
   });
+  
+  const [showOrgSignDialog, setShowOrgSignDialog] = useState(false);
+  const [orgSignDocId, setOrgSignDocId] = useState("");
+  const [orgSignDocTitle, setOrgSignDocTitle] = useState("");
+  const [orgSignerName, setOrgSignerName] = useState("");
+  const [orgSignerEmail, setOrgSignerEmail] = useState("");
+  const [orgSignerRole, setOrgSignerRole] = useState("");
+  const [orgSignConsent, setOrgSignConsent] = useState(false);
+  const [orgSignTypedSig, setOrgSignTypedSig] = useState("");
+  const [showOrgLegalDocs, setShowOrgLegalDocs] = useState(false);
   
   // State for changing own password
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
@@ -370,6 +399,17 @@ export default function AdminDashboard() {
     enabled: !!selectedOrg && showOrgFeatureDefaults,
   });
 
+  const { data: orgAssignedDocs = [], refetch: refetchOrgDocs } = useQuery<Array<{ id: string; organisationId: string; organisationName: string; documentId: string; assignedAt: string; signedAt?: string; signatureId?: string }>>({
+    queryKey: ["/api/admin/organizations", selectedOrg?.id, "assigned-documents"],
+    queryFn: async () => {
+      if (!selectedOrg) return [];
+      const res = await fetch(`/api/admin/organizations/${selectedOrg.id}/assigned-documents`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!selectedOrg,
+  });
+
   useEffect(() => {
     if (selectedOrgFeatureDefaults) {
       setOrgFeatureDefaultsEditing(selectedOrgFeatureDefaults);
@@ -420,8 +460,31 @@ export default function AdminDashboard() {
     },
   });
   
+  const orgSignMutation = useMutation({
+    mutationFn: async (data: { documentId: string; signerName: string; signerEmail: string; signerRole: string; organisationId: string; organisationName: string }) => {
+      const res = await apiRequest("POST", "/api/admin/document-signatures", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchOrgDocs();
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/document-signatures"] });
+      setShowOrgSignDialog(false);
+      setOrgSignDocId("");
+      setOrgSignDocTitle("");
+      setOrgSignerName("");
+      setOrgSignerEmail("");
+      setOrgSignerRole("");
+      setOrgSignConsent(false);
+      setOrgSignTypedSig("");
+      toast({ title: "Document Signed", description: "The document has been signed successfully." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
   const createOrgMutation = useMutation({
-    mutationFn: async (data: { name: string; email: string; password: string; featureDefaults?: Record<string, boolean> }) => {
+    mutationFn: async (data: { name: string; email: string; password: string; featureDefaults?: Record<string, boolean>; requiredDocuments?: string[] }) => {
       const response = await apiRequest("POST", "/api/admin/organizations", data);
       return response.json();
     },
@@ -434,6 +497,7 @@ export default function AdminDashboard() {
       setNewOrgEmail("");
       setNewOrgPassword("");
       setShowOrgFeatures(false);
+      setRequiredDocuments([]);
       toast({
         title: "Organisation created",
         description: "The organisation account has been created successfully.",
@@ -495,7 +559,7 @@ export default function AdminDashboard() {
     });
   };
   
-  const handleCreateOrganization = () => {
+  const handleCreateOrganization = (skipDocs?: boolean) => {
     if (!newOrgName.trim() || !newOrgEmail.trim() || !newOrgPassword.trim()) {
       toast({
         title: "Missing fields",
@@ -509,6 +573,7 @@ export default function AdminDashboard() {
       email: newOrgEmail.trim(),
       password: newOrgPassword,
       featureDefaults: orgFeatureDefaults,
+      requiredDocuments: skipDocs ? undefined : (requiredDocuments.length > 0 ? requiredDocuments : undefined),
     });
   };
   
@@ -1167,6 +1232,74 @@ export default function AdminDashboard() {
               )}
             </div>
 
+            {/* Legal Documents */}
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => setShowOrgLegalDocs(!showOrgLegalDocs)}
+                data-testid="button-toggle-org-legal-docs"
+              >
+                <span className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Legal Documents
+                  {orgAssignedDocs.length > 0 && (
+                    <Badge variant={orgAssignedDocs.every(d => d.signedAt) ? "default" : "secondary"} className="text-xs">
+                      {orgAssignedDocs.filter(d => d.signedAt).length}/{orgAssignedDocs.length} signed
+                    </Badge>
+                  )}
+                </span>
+                <span className="text-xs text-muted-foreground">{showOrgLegalDocs ? "Hide" : "Show"}</span>
+              </Button>
+              {showOrgLegalDocs && (
+                <div className="border rounded-md p-3 space-y-2">
+                  {orgAssignedDocs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-3" data-testid="text-no-assigned-docs">No documents assigned to this organisation</p>
+                  ) : (
+                    orgAssignedDocs.map((doc) => (
+                      <div key={doc.id} className="flex items-center justify-between gap-3 py-2 px-3 border rounded-md" data-testid={`org-assigned-doc-${doc.documentId}`}>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <span className="text-sm font-medium">{docIdToTitle[doc.documentId] || doc.documentId}</span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {doc.signedAt ? (
+                            <Badge variant="default" className="text-xs" data-testid={`badge-signed-${doc.documentId}`}>
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Signed {new Date(doc.signedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                            </Badge>
+                          ) : (
+                            <>
+                              <Badge variant="secondary" className="text-xs" data-testid={`badge-pending-${doc.documentId}`}>Awaiting Signature</Badge>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                data-testid={`button-sign-org-doc-${doc.documentId}`}
+                                onClick={() => {
+                                  setOrgSignDocId(doc.documentId);
+                                  setOrgSignDocTitle(docIdToTitle[doc.documentId] || doc.documentId);
+                                  setOrgSignerName("");
+                                  setOrgSignerEmail(selectedOrg?.email || "");
+                                  setOrgSignerRole("");
+                                  setOrgSignConsent(false);
+                                  setOrgSignTypedSig("");
+                                  setShowOrgSignDialog(true);
+                                }}
+                              >
+                                <PenLine className="w-3 h-3 mr-1" />
+                                Sign
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Search Fields */}
             {orgClients.length > 0 && (
               <div className="flex flex-col sm:flex-row gap-3">
@@ -1611,13 +1744,57 @@ export default function AdminDashboard() {
                   </div>
                 )}
               </div>
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-between"
+                  onClick={() => {}}
+                  data-testid="button-toggle-required-docs"
+                >
+                  <span className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Required Documents {requiredDocuments.length > 0 && `(${requiredDocuments.length})`}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {requiredDocuments.length > 0 ? `${requiredDocuments.length} selected` : "None"}
+                  </span>
+                </Button>
+                <div className="border rounded-md p-3 space-y-1 max-h-48 overflow-y-auto">
+                  {legalDocumentOptions.map((doc) => (
+                    <div key={doc.id} className="flex items-center gap-3 py-1.5 px-2 rounded-md" data-testid={`org-doc-${doc.id}`}>
+                      <Checkbox
+                        id={`doc-${doc.id}`}
+                        checked={requiredDocuments.includes(doc.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setRequiredDocuments(prev => [...prev, doc.id]);
+                          } else {
+                            setRequiredDocuments(prev => prev.filter(d => d !== doc.id));
+                          }
+                        }}
+                        data-testid={`checkbox-doc-${doc.id}`}
+                      />
+                      <Label htmlFor={`doc-${doc.id}`} className="text-sm cursor-pointer flex-1">{doc.label}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            <DialogFooter className="gap-2">
+            <DialogFooter className="gap-2 flex-wrap">
               <Button variant="outline" onClick={() => setShowCreateOrgDialog(false)}>
                 Cancel
               </Button>
               <Button
-                onClick={handleCreateOrganization}
+                variant="secondary"
+                onClick={() => handleCreateOrganization(true)}
+                disabled={createOrgMutation.isPending}
+                data-testid="button-create-org-skip-docs"
+              >
+                Skip Documents (Testing)
+              </Button>
+              <Button
+                onClick={() => handleCreateOrganization()}
                 disabled={createOrgMutation.isPending}
                 data-testid="button-submit-organization"
               >
@@ -1892,6 +2069,62 @@ export default function AdminDashboard() {
                 ) : (
                   "Save Schedule"
                 )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Org Document Sign Dialog */}
+        <Dialog open={showOrgSignDialog} onOpenChange={setShowOrgSignDialog}>
+          <DialogContent className="sm:max-w-lg" data-testid="dialog-org-sign-document">
+            <DialogHeader>
+              <DialogTitle>Sign Document for {selectedOrg?.name}</DialogTitle>
+              <DialogDescription>{orgSignDocTitle}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="org-signer-name">Full Name</Label>
+                <Input id="org-signer-name" data-testid="input-org-signer-name" placeholder="Enter signatory's full name" value={orgSignerName} onChange={(e) => setOrgSignerName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="org-signer-email">Email</Label>
+                <Input id="org-signer-email" data-testid="input-org-signer-email" type="email" placeholder="Enter email" value={orgSignerEmail} onChange={(e) => setOrgSignerEmail(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="org-signer-role">Role / Title</Label>
+                <Input id="org-signer-role" data-testid="input-org-signer-role" placeholder="e.g. Director, CEO" value={orgSignerRole} onChange={(e) => setOrgSignerRole(e.target.value)} />
+              </div>
+              <div className="flex items-start gap-3">
+                <Checkbox id="org-consent" data-testid="checkbox-org-consent" checked={orgSignConsent} onCheckedChange={(v) => setOrgSignConsent(v === true)} />
+                <Label htmlFor="org-consent" className="text-sm leading-relaxed cursor-pointer">I confirm that I have read and understood this document and agree to be bound by its terms on behalf of {selectedOrg?.name}.</Label>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="org-typed-sig">Signature</Label>
+                <Input id="org-typed-sig" data-testid="input-org-typed-sig" placeholder="Type your full name as signature" value={orgSignTypedSig} onChange={(e) => setOrgSignTypedSig(e.target.value)} className="text-lg italic border-b-2" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }} />
+              </div>
+              <div className="text-sm text-muted-foreground" data-testid="text-org-sign-date">
+                Date: {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setShowOrgSignDialog(false)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  if (!orgSignerName || !orgSignerEmail || !orgSignerRole || !orgSignConsent || !orgSignTypedSig || !selectedOrg) return;
+                  orgSignMutation.mutate({
+                    documentId: orgSignDocId,
+                    signerName: orgSignerName,
+                    signerEmail: orgSignerEmail,
+                    signerRole: orgSignerRole,
+                    organisationId: selectedOrg.id,
+                    organisationName: selectedOrg.name || "",
+                  });
+                }}
+                disabled={!orgSignerName.trim() || !orgSignerEmail.trim() || !orgSignerRole.trim() || !orgSignConsent || !orgSignTypedSig.trim() || orgSignMutation.isPending}
+                data-testid="button-submit-org-sign"
+              >
+                <PenLine className="w-4 h-4 mr-1" />
+                {orgSignMutation.isPending ? "Signing..." : "Sign Document"}
               </Button>
             </DialogFooter>
           </DialogContent>

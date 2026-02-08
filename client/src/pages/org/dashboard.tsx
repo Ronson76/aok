@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon, Video } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon, Video, Scale, PenLine } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -285,6 +285,54 @@ export default function OrganizationDashboard() {
 
   const { data: archivedClients } = useQuery<any[]>({
     queryKey: ["/api/org/clients/archived"],
+  });
+
+  const { data: legalDocsData, refetch: refetchLegalDocs } = useQuery<{
+    assignedDocuments: Array<{ id: string; organisationId: string; organisationName: string; documentId: string; assignedAt: string; signedAt?: string; signatureId?: string }>;
+    signatures: Array<{ id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: string }>;
+    isValid: boolean;
+    totalRequired: number;
+    totalSigned: number;
+  }>({
+    queryKey: ["/api/org/legal-documents"],
+  });
+
+  const [showLegalSignDialog, setShowLegalSignDialog] = useState(false);
+  const [legalSignDocId, setLegalSignDocId] = useState("");
+  const [legalSignDocTitle, setLegalSignDocTitle] = useState("");
+  const [legalSignerName, setLegalSignerName] = useState("");
+  const [legalSignerEmail, setLegalSignerEmail] = useState("");
+  const [legalSignerRole, setLegalSignerRole] = useState("");
+  const [legalSignConsent, setLegalSignConsent] = useState(false);
+  const [legalSignTypedSig, setLegalSignTypedSig] = useState("");
+
+  const docIdToTitle: Record<string, string> = {
+    eula: "EULA", privacy: "Privacy Policy", terms: "Terms and Conditions",
+    "enterprise-licence": "Enterprise Licence", "data-processing-addendum": "Data Processing Addendum",
+    sla: "SLA", "lone-worker-addendum": "Lone Worker Addendum",
+    "ip-ownership": "IP Ownership Agreement", nda: "NDA",
+  };
+
+  const legalSignMutation = useMutation({
+    mutationFn: async (data: { documentId: string; signerName: string; signerEmail: string; signerRole: string }) => {
+      const res = await apiRequest("POST", "/api/org/legal-documents/sign", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchLegalDocs();
+      setShowLegalSignDialog(false);
+      setLegalSignDocId("");
+      setLegalSignDocTitle("");
+      setLegalSignerName("");
+      setLegalSignerEmail("");
+      setLegalSignerRole("");
+      setLegalSignConsent(false);
+      setLegalSignTypedSig("");
+      toast({ title: "Document Signed", description: "The document has been signed successfully." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
   });
 
   // Filter and sort clients based on search terms
@@ -1970,6 +2018,96 @@ export default function OrganizationDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+        {legalDocsData && legalDocsData.totalRequired > 0 && !legalDocsData.isValid && (
+          <Card className="border-amber-300 dark:border-amber-700" data-testid="card-legal-docs-warning">
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Legal Documents Pending</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Your organisation has {legalDocsData.totalRequired - legalDocsData.totalSigned} document{legalDocsData.totalRequired - legalDocsData.totalSigned !== 1 ? "s" : ""} awaiting signature. Please review and sign to activate your account.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {legalDocsData && legalDocsData.assignedDocuments.length > 0 && (
+          <Card data-testid="card-legal-documents">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
+              <div className="flex items-center gap-2">
+                <Scale className="h-5 w-5 text-indigo-600" />
+                <CardTitle className="text-base">Legal Documents</CardTitle>
+              </div>
+              {legalDocsData.isValid ? (
+                <Badge variant="default" data-testid="badge-all-signed">All Signed</Badge>
+              ) : (
+                <Badge variant="secondary" data-testid="badge-docs-pending">{legalDocsData.totalSigned}/{legalDocsData.totalRequired} Signed</Badge>
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {legalDocsData.assignedDocuments.map((doc) => {
+                  const sig = legalDocsData.signatures.find(s => s.documentId === doc.documentId);
+                  return (
+                    <div key={doc.id} className="flex items-center justify-between gap-3 py-2 px-3 border rounded-md" data-testid={`legal-doc-${doc.documentId}`}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="text-sm font-medium">{docIdToTitle[doc.documentId] || doc.documentId}</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                        {doc.signedAt ? (
+                          <>
+                            <Badge variant="default" className="text-xs" data-testid={`badge-doc-signed-${doc.documentId}`}>
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Signed
+                            </Badge>
+                            {sig && (
+                              <span className="text-xs text-muted-foreground">
+                                by {sig.signerName} on {new Date(sig.signedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <Badge variant="secondary" className="text-xs" data-testid={`badge-doc-pending-${doc.documentId}`}>Awaiting Signature</Badge>
+                            <Link href={`/${doc.documentId}`}>
+                              <Button variant="outline" size="sm" data-testid={`button-view-doc-${doc.documentId}`}>
+                                <ExternalLink className="w-3 h-3 mr-1" />
+                                View
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              data-testid={`button-sign-doc-${doc.documentId}`}
+                              onClick={() => {
+                                setLegalSignDocId(doc.documentId);
+                                setLegalSignDocTitle(docIdToTitle[doc.documentId] || doc.documentId);
+                                setLegalSignerName("");
+                                setLegalSignerEmail("");
+                                setLegalSignerRole("");
+                                setLegalSignConsent(false);
+                                setLegalSignTypedSig("");
+                                setShowLegalSignDialog(true);
+                              }}
+                            >
+                              <PenLine className="w-3 h-3 mr-1" />
+                              Sign
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -3723,6 +3861,59 @@ export default function OrganizationDashboard() {
               ) : (
                 "Save Contacts"
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showLegalSignDialog} onOpenChange={setShowLegalSignDialog}>
+        <DialogContent className="sm:max-w-lg" data-testid="dialog-legal-sign">
+          <DialogHeader>
+            <DialogTitle data-testid="text-legal-sign-title">Sign Document</DialogTitle>
+            <DialogDescription>{legalSignDocTitle}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="legal-signer-name">Full Name</Label>
+              <Input id="legal-signer-name" data-testid="input-legal-signer-name" placeholder="Enter your full name" value={legalSignerName} onChange={(e) => setLegalSignerName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="legal-signer-email">Email</Label>
+              <Input id="legal-signer-email" data-testid="input-legal-signer-email" type="email" placeholder="Enter your email" value={legalSignerEmail} onChange={(e) => setLegalSignerEmail(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="legal-signer-role">Role / Title</Label>
+              <Input id="legal-signer-role" data-testid="input-legal-signer-role" placeholder="e.g. Director, CEO, Manager" value={legalSignerRole} onChange={(e) => setLegalSignerRole(e.target.value)} />
+            </div>
+            <div className="flex items-start gap-3">
+              <Checkbox id="legal-consent" data-testid="checkbox-legal-consent" checked={legalSignConsent} onCheckedChange={(v) => setLegalSignConsent(v === true)} />
+              <Label htmlFor="legal-consent" className="text-sm leading-relaxed cursor-pointer">I confirm that I have read and understood this document and agree to be bound by its terms.</Label>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="legal-typed-sig">Signature</Label>
+              <Input id="legal-typed-sig" data-testid="input-legal-typed-sig" placeholder="Type your full name as signature" value={legalSignTypedSig} onChange={(e) => setLegalSignTypedSig(e.target.value)} className="text-lg italic border-b-2" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }} />
+            </div>
+            <div className="text-sm text-muted-foreground" data-testid="text-legal-sign-date">
+              Date: {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowLegalSignDialog(false)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                if (!legalSignerName || !legalSignerEmail || !legalSignerRole || !legalSignConsent || !legalSignTypedSig) return;
+                legalSignMutation.mutate({
+                  documentId: legalSignDocId,
+                  signerName: legalSignerName,
+                  signerEmail: legalSignerEmail,
+                  signerRole: legalSignerRole,
+                });
+              }}
+              disabled={!legalSignerName.trim() || !legalSignerEmail.trim() || !legalSignerRole.trim() || !legalSignConsent || !legalSignTypedSig.trim() || legalSignMutation.isPending}
+              data-testid="button-submit-legal-sign"
+            >
+              <PenLine className="w-4 h-4 mr-1" />
+              {legalSignMutation.isPending ? "Signing..." : "Sign Document"}
             </Button>
           </DialogFooter>
         </DialogContent>
