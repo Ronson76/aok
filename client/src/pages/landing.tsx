@@ -1305,10 +1305,6 @@ export default function Landing() {
                 <li><Link href="/guide"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-guide">How-to Guide</span></Link></li>
                 <li><Link href="/terms"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-terms">Terms and Conditions</span></Link></li>
                 <li><Link href="/privacy"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-privacy">Privacy Policy</span></Link></li>
-                <li><Link href="/eula"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-eula">EULA</span></Link></li>
-                <li><Link href="/sla"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-sla">Service Level Agreement</span></Link></li>
-                <li><Link href="/ip-ownership"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-ip-ownership">IP Ownership Agreement</span></Link></li>
-                <li><Link href="/nda"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-nda">NDA</span></Link></li>
               </ul>
             </div>
             

@@ -1261,4 +1261,30 @@ export function registerAdminRoutes(app: Express) {
       res.status(500).json({ error: "Failed to update organisation feature defaults" });
     }
   });
+
+  app.post("/api/admin/document-signatures", adminAuthMiddleware, async (req, res) => {
+    const { documentId, signerName, signerEmail, signerRole } = req.body;
+    if (!documentId || !signerName || !signerEmail || !signerRole) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    const signature = await storage.createDocumentSignature({
+      documentId,
+      signerName,
+      signerEmail,
+      signerRole,
+      signedAt: new Date(),
+      ipAddress: req.ip,
+    });
+    res.json(signature);
+  });
+
+  app.get("/api/admin/document-signatures", adminAuthMiddleware, async (req, res) => {
+    const { documentId } = req.query;
+    if (documentId) {
+      const sigs = await storage.getDocumentSignatures(documentId as string);
+      return res.json(sigs);
+    }
+    const sigs = await storage.getAllDocumentSignatures();
+    res.json(sigs);
+  });
 }
