@@ -48,7 +48,20 @@ export default function LoneWorkerAddendum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">2. Connectivity Limitation</h2>
+              <h2 className="text-xl font-semibold mb-3">2. Activity/Errands Tracker for Lone Workers</h2>
+              <p className="text-muted-foreground leading-relaxed">
+                The Activity/Errands Tracker feature may be used to monitor lone worker sessions during everyday activities. The following terms apply:
+              </p>
+              <ul className="list-disc pl-6 text-muted-foreground space-y-2 mt-2">
+                <li><strong>Session Monitoring:</strong> Lone workers may start tracked sessions for activities such as site visits, appointments, errands, or travel. Sessions include a configurable grace period after which, if not completed or extended, alerts are triggered to designated contacts or supervisors.</li>
+                <li><strong>GPS Tracking:</strong> When enabled, the Activity/Errands Tracker records GPS coordinates during sessions. This data is used for safety monitoring and may be shared with emergency contacts if an alert is triggered.</li>
+                <li><strong>Not a Substitute for Supervision:</strong> The Activity/Errands Tracker is a supplementary safety tool. It does not replace direct supervision, buddy systems, or physical welfare checks required by health and safety legislation. Employers must not rely solely on the tracker for lone worker protection.</li>
+                <li><strong>Fitness Tracking:</strong> GPS Fitness Tracking (running, walking, cycling) is available as a separate feature. Fitness data is informational only and does not constitute health or medical monitoring. It must not be used for workplace health assessments or occupational health decisions.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-semibold mb-3">3. Connectivity Limitation</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Service depends on network availability. A-OK requires an active internet connection (mobile data or Wi-Fi) to function. The following limitations apply:
               </p>
@@ -58,6 +71,7 @@ export default function LoneWorkerAddendum() {
                 <li>SMS fallback is available but depends on mobile network coverage</li>
                 <li>Call Supervisor voice calls require mobile or internet connectivity to initiate</li>
                 <li>Areas with poor or no signal may result in delayed or missed check-ins</li>
+                <li>Activity/Errands Tracker sessions and GPS tracking require active connectivity to transmit data and trigger alerts</li>
               </ul>
               <p className="text-muted-foreground leading-relaxed mt-2">
                 Employers must consider connectivity limitations when assessing lone worker risks for remote or underground locations.
@@ -65,7 +79,7 @@ export default function LoneWorkerAddendum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">3. Responsibility</h2>
+              <h2 className="text-xl font-semibold mb-3">4. Responsibility</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Employer retains duty of care. The organisation using A-OK for lone worker monitoring retains full responsibility for:
               </p>
@@ -80,7 +94,7 @@ export default function LoneWorkerAddendum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">4. Indemnity</h2>
+              <h2 className="text-xl font-semibold mb-3">5. Indemnity</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Customer indemnifies Naiyatech Ltd. The Customer agrees to indemnify and hold harmless Naiyatech Ltd against any claims, losses, damages, or expenses arising from:
               </p>
@@ -93,7 +107,7 @@ export default function LoneWorkerAddendum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">5. Governing Law</h2>
+              <h2 className="text-xl font-semibold mb-3">6. Governing Law</h2>
               <p className="text-muted-foreground leading-relaxed">
                 This addendum shall be governed by and construed in accordance with the laws of England and Wales. Any disputes arising from or in connection with this addendum shall be subject to the exclusive jurisdiction of the courts of England and Wales.
               </p>

@@ -52,8 +52,12 @@ export default function DataProcessingAddendum() {
                 <li>Location data when emergency features are activated</li>
                 <li>Emergency recording data (audio and video captured via device camera and microphone during emergency alerts, processed only when the user has explicitly opted in)</li>
                 <li>Optional wellness data (mood entries, pet profiles, digital documents)</li>
+                <li>Fitness tracking data (GPS route coordinates, distance, duration, pace, speed, activity type)</li>
+                <li>Activity/errands session data (activity type, duration, GPS coordinates, grace period settings, session status)</li>
+                <li>AI wellbeing chat interaction data (chat messages, mood pattern analysis, processed via OpenAI)</li>
                 <li>Call Supervisor records (call timestamps, caller identity, supervisor phone number)</li>
                 <li>Safeguarding records and case files (for organisation accounts)</li>
+                <li>Feature permission and tier configuration data (which features are enabled per user/organisation)</li>
               </ul>
             </section>
 
@@ -109,7 +113,9 @@ export default function DataProcessingAddendum() {
                 <li>Email delivery services (Resend)</li>
                 <li>SMS and voice call services, including Call Supervisor calls (Twilio)</li>
                 <li>Payment processing (Stripe)</li>
-                <li>AI services (OpenAI) for optional wellbeing features</li>
+                <li>AI services (OpenAI) for wellbeing chat, mood analysis, and voice features</li>
+                <li>Environmental impact tracking (Ecologi) for sustainability features</li>
+                <li>Mapping services (OpenStreetMap/Leaflet) for GPS route rendering</li>
               </ul>
               <p className="text-muted-foreground leading-relaxed mt-2">
                 The Customer will be notified of any changes to sub-processors and may object within 14 days.
