@@ -50,7 +50,7 @@ export default function Pricing() {
         { text: "Pet protection profiles with vet info", icon: PawPrint },
         { text: "Digital will & document storage", icon: Scroll },
         { text: "Wellbeing AI chat with voice mode", icon: Headphones },
-        { text: "Strava fitness tracking", icon: Activity },
+        { text: "Strava fitness tracking", icon: SiStrava, isStrava: true },
         { text: "Offline emergency overlay", icon: Shield },
         { text: "Tree planted via Ecologi on signup", icon: TreePine },
       ],
@@ -214,7 +214,7 @@ export default function Pricing() {
                   <ul className="space-y-3">
                     {plan.features.map((feature, featureIndex) => (
                       <li key={featureIndex} className="flex items-start gap-2">
-                        <feature.icon className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                        <feature.icon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${(feature as any).isStrava ? "text-[#FC4C02]" : "text-primary"}`} />
                         <span className="text-sm">{feature.text}</span>
                       </li>
                     ))}
