@@ -55,9 +55,11 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Data Processing Addendum** (`/data-processing-addendum`): GDPR DPA for organisations.
 - **SLA** (`/sla`): Service level agreement (paid tiers only, 99.9% uptime target).
 - **Lone Worker Addendum** (`/lone-worker-addendum`): Additional terms for lone worker use.
+- **IP Ownership Agreement** (`/ip-ownership`): Intellectual property rights and ownership (organisations/pilots).
+- **NDA** (`/nda`): Mutual non-disclosure and confidentiality agreement (organisations/pilots).
 - **Privacy Policy** (`/privacy`): Data privacy policy for all users.
 - **Terms and Conditions** (`/terms`): General terms of service.
-- **Deployment Matrix**: Individuals get EULA + Privacy Policy; Organisations get Enterprise Licence + DPA; Lone Workers get Enterprise Licence + Lone Worker Addendum + SLA; Paid tiers only get SLA.
+- **Deployment Matrix**: Individuals get EULA + Privacy Policy; Organisations get Enterprise Licence + DPA + IP Ownership + NDA; Lone Workers get Enterprise Licence + Lone Worker Addendum + SLA + IP Ownership + NDA; Paid tiers only get SLA.
 
 ### Admin Dashboard
 - **Access**: Separate login (`/admin/login`) with role-based access (`super_admin`, `analyst`).
