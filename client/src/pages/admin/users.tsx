@@ -625,7 +625,7 @@ export default function AdminUsers() {
                 <Input
                   id="org-password"
                   type={showOrgPassword ? "text" : "password"}
-                  placeholder="Min 8 characters, letters and numbers only"
+                  placeholder="Min 8 characters"
                   value={orgPassword}
                   onChange={(e) => setOrgPassword(e.target.value)}
                   className="pr-10"
