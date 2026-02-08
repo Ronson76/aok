@@ -12,6 +12,7 @@ import { registerWellbeingAIRoutes } from "./wellbeingAI";
 import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
 import { stripeService } from "./stripeService";
 import { getEcologiImpact, plantTreeForNewSubscriber, isTestMode as isEcologiTestMode } from "./ecologiService";
+import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 
 // Helper function to render a simple HTML confirmation page
 function renderConfirmationPage(success: boolean, message: string): string {
@@ -698,6 +699,9 @@ export async function registerRoutes(
   
   registerOrgMemberRoutes(app);
   
+  // Object storage routes
+  registerObjectStorageRoutes(app);
+
   // Wellbeing AI routes (uses session auth)
   registerWellbeingAIRoutes(app);
 
@@ -2042,6 +2046,207 @@ export async function registerRoutes(
     } catch (error) {
       console.error('[EMERGENCY] Failed to get alert status:', error);
       res.status(500).json({ error: "Failed to get alert status" });
+    }
+  });
+
+  // Emergency recording endpoints
+  const objectStorageService = new ObjectStorageService();
+
+  // Initialize a new emergency recording
+  app.post("/api/emergency/recordings/init", async (req, res) => {
+    try {
+      const userSettings = await storage.getSettings(req.userId!);
+      if (!userSettings.emergencyRecordingEnabled) {
+        return res.status(403).json({ error: "Emergency recording is not enabled" });
+      }
+
+      const activeAlert = await storage.getActiveEmergencyAlert(req.userId!);
+      if (!activeAlert) {
+        return res.status(400).json({ error: "No active emergency alert" });
+      }
+
+      const retentionExpiresAt = new Date();
+      retentionExpiresAt.setDate(retentionExpiresAt.getDate() + 90);
+
+      const contentType = req.body?.contentType || "video/webm";
+
+      const recording = await storage.createEmergencyRecording({
+        userId: req.userId!,
+        alertId: activeAlert.id,
+        contentType,
+        retentionExpiresAt,
+      });
+
+      console.log(`[EMERGENCY RECORDING] Initialized recording ${recording.id} for user ${req.userId}, alert ${activeAlert.id}`);
+
+      res.json({
+        recordingId: recording.id,
+        alertId: activeAlert.id,
+        retentionExpiresAt: retentionExpiresAt.toISOString(),
+      });
+    } catch (error) {
+      console.error("[EMERGENCY RECORDING] Failed to initialize recording:", error);
+      res.status(500).json({ error: "Failed to initialize recording" });
+    }
+  });
+
+  // Request a presigned upload URL for a recording
+  app.post("/api/emergency/recordings/upload-url", async (req, res) => {
+    try {
+      const { recordingId, contentType } = req.body;
+      if (!recordingId) {
+        return res.status(400).json({ error: "Missing recordingId" });
+      }
+
+      const recording = await storage.getEmergencyRecording(recordingId);
+      if (!recording || recording.userId !== req.userId) {
+        return res.status(404).json({ error: "Recording not found" });
+      }
+
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+
+      await storage.updateEmergencyRecording(recordingId, { objectPath });
+
+      console.log(`[EMERGENCY RECORDING] Upload URL generated for recording ${recordingId}, path: ${objectPath}`);
+
+      res.json({
+        uploadURL,
+        objectPath,
+        contentType: contentType || recording.contentType,
+      });
+    } catch (error) {
+      console.error("[EMERGENCY RECORDING] Failed to generate upload URL:", error);
+      res.status(500).json({ error: "Failed to generate upload URL" });
+    }
+  });
+
+  // Finalize a recording after upload
+  app.post("/api/emergency/recordings/complete", async (req, res) => {
+    try {
+      const { recordingId, fileSize, durationSeconds } = req.body;
+      if (!recordingId) {
+        return res.status(400).json({ error: "Missing recordingId" });
+      }
+
+      const recording = await storage.getEmergencyRecording(recordingId);
+      if (!recording || recording.userId !== req.userId) {
+        return res.status(404).json({ error: "Recording not found" });
+      }
+
+      const updated = await storage.updateEmergencyRecording(recordingId, {
+        status: "ready",
+        fileSize: fileSize || null,
+        durationSeconds: durationSeconds || null,
+      });
+
+      console.log(`[EMERGENCY RECORDING] Recording ${recordingId} completed: ${fileSize} bytes, ${durationSeconds}s`);
+
+      res.json(updated);
+    } catch (error) {
+      console.error("[EMERGENCY RECORDING] Failed to complete recording:", error);
+      res.status(500).json({ error: "Failed to complete recording" });
+    }
+  });
+
+  // List recordings for the current user
+  app.get("/api/emergency/recordings", async (req, res) => {
+    try {
+      const recordings = await storage.getEmergencyRecordingsForUser(req.userId!);
+      res.json(recordings);
+    } catch (error) {
+      console.error("[EMERGENCY RECORDING] Failed to list recordings:", error);
+      res.status(500).json({ error: "Failed to list recordings" });
+    }
+  });
+
+  // Get a single recording with download URL
+  app.get("/api/emergency/recordings/:id", async (req, res) => {
+    try {
+      const recording = await storage.getEmergencyRecording(req.params.id);
+      if (!recording) {
+        return res.status(404).json({ error: "Recording not found" });
+      }
+
+      if (recording.userId !== req.userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      res.json(recording);
+    } catch (error) {
+      console.error("[EMERGENCY RECORDING] Failed to get recording:", error);
+      res.status(500).json({ error: "Failed to get recording" });
+    }
+  });
+
+  // Stream/download a recording file
+  app.get("/api/emergency/recordings/:id/download", async (req, res) => {
+    try {
+      const recording = await storage.getEmergencyRecording(req.params.id);
+      if (!recording) {
+        return res.status(404).json({ error: "Recording not found" });
+      }
+
+      if (recording.userId !== req.userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      if (!recording.objectPath || recording.status !== "ready") {
+        return res.status(404).json({ error: "Recording file not available" });
+      }
+
+      const objectFile = await objectStorageService.getObjectEntityFile(recording.objectPath);
+      await objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("[EMERGENCY RECORDING] Failed to download recording:", error);
+      res.status(500).json({ error: "Failed to download recording" });
+    }
+  });
+
+  // Delete a recording
+  app.delete("/api/emergency/recordings/:id", async (req, res) => {
+    try {
+      const recording = await storage.getEmergencyRecording(req.params.id);
+      if (!recording) {
+        return res.status(404).json({ error: "Recording not found" });
+      }
+
+      if (recording.userId !== req.userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      if (recording.objectPath) {
+        try {
+          const objectFile = await objectStorageService.getObjectEntityFile(recording.objectPath);
+          await objectFile.delete();
+          console.log(`[EMERGENCY RECORDING] Deleted object: ${recording.objectPath}`);
+        } catch (objErr) {
+          console.error("[EMERGENCY RECORDING] Failed to delete object:", objErr);
+        }
+      }
+
+      await storage.deleteEmergencyRecording(req.params.id);
+      console.log(`[EMERGENCY RECORDING] Deleted recording ${req.params.id}`);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[EMERGENCY RECORDING] Failed to delete recording:", error);
+      res.status(500).json({ error: "Failed to delete recording" });
+    }
+  });
+
+  // Get recording status for an active emergency alert
+  app.get("/api/emergency/:alertId/recording-status", async (req, res) => {
+    try {
+      const recordings = await storage.getEmergencyRecordingsForAlert(req.params.alertId);
+      const userRecordings = recordings.filter(r => r.userId === req.userId);
+      res.json({
+        hasRecordings: userRecordings.length > 0,
+        recordings: userRecordings,
+      });
+    } catch (error) {
+      console.error("[EMERGENCY RECORDING] Failed to get recording status:", error);
+      res.status(500).json({ error: "Failed to get recording status" });
     }
   });
 

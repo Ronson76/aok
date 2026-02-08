@@ -8,14 +8,14 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, AlertTriangle, Smartphone, Eye, EyeOff, ExternalLink, CreditCard, AlertCircle, MapPin, Vibrate, Video } from "lucide-react";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, AlertTriangle, Smartphone, Eye, EyeOff, ExternalLink, CreditCard, AlertCircle, MapPin, Vibrate, Video, Trash2, Download, Play, FileVideo, Shield } from "lucide-react";
 import ShakeDetector from "@/lib/shake-detector";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
-import type { Settings as SettingsType } from "@shared/schema";
+import type { Settings as SettingsType, EmergencyRecording } from "@shared/schema";
 import { useState, useEffect, useCallback } from "react";
 
 // Allowed interval values: 5 mins for testing, then 1-48 hours
@@ -388,6 +388,27 @@ export default function Settings() {
     queryKey: ["/api/features"],
   });
   
+  const { data: recordings, isLoading: recordingsLoading } = useQuery<EmergencyRecording[]>({
+    queryKey: ["/api/emergency/recordings"],
+    enabled: !!settings?.emergencyRecordingEnabled,
+  });
+
+  const deleteRecordingMutation = useMutation({
+    mutationFn: async (recordingId: number) => {
+      const res = await apiRequest("DELETE", `/api/emergency/recordings/${recordingId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/emergency/recordings"] });
+      toast({ title: "Recording deleted" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete recording", variant: "destructive" });
+    },
+  });
+
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
   // Track if user is actively changing the interval
   const [isChangingInterval, setIsChangingInterval] = useState(false);
 
@@ -882,6 +903,124 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      {settings?.emergencyRecordingEnabled && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileVideo className="h-4 w-4 text-muted-foreground" />
+              Saved Recordings
+            </CardTitle>
+            <CardDescription>
+              Emergency recordings are stored securely for 90 days.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {recordingsLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : !recordings || recordings.length === 0 ? (
+              <div className="text-center py-6 text-sm text-muted-foreground">
+                <Shield className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                <p>No recordings yet</p>
+                <p className="text-xs mt-1">Recordings will appear here when created during an emergency</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {recordings.map((recording) => (
+                  <div
+                    key={recording.id}
+                    className="flex items-center justify-between gap-3 p-3 rounded-md border"
+                    data-testid={`recording-item-${recording.id}`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Video className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {format(new Date(recording.createdAt!), "dd MMM yyyy, HH:mm")}
+                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs text-muted-foreground">
+                            {recording.durationSeconds ? `${Math.floor(recording.durationSeconds / 60)}m ${recording.durationSeconds % 60}s` : "Unknown duration"}
+                          </span>
+                          {recording.fileSizeBytes && (
+                            <span className="text-xs text-muted-foreground">
+                              {(recording.fileSizeBytes / (1024 * 1024)).toFixed(1)} MB
+                            </span>
+                          )}
+                          <Badge variant={recording.status === "ready" ? "secondary" : recording.status === "uploading" ? "outline" : "destructive"}>
+                            {recording.status === "ready" ? "saved" : recording.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {recording.status === "ready" && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            window.open(`/api/emergency/recordings/${recording.id}/download`, "_blank");
+                          }}
+                          data-testid={`button-download-recording-${recording.id}`}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setDeleteConfirmId(recording.id)}
+                        data-testid={`button-delete-recording-${recording.id}`}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-start gap-2 p-2 rounded-md bg-muted/50">
+              <Shield className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                Recordings are encrypted and only accessible by you and your confirmed emergency contacts. They are automatically deleted after 90 days.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Dialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Recording</DialogTitle>
+            <DialogDescription>
+              This will permanently delete this emergency recording. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteConfirmId(null)} data-testid="button-cancel-delete-recording">
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (deleteConfirmId !== null) {
+                  deleteRecordingMutation.mutate(deleteConfirmId);
+                  setDeleteConfirmId(null);
+                }
+              }}
+              disabled={deleteRecordingMutation.isPending}
+              data-testid="button-confirm-delete-recording"
+            >
+              {deleteRecordingMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardContent className="pt-6">

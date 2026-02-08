@@ -25,6 +25,7 @@ import {
   Monitor,
   Key,
   Video,
+  HardDrive,
 } from "lucide-react";
 
 function LayerDivider({ label, icon: Icon }: { label: string; icon?: typeof Lock }) {
@@ -247,6 +248,7 @@ export default function AdminArchitecture() {
               <ServiceBox icon={ShieldCheck} label="Check-ins" sublabel="History + streaks" />
               <ServiceBox icon={Shield} label="Safeguarding" sublabel="Incidents + cases" />
               <ServiceBox icon={Key} label="Sessions" sublabel="Auth state" />
+              <ServiceBox icon={HardDrive} label="Object Storage" sublabel="Encrypted recordings" />
             </div>
           </CardContent>
         </Card>
