@@ -369,6 +369,26 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "route-planning",
+    title: "Route planning",
+    content: [
+      "Plan your routes before heading out using the built-in map planner.",
+      "Go to **Wellbeing > Fitness Tracking** and tap the **Routes** tab.",
+      "Tap the map to set your **start point** (green dot), then tap again to set your **end point** (red dot). The route is calculated automatically.",
+      "The planner shows estimated times for **walking**, **running**, and **cycling** at your chosen pace. Use the **Easy**, **Moderate**, or **Fast** toggle to adjust.",
+      "Routes are categorised by distance: **Short** (0-2 km), **Medium** (2-5 km), or **Long** (5+ km).",
+      "A **weather snapshot** shows current temperature, rain probability, and wind speed for your route location.",
+      "A **safety cue** warns you if your route could finish after sunset based on estimated travel time — for example, 'Route will finish after sunset'. This is for awareness only.",
+      "Use the **Save Route** button to keep a route for later. Toggle **Mark as usual route** to star frequently used routes.",
+      "Toggle **Attach to emergency if needed** to link the route to your emergency profile.",
+      "Use the **Share** button to send your saved route to any of your emergency contacts by email.",
+      "Use the **Repeat** button on any saved route to reload it into the planner.",
+      "Before heading out, open the **Pre-start checklist**: phone charged, headphones on, weather checked, keys.",
+      "Route planning does not use GPS recording or background tracking. It is for planning purposes only.",
+      "Route distances and times are estimates and should not be relied upon for safety-critical decisions.",
+    ],
+  },
+  {
     id: "activities",
     title: "Activities tracker",
     content: [

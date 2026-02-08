@@ -1700,6 +1700,38 @@ export const insertActivityCommentSchema = createInsertSchema(activityComments).
 export type InsertActivityComment = z.infer<typeof insertActivityCommentSchema>;
 export type ActivityComment = typeof activityComments.$inferSelect;
 
+// ===== PLANNED ROUTES =====
+
+export const routePaceOptions = ["easy", "moderate", "fast"] as const;
+export type RoutePace = typeof routePaceOptions[number];
+
+export const routeDistanceBands = ["short", "medium", "long"] as const;
+export type RouteDistanceBand = typeof routeDistanceBands[number];
+
+export const plannedRoutes = pgTable("planned_routes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  startLat: doublePrecision("start_lat").notNull(),
+  startLng: doublePrecision("start_lng").notNull(),
+  endLat: doublePrecision("end_lat").notNull(),
+  endLng: doublePrecision("end_lng").notNull(),
+  routeGeometry: jsonb("route_geometry").$type<Array<[number, number]>>().default([]),
+  distanceM: doublePrecision("distance_m").notNull().default(0),
+  distanceBand: text("distance_band").$type<RouteDistanceBand>(),
+  isUsualRoute: boolean("is_usual_route").notNull().default(false),
+  attachToEmergency: boolean("attach_to_emergency").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertPlannedRouteSchema = createInsertSchema(plannedRoutes).omit({
+  id: true,
+  createdAt: true,
+  userId: true,
+});
+export type InsertPlannedRoute = z.infer<typeof insertPlannedRouteSchema>;
+export type PlannedRoute = typeof plannedRoutes.$inferSelect;
+
 // ===== ACTIVITY / ERRANDS =====
 
 export const errandActivityTypes = ["walking", "shopping", "errands", "appointment", "visiting", "commute", "dog_walking", "exercise", "other"] as const;

@@ -2,10 +2,11 @@ import { db } from "./db";
 import { eq, and, or, desc, inArray, gte, lte, sql } from "drizzle-orm";
 import {
   fitnessActivities, follows, activityLikes, activityComments,
-  users,
+  users, plannedRoutes,
   type FitnessActivity, type InsertFitnessActivity,
   type Follow, type ActivityLike, type ActivityComment,
   type ActivityType, type PrivacyLevel,
+  type PlannedRoute, type InsertPlannedRoute,
 } from "@shared/schema";
 
 export const fitnessStorage = {
@@ -261,5 +262,36 @@ export const fitnessStorage = {
     const [activity] = await db.select().from(fitnessActivities)
       .where(eq(fitnessActivities.emergencyAlertId, emergencyAlertId));
     return activity;
+  },
+
+  // ===== PLANNED ROUTES =====
+  async createPlannedRoute(userId: string, data: InsertPlannedRoute): Promise<PlannedRoute> {
+    const [route] = await db.insert(plannedRoutes).values({ ...data, userId }).returning();
+    return route;
+  },
+
+  async getPlannedRoute(id: string): Promise<PlannedRoute | undefined> {
+    const [route] = await db.select().from(plannedRoutes).where(eq(plannedRoutes.id, id));
+    return route;
+  },
+
+  async getUserPlannedRoutes(userId: string): Promise<PlannedRoute[]> {
+    return db.select().from(plannedRoutes)
+      .where(eq(plannedRoutes.userId, userId))
+      .orderBy(desc(plannedRoutes.createdAt));
+  },
+
+  async deletePlannedRoute(id: string, userId: string): Promise<boolean> {
+    const result = await db.delete(plannedRoutes)
+      .where(and(eq(plannedRoutes.id, id), eq(plannedRoutes.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
+  },
+
+  async updatePlannedRoute(id: string, userId: string, updates: Partial<InsertPlannedRoute>): Promise<PlannedRoute | undefined> {
+    const [route] = await db.update(plannedRoutes)
+      .set(updates)
+      .where(and(eq(plannedRoutes.id, id), eq(plannedRoutes.userId, userId)))
+      .returning();
+    return route;
   },
 };
