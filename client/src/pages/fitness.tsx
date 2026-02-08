@@ -130,12 +130,23 @@ export default function Fitness() {
 
   const connectMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("GET", "/api/strava/auth-url");
+      const res = await fetch("/api/strava/auth-url", { credentials: "include" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to start Strava connection");
+      }
       const data = await res.json();
-      window.location.href = data.url;
+      if (data.url) {
+        window.location.href = data.url;
+      }
     },
-    onError: () => {
-      toast({ title: "Error", description: "Could not start Strava connection. The integration may not be configured yet.", variant: "destructive" });
+    onError: (error: Error) => {
+      const msg = error.message === "Not authenticated"
+        ? "Please log in to connect Strava."
+        : error.message === "Strava integration not configured"
+        ? "Strava integration is not configured. Please contact support."
+        : "Could not start Strava connection. Please try again.";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     },
   });
 

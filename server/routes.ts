@@ -3297,10 +3297,11 @@ export async function registerRoutes(
 
   // ===== STRAVA FITNESS TRACKING =====
 
-  app.get("/api/strava/status", async (req, res) => {
-    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+  const stravaOAuthStates = new Map<string, { nonce: string; expiresAt: number }>();
+
+  app.get("/api/strava/status", authMiddleware, async (req, res) => {
     try {
-      const connection = await storage.getStravaConnection(req.session.userId);
+      const connection = await storage.getStravaConnection(req.userId!);
       if (!connection) return res.json({ connected: false });
       res.json({
         connected: true,
@@ -3315,29 +3316,33 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/strava/auth-url", async (req, res) => {
-    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+  app.get("/api/strava/auth-url", authMiddleware, async (req, res) => {
     const clientId = process.env.STRAVA_CLIENT_ID;
-    if (!clientId) return res.status(500).json({ error: "Strava integration not configured" });
+    if (!clientId) {
+      console.error("[STRAVA] STRAVA_CLIENT_ID not found in environment");
+      return res.status(500).json({ error: "Strava integration not configured" });
+    }
     const redirectUri = `${req.protocol}://${req.get("host")}/api/strava/callback`;
     const scope = "read,activity:read_all,profile:read_all";
     const stateNonce = randomBytes(32).toString("hex");
-    (req.session as any).stravaOAuthState = stateNonce;
+    stravaOAuthStates.set(req.userId!, { nonce: stateNonce, expiresAt: Date.now() + 10 * 60 * 1000 });
     const url = `https://www.strava.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${stateNonce}&approval_prompt=auto`;
     res.json({ url });
   });
 
-  app.get("/api/strava/callback", async (req, res) => {
+  app.get("/api/strava/callback", authMiddleware, async (req, res) => {
     const { code, state, error: stravaError } = req.query;
     if (stravaError) return res.redirect("/fitness?error=denied");
     if (!code || !state) return res.redirect("/fitness?error=missing_params");
 
-    if (!req.session?.userId) return res.redirect("/fitness?error=not_authenticated");
-    const expectedState = (req.session as any).stravaOAuthState;
-    if (!expectedState || state !== expectedState) return res.redirect("/fitness?error=invalid_state");
-    delete (req.session as any).stravaOAuthState;
+    const storedState = stravaOAuthStates.get(req.userId!);
+    if (!storedState || storedState.nonce !== state || Date.now() > storedState.expiresAt) {
+      stravaOAuthStates.delete(req.userId!);
+      return res.redirect("/fitness?error=invalid_state");
+    }
+    stravaOAuthStates.delete(req.userId!);
 
-    const userId = req.session.userId;
+    const userId = req.userId!;
     const clientId = process.env.STRAVA_CLIENT_ID;
     const clientSecret = process.env.STRAVA_CLIENT_SECRET;
     if (!clientId || !clientSecret) return res.redirect("/fitness?error=not_configured");
@@ -3412,10 +3417,9 @@ export async function registerRoutes(
     return refreshed?.accessToken || null;
   }
 
-  app.get("/api/strava/activities", async (req, res) => {
-    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+  app.get("/api/strava/activities", authMiddleware, async (req, res) => {
     try {
-      const token = await getValidStravaToken(req.session.userId);
+      const token = await getValidStravaToken(req.userId!);
       if (!token) return res.status(401).json({ error: "Strava not connected or token expired" });
 
       const page = parseInt(req.query.page as string) || 1;
@@ -3432,7 +3436,7 @@ export async function registerRoutes(
       });
       if (!stravaRes.ok) {
         if (stravaRes.status === 401) {
-          await storage.deleteStravaConnection(req.session.userId);
+          await storage.deleteStravaConnection(req.userId!);
           return res.status(401).json({ error: "Strava authorization revoked" });
         }
         return res.status(stravaRes.status).json({ error: "Strava API error" });
@@ -3445,12 +3449,11 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/strava/stats", async (req, res) => {
-    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+  app.get("/api/strava/stats", authMiddleware, async (req, res) => {
     try {
-      const conn = await storage.getStravaConnection(req.session.userId);
+      const conn = await storage.getStravaConnection(req.userId!);
       if (!conn) return res.status(401).json({ error: "Strava not connected" });
-      const token = await getValidStravaToken(req.session.userId);
+      const token = await getValidStravaToken(req.userId!);
       if (!token) return res.status(401).json({ error: "Token expired" });
 
       const stravaRes = await fetch(`https://www.strava.com/api/v3/athletes/${conn.athleteId}/stats`, {
@@ -3465,10 +3468,9 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/strava/disconnect", async (req, res) => {
-    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+  app.delete("/api/strava/disconnect", authMiddleware, async (req, res) => {
     try {
-      const conn = await storage.getStravaConnection(req.session.userId);
+      const conn = await storage.getStravaConnection(req.userId!);
       if (conn) {
         try {
           await fetch("https://www.strava.com/oauth/deauthorize", {
@@ -3478,7 +3480,7 @@ export async function registerRoutes(
           });
         } catch {}
       }
-      await storage.deleteStravaConnection(req.session.userId);
+      await storage.deleteStravaConnection(req.userId!);
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: "Failed to disconnect Strava" });
