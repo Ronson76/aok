@@ -85,7 +85,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "Your check-in streak counts how many consecutive check-ins you've completed on time.",
       "It appears on your dashboard as a motivating tracker.",
       "If you miss a check-in, the streak resets to zero.",
-      "Building a streak is a great way to maintain consistent safety habits.",
+      "Building a streak is a great way to maintain consistent check-in habits.",
     ],
   },
   {
@@ -169,6 +169,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "Alert all confirmed contacts via email, SMS, and phone calls.",
       "Sound an alarm on your device.",
       "You can cancel the alert if it was triggered accidentally.",
+      "Emergency alerts are user-initiated and do not replace emergency services. aok does not automatically detect danger, injury, or health events.",
     ],
   },
   {
@@ -237,7 +238,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "Your check-in history is available on the **History** tab of your dashboard.",
       "It shows all your past check-ins with dates, times, and whether they were on time or late.",
       "Missed check-ins are highlighted so you can see your patterns.",
-      "This helps you stay accountable and track your safety habits.",
+      "This helps you stay accountable and track your check-in habits.",
     ],
   },
   {
@@ -281,7 +282,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "Rate your mood on a scale, add optional notes about how you're feeling.",
       "View your mood patterns over time with charts and trends.",
       "This is completely private to you — no one else can see your mood data.",
-      "The wellbeing AI can detect mood patterns and offer proactive support.",
+      "The wellbeing AI can review mood patterns you share and offer supportive suggestions.",
     ],
   },
   {
@@ -301,7 +302,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "If your phone loses internet connection, aok displays an emergency overlay.",
       "The overlay shows quick-dial buttons for your **primary contact** and **999**.",
       "The overlay disappears automatically when your connection is restored.",
-      "This ensures you always have access to emergency calling even without data.",
+      "This provides access to emergency calling even without data.",
     ],
   },
   {
@@ -338,6 +339,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "Toggle **Share live activity with contacts** while recording to let your emergency contacts see your current route.",
       "If you trigger an emergency while recording, your route and last known location are automatically attached to the alert.",
       "If your organisation manages your account, fitness tracking may be enabled or disabled by your organisation administrator.",
+      "Fitness tracking is for personal wellbeing only and does not provide medical advice, diagnosis, or health monitoring.",
     ],
   },
   {
@@ -346,8 +348,8 @@ const GUIDE_TOPICS: GuideTopic[] = [
     content: [
       "aok offers simple, transparent pricing with all features included:",
       "**7-Day Free Trial** — full access to every feature, no payment details required upfront. Cancel anytime during the trial.",
-      "**Complete Protection** — £6.99/month or £69.99/year (save 2 months). Includes check-ins, emergency alerts, SMS and voice call alerts, GPS location sharing, wellbeing AI chat, mood tracking, pet protection, digital will storage, GPS fitness tracking, and a tree planted via Ecologi.",
-      "**Organisations** — custom pricing for bundles of seats. Includes everything in Complete Protection plus a dedicated organisation dashboard, bulk client management, staff roles, safeguarding hub, lone worker monitoring, Call Supervisor, reports, and emergency recording per-client controls.",
+      "**Complete Wellbeing** — £6.99/month or £69.99/year (save 2 months). Includes check-ins, emergency alerts, SMS and voice call alerts, GPS location sharing, wellbeing AI chat, mood tracking, pet protection, digital will storage, GPS fitness tracking, and a tree planted via Ecologi.",
+      "**Organisations** — custom pricing for bundles of seats. Includes everything in Complete Wellbeing plus a dedicated organisation dashboard, bulk client management, staff roles, safeguarding hub, lone worker session management, Call Supervisor, reports, and emergency recording per-client controls.",
       "Apple Pay and Google Pay are supported for quick and easy payment.",
       "You can cancel at any time — your account stays active until the end of your billing period.",
       "If you're managed by an organisation, your access is included at no cost to you.",
@@ -378,7 +380,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "3. Add at least one emergency contact.",
       "4. Wait for your contact to confirm via email.",
       "5. Complete payment (free for 7 days).",
-      "6. You're all set — check in on time each day to stay safe.",
+      "6. You're all set — check in on time each day to support your wellbeing.",
     ],
   },
   {
@@ -460,7 +462,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "Chat with our AI companion for emotional support and wellbeing advice. Find it under **Wellbeing > AI Chat**.",
       "Key features:",
       "Completely private — no conversations are stored (GDPR compliant).",
-      "Detects mood patterns from your tracking and offers proactive support.",
+      "Reviews mood patterns you share and offers supportive suggestions.",
       "Voice chat mode — speak instead of typing, and hear responses read aloud.",
       "Signposts to crisis helplines when appropriate.",
       "The AI is here to listen and support — it is not a replacement for professional help.",
@@ -617,7 +619,7 @@ export default function Guide() {
         <div>
           <h1 className="text-2xl font-bold mb-1" data-testid="text-guide-title">How to Use aok</h1>
           <p className="text-muted-foreground text-sm">
-            Everything you need to know about staying safe with aok. Browse A-Z or search for any topic.
+            Everything you need to know about using aok. Browse A-Z or search for any topic.
           </p>
         </div>
 

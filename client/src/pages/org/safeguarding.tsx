@@ -559,7 +559,7 @@ export default function OrgSafeguardingPage() {
       doc.setFontSize(8);
       doc.setTextColor(128);
       doc.setFont("helvetica", "normal");
-      doc.text(`aok - Keeping you safe | Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+      doc.text(`aok - Personal wellbeing tools | Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
     }
     
     doc.save(`aok-safeguarding-incidents-${format(new Date(), "yyyy-MM-dd")}.pdf`);
@@ -628,7 +628,7 @@ export default function OrgSafeguardingPage() {
       doc.setFontSize(8);
       doc.setTextColor(128);
       doc.setFont("helvetica", "normal");
-      doc.text(`aok - Keeping you safe | Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+      doc.text(`aok - Personal wellbeing tools | Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
     }
     
     doc.save(`aok-welfare-concerns-${format(new Date(), "yyyy-MM-dd")}.pdf`);
@@ -692,7 +692,7 @@ export default function OrgSafeguardingPage() {
       doc.setFontSize(8);
       doc.setTextColor(128);
       doc.setFont("helvetica", "normal");
-      doc.text(`aok - Keeping you safe | Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+      doc.text(`aok - Personal wellbeing tools | Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
     }
     
     doc.save(`aok-audit-trail-${format(new Date(), "yyyy-MM-dd")}.pdf`);
@@ -764,7 +764,7 @@ export default function OrgSafeguardingPage() {
       doc.setFontSize(8);
       doc.setTextColor(128);
       doc.setFont("helvetica", "normal");
-      doc.text(`aok - Keeping you safe | Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+      doc.text(`aok - Personal wellbeing tools | Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
     }
     
     doc.save(`aok-emergency-confirmations-${format(new Date(), "yyyy-MM-dd")}.pdf`);

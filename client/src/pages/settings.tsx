@@ -218,7 +218,7 @@ function SubscriptionCard() {
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Plan</span>
               <span className="font-medium" data-testid="text-subscription-plan">
-                {subscription.status === 'trialing' ? 'Complete Protection (Trial)' : 'Complete Protection'}
+                {subscription.status === 'trialing' ? 'Complete Wellbeing (Trial)' : 'Complete Wellbeing'}
               </span>
             </div>
             {subscription.status === 'trialing' && subscription.trialEnd && (
@@ -796,7 +796,7 @@ export default function Settings() {
             Shake-to-SOS
           </CardTitle>
           <CardDescription>
-            Shake your phone to trigger an emergency alert.
+            Shake your phone to manually trigger an emergency alert.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -865,7 +865,7 @@ export default function Settings() {
             Emergency Recording
           </CardTitle>
           <CardDescription>
-            Activate your phone's camera and microphone during emergencies.
+            Record audio and video for documentation during user-initiated emergencies.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -875,7 +875,7 @@ export default function Settings() {
                 Enable Emergency Recording
               </Label>
               <p className="text-sm text-muted-foreground">
-                Record audio and video when an emergency alert is triggered
+                Capture audio and video for documentation when you trigger an emergency alert
               </p>
             </div>
             <Switch
@@ -889,14 +889,23 @@ export default function Settings() {
             />
           </div>
 
+          <div className="flex items-start gap-2 p-3 rounded-md bg-amber-50 dark:bg-amber-950/30">
+            <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              By enabling this feature, you consent to audio/video recording during emergencies for documentation purposes only. Recordings are not monitored in real time.
+            </p>
+          </div>
+
           <div className="flex items-start gap-2 p-3 rounded-md bg-red-50 dark:bg-red-950/30">
             <Video className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-muted-foreground space-y-2">
               <p><strong>How it works:</strong></p>
               <ul className="list-disc list-inside space-y-1 ml-1">
-                <li>When an emergency alert is triggered, your phone's camera and microphone activate</li>
-                <li>Recordings are stored securely and encrypted</li>
-                <li>Only shared with your emergency contacts</li>
+                <li>When you trigger an emergency alert, your phone's camera and microphone activate</li>
+                <li>A visible indicator shows when recording is active</li>
+                <li>Recordings are stored securely and encrypted for documentation</li>
+                <li>Accessed only by authorised parties according to your settings</li>
+                <li>This is not monitored in real time</li>
                 <li>You maintain full control and can disable at any time</li>
               </ul>
             </div>
@@ -1313,6 +1322,12 @@ export default function Settings() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <div className="p-3 rounded-lg bg-muted/50 text-center" data-testid="text-service-limitation">
+        <p className="text-xs text-muted-foreground">
+          aok may not function in all circumstances. Network coverage, device settings, battery life, or software issues may prevent features from working. aok does not provide medical advice and is not a substitute for emergency services.
+        </p>
+      </div>
 
       <Dialog open={showRedAlertDisableDialog} onOpenChange={setShowRedAlertDisableDialog}>
         <DialogContent>

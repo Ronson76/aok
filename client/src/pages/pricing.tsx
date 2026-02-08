@@ -28,8 +28,8 @@ export default function Pricing() {
       isTrial: true,
     },
     {
-      name: "Essential Safety",
-      description: "Core safety features to keep you and your loved ones protected.",
+      name: "Essential",
+      description: "Core check-in and alert tools for peace of mind.",
       monthlyPrice: 6.99,
       yearlyPrice: 69.99,
       features: [
@@ -54,12 +54,12 @@ export default function Pricing() {
       priceProtected: true,
     },
     {
-      name: "Complete Protection",
-      description: "Everything in Essential Safety plus wellness, AI, and more.",
+      name: "Complete Wellbeing",
+      description: "Everything in Essential plus wellness, AI, and more.",
       monthlyPrice: 9.99,
       yearlyPrice: 99.99,
       features: [
-        { text: "Everything in Essential Safety", icon: Check },
+        { text: "Everything in Essential", icon: Check },
         { text: "Emergency recording (opt-in)", icon: Mic },
         { text: "Mood & wellness tracking", icon: TrendingUp },
         { text: "Pet protection profiles with vet info", icon: PawPrint },
@@ -77,11 +77,11 @@ export default function Pricing() {
     },
     {
       name: "Organisations",
-      description: "Protect your staff, clients, or residents with our comprehensive safety solution.",
+      description: "Support your staff, clients, or residents with comprehensive wellbeing tools.",
       monthlyPrice: null,
       yearlyPrice: null,
       features: [
-        { text: "Everything in Complete Protection", icon: Check },
+        { text: "Everything in Complete Wellbeing", icon: Check },
         { text: "Dedicated organisation dashboard", icon: Building2 },
         { text: "Bulk client management & Excel import", icon: Users },
         { text: "Staff roles & team management", icon: Users },
@@ -272,8 +272,8 @@ export default function Pricing() {
                     <tr className="border-b">
                       <th className="text-left py-3 px-4 font-medium">Feature</th>
                       <th className="text-center py-3 px-4 font-medium">7 Day Trial</th>
-                      <th className="text-center py-3 px-4 font-medium">Essential Safety</th>
-                      <th className="text-center py-3 px-4 font-medium text-primary">Complete Protection</th>
+                      <th className="text-center py-3 px-4 font-medium">Essential</th>
+                      <th className="text-center py-3 px-4 font-medium text-primary">Complete Wellbeing</th>
                       <th className="text-center py-3 px-4 font-medium">Organisations</th>
                     </tr>
                   </thead>
@@ -326,7 +326,7 @@ export default function Pricing() {
           <h2 className="text-2xl font-bold text-center mb-8" data-testid="text-faq-title">Frequently Asked Questions</h2>
           <div className="space-y-4">
             {[
-              { q: "What happens after my free trial?", a: "After 7 days, choose from Essential Safety at £6.99/month (£69.99/year) or Complete Protection at £9.99/month (£99.99/year). You can cancel anytime during the trial without being charged." },
+              { q: "What happens after my free trial?", a: "After 7 days, choose from Essential at £6.99/month (£69.99/year) or Complete Wellbeing at £9.99/month (£99.99/year). You can cancel anytime during the trial without being charged." },
               { q: "Can I cancel at any time?", a: "Yes, you can cancel your subscription at any time from Settings. Your account stays active until the end of your current billing period." },
               { q: "What payment methods do you accept?", a: "We accept all major debit and credit cards, Apple Pay, and Google Pay for quick and easy payment." },
               { q: "How does the organisation plan work?", a: "Organisations purchase bundles of seats and manage clients through a dedicated dashboard. Contact us for custom pricing based on your team size." },

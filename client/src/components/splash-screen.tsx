@@ -33,7 +33,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       <div className="flex flex-col items-center justify-center text-center gap-4 w-full px-4">
         <ShieldCheck className="w-24 h-24 text-green-600 animate-pulse" />
         <h1 className="text-2xl font-bold text-green-600">aok</h1>
-        <p className="text-sm text-muted-foreground italic">Stay Connected, Stay Safe, Stay Well</p>
+        <p className="text-sm text-muted-foreground italic">Stay Connected, Stay Well</p>
       </div>
     </div>
   );

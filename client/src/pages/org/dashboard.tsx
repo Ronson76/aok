@@ -1224,7 +1224,7 @@ export default function OrganizationDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold" data-testid="text-org-dashboard-title">Organisation Dashboard</h1>
-            <p className="text-muted-foreground">Monitor your clients' safety and check-in status</p>
+            <p className="text-muted-foreground">View your clients' check-in status and wellbeing</p>
           </div>
           <div className="flex gap-2">
             <Link href="/org/lone-worker">
@@ -2107,7 +2107,7 @@ export default function OrganizationDashboard() {
             <div className="text-center py-8 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No clients yet</p>
-              <p className="text-sm">Add clients to start monitoring their safety</p>
+              <p className="text-sm">Add clients to view their check-in status</p>
             </div>
           ) : filteredClients.length === 0 ? (
             <div className="text-center py-8">

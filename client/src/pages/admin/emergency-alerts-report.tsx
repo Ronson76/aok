@@ -147,7 +147,7 @@ export default function AdminEmergencyAlertsReport() {
       doc.setFontSize(8);
       doc.setTextColor(128);
       doc.setFont("helvetica", "normal");
-      doc.text(`aok - Keeping you safe | Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+      doc.text(`aok - Personal wellbeing tools | Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
     }
     
     doc.save(`aok-emergency-alerts-report-${format(new Date(), "yyyy-MM-dd")}.pdf`);

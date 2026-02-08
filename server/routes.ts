@@ -2972,7 +2972,7 @@ export async function registerRoutes(
     <div class="success" id="success-msg">
       <div class="tick"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
       <h1>You're checked in</h1>
-      <p>Your contacts have been notified. Stay safe!</p>
+      <p>Your contacts have been notified.</p>
     </div>
     <div id="offline-state" style="display:none">
       <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 16px;display:block"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M2.7 10.3a8 8 0 0 1 0 0"/><circle cx="12" cy="12" r="10"/></svg>
@@ -3016,7 +3016,7 @@ export async function registerRoutes(
     <p>This check-in link has expired or has already been used. Open the aok app to check in, or wait for a new SMS.</p>
     `}
   </div>
-  <p class="footer">aok.care &mdash; keeping you safe</p>
+  <p class="footer">aok.care &mdash; personal wellbeing tools</p>
 </body>
 </html>`);
     } catch (error) {

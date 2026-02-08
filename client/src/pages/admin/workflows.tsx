@@ -242,7 +242,7 @@ export default function AdminWorkflows() {
 
         <FlowArrow />
 
-        <WorkflowSection icon={Radio} title="Lone Worker Sessions" description="7-phase lone worker protection" color="teal">
+        <WorkflowSection icon={Radio} title="Lone Worker Sessions" description="7-phase lone worker session management" color="teal">
           <StepBox icon={Radio} label="Start Session" sublabel="Worker logs job type, location, expected duration" />
           <StepBox icon={Clock} label="Periodic Check-ins" sublabel="Worker confirms safety at intervals" />
           <StepBox icon={Timer} label="Overdue Detection" sublabel="System flags unresponsive workers" />
