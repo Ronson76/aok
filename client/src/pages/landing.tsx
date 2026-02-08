@@ -22,8 +22,9 @@ import {
   ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail, 
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
   ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles,
-  MessageCircle, MessageSquare, ArrowLeft, TreeDeciduous, Leaf, Activity
+  MessageCircle, MessageSquare, ArrowLeft, TreeDeciduous, Leaf
 } from "lucide-react";
+import { FaRunning } from "react-icons/fa";
 import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
@@ -149,7 +150,7 @@ export default function Landing() {
         { text: "Pet protection profiles", icon: PawPrint },
         { text: "Digital will storage", icon: Scroll },
         { text: "Wellbeing AI (Exclusive)", icon: Sparkles },
-        { text: "GPS fitness tracking", icon: Activity },
+        { text: "GPS fitness tracking", icon: FaRunning },
       ],
       cta: "Get Started",
       ctaLink: "/onboarding",
@@ -622,7 +623,7 @@ export default function Landing() {
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="rounded-full bg-green-500/10 p-3 w-fit">
-                    <Activity className="h-6 w-6 text-green-600" />
+                    <FaRunning className="h-6 w-6 text-green-600" />
                   </div>
                   <span className="text-xs text-muted-foreground font-medium">Built-in GPS</span>
                 </div>
