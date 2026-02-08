@@ -4,7 +4,11 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Clock, MapPin, TrendingUp, ArrowLeft, Lock, Bike, Footprints, Play, Pause, Square, ChevronRight, ChevronDown, Activity, Navigation } from "lucide-react";
+import {
+  Loader2, Clock, MapPin, TrendingUp, ArrowLeft, Lock, Bike, Footprints,
+  Play, Pause, Square, ChevronRight, Activity, Navigation, Flame, Timer,
+  Zap, Target, BarChart3,
+} from "lucide-react";
 import { FaRunning } from "react-icons/fa";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +28,12 @@ function getActivityIcon(type: string) {
   if (type === "cycle") return Bike;
   if (type === "walk") return Footprints;
   return Activity;
+}
+
+function getActivityColor(type: string) {
+  if (type === "walk") return { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-600", accent: "emerald" };
+  if (type === "cycle") return { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-600", accent: "purple" };
+  return { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-600", accent: "blue" };
 }
 
 function ActivityMap({ points }: { points: Array<{ lat: number; lng: number }> }) {
@@ -55,11 +65,11 @@ function ActivityMap({ points }: { points: Array<{ lat: number; lng: number }> }
       }).addTo(map);
 
       const latlngs = points.map(p => [p.lat, p.lng] as [number, number]);
-      const polyline = L.polyline(latlngs, { color: "#22c55e", weight: 4 }).addTo(map);
+      const polyline = L.polyline(latlngs, { color: "#3b82f6", weight: 4, opacity: 0.85 }).addTo(map);
       map.fitBounds(polyline.getBounds(), { padding: [20, 20] });
 
-      L.circleMarker(latlngs[0], { radius: 6, color: "#22c55e", fillColor: "#22c55e", fillOpacity: 1 }).addTo(map);
-      L.circleMarker(latlngs[latlngs.length - 1], { radius: 6, color: "#ef4444", fillColor: "#ef4444", fillOpacity: 1 }).addTo(map);
+      L.circleMarker(latlngs[0], { radius: 7, color: "#22c55e", fillColor: "#22c55e", fillOpacity: 1, weight: 2 }).addTo(map);
+      L.circleMarker(latlngs[latlngs.length - 1], { radius: 7, color: "#ef4444", fillColor: "#ef4444", fillOpacity: 1, weight: 2 }).addTo(map);
     });
 
     return () => {
@@ -72,7 +82,7 @@ function ActivityMap({ points }: { points: Array<{ lat: number; lng: number }> }
 
   if (points.length < 2) return null;
 
-  return <div ref={mapRef} className="h-48 rounded-lg overflow-hidden" data-testid="activity-map" />;
+  return <div ref={mapRef} className="h-48 rounded-xl overflow-hidden" data-testid="activity-map" />;
 }
 
 function Recorder({ onFinish }: { onFinish: () => void }) {
@@ -289,129 +299,170 @@ function Recorder({ onFinish }: { onFinish: () => void }) {
 
   const liveCalories = estimateCalories(activityType, duration);
   const liveSteps = motionAvailable ? steps : (activityType !== "cycle" ? estimateStepsFromDistance(distance, activityType) : 0);
-  const pace = activityType !== "cycle" ? computePace(distance, duration) : null;
+  const currentPace = activityType !== "cycle" ? computePace(distance, duration) : null;
   const speed = computeSpeed(distance, duration);
 
   if (!isRecording) {
+    const activityOptions: { type: ActivityType; label: string; icon: any; color: string; bgColor: string }[] = [
+      { type: "run", label: "Run", icon: FaRunning, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/30" },
+      { type: "walk", label: "Walk", icon: Footprints, color: "text-emerald-600", bgColor: "bg-emerald-100 dark:bg-emerald-900/30" },
+      { type: "cycle", label: "Cycle", icon: Bike, color: "text-purple-600", bgColor: "bg-purple-100 dark:bg-purple-900/30" },
+    ];
+
     return (
-      <Card>
-        <CardContent className="py-6 space-y-4">
-          <h2 className="text-lg font-semibold text-center" data-testid="text-start-activity">Start an Activity</h2>
-          <div className="grid grid-cols-3 gap-2">
-            {(["run", "walk", "cycle"] as const).map(t => {
-              const Icon = getActivityIcon(t);
-              return (
-                <Button
-                  key={t}
-                  variant={activityType === t ? "default" : "outline"}
-                  className="flex flex-col gap-1 h-auto py-3"
-                  onClick={() => setActivityType(t)}
-                  data-testid={`button-type-${t}`}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span className="text-xs capitalize">{t}</span>
-                </Button>
-              );
-            })}
-          </div>
-          <Select value={privacyLevel} onValueChange={(v) => setPrivacyLevel(v as PrivacyLevel)}>
-            <SelectTrigger data-testid="select-privacy">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="private">Private</SelectItem>
-              <SelectItem value="friends">Friends Only</SelectItem>
-              <SelectItem value="public">Public</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            className="w-full bg-green-600 hover:bg-green-700 text-white border-green-600"
-            onClick={handleStart}
-            disabled={createMutation.isPending}
-            data-testid="button-start-recording"
-          >
-            {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-            Start {activityType === "run" ? "Run" : activityType === "walk" ? "Walk" : "Ride"}
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <Card>
+          <CardContent className="py-6 space-y-5">
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                <Zap className="h-8 w-8 text-primary" />
+              </div>
+              <h2 className="text-lg font-semibold" data-testid="text-start-activity">Start an Activity</h2>
+              <p className="text-sm text-muted-foreground mt-1">Choose your activity and track your progress</p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              {activityOptions.map(opt => {
+                const Icon = opt.icon;
+                const isSelected = activityType === opt.type;
+                return (
+                  <button
+                    key={opt.type}
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                      isSelected
+                        ? "border-primary bg-primary/5 dark:bg-primary/10"
+                        : "border-border hover:border-muted-foreground/30"
+                    }`}
+                    onClick={() => setActivityType(opt.type)}
+                    data-testid={`button-type-${opt.type}`}
+                  >
+                    <div className={`w-12 h-12 rounded-full ${opt.bgColor} flex items-center justify-center`}>
+                      <Icon className={`h-6 w-6 ${opt.color}`} />
+                    </div>
+                    <span className="text-sm font-medium">{opt.label}</span>
+                    {isSelected && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                        <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <Select value={privacyLevel} onValueChange={(v) => setPrivacyLevel(v as PrivacyLevel)}>
+              <SelectTrigger data-testid="select-privacy">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="private">Private</SelectItem>
+                <SelectItem value="friends">Friends Only</SelectItem>
+                <SelectItem value="public">Public</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              className="w-full h-12 text-base font-semibold bg-emerald-600 border-emerald-600 text-white"
+              onClick={handleStart}
+              disabled={createMutation.isPending}
+              data-testid="button-start-recording"
+            >
+              {createMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Play className="h-5 w-5 mr-2" />}
+              Start {activityType === "run" ? "Run" : activityType === "walk" ? "Walk" : "Ride"}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
+  const actColor = getActivityColor(activityType);
+
   return (
-    <Card className="border-green-500/50">
-      <CardContent className="py-6 space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <Badge variant="default" className="bg-green-600" data-testid="badge-recording">
-            {isPaused ? "Paused" : "Recording"}
-          </Badge>
-          <Badge variant="secondary" className="capitalize" data-testid="badge-type">{activityType}</Badge>
-        </div>
-
-        <div className="text-center space-y-1">
-          <p className="text-4xl font-mono font-bold tabular-nums" data-testid="text-duration">{formatDuration(duration)}</p>
-          <p className="text-lg font-semibold text-green-600" data-testid="text-distance">{formatDistance(distance)}</p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-muted/50 rounded-lg p-3 text-center">
-            <p className="text-xs text-muted-foreground">{activityType === "cycle" ? "Speed" : "Pace"}</p>
-            <p className="font-semibold text-sm" data-testid="text-pace">
-              {activityType === "cycle" ? formatSpeed(speed) : formatPace(pace)}
-            </p>
+    <div className="space-y-4">
+      <Card className="border-emerald-500/30">
+        <CardContent className="py-6 space-y-5">
+          <div className="flex items-center justify-between gap-2">
+            <Badge className={isPaused ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"} data-testid="badge-recording">
+              <div className={`w-2 h-2 rounded-full mr-1.5 ${isPaused ? "bg-amber-500" : "bg-emerald-500 animate-pulse"}`} />
+              {isPaused ? "Paused" : "Recording"}
+            </Badge>
+            <Badge variant="secondary" className="capitalize" data-testid="badge-type">
+              {activityType}
+            </Badge>
           </div>
-          <div className="bg-muted/50 rounded-lg p-3 text-center">
-            <p className="text-xs text-muted-foreground">Calories</p>
-            <p className="font-semibold text-sm" data-testid="text-calories">{liveCalories} kcal</p>
+
+          <div className="text-center py-2">
+            <p className="text-5xl font-mono font-bold tabular-nums tracking-tight" data-testid="text-duration">{formatDuration(duration)}</p>
+            <p className="text-xl font-semibold text-emerald-600 mt-2" data-testid="text-distance">{formatDistance(distance)}</p>
           </div>
-        </div>
-        {activityType !== "cycle" && (
+
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-muted/50 rounded-lg p-3 text-center">
-              <p className="text-xs text-muted-foreground">Steps</p>
-              <p className="font-semibold text-sm" data-testid="text-steps">{liveSteps.toLocaleString()}</p>
+            <div className="bg-muted/30 rounded-xl p-3 text-center">
+              <Timer className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground mb-0.5">{activityType === "cycle" ? "Speed" : "Pace"}</p>
+              <p className="font-bold text-sm" data-testid="text-pace">
+                {activityType === "cycle" ? formatSpeed(speed) : formatPace(currentPace)}
+              </p>
             </div>
-            <div className="bg-muted/50 rounded-lg p-3 text-center">
-              <p className="text-xs text-muted-foreground">GPS Points</p>
-              <p className="font-semibold text-sm" data-testid="text-gps-count">{points.length}</p>
+            <div className="bg-muted/30 rounded-xl p-3 text-center">
+              <Flame className="h-4 w-4 mx-auto mb-1 text-orange-500" />
+              <p className="text-xs text-muted-foreground mb-0.5">Calories</p>
+              <p className="font-bold text-sm" data-testid="text-calories">{liveCalories} kcal</p>
             </div>
           </div>
-        )}
-
-        {points.length >= 2 && <ActivityMap points={points} />}
-
-        <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={liveShare}
-              onChange={(e) => {
-                setLiveShare(e.target.checked);
-                updateMutation.mutate({ liveShareEnabled: e.target.checked });
-              }}
-              className="rounded"
-              data-testid="checkbox-live-share"
-            />
-            Share live activity with contacts
-          </label>
-        </div>
-
-        <div className="flex gap-2">
-          {isPaused ? (
-            <Button className="flex-1 bg-green-600 hover:bg-green-700 text-white border-green-600" onClick={handleResume} data-testid="button-resume">
-              <Play className="h-4 w-4 mr-2" /> Resume
-            </Button>
-          ) : (
-            <Button variant="outline" className="flex-1" onClick={handlePause} data-testid="button-pause">
-              <Pause className="h-4 w-4 mr-2" /> Pause
-            </Button>
+          {activityType !== "cycle" && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-muted/30 rounded-xl p-3 text-center">
+                <Footprints className="h-4 w-4 mx-auto mb-1 text-emerald-500" />
+                <p className="text-xs text-muted-foreground mb-0.5">Steps</p>
+                <p className="font-bold text-sm" data-testid="text-steps">{liveSteps.toLocaleString()}</p>
+              </div>
+              <div className="bg-muted/30 rounded-xl p-3 text-center">
+                <MapPin className="h-4 w-4 mx-auto mb-1 text-blue-500" />
+                <p className="text-xs text-muted-foreground mb-0.5">GPS Points</p>
+                <p className="font-bold text-sm" data-testid="text-gps-count">{points.length}</p>
+              </div>
+            </div>
           )}
-          <Button variant="destructive" onClick={handleStop} data-testid="button-stop">
-            <Square className="h-4 w-4 mr-2" /> Stop
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+
+          {points.length >= 2 && <ActivityMap points={points} />}
+
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={liveShare}
+                onChange={(e) => {
+                  setLiveShare(e.target.checked);
+                  updateMutation.mutate({ liveShareEnabled: e.target.checked });
+                }}
+                className="rounded"
+                data-testid="checkbox-live-share"
+              />
+              Share live activity with contacts
+            </label>
+          </div>
+
+          <div className="flex gap-2">
+            {isPaused ? (
+              <Button className="flex-1 h-11 bg-emerald-600 border-emerald-600 text-white" onClick={handleResume} data-testid="button-resume">
+                <Play className="h-4 w-4 mr-2" /> Resume
+              </Button>
+            ) : (
+              <Button variant="outline" className="flex-1 h-11" onClick={handlePause} data-testid="button-pause">
+                <Pause className="h-4 w-4 mr-2" /> Pause
+              </Button>
+            )}
+            <Button variant="destructive" className="h-11" onClick={handleStop} data-testid="button-stop">
+              <Square className="h-4 w-4 mr-2" /> Stop
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -422,10 +473,11 @@ function ActivityDetail({ id, onBack }: { id: string; onBack: () => void }) {
     queryKey: ["/api/fitness/activities", id],
   });
 
-  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+  if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!activity) return <p className="text-center text-muted-foreground py-4">Activity not found</p>;
 
   const Icon = getActivityIcon(activity.type);
+  const colors = getActivityColor(activity.type);
   const gps = (activity.gpsPoints || []) as Array<{ lat: number; lng: number }>;
 
   return (
@@ -435,13 +487,13 @@ function ActivityDetail({ id, onBack }: { id: string; onBack: () => void }) {
       </Button>
 
       <Card>
-        <CardContent className="py-4 space-y-4">
+        <CardContent className="py-5 space-y-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30">
-              <Icon className="h-5 w-5 text-green-600" />
+            <div className={`p-3 rounded-xl ${colors.bg}`}>
+              <Icon className={`h-6 w-6 ${colors.text}`} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold" data-testid="text-activity-title">{activity.title || "Untitled Activity"}</p>
+              <p className="font-semibold text-lg" data-testid="text-activity-title">{activity.title || "Untitled Activity"}</p>
               <p className="text-xs text-muted-foreground">
                 by {activity.ownerName} {activity.startTime && <span>on {format(new Date(activity.startTime), "d MMM yyyy, h:mm a")}</span>}
               </p>
@@ -450,38 +502,42 @@ function ActivityDetail({ id, onBack }: { id: string; onBack: () => void }) {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-muted/50 rounded-lg p-3 text-center">
+            <div className="bg-muted/30 rounded-xl p-3 text-center">
+              <MapPin className="h-4 w-4 mx-auto mb-1 text-blue-500" />
+              <p className="font-bold text-sm" data-testid="text-detail-distance">{formatDistance(activity.distanceM)}</p>
               <p className="text-xs text-muted-foreground">Distance</p>
-              <p className="font-semibold text-sm" data-testid="text-detail-distance">{formatDistance(activity.distanceM)}</p>
             </div>
-            <div className="bg-muted/50 rounded-lg p-3 text-center">
+            <div className="bg-muted/30 rounded-xl p-3 text-center">
+              <Clock className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+              <p className="font-bold text-sm" data-testid="text-detail-duration">{formatDuration(activity.durationSec)}</p>
               <p className="text-xs text-muted-foreground">Duration</p>
-              <p className="font-semibold text-sm" data-testid="text-detail-duration">{formatDuration(activity.durationSec)}</p>
             </div>
-            <div className="bg-muted/50 rounded-lg p-3 text-center">
-              <p className="text-xs text-muted-foreground">{activity.type === "cycle" ? "Speed" : "Pace"}</p>
-              <p className="font-semibold text-sm" data-testid="text-detail-pace">
+            <div className="bg-muted/30 rounded-xl p-3 text-center">
+              <Timer className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+              <p className="font-bold text-sm" data-testid="text-detail-pace">
                 {activity.type === "cycle" ? formatSpeed(activity.avgSpeedKph) : formatPace(activity.avgPaceSecPerKm)}
               </p>
+              <p className="text-xs text-muted-foreground">{activity.type === "cycle" ? "Speed" : "Pace"}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {activity.type !== "cycle" && (activity.stepCount ?? 0) > 0 && (
-              <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <div className="bg-muted/30 rounded-xl p-3 text-center">
+                <Footprints className="h-4 w-4 mx-auto mb-1 text-emerald-500" />
+                <p className="font-bold text-sm" data-testid="text-detail-steps">{(activity.stepCount || 0).toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground">Steps</p>
-                <p className="font-semibold text-sm" data-testid="text-detail-steps">{(activity.stepCount || 0).toLocaleString()}</p>
               </div>
             )}
             {(activity.caloriesEstimate ?? 0) > 0 && (
-              <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <div className="bg-muted/30 rounded-xl p-3 text-center">
+                <Flame className="h-4 w-4 mx-auto mb-1 text-orange-500" />
+                <p className="font-bold text-sm" data-testid="text-detail-calories">{Math.round(activity.caloriesEstimate || 0)} kcal</p>
                 <p className="text-xs text-muted-foreground">Calories</p>
-                <p className="font-semibold text-sm" data-testid="text-detail-calories">{Math.round(activity.caloriesEstimate || 0)} kcal</p>
               </div>
             )}
           </div>
 
           {gps.length >= 2 && <ActivityMap points={gps} />}
-
         </CardContent>
       </Card>
     </div>
@@ -516,34 +572,36 @@ function HistoryTab() {
     <div className="space-y-4">
       {stats && stats.totalActivities > 0 && (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-lg">Your Stats</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
+          <CardContent className="py-5">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              <p className="text-sm font-semibold">Your Stats</p>
+            </div>
             <div className="grid grid-cols-3 gap-3">
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                <p className="text-lg font-bold" data-testid="stat-total-activities">{stats.totalActivities}</p>
-                <p className="text-xs text-muted-foreground">Activities</p>
+              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                <p className="text-xl font-bold" data-testid="stat-total-activities">{stats.totalActivities}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Activities</p>
               </div>
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                <p className="text-lg font-bold" data-testid="stat-total-distance">{formatDistance(stats.totalDistanceM)}</p>
-                <p className="text-xs text-muted-foreground">Distance</p>
+              <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+                <p className="text-xl font-bold" data-testid="stat-total-distance">{formatDistance(stats.totalDistanceM)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Distance</p>
               </div>
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                <p className="text-lg font-bold" data-testid="stat-total-duration">{formatDuration(stats.totalDurationSec)}</p>
-                <p className="text-xs text-muted-foreground">Time</p>
+              <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                <p className="text-xl font-bold" data-testid="stat-total-duration">{formatDuration(stats.totalDurationSec)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Time</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 mt-3">
               {stats.totalSteps > 0 && (
-                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+                  <Footprints className="h-4 w-4 mx-auto mb-1 text-emerald-500" />
                   <p className="text-lg font-bold" data-testid="stat-total-steps">{stats.totalSteps.toLocaleString()}</p>
                   <p className="text-xs text-muted-foreground">Steps</p>
                 </div>
               )}
               {stats.totalCalories > 0 && (
-                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
+                  <Flame className="h-4 w-4 mx-auto mb-1 text-orange-500" />
                   <p className="text-lg font-bold" data-testid="stat-total-calories">{Math.round(stats.totalCalories).toLocaleString()}</p>
                   <p className="text-xs text-muted-foreground">Calories</p>
                 </div>
@@ -553,9 +611,12 @@ function HistoryTab() {
               <div className="mt-3 space-y-2">
                 {Object.entries(stats.byType).map(([type, s]) => {
                   const Icon = getActivityIcon(type);
+                  const colors = getActivityColor(type);
                   return (
-                    <div key={type} className="flex items-center gap-3 p-2 bg-muted/30 rounded-lg" data-testid={`stat-type-${type}`}>
-                      <Icon className="h-4 w-4 text-green-600 shrink-0" />
+                    <div key={type} className="flex items-center gap-3 p-2.5 bg-muted/20 rounded-xl" data-testid={`stat-type-${type}`}>
+                      <div className={`p-1.5 rounded-lg ${colors.bg}`}>
+                        <Icon className={`h-3.5 w-3.5 ${colors.text}`} />
+                      </div>
                       <span className="text-sm font-medium capitalize flex-1">{type}s</span>
                       <span className="text-xs text-muted-foreground">{s.count} | {formatDistance(s.distanceM)}</span>
                     </div>
@@ -582,15 +643,26 @@ function HistoryTab() {
       </div>
 
       {isLoading ? (
-        <Card>
-          <CardContent className="flex justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <Card key={i}>
+              <CardContent className="py-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-muted animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <div className="w-32 h-4 bg-muted animate-pulse rounded" />
+                    <div className="w-48 h-3 bg-muted animate-pulse rounded" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : activities && activities.length > 0 ? (
         <div className="space-y-2">
           {activities.map(a => {
             const Icon = getActivityIcon(a.type);
+            const colors = getActivityColor(a.type);
             return (
               <Card
                 key={a.id}
@@ -599,8 +671,8 @@ function HistoryTab() {
                 data-testid={`activity-card-${a.id}`}
               >
                 <CardContent className="flex items-center gap-3 py-3">
-                  <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30 shrink-0">
-                    <Icon className="h-4 w-4 text-green-600" />
+                  <div className={`p-2.5 rounded-xl ${colors.bg} shrink-0`}>
+                    <Icon className={`h-4 w-4 ${colors.text}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{a.title || "Untitled"}</p>
@@ -611,6 +683,11 @@ function HistoryTab() {
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <MapPin className="h-3 w-3" /> {formatDistance(a.distanceM)}
                       </span>
+                      {(a.caloriesEstimate ?? 0) > 0 && (
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Flame className="h-3 w-3" /> {Math.round(a.caloriesEstimate || 0)} kcal
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {a.startTime && format(new Date(a.startTime), "d MMM yyyy, h:mm a")}
@@ -629,9 +706,12 @@ function HistoryTab() {
         </div>
       ) : (
         <Card>
-          <CardContent className="text-center text-muted-foreground py-8">
-            <FaRunning className="h-10 w-10 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No activities yet. Start your first one!</p>
+          <CardContent className="text-center py-12">
+            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+              <Target className="h-8 w-8 text-muted-foreground/50" />
+            </div>
+            <p className="font-medium text-muted-foreground">No activities yet</p>
+            <p className="text-xs text-muted-foreground mt-1">Start your first activity to see it here</p>
           </CardContent>
         </Card>
       )}
@@ -681,8 +761,10 @@ export default function Fitness() {
           <h1 className="text-xl font-semibold">Fitness Tracking</h1>
         </div>
         <Card>
-          <CardContent className="flex flex-col items-center py-10 gap-4">
-            <Lock className="h-12 w-12 text-muted-foreground" />
+          <CardContent className="flex flex-col items-center py-12 gap-4">
+            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
+              <Lock className="h-8 w-8 text-muted-foreground/50" />
+            </div>
             <p className="text-muted-foreground text-center">Fitness tracking has been disabled for your account.</p>
           </CardContent>
         </Card>
@@ -692,37 +774,40 @@ export default function Fitness() {
 
   return (
     <div className="p-4 max-w-lg mx-auto space-y-4 pb-24">
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-3 mb-1">
         <Link href="/app">
           <Button variant="ghost" size="icon" data-testid="button-back">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <h1 className="text-xl font-semibold" data-testid="text-fitness-title">Fitness Tracking</h1>
+        <div>
+          <h1 className="text-xl font-semibold" data-testid="text-fitness-title">Fitness Tracking</h1>
+          <p className="text-xs text-muted-foreground">Record, plan routes, and track your progress</p>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full grid grid-cols-3">
-          <TabsTrigger value="record" data-testid="tab-record">
-            <Play className="h-4 w-4 mr-1" /> Record
+        <TabsList className="w-full grid grid-cols-3 h-11">
+          <TabsTrigger value="record" className="gap-1.5" data-testid="tab-record">
+            <Play className="h-4 w-4" /> Record
           </TabsTrigger>
-          <TabsTrigger value="routes" data-testid="tab-routes">
-            <Navigation className="h-4 w-4 mr-1" /> Routes
+          <TabsTrigger value="routes" className="gap-1.5" data-testid="tab-routes">
+            <Navigation className="h-4 w-4" /> Routes
           </TabsTrigger>
-          <TabsTrigger value="history" data-testid="tab-history">
-            <Clock className="h-4 w-4 mr-1" /> History
+          <TabsTrigger value="history" className="gap-1.5" data-testid="tab-history">
+            <BarChart3 className="h-4 w-4" /> History
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="record">
+        <TabsContent value="record" className="mt-4">
           <Recorder onFinish={() => setActiveTab("history")} />
         </TabsContent>
 
-        <TabsContent value="routes">
+        <TabsContent value="routes" className="mt-4">
           <RoutesTab />
         </TabsContent>
 
-        <TabsContent value="history">
+        <TabsContent value="history" className="mt-4">
           <HistoryTab />
         </TabsContent>
       </Tabs>
