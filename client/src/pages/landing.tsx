@@ -133,7 +133,7 @@ export default function Landing() {
         { text: "Digital will storage", icon: Scroll },
         { text: "Offline SMS check-in backup", icon: MessageSquare },
         { text: "Wellbeing AI (Exclusive)", icon: Sparkles },
-        { text: "Strava fitness tracking", icon: TrendingUp },
+        { text: "Strava fitness tracking", icon: SiStrava, isStrava: true },
       ],
       cta: "Get Started",
       ctaLink: "/onboarding",
@@ -968,7 +968,7 @@ export default function Landing() {
                     <ul className="space-y-2">
                       {plan.features.map((feature, featureIndex) => (
                         <li key={featureIndex} className="flex items-start gap-2">
-                          <feature.icon className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                          <feature.icon className={`h-4 w-4 mt-0.5 flex-shrink-0 ${(feature as any).isStrava ? "text-[#FC4C02]" : "text-primary"}`} />
                           <span className="text-sm">{feature.text}</span>
                         </li>
                       ))}
