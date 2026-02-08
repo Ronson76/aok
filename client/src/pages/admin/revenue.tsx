@@ -70,7 +70,8 @@ function calculateProjection(
   totalUsers: number,
   orgPercent: number,
   missedCheckinRate: number,
-  aiUsageRate: number
+  aiUsageRate: number,
+  supervisorCallRate: number = 0.05
 ): ProjectionResult {
   const orgSeats = Math.round(totalUsers * (orgPercent / 100));
   const individualUsers = totalUsers - orgSeats;
@@ -84,7 +85,9 @@ function calculateProjection(
   const missedPerMonth = totalUsers * missedCheckinRate * 30;
   const twilioMonthlySms = missedPerMonth * COST_MODEL.smsPerUnit;
   const twilioMonthlyVoice = missedPerMonth * 0.3 * COST_MODEL.voiceCallPerUnit;
-  const twilioMonthly = twilioMonthlySms + twilioMonthlyVoice;
+  const supervisorCallsPerMonth = orgSeats * supervisorCallRate * 30;
+  const twilioSupervisor = supervisorCallsPerMonth * COST_MODEL.voiceCallPerUnit;
+  const twilioMonthly = twilioMonthlySms + twilioMonthlyVoice + twilioSupervisor;
 
   const emailsPerMonth = missedPerMonth + totalUsers * 0.5;
   const resendMonthly = emailsPerMonth * COST_MODEL.emailPerUnit;
@@ -185,6 +188,7 @@ export default function AdminRevenue() {
   const [orgPercent, setOrgPercent] = useState(30);
   const [missedRate, setMissedRate] = useState(0.05);
   const [aiUsageRate, setAiUsageRate] = useState(0.1);
+  const [supervisorCallRate, setSupervisorCallRate] = useState(0.05);
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/admin/dashboard/stats"],
@@ -197,18 +201,18 @@ export default function AdminRevenue() {
     const missRate = stats.totalCheckIns > 0
       ? (stats.totalMissedCheckIns / (stats.totalCheckIns + stats.totalMissedCheckIns))
       : 0.05;
-    return calculateProjection(total, orgPct, missRate, aiUsageRate);
-  }, [stats, aiUsageRate]);
+    return calculateProjection(total, orgPct, missRate, aiUsageRate, supervisorCallRate);
+  }, [stats, aiUsageRate, supervisorCallRate]);
 
   const scaleProjections = useMemo(() => {
     return [500, 1000, 2500, 5000, 10000, 25000, 50000].map(
-      (n) => calculateProjection(n, orgPercent, missedRate, aiUsageRate)
+      (n) => calculateProjection(n, orgPercent, missedRate, aiUsageRate, supervisorCallRate)
     );
-  }, [orgPercent, missedRate, aiUsageRate]);
+  }, [orgPercent, missedRate, aiUsageRate, supervisorCallRate]);
 
   const customProjection = useMemo(() => {
-    return calculateProjection(customUsers, orgPercent, missedRate, aiUsageRate);
-  }, [customUsers, orgPercent, missedRate, aiUsageRate]);
+    return calculateProjection(customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate);
+  }, [customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate]);
 
   const handleLogout = async () => {
     await logout();
@@ -307,7 +311,7 @@ export default function AdminRevenue() {
                     <span className="text-sm font-medium">Twilio (SMS + Voice)</span>
                   </div>
                   <div className="text-xl font-bold">{formatCurrency(currentProjection.monthlyCosts.twilio)}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Missed check-in alerts</p>
+                  <p className="text-xs text-muted-foreground mt-1">Missed check-in alerts + Call Supervisor</p>
                 </CardContent>
               </Card>
               <Card>
@@ -363,6 +367,7 @@ export default function AdminRevenue() {
                       { feature: "Missed check-in voice call", driver: "Twilio Voice", cost: "£0.08 to £0.15" },
                       { feature: "Email alert", driver: "Resend", cost: "£0.001" },
                       { feature: "Emergency GPS alert", driver: "Twilio + Resend + w3w", cost: "£0.15 to £0.25" },
+                      { feature: "Call Supervisor (org clients)", driver: "Twilio Voice", cost: "£0.08 to £0.15" },
                       { feature: "AI Wellbeing Chat", driver: "OpenAI GPT-4o", cost: "£0.01 to £0.05" },
                       { feature: "AI Voice Chat", driver: "OpenAI Whisper + TTS", cost: "£0.02 to £0.06" },
                       { feature: "Ecologi tree planting", driver: "Ecologi", cost: "£0.60 (one-off)" },
@@ -385,7 +390,7 @@ export default function AdminRevenue() {
           <h2 className="text-2xl font-semibold mb-4" data-testid="text-projections">Revenue Projections at Scale</h2>
           <Card className="mb-6">
             <CardContent className="pt-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <Label htmlFor="org-percent" className="text-sm">Organisation seat % of total users</Label>
                   <div className="flex items-center gap-2 mt-1">
@@ -434,6 +439,23 @@ export default function AdminRevenue() {
                       data-testid="input-ai-rate"
                     />
                     <span className="text-sm text-muted-foreground">(0.10 = 10%)</span>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="supervisor-rate" className="text-sm">Daily supervisor call rate (org)</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input
+                      id="supervisor-rate"
+                      type="number"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={supervisorCallRate}
+                      onChange={(e) => setSupervisorCallRate(Math.min(1, Math.max(0, Number(e.target.value))))}
+                      className="w-24"
+                      data-testid="input-supervisor-rate"
+                    />
+                    <span className="text-sm text-muted-foreground">(0.05 = 5%)</span>
                   </div>
                 </div>
               </div>
@@ -492,7 +514,7 @@ export default function AdminRevenue() {
                   data-testid="input-custom-users"
                 />
                 <p className="text-xs text-muted-foreground mt-2">
-                  Using {orgPercent}% org seats, {(missedRate * 100).toFixed(0)}% missed rate, {(aiUsageRate * 100).toFixed(0)}% AI usage
+                  Using {orgPercent}% org seats, {(missedRate * 100).toFixed(0)}% missed rate, {(aiUsageRate * 100).toFixed(0)}% AI usage, {(supervisorCallRate * 100).toFixed(0)}% supervisor calls
                 </p>
               </CardContent>
             </Card>
