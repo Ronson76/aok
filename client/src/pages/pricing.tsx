@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Check, Lock, Phone, FileText, Heart, Users, Clock, Mail, Bell, AlertTriangle, MapPin, Smartphone, Building2, TrendingUp, PawPrint, Scroll, ArrowLeft } from "lucide-react";
+import { ShieldCheck, Check, Lock, Phone, FileText, Heart, Users, Clock, Mail, Bell, AlertTriangle, MapPin, Smartphone, Building2, TrendingUp, PawPrint, Scroll, ArrowLeft, Mic, TreePine, Shield, Headphones } from "lucide-react";
 
 export default function Pricing() {
   const [isYearly, setIsYearly] = useState(false);
@@ -39,14 +39,17 @@ export default function Pricing() {
         { text: "SMS text message alerts", icon: Smartphone },
         { text: "Automated voice call alerts", icon: Phone },
         { text: "Emergency alert button with one-tap activation", icon: AlertTriangle },
+        { text: "Shake to SOS", icon: Smartphone },
         { text: "GPS location sharing with what3words", icon: MapPin },
-        { text: "Push notifications", icon: Bell },
+        { text: "Push notifications & SMS reminders", icon: Bell },
         { text: "Primary contact updates on every check-in", icon: Heart },
         { text: "Privacy protection with auto session timeout", icon: Lock },
         { text: "Mood & wellness tracking", icon: TrendingUp },
         { text: "Pet protection profiles with vet info", icon: PawPrint },
         { text: "Digital will & document storage", icon: Scroll },
-        { text: "Wellbeing AI integration (Health Insight)", icon: Heart },
+        { text: "Wellbeing AI chat with voice mode", icon: Headphones },
+        { text: "Offline emergency overlay", icon: Shield },
+        { text: "Tree planted via Ecologi on signup", icon: TreePine },
       ],
       cta: "Get Started",
       ctaLink: "/onboarding",
@@ -61,28 +64,48 @@ export default function Pricing() {
       monthlyPrice: null,
       yearlyPrice: null,
       features: [
-        { text: "Flexible check-in timer (5 minutes to 48 hours)", icon: Clock },
-        { text: "Up to 5 emergency contacts per user", icon: Users },
-        { text: "Email alerts for missed check-ins", icon: Mail },
-        { text: "SMS text message alerts", icon: Smartphone },
-        { text: "Automated voice call alerts", icon: Phone },
-        { text: "Emergency alert button with one-tap activation", icon: AlertTriangle },
-        { text: "GPS location sharing with what3words", icon: MapPin },
-        { text: "Push notifications", icon: Bell },
-        { text: "Primary contact updates on every check-in", icon: Heart },
-        { text: "Privacy protection with auto session timeout", icon: Lock },
-        { text: "Mood & wellness tracking", icon: TrendingUp },
-        { text: "Pet protection profiles with vet info", icon: PawPrint },
-        { text: "Digital will & document storage", icon: Scroll },
-        { text: "Wellbeing AI integration (Health Insight)", icon: Heart },
+        { text: "Everything in Complete Protection", icon: Check },
         { text: "Dedicated organisation dashboard", icon: Building2 },
-        { text: "Bulk user management", icon: Users },
+        { text: "Bulk client management & Excel import", icon: Users },
+        { text: "Staff roles & team management", icon: Users },
+        { text: "Safeguarding hub with case files", icon: Shield },
+        { text: "Lone worker monitoring", icon: MapPin },
+        { text: "Per-client feature toggles", icon: TrendingUp },
+        { text: "Emergency alerts & missed check-in reports", icon: FileText },
+        { text: "In-dashboard help centre", icon: Headphones },
+        { text: "Volume discounts on seat bundles", icon: TrendingUp },
       ],
       cta: "Contact Us",
       ctaLink: "mailto:organisations@aok.care?subject=Organisation%20Enquiry%20-%20aok%20Bundles%20%26%20Packages",
       highlight: false,
       isOrganisation: true,
     },
+  ];
+
+  const comparisonFeatures = [
+    { name: "Check-in timer (5 min to 48 hours)", trial: true, complete: true, org: true },
+    { name: "Up to 5 emergency contacts", trial: true, complete: true, org: true },
+    { name: "Email alerts", trial: true, complete: true, org: true },
+    { name: "SMS text alerts", trial: true, complete: true, org: true },
+    { name: "Automated voice calls", trial: true, complete: true, org: true },
+    { name: "Emergency alert button", trial: true, complete: true, org: true },
+    { name: "Shake to SOS", trial: true, complete: true, org: true },
+    { name: "GPS + what3words location", trial: true, complete: true, org: true },
+    { name: "SMS check-in reminders", trial: true, complete: true, org: true },
+    { name: "Offline emergency overlay", trial: true, complete: true, org: true },
+    { name: "Primary contact notifications", trial: true, complete: true, org: true },
+    { name: "Mood & wellness tracking", trial: true, complete: true, org: true },
+    { name: "Pet protection profiles", trial: true, complete: true, org: true },
+    { name: "Digital will & document storage", trial: true, complete: true, org: true },
+    { name: "Wellbeing AI chat + voice mode", trial: true, complete: true, org: true },
+    { name: "Ecologi tree planting", trial: false, complete: true, org: true },
+    { name: "Organisation dashboard", trial: false, complete: false, org: true },
+    { name: "Bulk client management", trial: false, complete: false, org: true },
+    { name: "Staff roles & team management", trial: false, complete: false, org: true },
+    { name: "Safeguarding hub", trial: false, complete: false, org: true },
+    { name: "Lone worker monitoring", trial: false, complete: false, org: true },
+    { name: "Per-client feature controls", trial: false, complete: false, org: true },
+    { name: "Reports & analytics", trial: false, complete: false, org: true },
   ];
 
   return (
@@ -108,8 +131,8 @@ export default function Pricing() {
       <main className="container mx-auto px-4 py-12">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4" data-testid="text-pricing-title">Simple, Transparent Pricing</h1>
-          <p className="text-xl text-muted-foreground mb-8">Get Peace of Mind Today</p>
-          <p className="text-muted-foreground">Start with a 7-day free trial. Cancel anytime.</p>
+          <p className="text-xl text-muted-foreground mb-4">Get Peace of Mind Today</p>
+          <p className="text-muted-foreground">Start with a 7-day free trial. Cancel anytime. No hidden fees.</p>
         </div>
 
         <div className="flex items-center justify-center gap-4 mb-8">
@@ -142,7 +165,7 @@ export default function Pricing() {
             <Card 
               key={index} 
               className={`relative flex flex-col ${plan.highlight ? "border-primary shadow-lg md:scale-105" : ""}`}
-              data-testid={`card-plan-${plan.name.toLowerCase()}`}
+              data-testid={`card-plan-${plan.name.toLowerCase().replace(/\s+/g, '-')}`}
             >
               {plan.badge && (
                 <Badge className="absolute -top-3 left-1/2 -translate-x-1/2" data-testid="badge-most-popular">
@@ -190,14 +213,14 @@ export default function Pricing() {
                     ))}
                   </ul>
                 )}
-                              </CardContent>
+              </CardContent>
               <CardFooter>
                 {plan.ctaLink.startsWith("mailto:") ? (
                   <a href={plan.ctaLink} className="w-full">
                     <Button 
                       variant={plan.highlight ? "default" : "outline"} 
                       className="w-full"
-                      data-testid={`button-plan-${plan.name.toLowerCase()}`}
+                      data-testid={`button-plan-${plan.name.toLowerCase().replace(/\s+/g, '-')}`}
                     >
                       {plan.cta}
                     </Button>
@@ -207,7 +230,7 @@ export default function Pricing() {
                     <Button 
                       variant={plan.highlight ? "default" : "outline"} 
                       className="w-full"
-                      data-testid={`button-plan-${plan.name.toLowerCase()}`}
+                      data-testid={`button-plan-${plan.name.toLowerCase().replace(/\s+/g, '-')}`}
                     >
                       {plan.cta}
                     </Button>
@@ -216,6 +239,75 @@ export default function Pricing() {
               </CardFooter>
             </Card>
           ))}
+        </div>
+
+        <div className="mt-20 max-w-5xl mx-auto">
+          <h2 className="text-2xl font-bold text-center mb-8" data-testid="text-comparison-title">Feature Comparison</h2>
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-3 px-4 font-medium">Feature</th>
+                      <th className="text-center py-3 px-4 font-medium">7 Day Trial</th>
+                      <th className="text-center py-3 px-4 font-medium text-primary">Complete Protection</th>
+                      <th className="text-center py-3 px-4 font-medium">Organisations</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {comparisonFeatures.map((feature, i) => (
+                      <tr key={i} className={i % 2 === 0 ? "bg-muted/30" : ""}>
+                        <td className="py-3 px-4">{feature.name}</td>
+                        <td className="text-center py-3 px-4">
+                          {feature.trial ? (
+                            <Check className="h-4 w-4 text-green-600 mx-auto" />
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {feature.complete ? (
+                            <Check className="h-4 w-4 text-green-600 mx-auto" />
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {feature.org ? (
+                            <Check className="h-4 w-4 text-green-600 mx-auto" />
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="mt-16 max-w-3xl mx-auto">
+          <h2 className="text-2xl font-bold text-center mb-8" data-testid="text-faq-title">Frequently Asked Questions</h2>
+          <div className="space-y-4">
+            {[
+              { q: "What happens after my free trial?", a: "After 7 days, your subscription starts at just £6.99/month (or £69.99/year if you choose annual billing). You can cancel anytime during the trial without being charged." },
+              { q: "Can I cancel at any time?", a: "Yes, you can cancel your subscription at any time from Settings. Your account stays active until the end of your current billing period." },
+              { q: "What payment methods do you accept?", a: "We accept all major debit and credit cards, Apple Pay, and Google Pay for quick and easy payment." },
+              { q: "How does the organisation plan work?", a: "Organisations purchase bundles of seats and manage clients through a dedicated dashboard. Contact us for custom pricing based on your team size." },
+              { q: "Is my data safe?", a: "Absolutely. We use encryption for all data, location is only shared during emergencies, AI conversations are never stored, and emergency contacts must give consent before receiving alerts." },
+              { q: "What is the Ecologi tree planting?", a: "When you subscribe, we plant a tree on your behalf through our partnership with Ecologi. It costs us £0.60 per tree and helps offset carbon emissions." },
+            ].map((faq, i) => (
+              <Card key={i}>
+                <CardContent className="py-4">
+                  <h3 className="font-medium mb-2" data-testid={`text-faq-q-${i}`}>{faq.q}</h3>
+                  <p className="text-sm text-muted-foreground" data-testid={`text-faq-a-${i}`}>{faq.a}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
 
         <div className="text-center mt-16">

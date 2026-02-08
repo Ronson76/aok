@@ -618,6 +618,15 @@ export default function AdminDashboard() {
                   Licence Agreements
                 </Button>
               )}
+              {isSuperAdmin && (
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setLocation("/admin/revenue")}
+                  data-testid="nav-revenue"
+                >
+                  Revenue
+                </Button>
+              )}
             </nav>
             {isSuperAdmin && (
               <Button 

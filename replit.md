@@ -61,6 +61,7 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Access**: Separate login (`/admin/login`) with role-based access (`super_admin`, `analyst`).
 - **Management**: User management, organization bundle creation, client oversight (viewing, pausing, resuming, removing clients), client safeguarding hub, full client management including check-in schedule and feature toggles.
 - **Licence Agreements Tab** (`/admin/licence-agreements`): Deployment matrix, document cards grouped by customer type, quick links to all legal documents (super_admin only).
+- **Revenue Dashboard** (`/admin/revenue`): Revenue projections at scale (500 to 50,000 users), per-feature cost reference, current overview with live stats, detailed cost breakdown (hosting, Twilio, Resend, OpenAI, Stripe, Ecologi), custom calculator with adjustable org mix/missed rate/AI usage. Super_admin only.
 - **Security**: Audit logging for admin actions.
 
 ### Organization Features
