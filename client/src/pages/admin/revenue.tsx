@@ -137,7 +137,7 @@ function calculateProjection(
 
   if (useAnnual) {
     const perSeatMonthly = annualSeats > 0 ? annualFlatFee / annualSeats : 0;
-    monthlyRevenue = perSeatMonthly * totalUsers;
+    monthlyRevenue = perSeatMonthly * annualSeats;
     annualRevenue = monthlyRevenue * 12;
   } else {
     const activeTiers: PricingTab[] = [];
