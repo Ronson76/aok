@@ -1103,7 +1103,7 @@ export default function AdminRevenue() {
                   Org Seats: Lower Revenue, Lower Cost
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Organisation seats average {formatCurrency(costModel.org_seat_average)}/month vs {formatCurrency(costModel.individual_monthly)} for individuals. However, organisations
+                  Organisation seats at {formatCurrency(costModel.org_monthly)}/month vs individual tiers (T1: {formatCurrency(costModel.tier1_monthly)}, T2: {formatCurrency(costModel.tier2_monthly)}, T3: {formatCurrency(costModel.tier3_monthly)}). Organisations
                   have lower churn, higher lifetime value, and more predictable revenue. They also bring supervisor
                   call costs but provide the most scalable revenue stream.
                 </p>
