@@ -1419,4 +1419,52 @@ export function registerAdminRoutes(app: Express) {
       res.status(500).json({ error: "Failed to fetch service health" });
     }
   });
+
+  // Pricing config - GET (super_admin only)
+  app.get("/api/admin/pricing", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      await adminStorage.seedDefaultPricing();
+      const config = await adminStorage.getPricingConfig();
+      res.json(config);
+    } catch (error) {
+      console.error("Error fetching pricing config:", error);
+      res.status(500).json({ error: "Failed to fetch pricing config" });
+    }
+  });
+
+  // Pricing config - PUT (super_admin only)
+  app.put("/api/admin/pricing", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const schema = z.object({
+        updates: z.array(z.object({
+          key: z.string(),
+          value: z.number().min(0),
+        })),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.issues });
+      }
+
+      const results = [];
+      for (const { key, value } of parsed.data.updates) {
+        const updated = await adminStorage.updatePricingValue(key, value);
+        if (updated) results.push(updated);
+      }
+
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "update_pricing",
+        "system",
+        "pricing_config",
+        `Updated ${results.length} pricing values`
+      );
+
+      const config = await adminStorage.getPricingConfig();
+      res.json(config);
+    } catch (error) {
+      console.error("Error updating pricing config:", error);
+      res.status(500).json({ error: "Failed to update pricing config" });
+    }
+  });
 }

@@ -1804,5 +1804,22 @@ export const insertActivityMemorySchema = createInsertSchema(activityMemories).o
 export type InsertActivityMemory = z.infer<typeof insertActivityMemorySchema>;
 export type ActivityMemory = typeof activityMemories.$inferSelect;
 
+// Pricing configuration (admin-editable)
+export const pricingConfig = pgTable("pricing_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: varchar("key", { length: 100 }).notNull().unique(),
+  value: doublePrecision("value").notNull(),
+  label: varchar("label", { length: 200 }).notNull(),
+  category: varchar("category", { length: 50 }).notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertPricingConfigSchema = createInsertSchema(pricingConfig).omit({
+  id: true,
+  updatedAt: true,
+});
+export type InsertPricingConfig = z.infer<typeof insertPricingConfigSchema>;
+export type PricingConfig = typeof pricingConfig.$inferSelect;
+
 // Re-export chat models for AI integrations (used by integration storage)
 export * from "./models/chat";
