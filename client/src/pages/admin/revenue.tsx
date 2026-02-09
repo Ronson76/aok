@@ -636,7 +636,7 @@ export default function AdminRevenue() {
   const aiUsageRate = parseFloat(aiUsageRateStr) || 0;
   const [supervisorCallRateStr, setSupervisorCallRateStr] = useState("0.05");
   const supervisorCallRate = parseFloat(supervisorCallRateStr) || 0;
-  const [activeTabs, setActiveTabs] = useState<Set<PricingTab>>(new Set(["tier1", "tier2"]));
+  const [activeTabs, setActiveTabs] = useState<Set<PricingTab>>(() => new Set<PricingTab>(["tier1", "tier2"]));
   const [annualSeatsStr, setAnnualSeatsStr] = useState("2000");
   const [annualFlatFeeStr, setAnnualFlatFeeStr] = useState("13000");
   const annualSeats = parseInt(annualSeatsStr) || 0;
@@ -757,7 +757,7 @@ export default function AdminRevenue() {
                 value={formatCurrency(liveOverview.monthlyRevenue - liveOverview.monthlyCosts.total)}
                 subtitle={`${formatCurrency(liveOverview.annualProfit)}/year`}
                 icon={Percent}
-                trend={liveOverview.annualProfit >= 0 ? "up" : "down"}
+                trend={liveOverview.annualProfit >= 0 ? "up" : "neutral"}
               />
             </div>
           ) : null}
