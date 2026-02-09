@@ -313,6 +313,12 @@ export default function Landing() {
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </Link>
+                <Link href="/demo">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2" data-testid="button-view-demo">
+                    See Demo
+                    <Play className="h-4 w-4" />
+                  </Button>
+                </Link>
               </div>
               <div className="w-full flex justify-center md:justify-start mt-6">
                 <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 md:gap-6 text-xs md:text-base text-muted-foreground">
