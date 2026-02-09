@@ -626,7 +626,7 @@ export default function Demo() {
           <section className="py-16 px-4">
             <div className="container mx-auto max-w-5xl">
               <div className="text-center mb-12">
-                <h2 className="text-2xl md:text-3xl font-bold mb-3 text-foreground">How the Safety Net Works</h2>
+                <h2 className="text-2xl md:text-3xl font-bold mb-3 text-foreground">How the Protection Net Works</h2>
                 <p className="text-base text-muted-foreground max-w-xl mx-auto">
                   Four layers of protection, working together seamlessly.
                 </p>
@@ -710,7 +710,7 @@ export default function Demo() {
       {activeSection === "organisation" && (
         <DemoWalkthrough
           title="For Organisations"
-          subtitle="Manage clients, monitor safety, and respond to emergencies with a dedicated organisation dashboard."
+          subtitle="Manage clients, monitor wellbeing, and respond to emergencies with a dedicated organisation dashboard."
           steps={DEMO_STEPS_ORG}
         />
       )}
@@ -751,7 +751,7 @@ export default function Demo() {
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-green-600" />
             <span className="font-bold text-green-600">aok</span>
-            <span className="text-sm text-muted-foreground">Personal Safety Check-In</span>
+            <span className="text-sm text-muted-foreground">Personal Check-In</span>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <Link href="/privacy" className="hover:text-foreground">Privacy</Link>
