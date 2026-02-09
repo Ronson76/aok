@@ -5,6 +5,7 @@ import { adminLoginSchema, AdminUserProfile, orgClientStatuses, updateUserFeatur
 import { z } from "zod";
 import { sendPasswordResetEmail, sendAdminInviteEmail, sendOrgSetupInviteEmail } from "./notifications";
 import { randomBytes } from "crypto";
+import { getAllServiceStatuses } from "./serviceResilience";
 
 const ADMIN_SESSION_COOKIE = "admin_session";
 
@@ -1385,6 +1386,37 @@ export function registerAdminRoutes(app: Express) {
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch validation status" });
+    }
+  });
+
+  app.get("/api/admin/service-health", adminAuthMiddleware, requireSuperAdmin, async (_req, res) => {
+    try {
+      const statuses = getAllServiceStatuses();
+      const services = statuses.map(s => ({
+        name: s.name,
+        healthy: s.healthy,
+        circuitOpen: s.circuitOpen,
+        consecutiveFailures: s.consecutiveFailures,
+        totalSuccesses: s.totalSuccesses,
+        totalFailures: s.totalFailures,
+        lastSuccess: s.lastSuccess?.toISOString() || null,
+        lastFailure: s.lastFailure?.toISOString() || null,
+        lastError: s.lastError,
+      }));
+      
+      const healthyCount = services.filter(s => s.healthy).length;
+      const degradedCount = services.filter(s => !s.healthy && !s.circuitOpen).length;
+      const downCount = services.filter(s => s.circuitOpen).length;
+
+      res.json({
+        overall: downCount > 0 ? "degraded" : healthyCount === services.length ? "healthy" : "warning",
+        summary: { healthy: healthyCount, degraded: degradedCount, down: downCount, total: services.length },
+        services,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Error fetching service health:", error);
+      res.status(500).json({ error: "Failed to fetch service health" });
     }
   });
 }

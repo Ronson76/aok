@@ -68,6 +68,7 @@ import AdminArchitecture from "@/pages/admin/architecture";
 import AdminWorkflows from "@/pages/admin/workflows";
 import AdminRevenue from "@/pages/admin/revenue";
 import AdminPermissions from "@/pages/admin/permissions";
+import AdminServiceHealth from "@/pages/admin/service-health";
 import Activate from "@/pages/activate";
 import Pricing from "@/pages/pricing";
 import Onboarding from "@/pages/onboarding";
@@ -621,6 +622,7 @@ function AdminRoutes() {
       <Route path="/admin/revenue" component={() => <AdminProtectedRoute component={AdminRevenue} />} />
       <Route path="/admin/licence-agreements" component={() => <AdminProtectedRoute component={AdminLicenceAgreements} />} />
       <Route path="/admin/permissions" component={() => <AdminProtectedRoute component={AdminPermissions} />} />
+      <Route path="/admin/service-health" component={() => <AdminProtectedRoute component={AdminServiceHealth} />} />
       <Route path="/admin/bundles" component={() => <AdminProtectedRoute component={AdminBundles} />} />
       <Route path="/admin/dashboard" component={() => <AdminProtectedRoute component={AdminDashboard} />} />
       <Route path="/admin" component={() => <AdminProtectedRoute component={AdminDashboard} />} />
