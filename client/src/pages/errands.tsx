@@ -12,11 +12,48 @@ import {
   MapPin, Clock, CheckCircle, Phone, Loader2, Timer, History,
   XCircle, Navigation, Siren, Play, AlertTriangle, ChevronDown,
   ChevronUp, ShoppingCart, Footprints, Car, Calendar, Users,
-  Dog, Dumbbell, Package
+  Dog, Dumbbell, Package, Lock, Shield
 } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { formatDistanceToNow, format, differenceInSeconds } from "date-fns";
 import type { ErrandSession, ErrandActivityType, Contact } from "@shared/schema";
+
+let sharedAudioContext: AudioContext | null = null;
+
+function playActivityAlarm() {
+  try {
+    if (!sharedAudioContext) {
+      sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (sharedAudioContext.state === 'suspended') {
+      sharedAudioContext.resume();
+    }
+    const ctx = sharedAudioContext!;
+    const startTime = ctx.currentTime;
+    const playChime = (delay: number, frequency: number, duration: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = frequency;
+      const t = startTime + delay;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.5, t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + duration);
+      osc.start(t);
+      osc.stop(t + duration);
+    };
+    playChime(0, 523, 0.4);
+    playChime(0.15, 659, 0.4);
+    playChime(0.30, 784, 0.6);
+  } catch (e) {
+    console.error('[Activity Audio] Failed to play alarm:', e);
+  }
+}
+
+const ACTIVITY_ALARM_STORAGE_KEY = 'aok_activity_alarm_session';
+const HOLD_DURATION_MS = 10000;
 
 const ACTIVITY_TYPES: { value: ErrandActivityType; label: string; icon: any }[] = [
   { value: "walking", label: "Walking", icon: Footprints },
@@ -282,7 +319,14 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
   const { toast } = useToast();
   const geo = useGeolocation();
   const gpsIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const alarmIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hasPlayedInitialAlarm = useRef(false);
   const ActivityIcon = getActivityIcon(session.activityType);
+
+  const [holdProgress, setHoldProgress] = useState(0);
+  const [isHolding, setIsHolding] = useState(false);
+  const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const holdStartTimeRef = useRef<number | null>(null);
 
   const { data: contacts } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
@@ -297,19 +341,31 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
 
   useEffect(() => {
     if (geo.position && session.status !== "completed" && session.status !== "cancelled") {
+      const isOverdueStatus = session.status === "overdue";
+      const interval = isOverdueStatus ? 300000 : 60000;
+
       const sendGps = async () => {
         try {
           await apiRequest("POST", `/api/errands/${session.id}/gps`, {
             lat: geo.position!.lat,
             lng: geo.position!.lng,
           });
+          if (isOverdueStatus && session.emergencyAlertId) {
+            try {
+              await apiRequest("POST", "/api/emergency/heartbeat", {
+                latitude: parseFloat(geo.position!.lat),
+                longitude: parseFloat(geo.position!.lng),
+              });
+            } catch {}
+          }
         } catch {}
       };
       sendGps();
 
-      if (!gpsIntervalRef.current) {
-        gpsIntervalRef.current = setInterval(sendGps, 60000);
+      if (gpsIntervalRef.current) {
+        clearInterval(gpsIntervalRef.current);
       }
+      gpsIntervalRef.current = setInterval(sendGps, interval);
     }
     return () => {
       if (gpsIntervalRef.current) {
@@ -317,7 +373,44 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
         gpsIntervalRef.current = null;
       }
     };
-  }, [geo.position, session.id, session.status]);
+  }, [geo.position, session.id, session.status, session.emergencyAlertId]);
+
+  useEffect(() => {
+    const isGraceOrOverdue = session.status === "grace" || session.status === "overdue";
+
+    if (isGraceOrOverdue) {
+      const lastAlarmedSession = localStorage.getItem(ACTIVITY_ALARM_STORAGE_KEY);
+      const alreadyAlarmed = lastAlarmedSession === session.id;
+
+      if (!hasPlayedInitialAlarm.current && !alreadyAlarmed) {
+        hasPlayedInitialAlarm.current = true;
+        localStorage.setItem(ACTIVITY_ALARM_STORAGE_KEY, session.id);
+        playActivityAlarm();
+      } else if (alreadyAlarmed) {
+        hasPlayedInitialAlarm.current = true;
+      }
+
+      alarmIntervalRef.current = setInterval(() => {
+        playActivityAlarm();
+      }, 5000);
+    } else {
+      if (alarmIntervalRef.current) {
+        clearInterval(alarmIntervalRef.current);
+        alarmIntervalRef.current = null;
+      }
+      hasPlayedInitialAlarm.current = false;
+      if (session.status === "completed" || session.status === "cancelled") {
+        localStorage.removeItem(ACTIVITY_ALARM_STORAGE_KEY);
+      }
+    }
+
+    return () => {
+      if (alarmIntervalRef.current) {
+        clearInterval(alarmIntervalRef.current);
+        alarmIntervalRef.current = null;
+      }
+    };
+  }, [session.status, session.id]);
 
   const completeMutation = useMutation({
     mutationFn: async () => {
@@ -325,8 +418,10 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
       return res.json();
     },
     onSuccess: () => {
+      localStorage.removeItem(ACTIVITY_ALARM_STORAGE_KEY);
       queryClient.invalidateQueries({ queryKey: ["/api/errands/active"] });
       queryClient.invalidateQueries({ queryKey: ["/api/errands/history"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/emergency/status"] });
       toast({ title: "Activity completed", description: "Well done! Your session has been recorded." });
       geo.stopWatching();
       onEnded();
@@ -342,8 +437,10 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
       return res.json();
     },
     onSuccess: () => {
+      localStorage.removeItem(ACTIVITY_ALARM_STORAGE_KEY);
       queryClient.invalidateQueries({ queryKey: ["/api/errands/active"] });
       queryClient.invalidateQueries({ queryKey: ["/api/errands/history"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/emergency/status"] });
       toast({ title: "Activity cancelled" });
       geo.stopWatching();
       onEnded();
@@ -362,10 +459,73 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
       return res.json();
     },
     onSuccess: () => {
+      localStorage.removeItem(ACTIVITY_ALARM_STORAGE_KEY);
+      hasPlayedInitialAlarm.current = false;
       queryClient.invalidateQueries({ queryKey: ["/api/errands/active"] });
       toast({ title: "Checked in", description: "Timer has been refreshed." });
     },
   });
+
+  const holdDeactivateMutation = useMutation({
+    mutationFn: async () => {
+      let location: { latitude: number; longitude: number } | undefined;
+      if (geo.position) {
+        location = {
+          latitude: parseFloat(geo.position.lat),
+          longitude: parseFloat(geo.position.lng),
+        };
+      }
+      const response = await apiRequest("POST", "/api/emergency/deactivate-hold", { location });
+      return response.json();
+    },
+    onSuccess: () => {
+      localStorage.removeItem(ACTIVITY_ALARM_STORAGE_KEY);
+      queryClient.invalidateQueries({ queryKey: ["/api/errands/active"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/emergency/status"] });
+      toast({
+        title: "Deactivation requested",
+        description: "Your contacts have been asked to confirm you are safe. Alerts continue until a contact confirms.",
+      });
+    },
+    onError: (error: any) => {
+      toast({ title: "Deactivation failed", description: error?.message || "Failed to deactivate", variant: "destructive" });
+    },
+  });
+
+  const startHold = () => {
+    setIsHolding(true);
+    holdStartTimeRef.current = Date.now();
+    setHoldProgress(0);
+    holdIntervalRef.current = setInterval(() => {
+      if (holdStartTimeRef.current) {
+        const elapsed = Date.now() - holdStartTimeRef.current;
+        const progress = Math.min(elapsed / HOLD_DURATION_MS, 1);
+        setHoldProgress(progress);
+        if (progress >= 1) {
+          endHold(true);
+        }
+      }
+    }, 50);
+  };
+
+  const endHold = (completed: boolean = false) => {
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
+    holdStartTimeRef.current = null;
+    setIsHolding(false);
+    if (completed) {
+      holdDeactivateMutation.mutate();
+    }
+    setTimeout(() => setHoldProgress(0), 300);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
+    };
+  }, []);
 
   const isGrace = session.status === "grace";
   const isOverdue = session.status === "overdue";
@@ -373,6 +533,46 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
 
   return (
     <div className="space-y-4">
+      {isOverdue && session.emergencyAlertId && (
+        <Card className="border-red-500 border-2 bg-red-500/5">
+          <CardContent className="p-4 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-red-500 flex items-center justify-center">
+                <Shield className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <span className="text-lg font-bold text-red-600 dark:text-red-400">EMERGENCY ALERT ACTIVE</span>
+                <p className="text-xs text-muted-foreground">Your contacts are being notified with location updates every 5 minutes</p>
+              </div>
+            </div>
+
+            <Button
+              className="w-full relative overflow-visible bg-red-600 text-white border-red-700"
+              size="lg"
+              onPointerDown={startHold}
+              onPointerUp={() => endHold(false)}
+              onPointerLeave={() => endHold(false)}
+              disabled={holdDeactivateMutation.isPending}
+              data-testid="button-deactivate-hold"
+            >
+              <div className="absolute inset-0 bg-green-600 rounded-md transition-all" style={{ width: `${holdProgress * 100}%` }} />
+              <span className="relative z-10 flex items-center justify-center">
+                {holdDeactivateMutation.isPending ? (
+                  <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Sending...</>
+                ) : holdProgress > 0 ? (
+                  <><Lock className="h-5 w-5 mr-2" /> {Math.ceil((1 - holdProgress) * 10)}s - Keep Holding</>
+                ) : (
+                  <><Lock className="h-5 w-5 mr-2" /> Hold 10s - I'm Safe</>
+                )}
+              </span>
+            </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              Alerts continue until a contact confirms they have spoken to you
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className={isOverdue ? "border-red-500 border-2" : isGrace ? "border-yellow-500 border-2" : ""}>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -390,7 +590,7 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
                 <AlertTriangle className="h-4 w-4" />
                 <span className="text-sm font-medium">
                   {isOverdue
-                    ? "Your contacts have been notified. Please check in or complete your activity."
+                    ? "Your contacts have been notified. Hold the button above to request emergency end, or complete your activity."
                     : "Your expected duration has passed. Check in to extend or complete your activity."}
                 </span>
               </div>
@@ -427,7 +627,9 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
             {geo.position && (
               <div className="flex items-center gap-2 col-span-2">
                 <Navigation className="h-4 w-4 text-green-500" />
-                <span className="text-xs text-muted-foreground">GPS tracking active</span>
+                <span className="text-xs text-muted-foreground">
+                  GPS tracking active{isOverdue ? " (updates every 5 min)" : ""}
+                </span>
               </div>
             )}
           </div>
@@ -488,16 +690,18 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
             </Button>
           </div>
 
-          <Button
-            variant="ghost"
-            className="w-full text-muted-foreground"
-            onClick={() => cancelMutation.mutate()}
-            disabled={cancelMutation.isPending}
-            data-testid="button-cancel-activity"
-          >
-            <XCircle className="h-4 w-4 mr-2" />
-            Cancel Activity
-          </Button>
+          {!isOverdue && (
+            <Button
+              variant="ghost"
+              className="w-full text-muted-foreground"
+              onClick={() => cancelMutation.mutate()}
+              disabled={cancelMutation.isPending}
+              data-testid="button-cancel-activity"
+            >
+              <XCircle className="h-4 w-4 mr-2" />
+              Cancel Activity
+            </Button>
+          )}
         </div>
       )}
     </div>

@@ -1459,6 +1459,11 @@ export async function registerRoutes(
         if (confirmation.alertId) {
           await storage.deactivateEmergencyAlert(confirmation.alertId);
           console.log(`[CONFIRM-SAFETY] Emergency alert ${confirmation.alertId} deactivated`);
+          const linkedErrand = await storage.getErrandSessionByAlertId(confirmation.alertId);
+          if (linkedErrand && linkedErrand.status !== "completed" && linkedErrand.status !== "cancelled") {
+            await storage.completeErrandSession(linkedErrand.id);
+            console.log(`[CONFIRM-SAFETY] Linked activity session ${linkedErrand.id} completed`);
+          }
         }
         
         // Log the confirmation with audit trail
@@ -2333,6 +2338,12 @@ export async function registerRoutes(
 
       // Deactivate the alert
       await storage.deactivateEmergencyAlert(activeAlert.id);
+      
+      const linkedErrand = await storage.getErrandSessionByAlertId(activeAlert.id);
+      if (linkedErrand && linkedErrand.status !== "completed" && linkedErrand.status !== "cancelled") {
+        await storage.completeErrandSession(linkedErrand.id);
+        console.log(`[EMERGENCY] Linked activity session ${linkedErrand.id} completed on password deactivation`);
+      }
       
       // Log the deactivation
       await storage.createAlertLog(
@@ -3907,6 +3918,10 @@ export async function registerRoutes(
       if (session.status === "completed" || session.status === "cancelled") {
         return res.status(400).json({ error: "Session is no longer active" });
       }
+      if (session.emergencyAlertId) {
+        await storage.deactivateEmergencyAlert(session.emergencyAlertId);
+        console.log(`[ERRAND] Deactivated emergency alert ${session.emergencyAlertId} on check-in extension`);
+      }
       const now = new Date();
       const newExpectedEnd = new Date(now.getTime() + session.expectedDurationMins * 60 * 1000);
       const newGraceEnd = new Date(newExpectedEnd.getTime() + 10 * 60 * 1000);
@@ -3929,6 +3944,10 @@ export async function registerRoutes(
       if (session.status === "completed" || session.status === "cancelled") {
         return res.status(400).json({ error: "Session already ended" });
       }
+      if (session.emergencyAlertId) {
+        await storage.deactivateEmergencyAlert(session.emergencyAlertId);
+        console.log(`[ERRAND] Deactivated emergency alert ${session.emergencyAlertId} on activity completion`);
+      }
       const completed = await storage.completeErrandSession(req.params.id);
       res.json(completed);
     } catch (error: any) {
@@ -3942,6 +3961,10 @@ export async function registerRoutes(
       if (!session) return res.status(404).json({ error: "Session not found" });
       if (session.status === "completed" || session.status === "cancelled") {
         return res.status(400).json({ error: "Session already ended" });
+      }
+      if (session.emergencyAlertId) {
+        await storage.deactivateEmergencyAlert(session.emergencyAlertId);
+        console.log(`[ERRAND] Deactivated emergency alert ${session.emergencyAlertId} on activity cancellation`);
       }
       const cancelled = await storage.cancelErrandSession(req.params.id);
       res.json(cancelled);
