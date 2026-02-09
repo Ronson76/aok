@@ -125,66 +125,41 @@ function calculateProjection(
   activeTabs: Set<PricingTab>,
   annualSeats: number = 100
 ): ProjectionResult {
-  const orgSeats = Math.round(totalUsers * (orgPercent / 100));
-  const individualUsers = totalUsers - orgSeats;
-
   const useAnnual = activeTabs.has("annual");
+  const useOrg = activeTabs.has("org");
 
-  let revenuePerIndividual = 0;
-  let revenuePerOrgSeat = 0;
-
-  if (activeTabs.has("org")) {
-    revenuePerOrgSeat = useAnnual
-      ? costModel.org_yearly / 12
-      : costModel.org_monthly;
-  } else {
-    revenuePerOrgSeat = costModel.org_seat_average;
-  }
-
-  const activeTiers: PricingTab[] = [];
-  if (activeTabs.has("tier1")) activeTiers.push("tier1");
-  if (activeTabs.has("tier2")) activeTiers.push("tier2");
-  if (activeTabs.has("tier3")) activeTiers.push("tier3");
-
-  if (activeTiers.length > 0) {
-    let totalTierPrice = 0;
-    for (const tier of activeTiers) {
-      if (tier === "tier1") {
-        totalTierPrice += useAnnual ? costModel.tier1_yearly / 12 : costModel.tier1_monthly;
-      } else if (tier === "tier2") {
-        totalTierPrice += useAnnual ? costModel.tier2_yearly / 12 : costModel.tier2_monthly;
-      } else if (tier === "tier3") {
-        totalTierPrice += useAnnual ? costModel.tier3_yearly / 12 : costModel.tier3_monthly;
-      }
-    }
-    revenuePerIndividual = totalTierPrice / activeTiers.length;
-  } else {
-    revenuePerIndividual = useAnnual
-      ? costModel.individual_yearly / 12
-      : costModel.individual_monthly;
-  }
+  const orgSeats = useOrg ? Math.round(totalUsers * (orgPercent / 100)) : 0;
+  const individualUsers = totalUsers - orgSeats;
 
   let monthlyRevenue: number;
   let annualRevenue: number;
 
   if (useAnnual) {
-    const avgYearlyIndividual = activeTiers.length > 0
-      ? activeTiers.reduce((sum, tier) => {
-          if (tier === "tier1") return sum + costModel.tier1_yearly;
-          if (tier === "tier2") return sum + costModel.tier2_yearly;
-          if (tier === "tier3") return sum + costModel.tier3_yearly;
-          return sum;
-        }, 0) / activeTiers.length
-      : costModel.individual_yearly;
-
-    const yearlyOrgSeat = activeTabs.has("org") ? costModel.org_yearly : costModel.org_seat_average * 12;
-
-    annualRevenue = annualSeats * (
-      (1 - orgPercent / 100) * avgYearlyIndividual +
-      (orgPercent / 100) * yearlyOrgSeat
-    );
+    const annualFlatFee = costModel.individual_yearly;
+    annualRevenue = annualFlatFee;
     monthlyRevenue = annualRevenue / 12;
   } else {
+    const activeTiers: PricingTab[] = [];
+    if (activeTabs.has("tier1")) activeTiers.push("tier1");
+    if (activeTabs.has("tier2")) activeTiers.push("tier2");
+    if (activeTabs.has("tier3")) activeTiers.push("tier3");
+
+    let revenuePerIndividual = 0;
+    if (activeTiers.length > 0) {
+      let totalTierPrice = 0;
+      for (const tier of activeTiers) {
+        if (tier === "tier1") totalTierPrice += costModel.tier1_monthly;
+        else if (tier === "tier2") totalTierPrice += costModel.tier2_monthly;
+        else if (tier === "tier3") totalTierPrice += costModel.tier3_monthly;
+      }
+      revenuePerIndividual = totalTierPrice / activeTiers.length;
+    }
+
+    let revenuePerOrgSeat = 0;
+    if (useOrg) {
+      revenuePerOrgSeat = costModel.org_monthly;
+    }
+
     monthlyRevenue =
       individualUsers * revenuePerIndividual +
       orgSeats * revenuePerOrgSeat;
@@ -295,7 +270,7 @@ const TAB_CONFIG: { id: PricingTab; label: string; icon: React.ElementType; mont
   { id: "tier2", label: "Tier 2", icon: Star, monthlyKey: "tier2_monthly", yearlyKey: "tier2_yearly", color: "text-blue-600" },
   { id: "tier3", label: "Tier 3", icon: Crown, monthlyKey: "tier3_monthly", yearlyKey: "tier3_yearly", color: "text-purple-600" },
   { id: "org", label: "Organisation", icon: Building2, monthlyKey: "org_monthly", yearlyKey: "org_yearly", color: "text-indigo-600" },
-  { id: "annual", label: "Annual", icon: CalendarDays, monthlyKey: "", yearlyKey: "", color: "text-amber-600" },
+  { id: "annual", label: "Annual", icon: CalendarDays, monthlyKey: "individual_monthly", yearlyKey: "individual_yearly", color: "text-amber-600" },
 ];
 
 function PricingTabs({
@@ -346,7 +321,6 @@ function PricingTabs({
   };
 
   const startEditing = (tab: typeof TAB_CONFIG[0]) => {
-    if (tab.id === "annual") return;
     setEditMonthly((costModel as any)[tab.monthlyKey]?.toString() || "0");
     setEditYearly((costModel as any)[tab.yearlyKey]?.toString() || "0");
     setEditingTab(tab.id);
@@ -411,7 +385,7 @@ function PricingTabs({
               }}
               onDoubleClick={(e) => {
                 e.stopPropagation();
-                if (isSuperAdmin && tab.id !== "annual") startEditing(tab);
+                if (isSuperAdmin) startEditing(tab);
               }}
               data-testid={`tab-pricing-${tab.id}`}
             >
@@ -428,22 +402,30 @@ function PricingTabs({
                   <span className="text-sm font-semibold">{tab.label}</span>
                 </div>
 
-                {tab.id === "annual" ? (
+                {tab.id === "annual" && !isEditing ? (
                   <div className="space-y-2">
-                    <div className="text-xs text-muted-foreground">
-                      {isActive ? "Using yearly prices" : "Using monthly prices"}
+                    <div>
+                      <div className="text-lg font-bold" data-testid="text-pricing-value-annual">
+                        {formatCurrency(costModel.individual_yearly)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">flat annual fee</div>
                     </div>
                     {isActive && (
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <Label className="text-xs text-muted-foreground">Seats</Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={annualSeats}
-                          onChange={(e) => setAnnualSeats(Math.max(1, parseInt(e.target.value) || 1))}
-                          className="h-7 text-sm mt-1"
-                          data-testid="input-annual-seats"
-                        />
+                      <div onClick={(e) => e.stopPropagation()} className="space-y-1">
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Seats</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={annualSeats}
+                            onChange={(e) => setAnnualSeats(Math.max(1, parseInt(e.target.value) || 1))}
+                            className="h-7 text-sm mt-1"
+                            data-testid="input-annual-seats"
+                          />
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          = {formatCurrency(costModel.individual_yearly / annualSeats)}/seat
+                        </div>
                       </div>
                     )}
                   </div>
