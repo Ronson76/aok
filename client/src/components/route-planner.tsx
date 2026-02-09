@@ -387,6 +387,7 @@ function RouteMap({
   endPoint,
   routeCoords,
   waypoints,
+  routePoints,
   onMapClick,
   onPoiStopover,
   mapMode,
@@ -398,9 +399,10 @@ function RouteMap({
   endPoint: [number, number] | null;
   routeCoords: Array<[number, number]>;
   waypoints: Waypoint[];
+  routePoints: Waypoint[];
   onMapClick: (lat: number, lng: number) => void;
   onPoiStopover: (poi: POI) => void;
-  mapMode: "search" | "pin";
+  mapMode: "search" | "pin" | "waypoint";
   settingPoint: "start" | "end";
   pois: POI[];
   showPois: boolean;
@@ -464,40 +466,59 @@ function RouteMap({
       markersRef.current.forEach((m) => map.removeLayer(m));
       markersRef.current = [];
 
-      if (startPoint) {
-        const startIcon = L.divIcon({
-          html: `<div style="background:#22c55e;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>`,
-          className: "",
-          iconSize: [18, 18],
-          iconAnchor: [9, 9],
+      if (mapMode === "waypoint" && routePoints.length > 0) {
+        routePoints.forEach((rp, i) => {
+          const isFirst = i === 0;
+          const isLast = i === routePoints.length - 1 && routePoints.length > 1;
+          const bgColor = isFirst ? "#22c55e" : isLast ? "#ef4444" : "#3b82f6";
+          const rpIcon = L.divIcon({
+            html: `<div style="background:${bgColor};width:22px;height:22px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white">${i + 1}</div>`,
+            className: "",
+            iconSize: [22, 22],
+            iconAnchor: [11, 11],
+          });
+          const label = isFirst ? "Start" : isLast ? "Finish" : `Waypoint ${i}`;
+          const m = L.marker([rp.lat, rp.lng], { icon: rpIcon })
+            .bindPopup(`<div style="font-size:12px;font-weight:600">${label}</div><div style="font-size:11px;color:#666">${rp.name}</div>`)
+            .addTo(map);
+          markersRef.current.push(m);
         });
-        const m = L.marker(startPoint, { icon: startIcon }).addTo(map);
-        markersRef.current.push(m);
-      }
+      } else {
+        if (startPoint) {
+          const startIcon = L.divIcon({
+            html: `<div style="background:#22c55e;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>`,
+            className: "",
+            iconSize: [18, 18],
+            iconAnchor: [9, 9],
+          });
+          const m = L.marker(startPoint, { icon: startIcon }).addTo(map);
+          markersRef.current.push(m);
+        }
 
-      if (endPoint) {
-        const endIcon = L.divIcon({
-          html: `<div style="background:#ef4444;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>`,
-          className: "",
-          iconSize: [18, 18],
-          iconAnchor: [9, 9],
-        });
-        const m = L.marker(endPoint, { icon: endIcon }).addTo(map);
-        markersRef.current.push(m);
-      }
+        if (endPoint) {
+          const endIcon = L.divIcon({
+            html: `<div style="background:#ef4444;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>`,
+            className: "",
+            iconSize: [18, 18],
+            iconAnchor: [9, 9],
+          });
+          const m = L.marker(endPoint, { icon: endIcon }).addTo(map);
+          markersRef.current.push(m);
+        }
 
-      waypoints.forEach((wp, i) => {
-        const wpIcon = L.divIcon({
-          html: `<div style="background:#8b5cf6;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white">${i + 1}</div>`,
-          className: "",
-          iconSize: [16, 16],
-          iconAnchor: [8, 8],
+        waypoints.forEach((wp, i) => {
+          const wpIcon = L.divIcon({
+            html: `<div style="background:#8b5cf6;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white">${i + 1}</div>`,
+            className: "",
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+          });
+          const m = L.marker([wp.lat, wp.lng], { icon: wpIcon })
+            .bindPopup(`<div style="font-size:12px;font-weight:600">Stopover ${i + 1}</div><div style="font-size:11px;color:#666">${wp.name}</div>`)
+            .addTo(map);
+          markersRef.current.push(m);
         });
-        const m = L.marker([wp.lat, wp.lng], { icon: wpIcon })
-          .bindPopup(`<div style="font-size:12px;font-weight:600">Stopover ${i + 1}</div><div style="font-size:11px;color:#666">${wp.name}</div>`)
-          .addTo(map);
-        markersRef.current.push(m);
-      });
+      }
 
       if (polylineRef.current) {
         map.removeLayer(polylineRef.current);
@@ -521,7 +542,7 @@ function RouteMap({
         map.setView(startPoint, 15);
       }
     });
-  }, [startPoint, endPoint, routeCoords, waypoints]);
+  }, [startPoint, endPoint, routeCoords, waypoints, routePoints, mapMode]);
 
   useEffect(() => {
     if (!mapInstance.current) return;
@@ -568,7 +589,7 @@ function RouteMap({
         className={`w-full rounded-xl overflow-hidden border border-border shadow-sm transition-all ${
           routeCoords.length > 0 ? "h-80 sm:h-96" : "h-56 sm:h-64"
         }`}
-        style={{ cursor: mapMode === "pin" ? "crosshair" : "grab" }}
+        style={{ cursor: mapMode === "pin" || mapMode === "waypoint" ? "crosshair" : "grab" }}
         data-testid="route-map"
       />
       {mapMode === "pin" && (
@@ -576,6 +597,14 @@ function RouteMap({
           <div className="bg-card/95 backdrop-blur-md px-4 py-2 rounded-full text-xs font-medium shadow-lg border border-border flex items-center gap-2">
             <div className={`w-2.5 h-2.5 rounded-full ${settingPoint === "start" ? "bg-emerald-500" : "bg-rose-500"} animate-pulse`} />
             Tap to set {settingPoint === "start" ? "start" : "finish"}
+          </div>
+        </div>
+      )}
+      {mapMode === "waypoint" && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
+          <div className="bg-card/95 backdrop-blur-md px-4 py-2 rounded-full text-xs font-medium shadow-lg border border-border flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
+            {routePoints.length === 0 ? "Tap to place your first point" : `${routePoints.length} point${routePoints.length > 1 ? "s" : ""} — tap to add more`}
           </div>
         </div>
       )}
@@ -622,7 +651,7 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [savedRouteId, setSavedRouteId] = useState<string | null>(null);
-  const [mapMode, setMapMode] = useState<"search" | "pin">("search");
+  const [mapMode, setMapMode] = useState<"search" | "pin" | "waypoint">("search");
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
   const [pois, setPois] = useState<POI[]>([]);
   const [showPois, setShowPois] = useState(true);
@@ -736,8 +765,14 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
     },
   });
 
+  const [routePoints, setRoutePoints] = useState<Waypoint[]>([]);
+
   const handleMapClick = useCallback(
     (lat: number, lng: number) => {
+      if (mapMode === "waypoint") {
+        setRoutePoints((prev) => [...prev, { lat, lng, name: `Point ${prev.length + 1}` }]);
+        return;
+      }
       if (mapMode !== "pin") return;
       if (settingPoint === "start") {
         setStartPoint([lat, lng]);
@@ -754,11 +789,39 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
   );
 
   useEffect(() => {
+    if (mapMode === "waypoint") return;
     if (startPoint && endPoint && startPoint[0] !== 0 && endPoint[0] !== 0) {
       setIsPlanning(true);
       planMutation.mutate({ mode: "foot" });
     }
   }, [startPoint, endPoint, waypoints]);
+
+  useEffect(() => {
+    if (mapMode !== "waypoint") return;
+    if (routePoints.length < 2) {
+      if (routePoints.length === 1) {
+        setStartPoint([routePoints[0].lat, routePoints[0].lng]);
+        setStartName(routePoints[0].name);
+      }
+      setEndPoint(null);
+      setEndName("");
+      setWaypoints([]);
+      setRouteCoords([]);
+      setDistance(0);
+      setRouteDuration(0);
+      return;
+    }
+    const first = routePoints[0];
+    const last = routePoints[routePoints.length - 1];
+    const middle = routePoints.slice(1, -1);
+    setStartPoint([first.lat, first.lng]);
+    setStartName(first.name);
+    setEndPoint([last.lat, last.lng]);
+    setEndName(last.name);
+    setWaypoints(middle);
+    setIsPlanning(true);
+    planMutation.mutate({ mode: "foot" });
+  }, [routePoints, mapMode]);
 
   useEffect(() => {
     if (routeCoords.length < 2) {
@@ -816,6 +879,7 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
     setSettingPoint("start");
     setCheckedItems({});
     setWaypoints([]);
+    setRoutePoints([]);
     setPois([]);
     setPoiFilter(null);
     setPoisExpanded(false);
@@ -832,7 +896,7 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
           variant={mapMode === "search" ? "default" : "outline"}
           size="sm"
           className="flex-1"
-          onClick={() => setMapMode("search")}
+          onClick={() => { if (mapMode === "waypoint") { handleReset(); } setMapMode("search"); }}
           data-testid="button-mode-search"
         >
           <Search className="h-3.5 w-3.5 mr-1.5" />
@@ -842,11 +906,21 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
           variant={mapMode === "pin" ? "default" : "outline"}
           size="sm"
           className="flex-1"
-          onClick={() => setMapMode("pin")}
+          onClick={() => { if (mapMode === "waypoint") { handleReset(); } setMapMode("pin"); }}
           data-testid="button-mode-pin"
         >
           <MousePointerClick className="h-3.5 w-3.5 mr-1.5" />
           Pin Drop
+        </Button>
+        <Button
+          variant={mapMode === "waypoint" ? "default" : "outline"}
+          size="sm"
+          className="flex-1"
+          onClick={() => { setMapMode("waypoint"); handleReset(); }}
+          data-testid="button-mode-waypoint"
+        >
+          <RouteIcon className="h-3.5 w-3.5 mr-1.5" />
+          Waypoints
         </Button>
       </div>
 
@@ -897,10 +971,15 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
         endPoint={endPoint}
         routeCoords={routeCoords}
         waypoints={waypoints}
+        routePoints={routePoints}
         onMapClick={handleMapClick}
         onPoiStopover={(poi) => {
-          if (waypoints.some(w => w.lat === poi.lat && w.lng === poi.lng)) return;
-          setWaypoints((prev) => [...prev, { lat: poi.lat, lng: poi.lng, name: poi.name }]);
+          if (mapMode === "waypoint") {
+            setRoutePoints((prev) => [...prev, { lat: poi.lat, lng: poi.lng, name: poi.name }]);
+          } else {
+            if (waypoints.some(w => w.lat === poi.lat && w.lng === poi.lng)) return;
+            setWaypoints((prev) => [...prev, { lat: poi.lat, lng: poi.lng, name: poi.name }]);
+          }
         }}
         mapMode={mapMode}
         settingPoint={settingPoint}
@@ -915,13 +994,81 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
         </div>
       )}
 
-      {(startPoint || endPoint) && (
+      {(startPoint || endPoint || routePoints.length > 0) && (
         <Button variant="ghost" size="sm" onClick={handleReset} className="w-full" data-testid="button-reset-route">
           <X className="h-3.5 w-3.5 mr-1" /> Clear route
         </Button>
       )}
 
-      {waypoints.length > 0 && (
+      {mapMode === "waypoint" && routePoints.length > 0 && (
+        <Card>
+          <CardContent className="py-3 px-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <RouteIcon className="h-3.5 w-3.5 text-blue-500" />
+                Route Points ({routePoints.length})
+              </p>
+              <div className="flex items-center gap-1">
+                {routePoints.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setRoutePoints((prev) => prev.slice(0, -1))}
+                    data-testid="button-undo-waypoint"
+                  >
+                    <ArrowLeft className="h-3 w-3 mr-1" /> Undo
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setRoutePoints([])}
+                  data-testid="button-clear-route-points"
+                >
+                  <X className="h-3 w-3 mr-1" /> Clear all
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-1">
+              {routePoints.map((rp, i) => {
+                const isFirst = i === 0;
+                const isLast = i === routePoints.length - 1 && routePoints.length > 1;
+                const bgColor = isFirst ? "bg-emerald-500" : isLast ? "bg-rose-500" : "bg-blue-500";
+                const containerBg = isFirst ? "bg-emerald-50 dark:bg-emerald-950/30" : isLast ? "bg-rose-50 dark:bg-rose-950/30" : "bg-blue-50 dark:bg-blue-950/30";
+                const label = isFirst ? "Start" : isLast ? "Finish" : `Waypoint ${i}`;
+                return (
+                  <div key={`rp-${i}`} className={`flex items-center gap-2 py-1.5 px-2 rounded-lg ${containerBg}`}>
+                    <div className={`w-5 h-5 rounded-full ${bgColor} flex items-center justify-center shrink-0`}>
+                      <span className="text-[10px] font-bold text-white">{i + 1}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium">{label}</span>
+                      <span className="text-xs text-muted-foreground ml-1.5">
+                        ({rp.lat.toFixed(4)}, {rp.lng.toFixed(4)})
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setRoutePoints((prev) => prev.filter((_, idx) => idx !== i))}
+                      data-testid={`button-remove-route-point-${i}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+            {routePoints.length < 2 && (
+              <p className="text-xs text-muted-foreground text-center mt-2 py-1">
+                Add at least 2 points to calculate a route
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {mapMode !== "waypoint" && waypoints.length > 0 && (
         <Card>
           <CardContent className="py-3 px-4">
             <div className="flex items-center justify-between mb-2">

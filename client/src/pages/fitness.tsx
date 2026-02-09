@@ -1050,8 +1050,8 @@ function MemoriesTab() {
 
 const FITNESS_HELP_ITEMS = [
   { icon: Play, title: "Recording an Activity", desc: "Tap Record, choose your activity type (walk, run, or cycle), then tap Start. Your GPS position, distance, steps, and calories are tracked live. Tap Stop when finished." },
-  { icon: Navigation, title: "Route Planning", desc: "In the Routes tab, search an address or drop a pin for start and finish points. OSRM calculates the route with walk, run, and cycle time estimates." },
-  { icon: MapPin, title: "Stopovers", desc: "After planning a route, nearby Places of Interest appear along your path. Tap any place to add it as a stopover. You can add multiple stopovers and they will be included in your route." },
+  { icon: Navigation, title: "Route Planning", desc: "In the Routes tab, search an address, drop a pin, or use Waypoints mode to click your entire route on the map point by point. OSRM calculates the route with walk, run, and cycle time estimates." },
+  { icon: MapPin, title: "Stopovers & Waypoints", desc: "Use Waypoints mode to tap the map and build your route step by step — each click adds a numbered point. Or add stopovers from nearby Places of Interest. Remove or undo points at any time." },
   { icon: Camera, title: "Activity Memories", desc: "In the Memories tab, upload photos from your activities. Add captions and dates to build a visual diary of your fitness journey." },
   { icon: BarChart3, title: "Activity History", desc: "The History tab shows all your recorded activities with distance, duration, pace, and calories. Tap any activity to view the full GPS track on a map." },
   { icon: Target, title: "Steps & Calories", desc: "Steps are estimated from your movement during recording. Calorie estimates factor in activity type, distance, and duration." },
