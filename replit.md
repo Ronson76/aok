@@ -117,7 +117,9 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - connect-pg-simple
 
 ### APIs & Services
-- **Resend**: For all email notifications (contact confirmation, successful check-in, missed check-in alerts, password reset).
+- **Resend**: Primary email provider (contact confirmation, successful check-in, missed check-in alerts, password reset).
+- **SendGrid**: Email fallback provider (automatic failover from Resend).
+- **Gmail/Outlook**: Additional email fallback providers via Replit connectors.
 - **Twilio**: For SMS alerts and automated voice calls for emergencies and missed check-ins.
 - **what3words**: Integrates precise location sharing (three-word addresses) into emergency alerts.
 - **OSRM**: Free routing engine for calculating route geometry and distances (no API key needed).
@@ -126,3 +128,10 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Ecologi**: Environmental impact tracking and automatic tree planting for new subscribers.
 - **OpenAI**: For AI chat features (GPT-4o for responses, TTS for voice output, Whisper API for speech-to-text).
 - **Leaflet/OpenStreetMap**: Route map rendering for fitness activity GPS tracks.
+
+### Service Resilience (`server/serviceResilience.ts`)
+- **Retry with exponential backoff**: Critical notification functions (email, SMS, voice) retry transient failures with jittered backoff.
+- **Email fallback chain**: Resend -> SendGrid -> Gmail -> Outlook. If the primary provider fails, the system automatically tries the next.
+- **Circuit breaker**: After 5 consecutive failures, a service is marked as down and requests are short-circuited for 60s before retrying.
+- **Service health tracking**: In-memory tracking of success/failure counts, last error, and circuit state for all external services.
+- **Admin dashboard**: `/admin/service-health` shows real-time status of all 12 external services (super_admin only).

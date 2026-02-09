@@ -4,6 +4,7 @@ import sgMail from '@sendgrid/mail';
 import twilio from 'twilio';
 import { google } from 'googleapis';
 import { Client } from '@microsoft/microsoft-graph-client';
+import { withRetry, withFallback, recordSuccess, recordFailure, isCircuitOpen, type ServiceName } from "./serviceResilience";
 
 // Helper to format date in British format (DD/MM/YYYY HH:mm)
 function formatDate(date: Date): string {
@@ -557,45 +558,87 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#039;');
 }
 
-async function sendEmail(to: string, subject: string, body: string, html?: string): Promise<void> {
-  console.log(`[EMAIL] Attempting to send email to ${to}, subject: ${subject}`);
+async function sendEmailViaResend(to: string, subject: string, body: string, html?: string): Promise<void> {
+  const { client, fromEmail } = await getResendClient();
   
-  // Use Resend as primary email provider (support@aok.care)
-  try {
-    const { client, fromEmail } = await getResendClient();
-    console.log(`[EMAIL] Got Resend client, fromEmail: ${fromEmail}`);
-    
-    const emailData: {
-      from: string;
-      to: string[];
-      subject: string;
-      text: string;
-      html?: string;
-      headers?: Record<string, string>;
-    } = {
-      from: fromEmail || 'aok <support@aok.care>',
-      to: [to],
-      subject: subject,
-      text: body
-    };
-    
-    if (html) {
-      emailData.html = html;
-    }
-    
-    console.log(`[EMAIL] Sending email from ${emailData.from} to ${to}...`);
-    const result = await client.emails.send(emailData);
-    console.log(`[EMAIL] Resend API response:`, JSON.stringify(result));
-    
-    console.log(`[EMAIL] Successfully sent email via Resend to ${to}`);
-  } catch (error: any) {
-    console.error(`[EMAIL] Failed to send email to ${to}:`, error);
-    console.error(`[EMAIL] Error details - message: ${error?.message}, statusCode: ${error?.statusCode}, name: ${error?.name}`);
-    if (error?.response) {
-      console.error(`[EMAIL] Response body:`, JSON.stringify(error.response));
-    }
-    throw error;
+  const emailData: {
+    from: string;
+    to: string[];
+    subject: string;
+    text: string;
+    html?: string;
+  } = {
+    from: fromEmail || 'aok <support@aok.care>',
+    to: [to],
+    subject: subject,
+    text: body
+  };
+  
+  if (html) {
+    emailData.html = html;
   }
+  
+  const result = await client.emails.send(emailData);
+  console.log(`[EMAIL] Resend sent to ${to}, response: ${JSON.stringify(result)}`);
+}
+
+async function sendEmailViaSendGrid(to: string, subject: string, body: string, html?: string): Promise<void> {
+  const sgClient = await getSendGridClient();
+  if (!sgClient) {
+    throw new Error("SendGrid not configured");
+  }
+  
+  const msg: any = {
+    to,
+    from: sgClient.fromEmail,
+    subject,
+    text: body,
+  };
+  if (html) {
+    msg.html = html;
+  }
+  
+  await sgClient.client.send(msg);
+  console.log(`[EMAIL] SendGrid sent to ${to}`);
+}
+
+async function sendEmail(to: string, subject: string, body: string, html?: string): Promise<void> {
+  console.log(`[EMAIL] Sending to ${to}, subject: ${subject}`);
+  
+  await withFallback(
+    {
+      name: "Resend",
+      serviceName: "resend",
+      fn: () => withRetry(
+        () => sendEmailViaResend(to, subject, body, html),
+        { maxAttempts: 2, serviceName: "resend", operation: `email to ${to}` }
+      ),
+    },
+    {
+      name: "SendGrid",
+      serviceName: "sendgrid",
+      fn: () => withRetry(
+        () => sendEmailViaSendGrid(to, subject, body, html),
+        { maxAttempts: 2, serviceName: "sendgrid", operation: `email to ${to}` }
+      ),
+    },
+    {
+      name: "Gmail",
+      serviceName: "gmail",
+      fn: async () => {
+        const sent = await sendEmailViaGmail(to, subject, body, html);
+        if (!sent) throw new Error("Gmail send returned false");
+      },
+    },
+    {
+      name: "Outlook",
+      serviceName: "outlook",
+      fn: async () => {
+        const sent = await sendEmailViaOutlook(to, subject, body, html);
+        if (!sent) throw new Error("Outlook send returned false");
+      },
+    }
+  );
 }
 
 async function sendSMS(to: string, body: string): Promise<{ success: boolean; error?: string }> {
@@ -606,22 +649,29 @@ async function sendSMS(to: string, body: string): Promise<{ success: boolean; er
     return { success: false, error: "Twilio not configured" };
   }
 
-  try {
-    // Use official Twilio SDK with API Key authentication
-    const client = twilio(credentials.apiKey, credentials.apiKeySecret, {
-      accountSid: credentials.accountSid
-    });
-    
-    const message = await client.messages.create({
-      to: to,
-      from: credentials.phoneNumber,
-      body: body,
-    });
+  if (isCircuitOpen("twilio_sms")) {
+    console.warn(`[SMS] Circuit breaker open for Twilio SMS, skipping send to ${to}`);
+    return { success: false, error: "Twilio SMS service temporarily unavailable" };
+  }
 
-    console.log(`[SMS] Successfully sent SMS to ${to}, SID: ${message.sid}`);
+  try {
+    await withRetry(async () => {
+      const client = twilio(credentials.apiKey, credentials.apiKeySecret, {
+        accountSid: credentials.accountSid
+      });
+      
+      const message = await client.messages.create({
+        to: to,
+        from: credentials.phoneNumber,
+        body: body,
+      });
+
+      console.log(`[SMS] Successfully sent SMS to ${to}, SID: ${message.sid}`);
+    }, { maxAttempts: 3, serviceName: "twilio_sms", operation: `SMS to ${to}` });
+
     return { success: true };
   } catch (error: any) {
-    console.error(`[SMS] Error sending to ${to}:`, error);
+    console.error(`[SMS] All attempts failed for ${to}:`, error?.message);
     return { 
       success: false, 
       error: error.message || 'Unknown error' 
@@ -1909,9 +1959,16 @@ export async function makeVoiceCall(
     return { success: false, error: 'Twilio not configured' };
   }
 
+  if (isCircuitOpen("twilio_voice")) {
+    console.warn(`[VOICE CALL] Circuit breaker open for Twilio Voice, skipping call to ${phoneNumber}`);
+    return { success: false, error: "Twilio Voice service temporarily unavailable" };
+  }
+
   try {
-    // Create TwiML for text-to-speech
-    const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+    let callSid: string | undefined;
+
+    await withRetry(async () => {
+      const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Pause length="1"/>
   <Say voice="alice" language="en-GB">${escapeXml(message)}</Say>
@@ -1920,36 +1977,37 @@ export async function makeVoiceCall(
   <Pause length="2"/>
 </Response>`;
 
-    // Make API call to Twilio using API key authentication
-    const auth = Buffer.from(`${credentials.apiKey}:${credentials.apiKeySecret}`).toString('base64');
-    
-    const response = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${credentials.accountSid}/Calls.json`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          To: phoneNumber,
-          From: credentials.phoneNumber,
-          Twiml: twiml,
-        }).toString(),
+      const auth = Buffer.from(`${credentials.apiKey}:${credentials.apiKeySecret}`).toString('base64');
+      
+      const response = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${credentials.accountSid}/Calls.json`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            To: phoneNumber,
+            From: credentials.phoneNumber,
+            Twiml: twiml,
+          }).toString(),
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        callSid = result.sid;
+        console.log(`[VOICE CALL] Successfully initiated call to ${phoneNumber}, SID: ${result.sid}`);
+      } else {
+        throw new Error(result.message || `Call failed with status ${response.status}`);
       }
-    );
+    }, { maxAttempts: 2, serviceName: "twilio_voice", operation: `voice call to ${phoneNumber}` });
 
-    const result = await response.json();
-
-    if (response.ok) {
-      console.log(`[VOICE CALL] Successfully initiated call to ${phoneNumber}, SID: ${result.sid}`);
-      return { success: true, callSid: result.sid };
-    } else {
-      console.error(`[VOICE CALL] Failed to call ${phoneNumber}:`, result);
-      return { success: false, error: result.message || 'Call failed' };
-    }
+    return { success: true, callSid };
   } catch (error) {
-    console.error(`[VOICE CALL] Error calling ${phoneNumber}:`, error);
+    console.error(`[VOICE CALL] All attempts failed for ${phoneNumber}:`, error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 

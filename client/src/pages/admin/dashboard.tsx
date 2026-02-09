@@ -781,6 +781,16 @@ export default function AdminDashboard() {
                   Permissions
                 </Button>
               )}
+              {isSuperAdmin && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setLocation("/admin/service-health")}
+                  data-testid="nav-service-health"
+                >
+                  Health
+                </Button>
+              )}
             </nav>
           </div>
         </div>
