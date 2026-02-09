@@ -136,8 +136,9 @@ function calculateProjection(
   let annualRevenue: number;
 
   if (useAnnual) {
-    annualRevenue = annualFlatFee;
-    monthlyRevenue = annualRevenue / 12;
+    const perSeatMonthly = annualSeats > 0 ? annualFlatFee / annualSeats : 0;
+    monthlyRevenue = perSeatMonthly * totalUsers;
+    annualRevenue = monthlyRevenue * 12;
   } else {
     const activeTiers: PricingTab[] = [];
     if (activeTabs.has("tier1")) activeTiers.push("tier1");
@@ -431,10 +432,7 @@ function PricingTabs({
                       <div className="text-lg font-bold" data-testid="text-annual-per-seat">
                         {formatCurrency(annualSeats > 0 ? annualFlatFee / annualSeats : 0)}
                       </div>
-                      <div className="text-xs text-muted-foreground">per seat</div>
-                    </div>
-                    <div className="text-sm font-semibold text-muted-foreground" data-testid="text-annual-monthly">
-                      {formatCurrency(annualFlatFee / 12)}/mo revenue
+                      <div className="text-xs text-muted-foreground">/month per user</div>
                     </div>
                   </div>
                 ) : isEditing ? (
