@@ -118,8 +118,7 @@ export default function AdminDashboard() {
   const [showCreateOrgDialog, setShowCreateOrgDialog] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
   const [newOrgEmail, setNewOrgEmail] = useState("");
-  const [newOrgPassword, setNewOrgPassword] = useState("");
-  const [showNewOrgPassword, setShowNewOrgPassword] = useState(false);
+  
   const [showOrgFeatures, setShowOrgFeatures] = useState(false);
   const [requiredDocuments, setRequiredDocuments] = useState<string[]>([]);
   const legalDocumentOptions = [
@@ -484,7 +483,7 @@ export default function AdminDashboard() {
   });
 
   const createOrgMutation = useMutation({
-    mutationFn: async (data: { name: string; email: string; password: string; featureDefaults?: Record<string, boolean>; requiredDocuments?: string[] }) => {
+    mutationFn: async (data: { name: string; email: string; featureDefaults?: Record<string, boolean>; requiredDocuments?: string[] }) => {
       const response = await apiRequest("POST", "/api/admin/organizations", data);
       return response.json();
     },
@@ -495,12 +494,11 @@ export default function AdminDashboard() {
       setShowCreateOrgDialog(false);
       setNewOrgName("");
       setNewOrgEmail("");
-      setNewOrgPassword("");
       setShowOrgFeatures(false);
       setRequiredDocuments([]);
       toast({
         title: "Organisation created",
-        description: "The organisation account has been created successfully.",
+        description: "A setup invitation has been sent to the organisation's email address.",
       });
     },
     onError: (error: any) => {
@@ -560,7 +558,7 @@ export default function AdminDashboard() {
   };
   
   const handleCreateOrganization = (skipDocs?: boolean) => {
-    if (!newOrgName.trim() || !newOrgEmail.trim() || !newOrgPassword.trim()) {
+    if (!newOrgName.trim() || !newOrgEmail.trim()) {
       toast({
         title: "Missing fields",
         description: "Please fill in all fields.",
@@ -571,7 +569,6 @@ export default function AdminDashboard() {
     createOrgMutation.mutate({
       name: newOrgName.trim(),
       email: newOrgEmail.trim(),
-      password: newOrgPassword,
       featureDefaults: orgFeatureDefaults,
       requiredDocuments: skipDocs ? undefined : (requiredDocuments.length > 0 ? requiredDocuments : undefined),
     });
@@ -1099,7 +1096,29 @@ export default function AdminDashboard() {
                       <span>Created {org.createdAt ? format(new Date(org.createdAt), "dd/MM/yyyy") : "N/A"}</span>
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {isSuperAdmin && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const res = await apiRequest("POST", `/api/admin/organizations/${org.id}/resend-invite`);
+                            if (!res.ok) {
+                              const err = await res.json();
+                              throw new Error(err.error || "Failed to resend invite");
+                            }
+                            toast({ title: "Invite sent", description: `A new setup invitation has been sent to ${org.email}.` });
+                          } catch (err: any) {
+                            toast({ title: "Error", description: err.message, variant: "destructive" });
+                          }
+                        }}
+                        data-testid={`button-resend-org-invite-${org.id}`}
+                      >
+                        <Mail className="h-4 w-4 mr-1" />
+                        Resend Invite
+                      </Button>
+                    )}
                     {isSuperAdmin && (
                       <Button
                         variant="outline"
@@ -1658,7 +1677,7 @@ export default function AdminDashboard() {
                 Create Organisation
               </DialogTitle>
               <DialogDescription>
-                Create a new organisation account. Once created, you can assign bundles to it.
+                Create a new organisation account. A setup invitation will be sent to their email so they can set their own password.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -1683,35 +1702,7 @@ export default function AdminDashboard() {
                   data-testid="input-org-email"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="org-password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="org-password"
-                    type={showNewOrgPassword ? "text" : "password"}
-                    placeholder="Min 8 characters"
-                    value={newOrgPassword}
-                    onChange={(e) => setNewOrgPassword(e.target.value)}
-                    className="pr-10"
-                    autoComplete="off"
-                    data-testid="input-org-password"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                    onClick={() => setShowNewOrgPassword(!showNewOrgPassword)}
-                    data-testid="button-toggle-org-password"
-                  >
-                    {showNewOrgPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <EyeIcon className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                </div>
-              </div>
+              <p className="text-sm text-muted-foreground">A setup invitation will be sent to this email. The organisation will create their own password.</p>
               <div className="space-y-2">
                 <Button
                   type="button"

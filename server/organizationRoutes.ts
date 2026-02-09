@@ -1226,6 +1226,51 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
+  app.post("/api/org/auth/setup-password", async (req, res) => {
+    try {
+      const schema = z.object({
+        token: z.string().min(1, "Token is required"),
+        password: passwordSchema,
+      });
+
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
+      }
+
+      const { token, password } = parsed.data;
+
+      const tokenData = await storage.validatePasswordResetToken(token);
+      if (!tokenData) {
+        return res.status(400).json({ error: "Invalid or expired setup link. Please contact your administrator for a new invitation." });
+      }
+
+      const user = await storage.getUserById(tokenData.userId);
+      if (!user || user.accountType !== "organization") {
+        return res.status(400).json({ error: "Invalid setup link." });
+      }
+
+      const newPasswordHash = await bcrypt.hash(password, 10);
+      await storage.updateUserPassword(tokenData.userId, newPasswordHash);
+      await storage.markPasswordResetTokenUsed(tokenData.tokenId);
+
+      const session = await storage.createSession(tokenData.userId);
+
+      res.cookie("session_id", session.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+
+      const { passwordHash: _, ...profile } = user;
+      res.json({ success: true, user: profile, message: "Password set successfully. Welcome to aok!" });
+    } catch (error) {
+      console.error("Organisation setup password error:", error);
+      res.status(500).json({ error: "Failed to set password" });
+    }
+  });
+
   // Organisation change password (authenticated)
   app.post("/api/org/auth/change-password", requireOrganization, async (req, res) => {
     try {

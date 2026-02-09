@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon, Video, Scale, PenLine } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon, Video, Scale, PenLine, Share2, Copy } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -1274,7 +1274,35 @@ export default function OrganizationDashboard() {
             <h1 className="text-2xl font-bold" data-testid="text-org-dashboard-title">Organisation Dashboard</h1>
             <p className="text-muted-foreground">View your clients' check-in status and wellbeing</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const shareUrl = "https://aok.care/org/login";
+                const shareData = {
+                  title: "aok - Organisation Portal",
+                  text: "Access the aok Organisation Portal to manage safety check-ins for your team.",
+                  url: shareUrl,
+                };
+                try {
+                  if (navigator.share && navigator.canShare(shareData)) {
+                    await navigator.share(shareData);
+                  } else {
+                    await navigator.clipboard.writeText(shareUrl);
+                    toast({ title: "Link copied", description: "The organisation portal link has been copied to your clipboard." });
+                  }
+                } catch (err: any) {
+                  if (err.name !== "AbortError") {
+                    await navigator.clipboard.writeText(shareUrl);
+                    toast({ title: "Link copied", description: "The organisation portal link has been copied to your clipboard." });
+                  }
+                }
+              }}
+              data-testid="button-share-portal"
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
             <Link href="/org/lone-worker">
               <Button variant="outline" data-testid="button-lone-worker-hub">
                 <Shield className="h-4 w-4 mr-2" />

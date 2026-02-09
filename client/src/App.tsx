@@ -55,6 +55,7 @@ import OrganizationStaffLogin from "@/pages/org/staff-login";
 import OrgTeamLogin from "@/pages/org/team-login";
 import OrgForgotPassword from "@/pages/org/forgot-password";
 import OrgResetPassword from "@/pages/org/reset-password";
+import OrgSetupPassword from "@/pages/org/setup-password";
 import OrgSafeguarding from "@/pages/org/safeguarding";
 import OrgLoneWorkerHub from "@/pages/org/lone-worker-hub";
 import OrgMissedCheckInsReport from "@/pages/org/missed-checkins-report";
@@ -696,6 +697,10 @@ function Router() {
 
   if (location.startsWith("/org/reset-password")) {
     return <OrgResetPassword />;
+  }
+
+  if (location.startsWith("/org/setup-password")) {
+    return <OrgSetupPassword />;
   }
 
   if (location.startsWith("/org/team-invite")) {

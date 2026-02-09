@@ -2643,6 +2643,51 @@ export async function sendTeamMemberInviteEmail(
   }
 }
 
+export async function sendOrgSetupInviteEmail(
+  email: string,
+  orgName: string,
+  token: string
+): Promise<boolean> {
+  try {
+    const setupUrl = `https://aok.care/org/setup-password?token=${token}`;
+
+    const htmlEmail = createBrandedEmail({
+      recipientName: orgName,
+      subject: `Welcome to aok - Set Up Your Organisation Account`,
+      alertType: 'welcome',
+      mainContent: `
+        <p style="margin: 0 0 16px 0;">Your organisation account <strong>${orgName}</strong> has been created on aok.</p>
+        <p style="margin: 0 0 16px 0;">To get started, please click the button below to set your password and access your organisation dashboard.</p>
+        <p style="margin: 0 0 8px 0;">Once set up, you can:</p>
+        <ul style="margin: 0 0 16px 0; padding-left: 20px;">
+          <li>Manage clients and their check-in schedules</li>
+          <li>Monitor safety statuses in real time</li>
+          <li>Configure wellbeing features for your team</li>
+          <li>Save the web app to your desktop for quick access</li>
+        </ul>
+      `,
+      ctaButton: {
+        text: 'Set Up Your Password',
+        url: setupUrl,
+      },
+      customFooterNote: 'This link expires in 24 hours. If you did not expect this email, you can safely ignore it.',
+    });
+
+    await sendEmail(
+      email,
+      `Welcome to aok - Set Up Your Organisation Account`,
+      `Your organisation account "${orgName}" has been created on aok. Visit ${setupUrl} to set your password and get started. This link expires in 24 hours.`,
+      htmlEmail
+    );
+
+    console.log(`[ORG INVITE] Setup email sent to ${email} for org "${orgName}"`);
+    return true;
+  } catch (error) {
+    console.error(`[ORG INVITE] Failed to send setup email to ${email}:`, error);
+    return false;
+  }
+}
+
 export async function sendAdminInviteEmail(
   email: string,
   name: string,
