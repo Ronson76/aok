@@ -145,9 +145,9 @@ function calculateProjection(
     t3Users * costModel.tier3_monthly +
     orgSeats * costModel.org_monthly;
 
-  if (useAnnual) {
-    const perSeatMonthly = annualSeats > 0 ? annualFlatFee / annualSeats : 0;
-    monthlyRevenue += perSeatMonthly * annualSeats;
+  if (useAnnual && annualSeats > 0) {
+    const perSeatMonthly = annualFlatFee / annualSeats;
+    monthlyRevenue += perSeatMonthly * totalUsers;
   }
 
   annualRevenue = monthlyRevenue * 12;
