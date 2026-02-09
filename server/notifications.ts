@@ -719,7 +719,7 @@ export async function sendContactConfirmationEmail(
   confirmationToken: string,
   baseUrl: string
 ): Promise<{ sent: boolean; error?: string }> {
-  const isOrganization = user.accountType === "organization";
+  const isOrganization = user.accountType === "organization" && !!user.referenceId;
   const contactName = escapeHtml(contact.name);
   const userName = escapeHtml(getUserDisplayName(user));
   const referenceId = escapeHtml(user.referenceId || '');
@@ -864,7 +864,7 @@ export async function sendContactAddedNotification(
     voiceCall: { sent: false },
   };
 
-  const isOrganization = user.accountType === "organization";
+  const isOrganization = user.accountType === "organization" && !!user.referenceId;
   const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `${displayName} (Reference ID: ${user.referenceId})`
@@ -915,7 +915,7 @@ export async function sendPrimaryContactPromotionNotification(
   contact: Contact,
   user: User
 ): Promise<boolean> {
-  const isOrganization = user.accountType === "organization";
+  const isOrganization = user.accountType === "organization" && !!user.referenceId;
   const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `Reference ${user.referenceId}` 
@@ -959,7 +959,7 @@ export async function sendContactRemovedNotification(
   contact: Contact,
   user: User
 ): Promise<boolean> {
-  const isOrganization = user.accountType === "organization";
+  const isOrganization = user.accountType === "organization" && !!user.referenceId;
   const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `Reference ${user.referenceId}` 
@@ -1121,7 +1121,7 @@ export async function sendMissedCheckInAlert(
   user: User,
   additionalInfo?: string | null
 ): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number; whatsappSent: number; whatsappFailed: number }> {
-  const isOrganization = user.accountType === "organization";
+  const isOrganization = user.accountType === "organization" && !!user.referenceId;
   const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `Reference ID: ${user.referenceId}` 
@@ -1279,7 +1279,7 @@ export async function sendSuccessfulCheckInNotification(
   primaryContact: Contact,
   user: User
 ): Promise<boolean> {
-  const isOrganization = user.accountType === "organization";
+  const isOrganization = user.accountType === "organization" && !!user.referenceId;
   const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `Reference ${user.referenceId}` 
@@ -1338,7 +1338,7 @@ export async function sendSchedulePreferencesNotification(
   scheduleTime: string,
   intervalHours: number
 ): Promise<{ emailsSent: number; emailsFailed: number }> {
-  const isOrganization = user.accountType === "organization";
+  const isOrganization = user.accountType === "organization" && !!user.referenceId;
   const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `Reference ${user.referenceId}` 
@@ -1398,7 +1398,7 @@ export async function sendEmergencyAlert(
   isLocationUpdate: boolean = false,
   additionalInfo?: string | null
 ): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number; whatsappSent: number; whatsappFailed: number }> {
-  const isOrganization = user.accountType === "organization";
+  const isOrganization = user.accountType === "organization" && !!user.referenceId;
   const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `Reference ID: ${user.referenceId}` 
@@ -2049,7 +2049,7 @@ export async function sendVoiceAlerts(
     return { callsMade: 0, callsFailed: 0 };
   }
 
-  const isOrganization = user.accountType === "organization";
+  const isOrganization = user.accountType === "organization" && !!user.referenceId;
   const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `Reference ${user.referenceId}` 
@@ -2085,7 +2085,7 @@ export async function sendLogoutNotification(
 ): Promise<{ sent: boolean; error?: string }> {
   const result = { sent: false, error: undefined as string | undefined };
 
-  const isOrganization = user.accountType === "organization";
+  const isOrganization = user.accountType === "organization" && !!user.referenceId;
   const displayName = getUserDisplayName(user);
   const identifier = isOrganization 
     ? `${displayName} (Reference ID: ${user.referenceId})`
