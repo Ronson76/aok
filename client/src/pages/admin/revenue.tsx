@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,31 +8,45 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdmin } from "@/contexts/admin-context";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   ShieldCheck, ArrowLeft, LogOut, TrendingUp, Users, DollarSign,
   PoundSterling, TreePine, Phone, Mail, Smartphone, Headphones,
-  Server, CreditCard, Calculator, BarChart3, Percent, KeyRound
+  Server, CreditCard, Calculator, BarChart3, Percent, KeyRound,
+  Save, RotateCcw, Settings2, Pencil
 } from "lucide-react";
-import type { DashboardStats } from "@shared/schema";
+import type { DashboardStats, PricingConfig } from "@shared/schema";
 
-const COST_MODEL = {
-  smsPerUnit: 0.04,
-  voiceCallPerUnit: 0.12,
-  emailPerUnit: 0.001,
-  emergencyAlertPerUnit: 0.20,
-  aiChatPerConversation: 0.03,
-  aiVoicePerSession: 0.04,
-  ecologiPerSignup: 0.60,
-  stripeFeePercent: 1.4,
-  stripeFeeFixed: 0.20,
-  tier1MonthlyPrice: 6.99,
-  tier1YearlyPrice: 69.99,
-  tier2MonthlyPrice: 9.99,
-  tier2YearlyPrice: 99.99,
-  individualMonthlyPrice: 8.49,
-  individualYearlyPrice: 84.99,
-  orgSeatAveragePrice: 4.99,
+const DEFAULT_COST_MODEL = {
+  sms_per_unit: 0.04,
+  voice_call_per_unit: 0.12,
+  email_per_unit: 0.001,
+  emergency_alert_per_unit: 0.20,
+  ai_chat_per_conversation: 0.03,
+  ai_voice_per_session: 0.04,
+  ecologi_per_signup: 0.60,
+  stripe_fee_percent: 1.4,
+  stripe_fee_fixed: 0.20,
+  tier1_monthly: 6.99,
+  tier1_yearly: 69.99,
+  tier2_monthly: 9.99,
+  tier2_yearly: 99.99,
+  individual_monthly: 8.49,
+  individual_yearly: 84.99,
+  org_seat_average: 4.99,
 };
+
+function buildCostModel(pricingData: PricingConfig[] | undefined): typeof DEFAULT_COST_MODEL {
+  if (!pricingData || pricingData.length === 0) return DEFAULT_COST_MODEL;
+  const model = { ...DEFAULT_COST_MODEL };
+  for (const item of pricingData) {
+    if (item.key in model) {
+      (model as any)[item.key] = item.value;
+    }
+  }
+  return model;
+}
 
 const HOSTING_TIERS: { maxUsers: number; monthlyCost: number; description: string }[] = [
   { maxUsers: 1000, monthlyCost: 10, description: "Autoscale / Small VM" },
@@ -75,40 +89,41 @@ function calculateProjection(
   orgPercent: number,
   missedCheckinRate: number,
   aiUsageRate: number,
-  supervisorCallRate: number = 0.05
+  supervisorCallRate: number = 0.05,
+  costModel: typeof DEFAULT_COST_MODEL = DEFAULT_COST_MODEL
 ): ProjectionResult {
   const orgSeats = Math.round(totalUsers * (orgPercent / 100));
   const individualUsers = totalUsers - orgSeats;
 
   const monthlyRevenue =
-    individualUsers * COST_MODEL.individualMonthlyPrice +
-    orgSeats * COST_MODEL.orgSeatAveragePrice;
+    individualUsers * costModel.individual_monthly +
+    orgSeats * costModel.org_seat_average;
 
   const annualRevenue = monthlyRevenue * 12;
 
   const missedPerMonth = totalUsers * missedCheckinRate * 30;
-  const twilioMonthlySms = missedPerMonth * COST_MODEL.smsPerUnit;
-  const twilioMonthlyVoice = missedPerMonth * 0.3 * COST_MODEL.voiceCallPerUnit;
+  const twilioMonthlySms = missedPerMonth * costModel.sms_per_unit;
+  const twilioMonthlyVoice = missedPerMonth * 0.3 * costModel.voice_call_per_unit;
   const supervisorCallsPerMonth = orgSeats * supervisorCallRate * 30;
-  const twilioSupervisor = supervisorCallsPerMonth * COST_MODEL.voiceCallPerUnit;
+  const twilioSupervisor = supervisorCallsPerMonth * costModel.voice_call_per_unit;
   const twilioMonthly = twilioMonthlySms + twilioMonthlyVoice + twilioSupervisor;
 
   const emailsPerMonth = missedPerMonth + totalUsers * 0.5;
-  const resendMonthly = emailsPerMonth * COST_MODEL.emailPerUnit;
+  const resendMonthly = emailsPerMonth * costModel.email_per_unit;
 
   const aiSessionsPerMonth = totalUsers * aiUsageRate * 30;
   const openaiMonthly =
-    aiSessionsPerMonth * 0.8 * COST_MODEL.aiChatPerConversation +
-    aiSessionsPerMonth * 0.2 * COST_MODEL.aiVoicePerSession;
+    aiSessionsPerMonth * 0.8 * costModel.ai_chat_per_conversation +
+    aiSessionsPerMonth * 0.2 * costModel.ai_voice_per_session;
 
   const stripeMonthly =
-    monthlyRevenue * (COST_MODEL.stripeFeePercent / 100) +
-    totalUsers * COST_MODEL.stripeFeeFixed;
+    monthlyRevenue * (costModel.stripe_fee_percent / 100) +
+    totalUsers * costModel.stripe_fee_fixed;
 
   const hosting = getHostingCost(totalUsers);
 
   const totalMonthlyCosts = hosting.cost + twilioMonthly + resendMonthly + openaiMonthly + stripeMonthly;
-  const ecologiOneOff = totalUsers * COST_MODEL.ecologiPerSignup;
+  const ecologiOneOff = totalUsers * costModel.ecologi_per_signup;
   const annualCosts = totalMonthlyCosts * 12;
   const annualProfit = annualRevenue - annualCosts;
   const grossMargin = annualRevenue > 0 ? (annualProfit / annualRevenue) * 100 : 0;
@@ -184,9 +199,232 @@ function ProjectionRow({ projection, highlight }: { projection: ProjectionResult
   );
 }
 
+function PricingEditor({ pricingData, isSuperAdmin }: { pricingData: PricingConfig[] | undefined; isSuperAdmin: boolean }) {
+  const { toast } = useToast();
+  const [editValues, setEditValues] = useState<Record<string, string>>({});
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (pricingData) {
+      const values: Record<string, string> = {};
+      for (const item of pricingData) {
+        values[item.key] = item.value.toString();
+      }
+      setEditValues(values);
+    }
+  }, [pricingData]);
+
+  const saveMutation = useMutation({
+    mutationFn: async (updates: { key: string; value: number }[]) => {
+      const res = await apiRequest("PUT", "/api/admin/pricing", { updates });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pricing"] });
+      toast({ title: "Pricing updated", description: "All pricing changes have been saved." });
+      setIsEditing(false);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update pricing.", variant: "destructive" });
+    },
+  });
+
+  const handleSave = () => {
+    const updates: { key: string; value: number }[] = [];
+    for (const [key, val] of Object.entries(editValues)) {
+      const numVal = parseFloat(val);
+      if (isNaN(numVal) || numVal < 0) {
+        toast({ title: "Invalid value", description: `Please enter a valid number for all fields.`, variant: "destructive" });
+        return;
+      }
+      const original = pricingData?.find(p => p.key === key);
+      if (original && original.value !== numVal) {
+        updates.push({ key, value: numVal });
+      }
+    }
+    if (updates.length === 0) {
+      toast({ title: "No changes", description: "No pricing values were changed." });
+      setIsEditing(false);
+      return;
+    }
+    saveMutation.mutate(updates);
+  };
+
+  const handleReset = () => {
+    if (pricingData) {
+      const values: Record<string, string> = {};
+      for (const item of pricingData) {
+        values[item.key] = item.value.toString();
+      }
+      setEditValues(values);
+    }
+    setIsEditing(false);
+  };
+
+  if (!pricingData || pricingData.length === 0) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Skeleton className="h-4 w-4" />
+            <span className="text-sm">Loading pricing configuration...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const subscriptionItems = pricingData.filter(p => p.category === "subscription");
+  const costItems = pricingData.filter(p => p.category === "costs");
+
+  const hasChanges = pricingData.some(item => {
+    const editVal = parseFloat(editValues[item.key] || "0");
+    return item.value !== editVal;
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h2 className="text-2xl font-semibold flex items-center gap-2" data-testid="text-pricing-config">
+            <Settings2 className="w-5 h-5" />
+            Tier Pricing & Cost Configuration
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Edit subscription prices and per-unit costs. Changes update all revenue projections.
+          </p>
+        </div>
+        {isSuperAdmin && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {isEditing ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReset}
+                  disabled={saveMutation.isPending}
+                  data-testid="button-pricing-cancel"
+                >
+                  <RotateCcw className="w-4 h-4 mr-1" />
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={saveMutation.isPending || !hasChanges}
+                  data-testid="button-pricing-save"
+                >
+                  <Save className="w-4 h-4 mr-1" />
+                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+                data-testid="button-pricing-edit"
+              >
+                <Pencil className="w-4 h-4 mr-1" />
+                Edit Pricing
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <PoundSterling className="w-4 h-4" />
+              Subscription Pricing
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {subscriptionItems.map((item) => (
+              <div key={item.key} className="flex items-center justify-between gap-4">
+                <Label className="text-sm flex-1 min-w-0" data-testid={`label-pricing-${item.key}`}>
+                  {item.label}
+                </Label>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm text-muted-foreground">£</span>
+                  {isEditing ? (
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={editValues[item.key] || ""}
+                      onChange={(e) => setEditValues(prev => ({ ...prev, [item.key]: e.target.value }))}
+                      className="w-24 text-right"
+                      data-testid={`input-pricing-${item.key}`}
+                    />
+                  ) : (
+                    <span className="text-sm font-semibold w-24 text-right inline-block" data-testid={`text-pricing-value-${item.key}`}>
+                      {item.value.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Per-Unit Costs
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {costItems.map((item) => (
+              <div key={item.key} className="flex items-center justify-between gap-4">
+                <Label className="text-sm flex-1 min-w-0" data-testid={`label-pricing-${item.key}`}>
+                  {item.label}
+                  {item.key === "stripe_fee_percent" && <span className="text-muted-foreground ml-1">(%)</span>}
+                </Label>
+                <div className="flex items-center gap-1">
+                  {item.key !== "stripe_fee_percent" && <span className="text-sm text-muted-foreground">£</span>}
+                  {isEditing ? (
+                    <Input
+                      type="number"
+                      step={item.key === "email_per_unit" ? "0.001" : "0.01"}
+                      min="0"
+                      value={editValues[item.key] || ""}
+                      onChange={(e) => setEditValues(prev => ({ ...prev, [item.key]: e.target.value }))}
+                      className="w-24 text-right"
+                      data-testid={`input-pricing-${item.key}`}
+                    />
+                  ) : (
+                    <span className="text-sm font-semibold w-24 text-right inline-block" data-testid={`text-pricing-value-${item.key}`}>
+                      {item.key === "stripe_fee_percent" ? `${item.value}%` : item.value.toFixed(item.key === "email_per_unit" ? 3 : 2)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      {isEditing && hasChanges && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="pt-4">
+            <p className="text-sm text-amber-700 dark:text-amber-400">
+              You have unsaved changes. Changes will immediately update all revenue projections and cost calculations on this page.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 export default function AdminRevenue() {
   const { admin, logout } = useAdmin();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const [customUsers, setCustomUsers] = useState(1000);
   const [orgPercent, setOrgPercent] = useState(30);
@@ -198,6 +436,15 @@ export default function AdminRevenue() {
     queryKey: ["/api/admin/dashboard/stats"],
   });
 
+  const isSuperAdmin = admin?.role === "super_admin";
+
+  const { data: pricingData } = useQuery<PricingConfig[]>({
+    queryKey: ["/api/admin/pricing"],
+    enabled: isSuperAdmin,
+  });
+
+  const costModel = useMemo(() => buildCostModel(pricingData), [pricingData]);
+
   const currentProjection = useMemo(() => {
     if (!stats) return null;
     const total = stats.totalUsers || 1;
@@ -205,25 +452,23 @@ export default function AdminRevenue() {
     const missRate = stats.totalCheckIns > 0
       ? (stats.totalMissedCheckIns / (stats.totalCheckIns + stats.totalMissedCheckIns))
       : 0.05;
-    return calculateProjection(total, orgPct, missRate, aiUsageRate, supervisorCallRate);
-  }, [stats, aiUsageRate, supervisorCallRate]);
+    return calculateProjection(total, orgPct, missRate, aiUsageRate, supervisorCallRate, costModel);
+  }, [stats, aiUsageRate, supervisorCallRate, costModel]);
 
   const scaleProjections = useMemo(() => {
     return [500, 1000, 2500, 5000, 10000, 25000, 50000].map(
-      (n) => calculateProjection(n, orgPercent, missedRate, aiUsageRate, supervisorCallRate)
+      (n) => calculateProjection(n, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel)
     );
-  }, [orgPercent, missedRate, aiUsageRate, supervisorCallRate]);
+  }, [orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel]);
 
   const customProjection = useMemo(() => {
-    return calculateProjection(customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate);
-  }, [customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate]);
+    return calculateProjection(customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel);
+  }, [customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel]);
 
   const handleLogout = async () => {
     await logout();
     setLocation("/admin/login");
   };
-
-  const isSuperAdmin = admin?.role === "super_admin";
 
   return (
     <div className="min-h-screen bg-background">
@@ -251,6 +496,10 @@ export default function AdminRevenue() {
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
+        {isSuperAdmin && (
+          <PricingEditor pricingData={pricingData} isSuperAdmin={isSuperAdmin} />
+        )}
+
         <section>
           <h2 className="text-2xl font-semibold mb-4" data-testid="text-current-overview">Current Overview</h2>
           {isLoading ? (
@@ -345,7 +594,7 @@ export default function AdminRevenue() {
                     <span className="text-sm font-medium">Stripe Fees</span>
                   </div>
                   <div className="text-xl font-bold">{formatCurrency(currentProjection.monthlyCosts.stripe)}</div>
-                  <p className="text-xs text-muted-foreground mt-1">1.4% + 20p per transaction</p>
+                  <p className="text-xs text-muted-foreground mt-1">{costModel.stripe_fee_percent}% + {formatCurrency(costModel.stripe_fee_fixed)} per transaction</p>
                 </CardContent>
               </Card>
             </div>
@@ -367,19 +616,19 @@ export default function AdminRevenue() {
                   </thead>
                   <tbody>
                     {[
-                      { feature: "SMS check-in reminder", driver: "Twilio SMS", cost: "£0.04" },
-                      { feature: "Missed check-in voice call", driver: "Twilio Voice", cost: "£0.08 to £0.15" },
-                      { feature: "Email alert", driver: "Resend", cost: "£0.001" },
-                      { feature: "Emergency GPS alert", driver: "Twilio + Resend + w3w", cost: "£0.15 to £0.25" },
-                      { feature: "Call Supervisor (org clients)", driver: "Twilio Voice", cost: "£0.08 to £0.15" },
-                      { feature: "AI Wellbeing Chat", driver: "OpenAI GPT-4o", cost: "£0.01 to £0.05" },
-                      { feature: "AI Voice Chat", driver: "OpenAI Whisper + TTS", cost: "£0.02 to £0.06" },
+                      { feature: "SMS check-in reminder", driver: "Twilio SMS", cost: formatCurrency(costModel.sms_per_unit) },
+                      { feature: "Missed check-in voice call", driver: "Twilio Voice", cost: `${formatCurrency(costModel.voice_call_per_unit * 0.67)} to ${formatCurrency(costModel.voice_call_per_unit * 1.25)}` },
+                      { feature: "Email alert", driver: "Resend", cost: formatCurrency(costModel.email_per_unit) },
+                      { feature: "Emergency GPS alert", driver: "Twilio + Resend + w3w", cost: `${formatCurrency(costModel.emergency_alert_per_unit * 0.75)} to ${formatCurrency(costModel.emergency_alert_per_unit * 1.25)}` },
+                      { feature: "Call Supervisor (org clients)", driver: "Twilio Voice", cost: `${formatCurrency(costModel.voice_call_per_unit * 0.67)} to ${formatCurrency(costModel.voice_call_per_unit * 1.25)}` },
+                      { feature: "AI Wellbeing Chat", driver: "OpenAI GPT-4o", cost: `${formatCurrency(costModel.ai_chat_per_conversation * 0.33)} to ${formatCurrency(costModel.ai_chat_per_conversation * 1.67)}` },
+                      { feature: "AI Voice Chat", driver: "OpenAI Whisper + TTS", cost: `${formatCurrency(costModel.ai_voice_per_session * 0.5)} to ${formatCurrency(costModel.ai_voice_per_session * 1.5)}` },
                       { feature: "GPS fitness tracking", driver: "Built-in (Leaflet/OSM)", cost: "£0.00" },
-                      { feature: "Ecologi tree planting", driver: "Ecologi", cost: "£0.60 (one-off)" },
-                      { feature: "Payment processing", driver: "Stripe", cost: "1.4% + 20p" },
-                      { feature: "Essential subscription", driver: "Tier 1", cost: "£6.99/mo or £69.99/yr" },
-                      { feature: "Complete Wellbeing subscription", driver: "Tier 2", cost: "£9.99/mo or £99.99/yr" },
-                      { feature: "Organisation seat (avg.)", driver: "Custom bundles", cost: "£4.99/mo avg." },
+                      { feature: "Ecologi tree planting", driver: "Ecologi", cost: `${formatCurrency(costModel.ecologi_per_signup)} (one-off)` },
+                      { feature: "Payment processing", driver: "Stripe", cost: `${costModel.stripe_fee_percent}% + ${formatCurrency(costModel.stripe_fee_fixed)}` },
+                      { feature: "Essential subscription", driver: "Tier 1", cost: `${formatCurrency(costModel.tier1_monthly)}/mo or ${formatCurrency(costModel.tier1_yearly)}/yr` },
+                      { feature: "Complete Wellbeing subscription", driver: "Tier 2", cost: `${formatCurrency(costModel.tier2_monthly)}/mo or ${formatCurrency(costModel.tier2_yearly)}/yr` },
+                      { feature: "Organisation seat (avg.)", driver: "Custom bundles", cost: `${formatCurrency(costModel.org_seat_average)}/mo avg.` },
                     ].map((row, i) => (
                       <tr key={i} className={i % 2 === 0 ? "bg-muted/30" : ""}>
                         <td className="py-3 px-4 font-medium">{row.feature}</td>
@@ -527,114 +776,52 @@ export default function AdminRevenue() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <BarChart3 className="w-4 h-4" />
-                  Revenue Projection
+                  Projection for {customUsers.toLocaleString()} Users
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Monthly revenue</span>
-                  <span className="text-sm font-medium text-green-600">{formatCurrency(customProjection.monthlyRevenue)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Annual revenue</span>
-                  <span className="text-sm font-bold text-green-600">{formatCurrency(customProjection.annualRevenue)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Ecologi (one-off)</span>
-                  <span className="text-sm">{formatCurrency(customProjection.ecologiOneOff)}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  Profit Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Annual costs</span>
-                  <span className="text-sm">{formatCurrency(customProjection.annualCosts)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Annual profit</span>
-                  <span className="text-sm font-bold text-green-600">{formatCurrency(customProjection.annualProfit)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Gross margin</span>
-                  <Badge variant={customProjection.grossMargin >= 90 ? "default" : "secondary"}>
-                    {customProjection.grossMargin.toFixed(1)}%
-                  </Badge>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Monthly Revenue</p>
+                    <p className="text-lg font-bold text-green-600">{formatCurrency(customProjection.monthlyRevenue)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Annual Revenue</p>
+                    <p className="text-lg font-bold text-green-600">{formatCurrency(customProjection.annualRevenue)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Monthly Costs</p>
+                    <p className="text-lg font-bold">{formatCurrency(customProjection.monthlyCosts.total)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Gross Margin</p>
+                    <p className="text-lg font-bold text-green-600">{customProjection.grossMargin.toFixed(1)}%</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Annual Profit</p>
+                    <p className="text-lg font-bold text-green-600">{formatCurrency(customProjection.annualProfit)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Hosting</p>
+                    <p className="text-lg font-bold">{formatCurrency(customProjection.monthlyCosts.hosting)}/mo</p>
+                    <p className="text-xs text-muted-foreground">{customProjection.monthlyCosts.hostingDesc}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Twilio</p>
+                    <p className="text-lg font-bold">{formatCurrency(customProjection.monthlyCosts.twilio)}/mo</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Ecologi (one-off)</p>
+                    <p className="text-lg font-bold">{formatCurrency(customProjection.ecologiOneOff)}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
-
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle className="text-base">Detailed Cost Breakdown for {customUsers.toLocaleString()} Users</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="flex justify-between items-center py-2 border-b">
-                  <div className="flex items-center gap-2">
-                    <Server className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">Hosting (Replit)</span>
-                  </div>
-                  <span className="text-sm font-medium">{formatCurrency(customProjection.monthlyCosts.hosting)}/mo</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">Twilio (SMS + Voice)</span>
-                  </div>
-                  <span className="text-sm font-medium">{formatCurrency(customProjection.monthlyCosts.twilio)}/mo</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">Resend (Email)</span>
-                  </div>
-                  <span className="text-sm font-medium">{formatCurrency(customProjection.monthlyCosts.resend)}/mo</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b">
-                  <div className="flex items-center gap-2">
-                    <Headphones className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">OpenAI (AI Chat)</span>
-                  </div>
-                  <span className="text-sm font-medium">{formatCurrency(customProjection.monthlyCosts.openai)}/mo</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">Stripe Fees</span>
-                  </div>
-                  <span className="text-sm font-medium">{formatCurrency(customProjection.monthlyCosts.stripe)}/mo</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b">
-                  <div className="flex items-center gap-2">
-                    <TreePine className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">Ecologi (one-off)</span>
-                  </div>
-                  <span className="text-sm font-medium">{formatCurrency(customProjection.ecologiOneOff)}</span>
-                </div>
-              </div>
-              <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                <span className="font-medium">Total Monthly Running Cost</span>
-                <span className="text-lg font-bold">{formatCurrency(customProjection.monthlyCosts.total)}</span>
-              </div>
-              <div className="flex justify-between items-center mt-2">
-                <span className="font-medium">Total Annual Running Cost</span>
-                <span className="text-lg font-bold">{formatCurrency(customProjection.annualCosts)}</span>
-              </div>
-            </CardContent>
-          </Card>
         </section>
 
         <section>
@@ -659,46 +846,38 @@ export default function AdminRevenue() {
                   Ecologi Investment
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  The £0.60 per tree is a one-time cost per new subscriber, not recurring.
-                  It's a strong selling point for environmentally conscious customers and a modest cost relative to lifetime revenue.
+                  At {formatCurrency(costModel.ecologi_per_signup)} per signup, Ecologi is a one-time cost per user. It's a marketing differentiator
+                  that adds minimal impact to ongoing costs but boosts brand perception.
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-4 space-y-2">
                 <h3 className="font-medium text-sm flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-green-600" />
-                  Biggest Variable Cost
+                  <Phone className="w-4 h-4 text-amber-600" />
+                  Twilio is the Biggest Variable
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Twilio (SMS and voice calls) is the largest variable cost.
-                  Consider setting check-in reminders to reduce missed check-ins, which directly reduces Twilio spend.
+                  SMS ({formatCurrency(costModel.sms_per_unit)}/msg) and voice ({formatCurrency(costModel.voice_call_per_unit)}/call) are the largest per-event costs. Keeping missed check-in rates
+                  below 5% is critical for maintaining healthy margins. The Call Supervisor feature adds voice costs per org seat.
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-4 space-y-2">
                 <h3 className="font-medium text-sm flex items-center gap-2">
-                  <Users className="w-4 h-4 text-green-600" />
-                  Organisation Margins
+                  <Users className="w-4 h-4 text-blue-600" />
+                  Org Seats: Lower Revenue, Lower Cost
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Organisation seats at £4.99/seat still deliver strong margins (over 90%).
-                  Volume discounts work because per-user costs decrease at scale while revenue stays predictable.
+                  Organisation seats average {formatCurrency(costModel.org_seat_average)}/month vs {formatCurrency(costModel.individual_monthly)} for individuals. However, organisations
+                  have lower churn, higher lifetime value, and more predictable revenue. They also bring supervisor
+                  call costs but provide the most scalable revenue stream.
                 </p>
               </CardContent>
             </Card>
           </div>
         </section>
-
-        <div className="text-center py-6">
-          <Link href="/admin">
-            <Button variant="outline" className="gap-2" data-testid="button-back-admin">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Admin Dashboard
-            </Button>
-          </Link>
-        </div>
       </main>
     </div>
   );

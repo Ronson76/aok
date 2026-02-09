@@ -24,7 +24,8 @@ import {
   emergencyRecordings, EmergencyRecording,
   stravaConnections, StravaConnection, InsertStravaConnection,
   errandSessions, ErrandSession, InsertErrandSession, ErrandSessionStatus,
-  tierPermissions, TierPermission, UpdateTierPermissions, SubscriptionTier, OrgFeatureDefaults
+  tierPermissions, TierPermission, UpdateTierPermissions, SubscriptionTier, OrgFeatureDefaults,
+  pricingConfig, PricingConfig
 } from "@shared/schema";
 import { ensureDb } from "./db";
 import { eq, ne, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray, inArray } from "drizzle-orm";
@@ -3214,6 +3215,61 @@ class AdminStorage implements IAdminStorage {
 
   async deleteAllAdminSessions(adminId: string): Promise<void> {
     await getDb().delete(adminSessions).where(eq(adminSessions.adminId, adminId));
+  }
+
+  async getPricingConfig(): Promise<PricingConfig[]> {
+    return await getDb().select().from(pricingConfig).orderBy(pricingConfig.category, pricingConfig.key);
+  }
+
+  async upsertPricingConfig(key: string, value: number, label: string, category: string): Promise<PricingConfig> {
+    const existing = await getDb().select().from(pricingConfig).where(eq(pricingConfig.key, key));
+    if (existing.length > 0) {
+      const [updated] = await getDb().update(pricingConfig)
+        .set({ value, label, category, updatedAt: new Date() })
+        .where(eq(pricingConfig.key, key))
+        .returning();
+      return updated;
+    }
+    const [created] = await getDb().insert(pricingConfig)
+      .values({ key, value, label, category })
+      .returning();
+    return created;
+  }
+
+  async updatePricingValue(key: string, value: number): Promise<PricingConfig | undefined> {
+    const [updated] = await getDb().update(pricingConfig)
+      .set({ value, updatedAt: new Date() })
+      .where(eq(pricingConfig.key, key))
+      .returning();
+    return updated;
+  }
+
+  async seedDefaultPricing(): Promise<void> {
+    const existing = await getDb().select().from(pricingConfig).limit(1);
+    if (existing.length > 0) return;
+
+    const defaults = [
+      { key: "tier1_monthly", value: 6.99, label: "Tier 1 (Essential) Monthly", category: "subscription" },
+      { key: "tier1_yearly", value: 69.99, label: "Tier 1 (Essential) Yearly", category: "subscription" },
+      { key: "tier2_monthly", value: 9.99, label: "Tier 2 (Complete) Monthly", category: "subscription" },
+      { key: "tier2_yearly", value: 99.99, label: "Tier 2 (Complete) Yearly", category: "subscription" },
+      { key: "individual_monthly", value: 8.49, label: "Individual Average Monthly", category: "subscription" },
+      { key: "individual_yearly", value: 84.99, label: "Individual Average Yearly", category: "subscription" },
+      { key: "org_seat_average", value: 4.99, label: "Organisation Seat Average", category: "subscription" },
+      { key: "sms_per_unit", value: 0.04, label: "SMS Per Unit", category: "costs" },
+      { key: "voice_call_per_unit", value: 0.12, label: "Voice Call Per Unit", category: "costs" },
+      { key: "email_per_unit", value: 0.001, label: "Email Per Unit", category: "costs" },
+      { key: "emergency_alert_per_unit", value: 0.20, label: "Emergency Alert Per Unit", category: "costs" },
+      { key: "ai_chat_per_conversation", value: 0.03, label: "AI Chat Per Conversation", category: "costs" },
+      { key: "ai_voice_per_session", value: 0.04, label: "AI Voice Per Session", category: "costs" },
+      { key: "ecologi_per_signup", value: 0.60, label: "Ecologi Per Signup", category: "costs" },
+      { key: "stripe_fee_percent", value: 1.4, label: "Stripe Fee %", category: "costs" },
+      { key: "stripe_fee_fixed", value: 0.20, label: "Stripe Fixed Fee", category: "costs" },
+    ];
+
+    for (const d of defaults) {
+      await getDb().insert(pricingConfig).values(d).onConflictDoNothing();
+    }
   }
 }
 
