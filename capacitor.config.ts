@@ -12,12 +12,14 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: 'automatic',
     preferredContentMode: 'mobile',
-    scheme: 'aok'
+    scheme: 'aok',
+    backgroundColor: '#ffffff'
   },
   android: {
     allowMixedContent: false,
     captureInput: true,
-    webContentsDebuggingEnabled: false
+    webContentsDebuggingEnabled: false,
+    backgroundColor: '#ffffff'
   },
   plugins: {
     SplashScreen: {

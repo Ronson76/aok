@@ -93,8 +93,28 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Shared Schema**: Zod for type-safe validation across client and server.
 - **Component Library**: shadcn/ui for accessible, customizable UI components.
 - **Theme System**: CSS custom properties for light/dark mode with separate themes for Admin (slate) and Org (indigo) portals.
-- **Native App Support**: Capacitor for iOS and Android app build capability with native plugins.
+- **Native App Support**: Capacitor 8 for iOS and Android app build capability with native plugins.
 - **AI Integration**: In-app AI chat for wellbeing with mood pattern detection, streaming responses, and voice chat mode (OpenAI GPT-4o, TTS, Whisper API).
+
+### Native App Build (Capacitor)
+- **App ID**: `care.aok.app`
+- **Web Dir**: `dist/public` (production build output)
+- **Config**: `capacitor.config.ts`
+- **Native Utilities**: `client/src/lib/native.ts` — platform-aware wrappers for Haptics, Push/Local Notifications, Motion (shake detection), Geolocation, StatusBar, SplashScreen, App lifecycle.
+- **Installed Plugins**: `@capacitor/core`, `@capacitor/ios`, `@capacitor/android`, `@capacitor/app`, `@capacitor/geolocation`, `@capacitor/haptics`, `@capacitor/local-notifications`, `@capacitor/motion`, `@capacitor/push-notifications`, `@capacitor/splash-screen`, `@capacitor/status-bar`.
+- **iOS Build** (requires Mac with Xcode):
+  1. `npm run build` — build the web app to `dist/public`
+  2. `npx cap add ios` — create the iOS project (first time only)
+  3. `npx cap sync ios` — copy web assets and sync native plugins
+  4. `npx cap open ios` — open in Xcode for signing, building, and testing
+- **Android Build**:
+  1. `npm run build` — build the web app to `dist/public`
+  2. `npx cap add android` — create the Android project (first time only)
+  3. `npx cap sync android` — copy web assets and sync native plugins
+  4. `npx cap open android` — open in Android Studio for building and testing
+- **Live Reload** (development): `npx cap run ios --livereload --external` or `npx cap run android --livereload --external`
+- **Platform Permissions**: Geolocation, push notifications, and camera permissions must be configured in the native platform files (iOS: `Info.plist`, Android: `AndroidManifest.xml`). These are set when running `npx cap add ios/android` and may need manual adjustment for App Store/Play Store review.
+- **App Store Requirements**: Apple Developer account ($99/year), Google Play Developer account ($25 one-time). Submissions require their respective review processes.
 
 ## External Dependencies
 
