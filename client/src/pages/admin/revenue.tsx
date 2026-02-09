@@ -332,17 +332,13 @@ function PricingTabs({
 
   const handleSave = (tab: typeof TAB_CONFIG[0]) => {
     const monthlyVal = parseFloat(editMonthly);
-    const yearlyVal = parseFloat(editYearly);
-    if (isNaN(monthlyVal) || isNaN(yearlyVal) || monthlyVal < 0 || yearlyVal < 0) {
-      toast({ title: "Invalid value", description: "Please enter valid numbers.", variant: "destructive" });
+    if (isNaN(monthlyVal) || monthlyVal < 0) {
+      toast({ title: "Invalid value", description: "Please enter a valid number.", variant: "destructive" });
       return;
     }
     const updates: { key: string; value: number }[] = [];
     if ((costModel as any)[tab.monthlyKey] !== monthlyVal) {
       updates.push({ key: tab.monthlyKey, value: monthlyVal });
-    }
-    if ((costModel as any)[tab.yearlyKey] !== yearlyVal) {
-      updates.push({ key: tab.yearlyKey, value: yearlyVal });
     }
     if (updates.length === 0) {
       setEditingTab(null);
@@ -350,8 +346,6 @@ function PricingTabs({
     }
     saveMutation.mutate(updates);
   };
-
-  const useAnnual = activeTabs.has("annual");
 
   return (
     <div className="space-y-4">
@@ -374,7 +368,6 @@ function PricingTabs({
           const Icon = tab.icon;
 
           const monthlyPrice = tab.monthlyKey ? (costModel as any)[tab.monthlyKey] : 0;
-          const yearlyPrice = tab.yearlyKey ? (costModel as any)[tab.yearlyKey] : 0;
 
           return (
             <Card
@@ -440,11 +433,14 @@ function PricingTabs({
                       </div>
                       <div className="text-xs text-muted-foreground">per seat</div>
                     </div>
+                    <div className="text-sm font-semibold text-muted-foreground" data-testid="text-annual-monthly">
+                      {formatCurrency(annualFlatFee / 12)}/mo revenue
+                    </div>
                   </div>
                 ) : isEditing ? (
                   <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Monthly</Label>
+                      <Label className="text-xs text-muted-foreground">Monthly Price</Label>
                       <div className="flex items-center gap-1">
                         <span className="text-xs text-muted-foreground">£</span>
                         <Input
@@ -456,21 +452,6 @@ function PricingTabs({
                           className="h-7 text-sm"
                           data-testid={`input-pricing-${tab.monthlyKey}`}
                           autoFocus
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Yearly</Label>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-muted-foreground">£</span>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={editYearly}
-                          onChange={(e) => setEditYearly(e.target.value)}
-                          className="h-7 text-sm"
-                          data-testid={`input-pricing-${tab.yearlyKey}`}
                         />
                       </div>
                     </div>
@@ -499,14 +480,9 @@ function PricingTabs({
                 ) : (
                   <div>
                     <div className="text-lg font-bold" data-testid={`text-pricing-value-${tab.monthlyKey}`}>
-                      {formatCurrency(useAnnual ? yearlyPrice : monthlyPrice)}
+                      {formatCurrency(monthlyPrice)}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {useAnnual ? "/year" : "/month"}
-                      {!useAnnual && yearlyPrice > 0 && (
-                        <span className="ml-1">({formatCurrency(yearlyPrice)}/yr)</span>
-                      )}
-                    </div>
+                    <div className="text-xs text-muted-foreground">/month per user</div>
                   </div>
                 )}
               </CardContent>
