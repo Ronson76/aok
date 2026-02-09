@@ -146,7 +146,7 @@ function calculateProjection(
     orgSeats * costModel.org_monthly;
 
   if (useAnnual && annualSeats > 0) {
-    const perSeatMonthly = annualFlatFee / (annualSeats / 12);
+    const perSeatMonthly = annualFlatFee / annualSeats;
     monthlyRevenue += perSeatMonthly * totalUsers;
   }
 
@@ -392,7 +392,7 @@ function PricingTabs({
                 {tab.id === "annual" ? (
                   <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Flat Annual Fee</Label>
+                      <Label className="text-xs text-muted-foreground">Flat Monthly Fee</Label>
                       <div className="flex items-center gap-1 mt-1">
                         <span className="text-xs text-muted-foreground">£</span>
                         <Input
@@ -638,7 +638,7 @@ export default function AdminRevenue() {
   const supervisorCallRate = parseFloat(supervisorCallRateStr) || 0;
   const [activeTabs, setActiveTabs] = useState<Set<PricingTab>>(new Set(["tier1", "tier2"]));
   const [annualSeatsStr, setAnnualSeatsStr] = useState("2000");
-  const [annualFlatFeeStr, setAnnualFlatFeeStr] = useState("10000");
+  const [annualFlatFeeStr, setAnnualFlatFeeStr] = useState("13000");
   const annualSeats = parseInt(annualSeatsStr) || 0;
   const annualFlatFee = parseFloat(annualFlatFeeStr) || 0;
 
