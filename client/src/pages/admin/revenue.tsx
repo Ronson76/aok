@@ -663,12 +663,13 @@ export default function AdminRevenue() {
   const liveOverview = useMemo(() => {
     if (!stats) return null;
     const total = stats.totalUsers || 1;
-    const orgPct = total > 0 ? ((stats.totalSeatsUsed || 0) / total) * 100 : 30;
+    const orgPct = total > 0 ? ((stats.totalSeatsUsed || 0) / total) * 100 : 0;
     const missRate = stats.totalCheckIns > 0
       ? (stats.totalMissedCheckIns / (stats.totalCheckIns + stats.totalMissedCheckIns))
       : 0.05;
-    return calculateProjection(total, orgPct, missRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee);
-  }, [stats, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee]);
+    const noRevenueTabs = new Set<PricingTab>();
+    return calculateProjection(total, orgPct, missRate, aiUsageRate, supervisorCallRate, costModel, noRevenueTabs, 0, 0);
+  }, [stats, aiUsageRate, supervisorCallRate, costModel]);
 
   const scaleProjections = useMemo(() => {
     return [500, 1000, 2500, 5000, 10000, 25000, 50000].map(
