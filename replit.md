@@ -28,7 +28,7 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 ### Data Layer
 - **ORM**: Drizzle ORM for PostgreSQL
 - **Schema Definition**: Shared TypeScript schemas with Zod validation (`/shared/schema.ts`)
-- **Storage Abstraction**: Uses an in-memory storage implementation for development, designed to be swappable with a PostgreSQL database.
+- **Storage**: Fully persistent PostgreSQL via Drizzle ORM. All storage classes (`DatabaseStorage`, `AdminStorage`, `OrgMemberStorage`, `OrganizationStorage`, `fitnessStorage`) query PostgreSQL directly. No in-memory storage.
 
 ### Data Models
 - **Core**: Contact, CheckIn, Settings, AlertLog
