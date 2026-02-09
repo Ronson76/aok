@@ -622,7 +622,13 @@ export default function AdminRevenue() {
   const { toast } = useToast();
 
   const [customUsers, setCustomUsers] = useState(1000);
-  const [tierPcts, setTierPcts] = useState({ tier1: 30, tier2: 30, tier3: 10, org: 30 });
+  const [tierPctStrs, setTierPctStrs] = useState({ tier1: "30", tier2: "30", tier3: "10", org: "30" });
+  const tierPcts: TierPcts = {
+    tier1: parseFloat(tierPctStrs.tier1) || 0,
+    tier2: parseFloat(tierPctStrs.tier2) || 0,
+    tier3: parseFloat(tierPctStrs.tier3) || 0,
+    org: parseFloat(tierPctStrs.org) || 0,
+  };
   const [missedRate, setMissedRate] = useState(0.05);
   const [aiUsageRate, setAiUsageRate] = useState(0.1);
   const [supervisorCallRate, setSupervisorCallRate] = useState(0.05);
@@ -874,13 +880,12 @@ export default function AdminRevenue() {
                           <Label htmlFor={`pct-${k}`} className="text-xs text-muted-foreground whitespace-nowrap">{pctLabels[k]}</Label>
                           <Input
                             id={`pct-${k}`}
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={tierPcts[k]}
+                            type="text"
+                            inputMode="numeric"
+                            value={tierPctStrs[k]}
                             onChange={(e) => {
-                              const v = Math.min(100, Math.max(0, Number(e.target.value) || 0));
-                              setTierPcts(prev => ({ ...prev, [k]: v }));
+                              const raw = e.target.value.replace(/[^0-9.]/g, "");
+                              setTierPctStrs(prev => ({ ...prev, [k]: raw }));
                             }}
                             className="w-20"
                             data-testid={`input-pct-${k}`}
