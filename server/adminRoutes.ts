@@ -3,7 +3,8 @@ import bcrypt from "bcrypt";
 import { adminStorage, organizationStorage, storage, adminInviteStorage } from "./storage";
 import { adminLoginSchema, AdminUserProfile, orgClientStatuses, updateUserFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, adminRoles, passwordSchema, updateTierPermissionsSchema, subscriptionTiers, orgFeatureDefaultsSchema, SubscriptionTier } from "@shared/schema";
 import { z } from "zod";
-import { sendPasswordResetEmail, sendAdminInviteEmail } from "./notifications";
+import { sendPasswordResetEmail, sendAdminInviteEmail, sendOrgSetupInviteEmail } from "./notifications";
+import { randomBytes } from "crypto";
 
 const ADMIN_SESSION_COOKIE = "admin_session";
 
@@ -196,7 +197,6 @@ export function registerAdminRoutes(app: Express) {
   const createOrganizationSchema = z.object({
     name: z.string().min(1, "Name is required").max(100),
     email: z.string().email("Invalid email address"),
-    password: passwordSchema,
     featureDefaults: orgFeatureDefaultsSchema.optional(),
     requiredDocuments: z.array(z.string()).optional(),
   });
@@ -208,14 +208,15 @@ export function registerAdminRoutes(app: Express) {
         return res.status(400).json({ error: validation.error.errors[0].message });
       }
 
-      const { name, email, password, featureDefaults, requiredDocuments } = validation.data;
+      const { name, email, featureDefaults, requiredDocuments } = validation.data;
 
       const existingUser = await storage.getUserByEmail(email.toLowerCase());
       if (existingUser) {
         return res.status(400).json({ error: "An account with this email already exists" });
       }
 
-      const passwordHash = await bcrypt.hash(password, 10);
+      const tempPassword = randomBytes(32).toString("hex");
+      const passwordHash = await bcrypt.hash(tempPassword, 10);
       
       const user = await storage.createUser({
         email: email.toLowerCase(),
@@ -232,12 +233,18 @@ export function registerAdminRoutes(app: Express) {
         await storage.assignDocumentsToOrg(user.id, name, requiredDocuments);
       }
 
+      const inviteToken = await storage.createPasswordResetToken(user.id);
+
+      sendOrgSetupInviteEmail(email.toLowerCase(), name, inviteToken).catch(err => {
+        console.error(`[ORG INVITE] Background email send failed for ${email}:`, err);
+      });
+
       await adminStorage.createAuditLog(
         req.admin!.id,
         "create",
         "organization",
         user.id,
-        `Created organization: ${name} (${email})${requiredDocuments?.length ? ` with ${requiredDocuments.length} required documents` : ""}`
+        `Created organization: ${name} (${email})${requiredDocuments?.length ? ` with ${requiredDocuments.length} required documents` : ""} - setup invite sent`
       );
 
       const { passwordHash: _, ...profile } = user;
@@ -825,6 +832,35 @@ export function registerAdminRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching user features:", error);
       res.status(500).json({ error: "Failed to fetch user features" });
+    }
+  });
+
+  app.post("/api/admin/organizations/:organizationId/resend-invite", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { organizationId } = req.params;
+      const org = await storage.getUserById(organizationId);
+      if (!org || org.accountType !== "organization") {
+        return res.status(404).json({ error: "Organisation not found" });
+      }
+
+      const inviteToken = await storage.createPasswordResetToken(org.id);
+      
+      sendOrgSetupInviteEmail(org.email, org.name || org.email, inviteToken).catch(err => {
+        console.error(`[ORG INVITE] Background resend failed for ${org.email}:`, err);
+      });
+
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "update",
+        "organization",
+        organizationId,
+        `Resent setup invitation to ${org.name || org.email} (${org.email})`
+      );
+
+      res.json({ success: true, message: "Setup invitation has been resent" });
+    } catch (error) {
+      console.error("Error resending org invite:", error);
+      res.status(500).json({ error: "Failed to resend invitation" });
     }
   });
 
