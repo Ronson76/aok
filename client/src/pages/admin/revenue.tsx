@@ -621,7 +621,8 @@ export default function AdminRevenue() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const [customUsers, setCustomUsers] = useState(1000);
+  const [customUsersStr, setCustomUsersStr] = useState("1000");
+  const customUsers = parseInt(customUsersStr) || 0;
   const [tierPctStrs, setTierPctStrs] = useState({ tier1: "30", tier2: "30", tier3: "10", org: "30" });
   const tierPcts: TierPcts = {
     tier1: parseFloat(tierPctStrs.tier1) || 0,
@@ -629,9 +630,12 @@ export default function AdminRevenue() {
     tier3: parseFloat(tierPctStrs.tier3) || 0,
     org: parseFloat(tierPctStrs.org) || 0,
   };
-  const [missedRate, setMissedRate] = useState(0.05);
-  const [aiUsageRate, setAiUsageRate] = useState(0.1);
-  const [supervisorCallRate, setSupervisorCallRate] = useState(0.05);
+  const [missedRateStr, setMissedRateStr] = useState("0.05");
+  const missedRate = parseFloat(missedRateStr) || 0;
+  const [aiUsageRateStr, setAiUsageRateStr] = useState("0.1");
+  const aiUsageRate = parseFloat(aiUsageRateStr) || 0;
+  const [supervisorCallRateStr, setSupervisorCallRateStr] = useState("0.05");
+  const supervisorCallRate = parseFloat(supervisorCallRateStr) || 0;
   const [activeTabs, setActiveTabs] = useState<Set<PricingTab>>(new Set(["tier1", "tier2"]));
   const [annualSeatsStr, setAnnualSeatsStr] = useState("2000");
   const [annualFlatFeeStr, setAnnualFlatFeeStr] = useState("10000");
@@ -905,12 +909,10 @@ export default function AdminRevenue() {
                   <div className="flex items-center gap-2 mt-1">
                     <Input
                       id="missed-rate"
-                      type="number"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={missedRate}
-                      onChange={(e) => setMissedRate(Math.min(1, Math.max(0, Number(e.target.value))))}
+                      type="text"
+                      inputMode="decimal"
+                      value={missedRateStr}
+                      onChange={(e) => setMissedRateStr(e.target.value.replace(/[^0-9.]/g, ""))}
                       className="w-24"
                       data-testid="input-missed-rate"
                     />
@@ -922,12 +924,10 @@ export default function AdminRevenue() {
                   <div className="flex items-center gap-2 mt-1">
                     <Input
                       id="ai-rate"
-                      type="number"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={aiUsageRate}
-                      onChange={(e) => setAiUsageRate(Math.min(1, Math.max(0, Number(e.target.value))))}
+                      type="text"
+                      inputMode="decimal"
+                      value={aiUsageRateStr}
+                      onChange={(e) => setAiUsageRateStr(e.target.value.replace(/[^0-9.]/g, ""))}
                       className="w-24"
                       data-testid="input-ai-rate"
                     />
@@ -939,12 +939,10 @@ export default function AdminRevenue() {
                   <div className="flex items-center gap-2 mt-1">
                     <Input
                       id="supervisor-rate"
-                      type="number"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={supervisorCallRate}
-                      onChange={(e) => setSupervisorCallRate(Math.min(1, Math.max(0, Number(e.target.value))))}
+                      type="text"
+                      inputMode="decimal"
+                      value={supervisorCallRateStr}
+                      onChange={(e) => setSupervisorCallRateStr(e.target.value.replace(/[^0-9.]/g, ""))}
                       className="w-24"
                       data-testid="input-supervisor-rate"
                     />
@@ -999,11 +997,10 @@ export default function AdminRevenue() {
               </CardHeader>
               <CardContent>
                 <Input
-                  type="number"
-                  min={1}
-                  max={100000}
-                  value={customUsers}
-                  onChange={(e) => setCustomUsers(Math.max(1, Number(e.target.value)))}
+                  type="text"
+                  inputMode="numeric"
+                  value={customUsersStr}
+                  onChange={(e) => setCustomUsersStr(e.target.value.replace(/[^0-9]/g, ""))}
                   data-testid="input-custom-users"
                 />
                 <p className="text-xs text-muted-foreground mt-2">
