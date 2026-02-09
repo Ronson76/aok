@@ -709,7 +709,8 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
 }
 
 function SessionHistory() {
-  const [expanded, setExpanded] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
+  const [showAll, setShowAll] = useState(false);
   const { data: sessions, isLoading } = useQuery<ErrandSession[]>({
     queryKey: ["/api/errands/history"],
   });
@@ -737,46 +738,56 @@ function SessionHistory() {
     );
   }
 
-  const displaySessions = expanded ? completedSessions : completedSessions.slice(0, 5);
+  const displaySessions = showAll ? completedSessions : completedSessions.slice(0, 5);
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
+      <button
+        className="flex items-center justify-between w-full text-left"
+        onClick={() => setCollapsed(!collapsed)}
+        data-testid="button-collapse-history"
+      >
         <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
           <History className="h-4 w-4" />
           Recent Activities
+          <Badge variant="secondary" className="text-xs no-default-active-elevate">{completedSessions.length}</Badge>
         </h3>
-        {completedSessions.length > 5 && (
-          <Button variant="ghost" size="sm" onClick={() => setExpanded(!expanded)} data-testid="button-toggle-history">
-            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-        )}
-      </div>
-      {displaySessions.map((session) => {
-        const Icon = getActivityIcon(session.activityType);
-        return (
-          <Card key={session.id} data-testid={`history-item-${session.id}`}>
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">
-                    {getActivityLabel(session.activityType, session.customLabel)}
-                  </span>
-                </div>
-                {getStatusBadge(session.status)}
-              </div>
-              <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                <span>{format(new Date(session.startedAt), "dd MMM yyyy HH:mm")}</span>
-                <span>{session.expectedDurationMins} min</span>
-                {session.completedAt && (
-                  <span>Ended {format(new Date(session.completedAt), "HH:mm")}</span>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+        {collapsed ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronUp className="h-4 w-4 text-muted-foreground" />}
+      </button>
+      {!collapsed && (
+        <>
+          {displaySessions.map((session) => {
+            const Icon = getActivityIcon(session.activityType);
+            return (
+              <Card key={session.id} data-testid={`history-item-${session.id}`}>
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">
+                        {getActivityLabel(session.activityType, session.customLabel)}
+                      </span>
+                    </div>
+                    {getStatusBadge(session.status)}
+                  </div>
+                  <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                    <span>{format(new Date(session.startedAt), "dd MMM yyyy HH:mm")}</span>
+                    <span>{session.expectedDurationMins} min</span>
+                    {session.completedAt && (
+                      <span>Ended {format(new Date(session.completedAt), "HH:mm")}</span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+          {completedSessions.length > 5 && (
+            <Button variant="ghost" size="sm" className="w-full" onClick={() => setShowAll(!showAll)} data-testid="button-toggle-history">
+              {showAll ? "Show less" : `Show all ${completedSessions.length} activities`}
+            </Button>
+          )}
+        </>
+      )}
     </div>
   );
 }
