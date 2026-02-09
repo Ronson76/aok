@@ -525,6 +525,10 @@ function RouteMap({
         polylineRef.current = null;
       }
 
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 100);
+
       if (routeCoords.length > 1) {
         const latlngs = routeCoords.map((c) => [c[1], c[0]] as [number, number]);
         const polyline = L.polyline(latlngs, {
@@ -535,7 +539,10 @@ function RouteMap({
           lineJoin: "round",
         }).addTo(map);
         polylineRef.current = polyline;
-        map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+        setTimeout(() => {
+          map.invalidateSize();
+          map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+        }, 200);
       } else if (startPoint && endPoint) {
         map.fitBounds([startPoint, endPoint], { padding: [50, 50] });
       } else if (startPoint) {
