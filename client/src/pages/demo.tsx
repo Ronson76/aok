@@ -8,9 +8,8 @@ import {
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User,
   ChevronRight, Shield, Zap, Lock, TrendingUp, PawPrint, Scroll, Check,
   Sparkles, MessageSquare, ArrowLeft, Timer, Map, Camera, HardHat,
-  ChevronDown, Activity, Globe, Share2, Eye, Mic, ArrowRight
+  ChevronDown, Globe, Share2, Eye, Mic, ArrowRight
 } from "lucide-react";
-import { FaRunning } from "react-icons/fa";
 
 type DemoSection = "overview" | "individual" | "organisation" | "lone-worker";
 
@@ -155,7 +154,7 @@ const DEMO_STEPS_INDIVIDUAL = [
   {
     id: "wellness",
     title: "Track Your Wellbeing",
-    description: "Log your mood, chat with the AI wellbeing assistant, track fitness activities, and store important documents — all in one place.",
+    description: "Log your mood, chat with the AI wellbeing assistant, and store important documents — all in one place.",
     phone: {
       bg: "bg-card",
       content: (
@@ -165,7 +164,6 @@ const DEMO_STEPS_INDIVIDUAL = [
             {[
               { label: "Mood", icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
               { label: "AI Chat", icon: Sparkles, color: "text-violet-500", bg: "bg-violet-500/10" },
-              { label: "Fitness", icon: Activity, color: "text-blue-500", bg: "bg-blue-500/10" },
               { label: "Pets", icon: PawPrint, color: "text-rose-500", bg: "bg-rose-500/10" },
               { label: "Documents", icon: Scroll, color: "text-slate-500", bg: "bg-slate-500/10" },
               { label: "Routes", icon: Map, color: "text-sky-500", bg: "bg-sky-500/10" },
@@ -292,7 +290,6 @@ const DEMO_STEPS_ORG = [
               { label: "Emergency Alerts", on: true, locked: true },
               { label: "Mood Tracking", on: true, locked: false },
               { label: "Pet Profiles", on: false, locked: false },
-              { label: "Fitness Tracking", on: true, locked: false },
               { label: "AI Wellbeing Chat", on: false, locked: false },
               { label: "Document Storage", on: false, locked: false },
             ].map((f) => (
