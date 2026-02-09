@@ -219,6 +219,7 @@ function AddressSearch({
   accentColor,
   dotColor,
   testId,
+  dropUp,
 }: {
   label: string;
   placeholder: string;
@@ -228,6 +229,7 @@ function AddressSearch({
   accentColor: string;
   dotColor: string;
   testId: string;
+  dropUp?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<NominatimResult[]>([]);
@@ -357,7 +359,7 @@ function AddressSearch({
       )}
 
       {showResults && results.length > 0 && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-52 overflow-y-auto">
+        <div className={`absolute z-50 left-0 right-0 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-52 overflow-y-auto ${dropUp ? "bottom-full mb-1" : "top-full mt-1"}`}>
           {results.map((r) => (
             <Button
               key={r.place_id}
@@ -969,6 +971,7 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
             accentColor="bg-rose-50 dark:bg-rose-950/40"
             dotColor="bg-rose-500"
             testId="input-end-address"
+            dropUp
           />
         </div>
       )}
