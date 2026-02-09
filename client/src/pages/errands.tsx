@@ -176,7 +176,14 @@ function CountdownTimer({ targetDate, label, onExpired }: { targetDate: Date; la
     };
     update();
     const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") update();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [targetDate, onExpired]);
 
   const hours = Math.floor(secondsLeft / 3600);
@@ -337,6 +344,16 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
   useEffect(() => {
     geo.startWatching();
     return () => { geo.stopWatching(); };
+  }, []);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        queryClient.invalidateQueries({ queryKey: ["/api/errands/active"] });
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
   }, []);
 
   useEffect(() => {

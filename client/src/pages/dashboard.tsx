@@ -427,8 +427,18 @@ export default function Dashboard() {
     
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        updateCountdown();
+        queryClient.invalidateQueries({ queryKey: ["/api/status"] });
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [status?.nextCheckInDue, status?.status]);
 
   // Determine if we should show overdue state (server says overdue OR local countdown reached zero)
