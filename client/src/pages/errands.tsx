@@ -227,7 +227,14 @@ function StartSessionForm({ onStarted }: { onStarted: () => void }) {
           <Label htmlFor="custom-label">Custom Label (optional)</Label>
           <Input
             id="custom-label"
-            placeholder="e.g. Walking to pharmacy"
+            placeholder={
+              activityType === "walking" ? "e.g. Walking to the pharmacy" :
+              activityType === "shopping" ? "e.g. Weekly food shop" :
+              activityType === "errands" ? "e.g. Dropping off parcels" :
+              activityType === "appointment" ? "e.g. Dentist at 2pm" :
+              activityType === "visiting" ? "e.g. Visiting Mum" :
+              "e.g. Describe your activity"
+            }
             value={customLabel}
             onChange={(e) => setCustomLabel(e.target.value)}
             className="mt-1"
