@@ -115,9 +115,11 @@ interface ProjectionResult {
   revenuePerUser: number;
 }
 
+type TierPcts = { tier1: number; tier2: number; tier3: number; org: number };
+
 function calculateProjection(
   totalUsers: number,
-  orgPercent: number,
+  tierPcts: TierPcts,
   missedCheckinRate: number,
   aiUsageRate: number,
   supervisorCallRate: number,
@@ -127,39 +129,21 @@ function calculateProjection(
   annualFlatFee: number = 10000
 ): ProjectionResult {
   const useAnnual = activeTabs.has("annual");
-  const useOrg = activeTabs.has("org");
 
-  const activeTiers: PricingTab[] = [];
-  if (activeTabs.has("tier1")) activeTiers.push("tier1");
-  if (activeTabs.has("tier2")) activeTiers.push("tier2");
-  if (activeTabs.has("tier3")) activeTiers.push("tier3");
-
-  const hasTiers = activeTiers.length > 0;
-  const orgSeats = useOrg && hasTiers ? Math.round(totalUsers * (orgPercent / 100)) : useOrg ? totalUsers : 0;
-  const individualUsers = useOrg && hasTiers ? totalUsers - orgSeats : !useOrg && hasTiers ? totalUsers : 0;
+  const t1Users = activeTabs.has("tier1") ? Math.round(totalUsers * (tierPcts.tier1 / 100)) : 0;
+  const t2Users = activeTabs.has("tier2") ? Math.round(totalUsers * (tierPcts.tier2 / 100)) : 0;
+  const t3Users = activeTabs.has("tier3") ? Math.round(totalUsers * (tierPcts.tier3 / 100)) : 0;
+  const orgSeats = activeTabs.has("org") ? Math.round(totalUsers * (tierPcts.org / 100)) : 0;
+  const individualUsers = t1Users + t2Users + t3Users;
 
   let monthlyRevenue: number;
   let annualRevenue: number;
 
-  let revenuePerIndividual = 0;
-  if (hasTiers) {
-    let totalTierPrice = 0;
-    for (const tier of activeTiers) {
-      if (tier === "tier1") totalTierPrice += costModel.tier1_monthly;
-      else if (tier === "tier2") totalTierPrice += costModel.tier2_monthly;
-      else if (tier === "tier3") totalTierPrice += costModel.tier3_monthly;
-    }
-    revenuePerIndividual = totalTierPrice / activeTiers.length;
-  }
-
-  let revenuePerOrgSeat = 0;
-  if (useOrg) {
-    revenuePerOrgSeat = costModel.org_monthly;
-  }
-
   monthlyRevenue =
-    individualUsers * revenuePerIndividual +
-    orgSeats * revenuePerOrgSeat;
+    t1Users * costModel.tier1_monthly +
+    t2Users * costModel.tier2_monthly +
+    t3Users * costModel.tier3_monthly +
+    orgSeats * costModel.org_monthly;
 
   if (useAnnual) {
     const perSeatMonthly = annualSeats > 0 ? annualFlatFee / annualSeats : 0;
@@ -638,7 +622,7 @@ export default function AdminRevenue() {
   const { toast } = useToast();
 
   const [customUsers, setCustomUsers] = useState(1000);
-  const [orgPercent, setOrgPercent] = useState(30);
+  const [tierPcts, setTierPcts] = useState({ tier1: 30, tier2: 30, tier3: 10, org: 30 });
   const [missedRate, setMissedRate] = useState(0.05);
   const [aiUsageRate, setAiUsageRate] = useState(0.1);
   const [supervisorCallRate, setSupervisorCallRate] = useState(0.05);
@@ -668,18 +652,19 @@ export default function AdminRevenue() {
       ? (stats.totalMissedCheckIns / (stats.totalCheckIns + stats.totalMissedCheckIns))
       : 0.05;
     const noRevenueTabs = new Set<PricingTab>();
-    return calculateProjection(total, orgPct, missRate, aiUsageRate, supervisorCallRate, costModel, noRevenueTabs, 0, 0);
+    const livePcts: TierPcts = { tier1: 100 - orgPct, tier2: 0, tier3: 0, org: orgPct };
+    return calculateProjection(total, livePcts, missRate, aiUsageRate, supervisorCallRate, costModel, noRevenueTabs, 0, 0);
   }, [stats, aiUsageRate, supervisorCallRate, costModel]);
 
   const scaleProjections = useMemo(() => {
     return [500, 1000, 2500, 5000, 10000, 25000, 50000].map(
-      (n) => calculateProjection(n, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee)
+      (n) => calculateProjection(n, tierPcts, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee)
     );
-  }, [orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee]);
+  }, [tierPcts, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee]);
 
   const customProjection = useMemo(() => {
-    return calculateProjection(customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee);
-  }, [customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee]);
+    return calculateProjection(customUsers, tierPcts, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee);
+  }, [customUsers, tierPcts, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee]);
 
   const handleLogout = async () => {
     await logout();
@@ -875,23 +860,41 @@ export default function AdminRevenue() {
           <h2 className="text-2xl font-semibold mb-4" data-testid="text-projections">Revenue Projections at Scale</h2>
           <Card className="mb-6">
             <CardContent className="pt-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <Label htmlFor="org-percent" className="text-sm">Organisation seat % of total users</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Input
-                      id="org-percent"
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={orgPercent}
-                      onChange={(e) => setOrgPercent(Math.min(100, Math.max(0, Number(e.target.value))))}
-                      className="w-24"
-                      data-testid="input-org-percent"
-                    />
-                    <span className="text-sm text-muted-foreground">%</span>
+              {(() => {
+                const activeKeys = (["tier1", "tier2", "tier3", "org"] as const).filter(k => activeTabs.has(k));
+                const pctTotal = activeKeys.reduce((sum, k) => sum + tierPcts[k], 0);
+                const isValid = Math.abs(pctTotal - 100) < 0.01;
+                const pctLabels: Record<string, string> = { tier1: "T1 %", tier2: "T2 %", tier3: "T3 %", org: "Org %" };
+                return activeKeys.length > 0 ? (
+                  <div className="mb-4">
+                    <Label className="text-sm font-medium">User distribution across active tiers</Label>
+                    <div className="flex items-center flex-wrap gap-3 mt-2">
+                      {activeKeys.map(k => (
+                        <div key={k} className="flex items-center gap-1">
+                          <Label htmlFor={`pct-${k}`} className="text-xs text-muted-foreground whitespace-nowrap">{pctLabels[k]}</Label>
+                          <Input
+                            id={`pct-${k}`}
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={tierPcts[k]}
+                            onChange={(e) => {
+                              const v = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                              setTierPcts(prev => ({ ...prev, [k]: v }));
+                            }}
+                            className="w-20"
+                            data-testid={`input-pct-${k}`}
+                          />
+                        </div>
+                      ))}
+                      <span className={`text-sm font-medium ${isValid ? "text-green-600 dark:text-green-400" : "text-destructive"}`} data-testid="text-pct-total">
+                        = {pctTotal.toFixed(0)}%{!isValid && " (must equal 100%)"}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                ) : null;
+              })()}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="missed-rate" className="text-sm">Daily missed check-in rate</Label>
                   <div className="flex items-center gap-2 mt-1">
@@ -999,7 +1002,7 @@ export default function AdminRevenue() {
                   data-testid="input-custom-users"
                 />
                 <p className="text-xs text-muted-foreground mt-2">
-                  Using {orgPercent}% org seats, {(missedRate * 100).toFixed(0)}% missed rate, {(aiUsageRate * 100).toFixed(0)}% AI usage, {(supervisorCallRate * 100).toFixed(0)}% supervisor calls
+                  Using {(["tier1", "tier2", "tier3", "org"] as const).filter(k => activeTabs.has(k)).map(k => `${k === "org" ? "Org" : k.toUpperCase()}: ${tierPcts[k]}%`).join(", ") || "no tiers selected"}, {(missedRate * 100).toFixed(0)}% missed rate, {(aiUsageRate * 100).toFixed(0)}% AI usage, {(supervisorCallRate * 100).toFixed(0)}% supervisor calls
                 </p>
               </CardContent>
             </Card>
