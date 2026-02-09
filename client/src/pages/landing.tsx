@@ -23,7 +23,7 @@ import {
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
   ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles,
   MessageCircle, MessageSquare, ArrowLeft, TreeDeciduous, Leaf, Timer,
-  Map, Camera, HardHat, Flame, Moon
+  Map, HardHat, Flame, Moon
 } from "lucide-react";
 import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
@@ -657,18 +657,6 @@ export default function Landing() {
                 <h3 className="text-lg font-semibold mb-2">Route Planning</h3>
                 <p className="text-muted-foreground text-sm">
                   Plan walking, running, or cycling routes on an interactive map with turn-by-turn directions, live weather forecasts, sunset times, and nearby safety points.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-pink-500/10 p-3 w-fit mb-4">
-                  <Camera className="h-6 w-6 text-pink-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Activity Memories</h3>
-                <p className="text-muted-foreground text-sm">
-                  Capture photos during your activities to build a visual journal. Each memory is automatically geo-tagged with your location and saved to your timeline.
                 </p>
               </CardContent>
             </Card>
