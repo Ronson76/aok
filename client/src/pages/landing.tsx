@@ -25,7 +25,6 @@ import {
   MessageCircle, MessageSquare, ArrowLeft, TreeDeciduous, Leaf, Timer,
   Map, Camera, HardHat, Flame, Moon
 } from "lucide-react";
-import { FaRunning } from "react-icons/fa";
 import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
@@ -151,7 +150,6 @@ export default function Landing() {
         { text: "Pet protection profiles", icon: PawPrint },
         { text: "Digital will storage", icon: Scroll },
         { text: "Wellbeing AI (Exclusive)", icon: Sparkles },
-        { text: "GPS fitness tracking", icon: FaRunning },
         { text: "Activities tracker", icon: MapPin },
       ],
       cta: "Get Started",
@@ -623,21 +621,6 @@ export default function Landing() {
                 <h3 className="text-lg font-semibold mb-2">Emergency Recording</h3>
                 <p className="text-muted-foreground text-sm">
                   Opt-in feature that activates your camera and microphone during emergencies. Recordings are encrypted, shared only with your contacts, and deleted after 90 days.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="rounded-full bg-green-500/10 p-3 w-fit">
-                    <FaRunning className="h-6 w-6 text-green-600" />
-                  </div>
-                  <span className="text-xs text-muted-foreground font-medium">Built-in GPS</span>
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Fitness Tracking</h3>
-                <p className="text-muted-foreground text-sm">
-                  Record your runs, walks, and rides with GPS route mapping. Share activities with friends, follow other users, and track your progress.
                 </p>
               </CardContent>
             </Card>

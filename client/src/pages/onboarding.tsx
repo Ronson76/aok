@@ -454,7 +454,7 @@ function StepComplianceConsent({ consents, setConsents }: {
               data-testid="checkbox-consent-fitness"
             />
             <label htmlFor="consent-fitness" className="text-sm cursor-pointer leading-relaxed">
-              I understand that fitness and activity features are for personal wellbeing only and do not provide medical advice, diagnosis, or health monitoring.
+              I understand that activity and wellbeing features are for personal wellness only and do not provide medical advice, diagnosis, or health monitoring.
             </label>
           </div>
 

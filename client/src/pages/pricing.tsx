@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ShieldCheck, Check, Lock, Phone, FileText, Heart, Users, Clock, Mail, Bell, AlertTriangle, MapPin, Smartphone, Building2, TrendingUp, PawPrint, Scroll, ArrowLeft, Mic, TreePine, Shield, Headphones } from "lucide-react";
-import { FaRunning } from "react-icons/fa";
 
 export default function Pricing() {
   const [isYearly, setIsYearly] = useState(false);
@@ -66,7 +65,6 @@ export default function Pricing() {
         { text: "Pet protection profiles with vet info", icon: PawPrint },
         { text: "Digital will & document storage", icon: Scroll },
         { text: "Wellbeing AI chat with voice mode", icon: Headphones },
-        { text: "GPS fitness tracking", icon: FaRunning },
         { text: "Tree planted via Ecologi on signup", icon: TreePine },
       ],
       cta: "Get Started",
@@ -118,7 +116,6 @@ export default function Pricing() {
     { name: "Pet protection profiles", trial: true, essential: false, complete: true, org: true },
     { name: "Digital will & document storage", trial: true, essential: false, complete: true, org: true },
     { name: "Wellbeing AI chat + voice mode", trial: true, essential: false, complete: true, org: true },
-    { name: "GPS fitness tracking", trial: true, essential: false, complete: true, org: true },
     { name: "Ecologi tree planting", trial: false, essential: false, complete: true, org: true },
     { name: "Organisation dashboard", trial: false, essential: false, complete: false, org: true },
     { name: "Bulk client management", trial: false, essential: false, complete: false, org: true },
