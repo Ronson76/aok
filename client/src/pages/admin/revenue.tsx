@@ -660,7 +660,7 @@ export default function AdminRevenue() {
 
   const costModel = useMemo(() => buildCostModel(pricingData), [pricingData]);
 
-  const currentProjection = useMemo(() => {
+  const liveOverview = useMemo(() => {
     if (!stats) return null;
     const total = stats.totalUsers || 1;
     const orgPct = total > 0 ? ((stats.totalSeatsUsed || 0) / total) * 100 : 30;
@@ -736,7 +736,7 @@ export default function AdminRevenue() {
                 </Card>
               ))}
             </div>
-          ) : stats && currentProjection ? (
+          ) : stats && liveOverview ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
                 title="Total Users"
@@ -745,30 +745,29 @@ export default function AdminRevenue() {
                 icon={Users}
               />
               <StatCard
-                title="Est. Monthly Revenue"
-                value={formatCurrency(currentProjection.monthlyRevenue)}
-                subtitle={`${formatCurrency(currentProjection.annualRevenue)}/year projected`}
+                title="Actual Monthly Revenue"
+                value={formatCurrency(liveOverview.monthlyRevenue)}
+                subtitle={liveOverview.monthlyRevenue === 0 ? "All users on free accounts" : `${formatCurrency(liveOverview.annualRevenue)}/year`}
                 icon={PoundSterling}
-                trend="up"
               />
               <StatCard
-                title="Est. Monthly Costs"
-                value={formatCurrency(currentProjection.monthlyCosts.total)}
-                subtitle={currentProjection.monthlyCosts.hostingDesc}
+                title="Actual Monthly Costs"
+                value={formatCurrency(liveOverview.monthlyCosts.total)}
+                subtitle={liveOverview.monthlyCosts.hostingDesc}
                 icon={Server}
               />
               <StatCard
-                title="Gross Margin"
-                value={`${currentProjection.grossMargin.toFixed(1)}%`}
-                subtitle={`${formatCurrency(currentProjection.annualProfit)}/year profit`}
+                title="Net Position"
+                value={formatCurrency(liveOverview.monthlyRevenue - liveOverview.monthlyCosts.total)}
+                subtitle={`${formatCurrency(liveOverview.annualProfit)}/year`}
                 icon={Percent}
-                trend="up"
+                trend={liveOverview.annualProfit >= 0 ? "up" : "down"}
               />
             </div>
           ) : null}
         </section>
 
-        {stats && currentProjection && (
+        {stats && liveOverview && (
           <section>
             <h2 className="text-lg font-semibold mb-4" data-testid="text-current-costs">Current Monthly Cost Breakdown</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -778,8 +777,8 @@ export default function AdminRevenue() {
                     <Server className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Hosting</span>
                   </div>
-                  <div className="text-xl font-bold">{formatCurrency(currentProjection.monthlyCosts.hosting)}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{currentProjection.monthlyCosts.hostingDesc}</p>
+                  <div className="text-xl font-bold">{formatCurrency(liveOverview.monthlyCosts.hosting)}</div>
+                  <p className="text-xs text-muted-foreground mt-1">{liveOverview.monthlyCosts.hostingDesc}</p>
                 </CardContent>
               </Card>
               <Card>
@@ -788,7 +787,7 @@ export default function AdminRevenue() {
                     <Phone className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Twilio (SMS + Voice)</span>
                   </div>
-                  <div className="text-xl font-bold">{formatCurrency(currentProjection.monthlyCosts.twilio)}</div>
+                  <div className="text-xl font-bold">{formatCurrency(liveOverview.monthlyCosts.twilio)}</div>
                   <p className="text-xs text-muted-foreground mt-1">Missed check-in alerts + Call Supervisor</p>
                 </CardContent>
               </Card>
@@ -798,7 +797,7 @@ export default function AdminRevenue() {
                     <Mail className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Resend (Email)</span>
                   </div>
-                  <div className="text-xl font-bold">{formatCurrency(currentProjection.monthlyCosts.resend)}</div>
+                  <div className="text-xl font-bold">{formatCurrency(liveOverview.monthlyCosts.resend)}</div>
                   <p className="text-xs text-muted-foreground mt-1">Alerts & notifications</p>
                 </CardContent>
               </Card>
@@ -808,7 +807,7 @@ export default function AdminRevenue() {
                     <Headphones className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm font-medium">OpenAI (AI Chat)</span>
                   </div>
-                  <div className="text-xl font-bold">{formatCurrency(currentProjection.monthlyCosts.openai)}</div>
+                  <div className="text-xl font-bold">{formatCurrency(liveOverview.monthlyCosts.openai)}</div>
                   <p className="text-xs text-muted-foreground mt-1">Wellbeing AI + voice</p>
                 </CardContent>
               </Card>
@@ -818,7 +817,7 @@ export default function AdminRevenue() {
                     <CreditCard className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Stripe Fees</span>
                   </div>
-                  <div className="text-xl font-bold">{formatCurrency(currentProjection.monthlyCosts.stripe)}</div>
+                  <div className="text-xl font-bold">{formatCurrency(liveOverview.monthlyCosts.stripe)}</div>
                   <p className="text-xs text-muted-foreground mt-1">{costModel.stripe_fee_percent}% + {formatCurrency(costModel.stripe_fee_fixed)} per transaction</p>
                 </CardContent>
               </Card>
