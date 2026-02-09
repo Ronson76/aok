@@ -146,7 +146,7 @@ function calculateProjection(
     orgSeats * costModel.org_monthly;
 
   if (useAnnual && annualSeats > 0) {
-    const perSeatMonthly = annualFlatFee / annualSeats / 12;
+    const perSeatMonthly = annualFlatFee / (annualSeats / 12);
     monthlyRevenue += perSeatMonthly * totalUsers;
   }
 
