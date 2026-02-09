@@ -8,13 +8,14 @@ import {
   Loader2, Clock, MapPin, TrendingUp, ArrowLeft, Lock, Bike, Footprints,
   Play, Pause, Square, ChevronRight, Activity, Navigation, Flame, Timer,
   Zap, Target, BarChart3, Camera, Image, Trash2, Edit3, X, Check, Plus,
-  CalendarDays,
+  CalendarDays, HelpCircle, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { FaRunning } from "react-icons/fa";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useEffect, useState, useRef, useCallback } from "react";
+import "leaflet/dist/leaflet.css";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -45,18 +46,10 @@ function ActivityMap({ points }: { points: Array<{ lat: number; lng: number }> }
   useEffect(() => {
     if (!mapRef.current || points.length < 2) return;
 
-    import("leaflet").then((L) => {
+    import("leaflet").then((mod) => {
+      const L = mod.default || mod;
       if (mapInstance.current) {
         mapInstance.current.remove();
-      }
-
-      const linkEl = document.getElementById("leaflet-css");
-      if (!linkEl) {
-        const link = document.createElement("link");
-        link.id = "leaflet-css";
-        link.rel = "stylesheet";
-        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        document.head.appendChild(link);
       }
 
       const map = L.map(mapRef.current!, { zoomControl: false, attributionControl: false });
@@ -1055,6 +1048,53 @@ function MemoriesTab() {
   );
 }
 
+const FITNESS_HELP_ITEMS = [
+  { icon: Play, title: "Recording an Activity", desc: "Tap Record, choose your activity type (walk, run, or cycle), then tap Start. Your GPS position, distance, steps, and calories are tracked live. Tap Stop when finished." },
+  { icon: Navigation, title: "Route Planning", desc: "In the Routes tab, search an address or drop a pin for start and finish points. OSRM calculates the route with walk, run, and cycle time estimates." },
+  { icon: MapPin, title: "Stopovers", desc: "After planning a route, nearby Places of Interest appear along your path. Tap any place to add it as a stopover. You can add multiple stopovers and they will be included in your route." },
+  { icon: Camera, title: "Activity Memories", desc: "In the Memories tab, upload photos from your activities. Add captions and dates to build a visual diary of your fitness journey." },
+  { icon: BarChart3, title: "Activity History", desc: "The History tab shows all your recorded activities with distance, duration, pace, and calories. Tap any activity to view the full GPS track on a map." },
+  { icon: Target, title: "Steps & Calories", desc: "Steps are estimated from your movement during recording. Calorie estimates factor in activity type, distance, and duration." },
+  { icon: Zap, title: "Pace & Speed", desc: "Choose Easy, Moderate, or Fast pace when planning routes. Time estimates update automatically for walking, running, and cycling." },
+];
+
+function FitnessHelp() {
+  const [open, setOpen] = useState(false);
+  return (
+    <Card>
+      <CardContent className="py-0 px-0">
+        <Button
+          variant="ghost"
+          className="w-full justify-between px-4 py-3 rounded-xl"
+          onClick={() => setOpen(!open)}
+          data-testid="button-fitness-help-toggle"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <HelpCircle className="h-4 w-4 text-blue-500" />
+            Fitness Help
+          </span>
+          {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+        {open && (
+          <div className="px-4 pb-4 space-y-3">
+            {FITNESS_HELP_ITEMS.map((item) => (
+              <div key={item.title} className="flex gap-3" data-testid={`help-item-${item.title.toLowerCase().replace(/\s+/g, "-")}`}>
+                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0 mt-0.5">
+                  <item.icon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">{item.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Fitness() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -1121,6 +1161,8 @@ export default function Fitness() {
           <p className="text-xs text-muted-foreground">Record, plan routes, and track your progress</p>
         </div>
       </div>
+
+      <FitnessHelp />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full grid grid-cols-4 h-11">

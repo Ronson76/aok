@@ -3712,13 +3712,23 @@ export async function registerRoutes(
 
   app.post("/api/routes/plan", authMiddleware, async (req, res) => {
     if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
-    const { startLat, startLng, endLat, endLng, mode } = req.body;
+    const { startLat, startLng, endLat, endLng, mode, waypoints } = req.body;
     if (!startLat || !startLng || !endLat || !endLng) {
       return res.status(400).json({ error: "Start and end coordinates required" });
     }
     const profile = mode === "bike" ? "bike" : "foot";
     try {
-      const url = `https://router.project-osrm.org/route/v1/${profile}/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
+      let coords = `${startLng},${startLat}`;
+      if (Array.isArray(waypoints) && waypoints.length > 0) {
+        for (const wp of waypoints) {
+          const wLat = Number(wp.lat);
+          const wLng = Number(wp.lng);
+          if (isNaN(wLat) || isNaN(wLng) || wLat < -90 || wLat > 90 || wLng < -180 || wLng > 180) continue;
+          coords += `;${wLng},${wLat}`;
+        }
+      }
+      coords += `;${endLng},${endLat}`;
+      const url = `https://router.project-osrm.org/route/v1/${profile}/${coords}?overview=full&geometries=geojson`;
       const response = await fetch(url);
       const data = await response.json();
       if (data.code !== "Ok" || !data.routes?.length) {
