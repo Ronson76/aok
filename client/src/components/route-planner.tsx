@@ -925,7 +925,7 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
       </div>
 
       {mapMode === "search" && (
-        <div className="space-y-2">
+        <div className="space-y-2 relative z-30">
           <AddressSearch
             label="Start"
             placeholder="Search start address, postcode..."
