@@ -87,6 +87,7 @@ import ConfirmContact from "@/pages/confirm-contact";
 import WellbeingAI from "@/pages/wellbeing-ai";
 import LoneWorker from "@/pages/lone-worker";
 import Errands from "@/pages/errands";
+import Demo from "@/pages/demo";
 import { TermsModal } from "@/components/terms-modal";
 
 function PaymentBlockedScreen() {
@@ -707,6 +708,10 @@ function Router() {
 
   if (location.startsWith("/org/team-invite")) {
     return <OrgTeamInvite />;
+  }
+
+  if (location === "/demo") {
+    return <Demo />;
   }
 
   if (location === "/guide") {
