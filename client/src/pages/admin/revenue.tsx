@@ -135,37 +135,37 @@ function calculateProjection(
   let monthlyRevenue: number;
   let annualRevenue: number;
 
+  const activeTiers: PricingTab[] = [];
+  if (activeTabs.has("tier1")) activeTiers.push("tier1");
+  if (activeTabs.has("tier2")) activeTiers.push("tier2");
+  if (activeTabs.has("tier3")) activeTiers.push("tier3");
+
+  let revenuePerIndividual = 0;
+  if (activeTiers.length > 0) {
+    let totalTierPrice = 0;
+    for (const tier of activeTiers) {
+      if (tier === "tier1") totalTierPrice += costModel.tier1_monthly;
+      else if (tier === "tier2") totalTierPrice += costModel.tier2_monthly;
+      else if (tier === "tier3") totalTierPrice += costModel.tier3_monthly;
+    }
+    revenuePerIndividual = totalTierPrice / activeTiers.length;
+  }
+
+  let revenuePerOrgSeat = 0;
+  if (useOrg) {
+    revenuePerOrgSeat = costModel.org_monthly;
+  }
+
+  monthlyRevenue =
+    individualUsers * revenuePerIndividual +
+    orgSeats * revenuePerOrgSeat;
+
   if (useAnnual) {
     const perSeatMonthly = annualSeats > 0 ? annualFlatFee / annualSeats : 0;
-    monthlyRevenue = perSeatMonthly * annualSeats;
-    annualRevenue = monthlyRevenue * 12;
-  } else {
-    const activeTiers: PricingTab[] = [];
-    if (activeTabs.has("tier1")) activeTiers.push("tier1");
-    if (activeTabs.has("tier2")) activeTiers.push("tier2");
-    if (activeTabs.has("tier3")) activeTiers.push("tier3");
-
-    let revenuePerIndividual = 0;
-    if (activeTiers.length > 0) {
-      let totalTierPrice = 0;
-      for (const tier of activeTiers) {
-        if (tier === "tier1") totalTierPrice += costModel.tier1_monthly;
-        else if (tier === "tier2") totalTierPrice += costModel.tier2_monthly;
-        else if (tier === "tier3") totalTierPrice += costModel.tier3_monthly;
-      }
-      revenuePerIndividual = totalTierPrice / activeTiers.length;
-    }
-
-    let revenuePerOrgSeat = 0;
-    if (useOrg) {
-      revenuePerOrgSeat = costModel.org_monthly;
-    }
-
-    monthlyRevenue =
-      individualUsers * revenuePerIndividual +
-      orgSeats * revenuePerOrgSeat;
-    annualRevenue = monthlyRevenue * 12;
+    monthlyRevenue += perSeatMonthly * annualSeats;
   }
+
+  annualRevenue = monthlyRevenue * 12;
 
   const missedPerMonth = totalUsers * missedCheckinRate * 30;
   const twilioMonthlySms = missedPerMonth * costModel.sms_per_unit;
