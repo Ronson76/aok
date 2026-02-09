@@ -129,19 +129,20 @@ function calculateProjection(
   const useAnnual = activeTabs.has("annual");
   const useOrg = activeTabs.has("org");
 
-  const orgSeats = useOrg ? Math.round(totalUsers * (orgPercent / 100)) : 0;
-  const individualUsers = totalUsers - orgSeats;
-
-  let monthlyRevenue: number;
-  let annualRevenue: number;
-
   const activeTiers: PricingTab[] = [];
   if (activeTabs.has("tier1")) activeTiers.push("tier1");
   if (activeTabs.has("tier2")) activeTiers.push("tier2");
   if (activeTabs.has("tier3")) activeTiers.push("tier3");
 
+  const hasTiers = activeTiers.length > 0;
+  const orgSeats = useOrg && hasTiers ? Math.round(totalUsers * (orgPercent / 100)) : useOrg ? totalUsers : 0;
+  const individualUsers = useOrg && hasTiers ? totalUsers - orgSeats : !useOrg && hasTiers ? totalUsers : 0;
+
+  let monthlyRevenue: number;
+  let annualRevenue: number;
+
   let revenuePerIndividual = 0;
-  if (activeTiers.length > 0) {
+  if (hasTiers) {
     let totalTierPrice = 0;
     for (const tier of activeTiers) {
       if (tier === "tier1") totalTierPrice += costModel.tier1_monthly;
@@ -280,20 +281,24 @@ function PricingTabs({
   setActiveTabs,
   pricingData,
   isSuperAdmin,
+  annualSeatsStr,
+  setAnnualSeatsStr,
+  annualFlatFeeStr,
+  setAnnualFlatFeeStr,
   annualSeats,
-  setAnnualSeats,
   annualFlatFee,
-  setAnnualFlatFee,
 }: {
   costModel: CostModel;
   activeTabs: Set<PricingTab>;
   setActiveTabs: (tabs: Set<PricingTab>) => void;
   pricingData: PricingConfig[] | undefined;
   isSuperAdmin: boolean;
+  annualSeatsStr: string;
+  setAnnualSeatsStr: (s: string) => void;
+  annualFlatFeeStr: string;
+  setAnnualFlatFeeStr: (s: string) => void;
   annualSeats: number;
-  setAnnualSeats: (n: number) => void;
   annualFlatFee: number;
-  setAnnualFlatFee: (n: number) => void;
 }) {
   const { toast } = useToast();
   const [editingTab, setEditingTab] = useState<PricingTab | null>(null);
@@ -410,8 +415,8 @@ function PricingTabs({
                           type="number"
                           min="0"
                           step="100"
-                          value={annualFlatFee}
-                          onChange={(e) => setAnnualFlatFee(Math.max(0, parseFloat(e.target.value) || 0))}
+                          value={annualFlatFeeStr}
+                          onChange={(e) => setAnnualFlatFeeStr(e.target.value)}
                           className="h-7 text-sm"
                           data-testid="input-annual-flat-fee"
                         />
@@ -422,8 +427,8 @@ function PricingTabs({
                       <Input
                         type="number"
                         min="1"
-                        value={annualSeats}
-                        onChange={(e) => setAnnualSeats(Math.max(1, parseInt(e.target.value) || 1))}
+                        value={annualSeatsStr}
+                        onChange={(e) => setAnnualSeatsStr(e.target.value)}
                         className="h-7 text-sm mt-1"
                         data-testid="input-annual-seats"
                       />
@@ -638,8 +643,10 @@ export default function AdminRevenue() {
   const [aiUsageRate, setAiUsageRate] = useState(0.1);
   const [supervisorCallRate, setSupervisorCallRate] = useState(0.05);
   const [activeTabs, setActiveTabs] = useState<Set<PricingTab>>(new Set(["tier1", "tier2"]));
-  const [annualSeats, setAnnualSeats] = useState(2000);
-  const [annualFlatFee, setAnnualFlatFee] = useState(10000);
+  const [annualSeatsStr, setAnnualSeatsStr] = useState("2000");
+  const [annualFlatFeeStr, setAnnualFlatFeeStr] = useState("10000");
+  const annualSeats = parseInt(annualSeatsStr) || 0;
+  const annualFlatFee = parseFloat(annualFlatFeeStr) || 0;
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/admin/dashboard/stats"],
@@ -710,10 +717,12 @@ export default function AdminRevenue() {
           setActiveTabs={setActiveTabs}
           pricingData={pricingData}
           isSuperAdmin={isSuperAdmin}
+          annualSeatsStr={annualSeatsStr}
+          setAnnualSeatsStr={setAnnualSeatsStr}
+          annualFlatFeeStr={annualFlatFeeStr}
+          setAnnualFlatFeeStr={setAnnualFlatFeeStr}
           annualSeats={annualSeats}
-          setAnnualSeats={setAnnualSeats}
           annualFlatFee={annualFlatFee}
-          setAnnualFlatFee={setAnnualFlatFee}
         />
 
         <section>
