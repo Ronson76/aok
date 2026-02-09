@@ -1420,8 +1420,8 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
-  // Pricing config - GET (super_admin only)
-  app.get("/api/admin/pricing", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+  // Pricing config - GET (all admins)
+  app.get("/api/admin/pricing", adminAuthMiddleware, async (req, res) => {
     try {
       await adminStorage.seedDefaultPricing();
       const config = await adminStorage.getPricingConfig();

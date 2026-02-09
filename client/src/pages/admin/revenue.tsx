@@ -11,14 +11,38 @@ import { useAdmin } from "@/contexts/admin-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
-  ShieldCheck, ArrowLeft, LogOut, TrendingUp, Users, DollarSign,
-  PoundSterling, TreePine, Phone, Mail, Smartphone, Headphones,
-  Server, CreditCard, Calculator, BarChart3, Percent, KeyRound,
-  Save, RotateCcw, Settings2, Pencil
+  ShieldCheck, ArrowLeft, LogOut, TrendingUp, Users,
+  PoundSterling, TreePine, Phone, Mail, Headphones,
+  Server, CreditCard, Calculator, BarChart3, Percent,
+  Save, RotateCcw, Settings2, Pencil, Check, Building2,
+  Crown, Star, CalendarDays
 } from "lucide-react";
 import type { DashboardStats, PricingConfig } from "@shared/schema";
 
-const DEFAULT_COST_MODEL = {
+interface CostModel {
+  sms_per_unit: number;
+  voice_call_per_unit: number;
+  email_per_unit: number;
+  emergency_alert_per_unit: number;
+  ai_chat_per_conversation: number;
+  ai_voice_per_session: number;
+  ecologi_per_signup: number;
+  stripe_fee_percent: number;
+  stripe_fee_fixed: number;
+  tier1_monthly: number;
+  tier1_yearly: number;
+  tier2_monthly: number;
+  tier2_yearly: number;
+  tier3_monthly: number;
+  tier3_yearly: number;
+  org_monthly: number;
+  org_yearly: number;
+  individual_monthly: number;
+  individual_yearly: number;
+  org_seat_average: number;
+}
+
+const DEFAULT_COST_MODEL: CostModel = {
   sms_per_unit: 0.04,
   voice_call_per_unit: 0.12,
   email_per_unit: 0.001,
@@ -32,12 +56,16 @@ const DEFAULT_COST_MODEL = {
   tier1_yearly: 69.99,
   tier2_monthly: 9.99,
   tier2_yearly: 99.99,
+  tier3_monthly: 14.99,
+  tier3_yearly: 149.99,
+  org_monthly: 7.99,
+  org_yearly: 79.99,
   individual_monthly: 8.49,
   individual_yearly: 84.99,
   org_seat_average: 4.99,
 };
 
-function buildCostModel(pricingData: PricingConfig[] | undefined): typeof DEFAULT_COST_MODEL {
+function buildCostModel(pricingData: PricingConfig[] | undefined): CostModel {
   if (!pricingData || pricingData.length === 0) return DEFAULT_COST_MODEL;
   const model = { ...DEFAULT_COST_MODEL };
   for (const item of pricingData) {
@@ -63,6 +91,8 @@ function getHostingCost(users: number): { cost: number; description: string } {
   return { cost: 500, description: "Enterprise cluster" };
 }
 
+type PricingTab = "tier1" | "tier2" | "tier3" | "org" | "annual";
+
 interface ProjectionResult {
   totalUsers: number;
   individualUsers: number;
@@ -82,6 +112,7 @@ interface ProjectionResult {
   annualCosts: number;
   annualProfit: number;
   grossMargin: number;
+  revenuePerUser: number;
 }
 
 function calculateProjection(
@@ -89,15 +120,52 @@ function calculateProjection(
   orgPercent: number,
   missedCheckinRate: number,
   aiUsageRate: number,
-  supervisorCallRate: number = 0.05,
-  costModel: typeof DEFAULT_COST_MODEL = DEFAULT_COST_MODEL
+  supervisorCallRate: number,
+  costModel: CostModel,
+  activeTabs: Set<PricingTab>
 ): ProjectionResult {
   const orgSeats = Math.round(totalUsers * (orgPercent / 100));
   const individualUsers = totalUsers - orgSeats;
 
+  const useAnnual = activeTabs.has("annual");
+
+  let revenuePerIndividual = 0;
+  let revenuePerOrgSeat = 0;
+
+  if (activeTabs.has("org")) {
+    revenuePerOrgSeat = useAnnual
+      ? costModel.org_yearly / 12
+      : costModel.org_monthly;
+  } else {
+    revenuePerOrgSeat = costModel.org_seat_average;
+  }
+
+  const activeTiers: PricingTab[] = [];
+  if (activeTabs.has("tier1")) activeTiers.push("tier1");
+  if (activeTabs.has("tier2")) activeTiers.push("tier2");
+  if (activeTabs.has("tier3")) activeTiers.push("tier3");
+
+  if (activeTiers.length > 0) {
+    let totalTierPrice = 0;
+    for (const tier of activeTiers) {
+      if (tier === "tier1") {
+        totalTierPrice += useAnnual ? costModel.tier1_yearly / 12 : costModel.tier1_monthly;
+      } else if (tier === "tier2") {
+        totalTierPrice += useAnnual ? costModel.tier2_yearly / 12 : costModel.tier2_monthly;
+      } else if (tier === "tier3") {
+        totalTierPrice += useAnnual ? costModel.tier3_yearly / 12 : costModel.tier3_monthly;
+      }
+    }
+    revenuePerIndividual = totalTierPrice / activeTiers.length;
+  } else {
+    revenuePerIndividual = useAnnual
+      ? costModel.individual_yearly / 12
+      : costModel.individual_monthly;
+  }
+
   const monthlyRevenue =
-    individualUsers * costModel.individual_monthly +
-    orgSeats * costModel.org_seat_average;
+    individualUsers * revenuePerIndividual +
+    orgSeats * revenuePerOrgSeat;
 
   const annualRevenue = monthlyRevenue * 12;
 
@@ -147,6 +215,7 @@ function calculateProjection(
     annualCosts,
     annualProfit,
     grossMargin,
+    revenuePerUser: totalUsers > 0 ? monthlyRevenue / totalUsers : 0,
   };
 }
 
@@ -199,7 +268,241 @@ function ProjectionRow({ projection, highlight }: { projection: ProjectionResult
   );
 }
 
-function PricingEditor({ pricingData, isSuperAdmin }: { pricingData: PricingConfig[] | undefined; isSuperAdmin: boolean }) {
+const TAB_CONFIG: { id: PricingTab; label: string; icon: React.ElementType; monthlyKey: string; yearlyKey: string; color: string }[] = [
+  { id: "tier1", label: "Tier 1", icon: Check, monthlyKey: "tier1_monthly", yearlyKey: "tier1_yearly", color: "text-green-600" },
+  { id: "tier2", label: "Tier 2", icon: Star, monthlyKey: "tier2_monthly", yearlyKey: "tier2_yearly", color: "text-blue-600" },
+  { id: "tier3", label: "Tier 3", icon: Crown, monthlyKey: "tier3_monthly", yearlyKey: "tier3_yearly", color: "text-purple-600" },
+  { id: "org", label: "Organisation", icon: Building2, monthlyKey: "org_monthly", yearlyKey: "org_yearly", color: "text-indigo-600" },
+  { id: "annual", label: "Annual", icon: CalendarDays, monthlyKey: "", yearlyKey: "", color: "text-amber-600" },
+];
+
+function PricingTabs({
+  costModel,
+  activeTabs,
+  setActiveTabs,
+  pricingData,
+  isSuperAdmin,
+}: {
+  costModel: CostModel;
+  activeTabs: Set<PricingTab>;
+  setActiveTabs: (tabs: Set<PricingTab>) => void;
+  pricingData: PricingConfig[] | undefined;
+  isSuperAdmin: boolean;
+}) {
+  const { toast } = useToast();
+  const [editingTab, setEditingTab] = useState<PricingTab | null>(null);
+  const [editMonthly, setEditMonthly] = useState("");
+  const [editYearly, setEditYearly] = useState("");
+
+  const saveMutation = useMutation({
+    mutationFn: async (updates: { key: string; value: number }[]) => {
+      const res = await apiRequest("PUT", "/api/admin/pricing", { updates });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pricing"] });
+      toast({ title: "Pricing updated", description: "Price saved successfully." });
+      setEditingTab(null);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update pricing.", variant: "destructive" });
+    },
+  });
+
+  const toggleTab = (tabId: PricingTab) => {
+    const next = new Set(activeTabs);
+    if (next.has(tabId)) {
+      next.delete(tabId);
+    } else {
+      next.add(tabId);
+    }
+    setActiveTabs(next);
+  };
+
+  const startEditing = (tab: typeof TAB_CONFIG[0]) => {
+    if (tab.id === "annual") return;
+    setEditMonthly((costModel as any)[tab.monthlyKey]?.toString() || "0");
+    setEditYearly((costModel as any)[tab.yearlyKey]?.toString() || "0");
+    setEditingTab(tab.id);
+  };
+
+  const handleSave = (tab: typeof TAB_CONFIG[0]) => {
+    const monthlyVal = parseFloat(editMonthly);
+    const yearlyVal = parseFloat(editYearly);
+    if (isNaN(monthlyVal) || isNaN(yearlyVal) || monthlyVal < 0 || yearlyVal < 0) {
+      toast({ title: "Invalid value", description: "Please enter valid numbers.", variant: "destructive" });
+      return;
+    }
+    const updates: { key: string; value: number }[] = [];
+    if ((costModel as any)[tab.monthlyKey] !== monthlyVal) {
+      updates.push({ key: tab.monthlyKey, value: monthlyVal });
+    }
+    if ((costModel as any)[tab.yearlyKey] !== yearlyVal) {
+      updates.push({ key: tab.yearlyKey, value: yearlyVal });
+    }
+    if (updates.length === 0) {
+      setEditingTab(null);
+      return;
+    }
+    saveMutation.mutate(updates);
+  };
+
+  const useAnnual = activeTabs.has("annual");
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h2 className="text-2xl font-semibold flex items-center gap-2" data-testid="text-pricing-config">
+            <Settings2 className="w-5 h-5" />
+            Revenue Pricing
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Select pricing tiers to model revenue. Click a tab to include it in projections. {isSuperAdmin ? "Double-click to edit prices." : ""}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {TAB_CONFIG.map((tab) => {
+          const isActive = activeTabs.has(tab.id);
+          const isEditing = editingTab === tab.id;
+          const Icon = tab.icon;
+
+          const monthlyPrice = tab.monthlyKey ? (costModel as any)[tab.monthlyKey] : 0;
+          const yearlyPrice = tab.yearlyKey ? (costModel as any)[tab.yearlyKey] : 0;
+
+          return (
+            <Card
+              key={tab.id}
+              className={`cursor-pointer transition-all relative ${
+                isActive
+                  ? "ring-2 ring-primary border-primary"
+                  : "opacity-60 hover:opacity-80"
+              }`}
+              onClick={() => {
+                if (!isEditing) toggleTab(tab.id);
+              }}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                if (isSuperAdmin && tab.id !== "annual") startEditing(tab);
+              }}
+              data-testid={`tab-pricing-${tab.id}`}
+            >
+              {isActive && (
+                <div className="absolute top-2 right-2">
+                  <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                    <Check className="w-3 h-3 text-primary-foreground" />
+                  </div>
+                </div>
+              )}
+              <CardContent className="pt-4 pb-4 px-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon className={`w-4 h-4 ${tab.color}`} />
+                  <span className="text-sm font-semibold">{tab.label}</span>
+                </div>
+
+                {tab.id === "annual" ? (
+                  <div className="text-xs text-muted-foreground">
+                    {isActive ? "Using yearly prices" : "Using monthly prices"}
+                  </div>
+                ) : isEditing ? (
+                  <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Monthly</Label>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground">£</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={editMonthly}
+                          onChange={(e) => setEditMonthly(e.target.value)}
+                          className="h-7 text-sm"
+                          data-testid={`input-pricing-${tab.monthlyKey}`}
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Yearly</Label>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground">£</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={editYearly}
+                          onChange={(e) => setEditYearly(e.target.value)}
+                          className="h-7 text-sm"
+                          data-testid={`input-pricing-${tab.yearlyKey}`}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-1 pt-1">
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs flex-1"
+                        onClick={(e) => { e.stopPropagation(); handleSave(tab); }}
+                        disabled={saveMutation.isPending}
+                        data-testid={`button-pricing-save-${tab.id}`}
+                      >
+                        <Save className="w-3 h-3 mr-1" />
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs flex-1"
+                        onClick={(e) => { e.stopPropagation(); setEditingTab(null); }}
+                        data-testid={`button-pricing-cancel-${tab.id}`}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="text-lg font-bold" data-testid={`text-pricing-value-${tab.monthlyKey}`}>
+                      {formatCurrency(useAnnual ? yearlyPrice : monthlyPrice)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {useAnnual ? "/year" : "/month"}
+                      {!useAnnual && yearlyPrice > 0 && (
+                        <span className="ml-1">({formatCurrency(yearlyPrice)}/yr)</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+        <span>Active:</span>
+        {Array.from(activeTabs).map((tabId) => {
+          const tab = TAB_CONFIG.find(t => t.id === tabId);
+          return tab ? (
+            <Badge key={tabId} variant="secondary" className="text-xs">
+              {tab.label}
+            </Badge>
+          ) : null;
+        })}
+        {activeTabs.size === 0 && <span className="italic">No tiers selected — using default individual pricing</span>}
+      </div>
+    </div>
+  );
+}
+
+function CostEditor({
+  pricingData,
+  isSuperAdmin,
+}: {
+  pricingData: PricingConfig[] | undefined;
+  isSuperAdmin: boolean;
+}) {
   const { toast } = useToast();
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [isEditing, setIsEditing] = useState(false);
@@ -221,203 +524,97 @@ function PricingEditor({ pricingData, isSuperAdmin }: { pricingData: PricingConf
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/pricing"] });
-      toast({ title: "Pricing updated", description: "All pricing changes have been saved." });
+      toast({ title: "Costs updated", description: "All cost changes have been saved." });
       setIsEditing(false);
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to update pricing.", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to update costs.", variant: "destructive" });
     },
   });
 
   const handleSave = () => {
+    const costItems = pricingData?.filter(p => p.category === "costs") || [];
     const updates: { key: string; value: number }[] = [];
-    for (const [key, val] of Object.entries(editValues)) {
-      const numVal = parseFloat(val);
+    for (const item of costItems) {
+      const numVal = parseFloat(editValues[item.key] || "0");
       if (isNaN(numVal) || numVal < 0) {
-        toast({ title: "Invalid value", description: `Please enter a valid number for all fields.`, variant: "destructive" });
+        toast({ title: "Invalid value", description: "Please enter valid numbers.", variant: "destructive" });
         return;
       }
-      const original = pricingData?.find(p => p.key === key);
-      if (original && original.value !== numVal) {
-        updates.push({ key, value: numVal });
+      if (item.value !== numVal) {
+        updates.push({ key: item.key, value: numVal });
       }
     }
     if (updates.length === 0) {
-      toast({ title: "No changes", description: "No pricing values were changed." });
       setIsEditing(false);
       return;
     }
     saveMutation.mutate(updates);
   };
 
-  const handleReset = () => {
-    if (pricingData) {
-      const values: Record<string, string> = {};
-      for (const item of pricingData) {
-        values[item.key] = item.value.toString();
-      }
-      setEditValues(values);
-    }
-    setIsEditing(false);
-  };
+  if (!pricingData) return null;
 
-  if (!pricingData || pricingData.length === 0) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Skeleton className="h-4 w-4" />
-            <span className="text-sm">Loading pricing configuration...</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const subscriptionItems = pricingData.filter(p => p.category === "subscription");
   const costItems = pricingData.filter(p => p.category === "costs");
 
-  const hasChanges = pricingData.some(item => {
-    const editVal = parseFloat(editValues[item.key] || "0");
-    return item.value !== editVal;
-  });
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h2 className="text-2xl font-semibold flex items-center gap-2" data-testid="text-pricing-config">
-            <Settings2 className="w-5 h-5" />
-            Tier Pricing & Cost Configuration
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Edit subscription prices and per-unit costs. Changes update all revenue projections.
-          </p>
-        </div>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          <BarChart3 className="w-4 h-4" />
+          Per-Unit Costs
+        </CardTitle>
         {isSuperAdmin && (
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
             {isEditing ? (
               <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleReset}
-                  disabled={saveMutation.isPending}
-                  data-testid="button-pricing-cancel"
-                >
-                  <RotateCcw className="w-4 h-4 mr-1" />
+                <Button variant="outline" size="sm" onClick={() => { setIsEditing(false); if (pricingData) { const v: Record<string, string> = {}; for (const item of pricingData) v[item.key] = item.value.toString(); setEditValues(v); } }} data-testid="button-costs-cancel">
                   Cancel
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={saveMutation.isPending || !hasChanges}
-                  data-testid="button-pricing-save"
-                >
-                  <Save className="w-4 h-4 mr-1" />
-                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending} data-testid="button-costs-save">
+                  <Save className="w-3 h-3 mr-1" />
+                  Save
                 </Button>
               </>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(true)}
-                data-testid="button-pricing-edit"
-              >
-                <Pencil className="w-4 h-4 mr-1" />
-                Edit Pricing
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} data-testid="button-costs-edit">
+                <Pencil className="w-3 h-3 mr-1" />
+                Edit
               </Button>
             )}
           </div>
         )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <PoundSterling className="w-4 h-4" />
-              Subscription Pricing
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {subscriptionItems.map((item) => (
-              <div key={item.key} className="flex items-center justify-between gap-4">
-                <Label className="text-sm flex-1 min-w-0" data-testid={`label-pricing-${item.key}`}>
-                  {item.label}
-                </Label>
-                <div className="flex items-center gap-1">
-                  <span className="text-sm text-muted-foreground">£</span>
-                  {isEditing ? (
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={editValues[item.key] || ""}
-                      onChange={(e) => setEditValues(prev => ({ ...prev, [item.key]: e.target.value }))}
-                      className="w-24 text-right"
-                      data-testid={`input-pricing-${item.key}`}
-                    />
-                  ) : (
-                    <span className="text-sm font-semibold w-24 text-right inline-block" data-testid={`text-pricing-value-${item.key}`}>
-                      {item.value.toFixed(2)}
-                    </span>
-                  )}
-                </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {costItems.map((item) => (
+            <div key={item.key} className="flex items-center justify-between gap-2">
+              <Label className="text-sm flex-1 min-w-0" data-testid={`label-pricing-${item.key}`}>
+                {item.label}
+                {item.key === "stripe_fee_percent" && <span className="text-muted-foreground ml-1">(%)</span>}
+              </Label>
+              <div className="flex items-center gap-1">
+                {item.key !== "stripe_fee_percent" && <span className="text-xs text-muted-foreground">£</span>}
+                {isEditing ? (
+                  <Input
+                    type="number"
+                    step={item.key === "email_per_unit" ? "0.001" : "0.01"}
+                    min="0"
+                    value={editValues[item.key] || ""}
+                    onChange={(e) => setEditValues(prev => ({ ...prev, [item.key]: e.target.value }))}
+                    className="w-20 text-right text-sm"
+                    data-testid={`input-pricing-${item.key}`}
+                  />
+                ) : (
+                  <span className="text-sm font-semibold w-20 text-right inline-block" data-testid={`text-pricing-value-${item.key}`}>
+                    {item.key === "stripe_fee_percent" ? `${item.value}%` : item.value.toFixed(item.key === "email_per_unit" ? 3 : 2)}
+                  </span>
+                )}
               </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Per-Unit Costs
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {costItems.map((item) => (
-              <div key={item.key} className="flex items-center justify-between gap-4">
-                <Label className="text-sm flex-1 min-w-0" data-testid={`label-pricing-${item.key}`}>
-                  {item.label}
-                  {item.key === "stripe_fee_percent" && <span className="text-muted-foreground ml-1">(%)</span>}
-                </Label>
-                <div className="flex items-center gap-1">
-                  {item.key !== "stripe_fee_percent" && <span className="text-sm text-muted-foreground">£</span>}
-                  {isEditing ? (
-                    <Input
-                      type="number"
-                      step={item.key === "email_per_unit" ? "0.001" : "0.01"}
-                      min="0"
-                      value={editValues[item.key] || ""}
-                      onChange={(e) => setEditValues(prev => ({ ...prev, [item.key]: e.target.value }))}
-                      className="w-24 text-right"
-                      data-testid={`input-pricing-${item.key}`}
-                    />
-                  ) : (
-                    <span className="text-sm font-semibold w-24 text-right inline-block" data-testid={`text-pricing-value-${item.key}`}>
-                      {item.key === "stripe_fee_percent" ? `${item.value}%` : item.value.toFixed(item.key === "email_per_unit" ? 3 : 2)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-
-      {isEditing && hasChanges && (
-        <Card className="border-amber-500/30 bg-amber-500/5">
-          <CardContent className="pt-4">
-            <p className="text-sm text-amber-700 dark:text-amber-400">
-              You have unsaved changes. Changes will immediately update all revenue projections and cost calculations on this page.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -431,6 +628,7 @@ export default function AdminRevenue() {
   const [missedRate, setMissedRate] = useState(0.05);
   const [aiUsageRate, setAiUsageRate] = useState(0.1);
   const [supervisorCallRate, setSupervisorCallRate] = useState(0.05);
+  const [activeTabs, setActiveTabs] = useState<Set<PricingTab>>(new Set(["tier1", "tier2"]));
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/admin/dashboard/stats"],
@@ -440,7 +638,6 @@ export default function AdminRevenue() {
 
   const { data: pricingData } = useQuery<PricingConfig[]>({
     queryKey: ["/api/admin/pricing"],
-    enabled: isSuperAdmin,
   });
 
   const costModel = useMemo(() => buildCostModel(pricingData), [pricingData]);
@@ -452,18 +649,18 @@ export default function AdminRevenue() {
     const missRate = stats.totalCheckIns > 0
       ? (stats.totalMissedCheckIns / (stats.totalCheckIns + stats.totalMissedCheckIns))
       : 0.05;
-    return calculateProjection(total, orgPct, missRate, aiUsageRate, supervisorCallRate, costModel);
-  }, [stats, aiUsageRate, supervisorCallRate, costModel]);
+    return calculateProjection(total, orgPct, missRate, aiUsageRate, supervisorCallRate, costModel, activeTabs);
+  }, [stats, aiUsageRate, supervisorCallRate, costModel, activeTabs]);
 
   const scaleProjections = useMemo(() => {
     return [500, 1000, 2500, 5000, 10000, 25000, 50000].map(
-      (n) => calculateProjection(n, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel)
+      (n) => calculateProjection(n, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs)
     );
-  }, [orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel]);
+  }, [orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs]);
 
   const customProjection = useMemo(() => {
-    return calculateProjection(customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel);
-  }, [customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel]);
+    return calculateProjection(customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs);
+  }, [customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs]);
 
   const handleLogout = async () => {
     await logout();
@@ -496,9 +693,13 @@ export default function AdminRevenue() {
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
-        {isSuperAdmin && (
-          <PricingEditor pricingData={pricingData} isSuperAdmin={isSuperAdmin} />
-        )}
+        <PricingTabs
+          costModel={costModel}
+          activeTabs={activeTabs}
+          setActiveTabs={setActiveTabs}
+          pricingData={pricingData}
+          isSuperAdmin={isSuperAdmin}
+        />
 
         <section>
           <h2 className="text-2xl font-semibold mb-4" data-testid="text-current-overview">Current Overview</h2>
@@ -626,9 +827,6 @@ export default function AdminRevenue() {
                       { feature: "GPS fitness tracking", driver: "Built-in (Leaflet/OSM)", cost: "£0.00" },
                       { feature: "Ecologi tree planting", driver: "Ecologi", cost: `${formatCurrency(costModel.ecologi_per_signup)} (one-off)` },
                       { feature: "Payment processing", driver: "Stripe", cost: `${costModel.stripe_fee_percent}% + ${formatCurrency(costModel.stripe_fee_fixed)}` },
-                      { feature: "Essential subscription", driver: "Tier 1", cost: `${formatCurrency(costModel.tier1_monthly)}/mo or ${formatCurrency(costModel.tier1_yearly)}/yr` },
-                      { feature: "Complete Wellbeing subscription", driver: "Tier 2", cost: `${formatCurrency(costModel.tier2_monthly)}/mo or ${formatCurrency(costModel.tier2_yearly)}/yr` },
-                      { feature: "Organisation seat (avg.)", driver: "Custom bundles", cost: `${formatCurrency(costModel.org_seat_average)}/mo avg.` },
                     ].map((row, i) => (
                       <tr key={i} className={i % 2 === 0 ? "bg-muted/30" : ""}>
                         <td className="py-3 px-4 font-medium">{row.feature}</td>
@@ -642,6 +840,12 @@ export default function AdminRevenue() {
             </CardContent>
           </Card>
         </section>
+
+        {isSuperAdmin && (
+          <section>
+            <CostEditor pricingData={pricingData} isSuperAdmin={isSuperAdmin} />
+          </section>
+        )}
 
         <section>
           <h2 className="text-2xl font-semibold mb-4" data-testid="text-projections">Revenue Projections at Scale</h2>
