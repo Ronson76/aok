@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState, useRef, useCallback } from "react";
+import "leaflet/dist/leaflet.css";
 import {
   MapPin, Navigation, Cloud, Thermometer, Droplets, Wind, Sun, Moon,
   Clock, Save, Repeat, Share2, ShieldAlert, Star, Check, ArrowLeft,
   Loader2, Trash2, AlertTriangle, Footprints, Bike, ChevronRight,
   Search, X, LocateFixed, Route as RouteIcon, MousePointerClick,
-  Battery, Headphones, Key, CheckCircle2, Timer, Play,
+  Battery, Headphones, Key, CheckCircle2, Timer, Play, Plus,
   Smartphone, ChevronDown, ChevronUp, Zap,
   Store, Coffee, UtensilsCrossed, Beer, Fuel, ShoppingCart, Building2,
   Heart, Pill, Eye, EyeOff,
@@ -375,11 +376,19 @@ function AddressSearch({
   );
 }
 
+interface Waypoint {
+  lat: number;
+  lng: number;
+  name: string;
+}
+
 function RouteMap({
   startPoint,
   endPoint,
   routeCoords,
+  waypoints,
   onMapClick,
+  onPoiStopover,
   mapMode,
   settingPoint,
   pois,
@@ -388,7 +397,9 @@ function RouteMap({
   startPoint: [number, number] | null;
   endPoint: [number, number] | null;
   routeCoords: Array<[number, number]>;
+  waypoints: Waypoint[];
   onMapClick: (lat: number, lng: number) => void;
+  onPoiStopover: (poi: POI) => void;
   mapMode: "search" | "pin";
   settingPoint: "start" | "end";
   pois: POI[];
@@ -403,15 +414,8 @@ function RouteMap({
   useEffect(() => {
     if (!mapRef.current) return;
 
-    import("leaflet").then((L) => {
-      const linkEl = document.getElementById("leaflet-css");
-      if (!linkEl) {
-        const link = document.createElement("link");
-        link.id = "leaflet-css";
-        link.rel = "stylesheet";
-        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        document.head.appendChild(link);
-      }
+    import("leaflet").then((mod) => {
+      const L = mod.default || mod;
 
       if (!mapInstance.current) {
         const map = L.map(mapRef.current!, { zoomControl: false, attributionControl: false });
@@ -454,7 +458,8 @@ function RouteMap({
   useEffect(() => {
     if (!mapInstance.current) return;
 
-    import("leaflet").then((L) => {
+    import("leaflet").then((mod) => {
+      const L = mod.default || mod;
       const map = mapInstance.current;
       markersRef.current.forEach((m) => map.removeLayer(m));
       markersRef.current = [];
@@ -481,6 +486,19 @@ function RouteMap({
         markersRef.current.push(m);
       }
 
+      waypoints.forEach((wp, i) => {
+        const wpIcon = L.divIcon({
+          html: `<div style="background:#8b5cf6;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white">${i + 1}</div>`,
+          className: "",
+          iconSize: [16, 16],
+          iconAnchor: [8, 8],
+        });
+        const m = L.marker([wp.lat, wp.lng], { icon: wpIcon })
+          .bindPopup(`<div style="font-size:12px;font-weight:600">Stopover ${i + 1}</div><div style="font-size:11px;color:#666">${wp.name}</div>`)
+          .addTo(map);
+        markersRef.current.push(m);
+      });
+
       if (polylineRef.current) {
         map.removeLayer(polylineRef.current);
         polylineRef.current = null;
@@ -503,12 +521,13 @@ function RouteMap({
         map.setView(startPoint, 15);
       }
     });
-  }, [startPoint, endPoint, routeCoords]);
+  }, [startPoint, endPoint, routeCoords, waypoints]);
 
   useEffect(() => {
     if (!mapInstance.current) return;
 
-    import("leaflet").then((L) => {
+    import("leaflet").then((mod) => {
+      const L = mod.default || mod;
       const map = mapInstance.current;
       poiMarkersRef.current.forEach((m) => map.removeLayer(m));
       poiMarkersRef.current = [];
@@ -523,8 +542,19 @@ function RouteMap({
           iconSize: [12, 12],
           iconAnchor: [6, 6],
         });
+        const popupContent = document.createElement("div");
+        popupContent.innerHTML = `<div style="font-size:13px;font-weight:600">${poi.name}</div><div style="font-size:11px;color:#666;text-transform:capitalize;margin-bottom:6px">${poi.type}</div>`;
+        const btn = document.createElement("button");
+        btn.textContent = "Add as stopover";
+        btn.setAttribute("data-testid", `button-stopover-poi-${poi.id}`);
+        btn.style.cssText = "background:#8b5cf6;color:white;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;width:100%";
+        btn.addEventListener("click", () => {
+          onPoiStopover(poi);
+          map.closePopup();
+        });
+        popupContent.appendChild(btn);
         const m = L.marker([poi.lat, poi.lng], { icon })
-          .bindPopup(`<div style="font-size:13px;font-weight:600">${poi.name}</div><div style="font-size:11px;color:#666;text-transform:capitalize">${poi.type}</div>`)
+          .bindPopup(popupContent)
           .addTo(map);
         poiMarkersRef.current.push(m);
       });
@@ -593,6 +623,7 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [savedRouteId, setSavedRouteId] = useState<string | null>(null);
   const [mapMode, setMapMode] = useState<"search" | "pin">("search");
+  const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
   const [pois, setPois] = useState<POI[]>([]);
   const [showPois, setShowPois] = useState(true);
   const [loadingPois, setLoadingPois] = useState(false);
@@ -647,6 +678,7 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
         endLat: endPoint![0],
         endLng: endPoint![1],
         mode,
+        waypoints: waypoints.length > 0 ? waypoints : undefined,
       });
       return res.json();
     },
@@ -726,7 +758,7 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
       setIsPlanning(true);
       planMutation.mutate({ mode: "foot" });
     }
-  }, [startPoint, endPoint]);
+  }, [startPoint, endPoint, waypoints]);
 
   useEffect(() => {
     if (routeCoords.length < 2) {
@@ -783,6 +815,7 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
     setSavedRouteId(null);
     setSettingPoint("start");
     setCheckedItems({});
+    setWaypoints([]);
     setPois([]);
     setPoiFilter(null);
     setPoisExpanded(false);
@@ -863,7 +896,12 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
         startPoint={startPoint}
         endPoint={endPoint}
         routeCoords={routeCoords}
+        waypoints={waypoints}
         onMapClick={handleMapClick}
+        onPoiStopover={(poi) => {
+          if (waypoints.some(w => w.lat === poi.lat && w.lng === poi.lng)) return;
+          setWaypoints((prev) => [...prev, { lat: poi.lat, lng: poi.lng, name: poi.name }]);
+        }}
         mapMode={mapMode}
         settingPoint={settingPoint}
         pois={poiFilter ? pois.filter(p => p.category === poiFilter) : pois}
@@ -881,6 +919,45 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
         <Button variant="ghost" size="sm" onClick={handleReset} className="w-full" data-testid="button-reset-route">
           <X className="h-3.5 w-3.5 mr-1" /> Clear route
         </Button>
+      )}
+
+      {waypoints.length > 0 && (
+        <Card>
+          <CardContent className="py-3 px-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5 text-violet-500" />
+                Stopovers ({waypoints.length})
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setWaypoints([])}
+                data-testid="button-clear-waypoints"
+              >
+                <X className="h-3 w-3 mr-1" /> Clear all
+              </Button>
+            </div>
+            <div className="space-y-1">
+              {waypoints.map((wp, i) => (
+                <div key={`${wp.lat}-${wp.lng}`} className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-violet-50 dark:bg-violet-950/30">
+                  <div className="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center shrink-0">
+                    <span className="text-[10px] font-bold text-white">{i + 1}</span>
+                  </div>
+                  <span className="text-sm flex-1 truncate">{wp.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setWaypoints((prev) => prev.filter((_, idx) => idx !== i))}
+                    data-testid={`button-remove-waypoint-${i}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {distance > 0 && (
@@ -1113,6 +1190,23 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
                               <p className="text-sm font-medium truncate">{poi.name}</p>
                               <p className="text-xs text-muted-foreground capitalize">{poi.type}</p>
                             </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="shrink-0 text-violet-600 dark:text-violet-400"
+                              onClick={() => {
+                                if (waypoints.some(w => w.lat === poi.lat && w.lng === poi.lng)) return;
+                                setWaypoints((prev) => [...prev, { lat: poi.lat, lng: poi.lng, name: poi.name }]);
+                              }}
+                              disabled={waypoints.some(w => w.lat === poi.lat && w.lng === poi.lng)}
+                              data-testid={`button-add-stopover-${poi.id}`}
+                            >
+                              {waypoints.some(w => w.lat === poi.lat && w.lng === poi.lng) ? (
+                                <><Check className="h-3 w-3 mr-1" /> Added</>
+                              ) : (
+                                <><Plus className="h-3 w-3 mr-1" /> Stopover</>
+                              )}
+                            </Button>
                           </div>
                         );
                       })}
@@ -1418,9 +1512,11 @@ function RouteCard({
 export default function RoutesTab() {
   const [view, setView] = useState<"planner" | "saved">("planner");
   const [repeatRoute, setRepeatRoute] = useState<PlannedRoute | null>(null);
+  const [repeatKey, setRepeatKey] = useState(0);
 
   const handleRepeat = (route: PlannedRoute) => {
     setRepeatRoute(route);
+    setRepeatKey((k) => k + 1);
     setView("planner");
   };
 
@@ -1450,7 +1546,7 @@ export default function RoutesTab() {
       </div>
 
       {view === "planner" ? (
-        <RoutePlannerView initialRoute={repeatRoute} onClearRepeat={() => setRepeatRoute(null)} />
+        <RoutePlannerView key={repeatKey} initialRoute={repeatRoute} onClearRepeat={() => setRepeatRoute(null)} />
       ) : (
         <SavedRoutesList onRepeat={handleRepeat} />
       )}
