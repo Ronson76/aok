@@ -122,7 +122,8 @@ function calculateProjection(
   aiUsageRate: number,
   supervisorCallRate: number,
   costModel: CostModel,
-  activeTabs: Set<PricingTab>
+  activeTabs: Set<PricingTab>,
+  annualSeats: number = 100
 ): ProjectionResult {
   const orgSeats = Math.round(totalUsers * (orgPercent / 100));
   const individualUsers = totalUsers - orgSeats;
@@ -163,11 +164,32 @@ function calculateProjection(
       : costModel.individual_monthly;
   }
 
-  const monthlyRevenue =
-    individualUsers * revenuePerIndividual +
-    orgSeats * revenuePerOrgSeat;
+  let monthlyRevenue: number;
+  let annualRevenue: number;
 
-  const annualRevenue = monthlyRevenue * 12;
+  if (useAnnual) {
+    const avgYearlyIndividual = activeTiers.length > 0
+      ? activeTiers.reduce((sum, tier) => {
+          if (tier === "tier1") return sum + costModel.tier1_yearly;
+          if (tier === "tier2") return sum + costModel.tier2_yearly;
+          if (tier === "tier3") return sum + costModel.tier3_yearly;
+          return sum;
+        }, 0) / activeTiers.length
+      : costModel.individual_yearly;
+
+    const yearlyOrgSeat = activeTabs.has("org") ? costModel.org_yearly : costModel.org_seat_average * 12;
+
+    annualRevenue = annualSeats * (
+      (1 - orgPercent / 100) * avgYearlyIndividual +
+      (orgPercent / 100) * yearlyOrgSeat
+    );
+    monthlyRevenue = annualRevenue / 12;
+  } else {
+    monthlyRevenue =
+      individualUsers * revenuePerIndividual +
+      orgSeats * revenuePerOrgSeat;
+    annualRevenue = monthlyRevenue * 12;
+  }
 
   const missedPerMonth = totalUsers * missedCheckinRate * 30;
   const twilioMonthlySms = missedPerMonth * costModel.sms_per_unit;
@@ -282,12 +304,16 @@ function PricingTabs({
   setActiveTabs,
   pricingData,
   isSuperAdmin,
+  annualSeats,
+  setAnnualSeats,
 }: {
   costModel: CostModel;
   activeTabs: Set<PricingTab>;
   setActiveTabs: (tabs: Set<PricingTab>) => void;
   pricingData: PricingConfig[] | undefined;
   isSuperAdmin: boolean;
+  annualSeats: number;
+  setAnnualSeats: (n: number) => void;
 }) {
   const { toast } = useToast();
   const [editingTab, setEditingTab] = useState<PricingTab | null>(null);
@@ -403,8 +429,23 @@ function PricingTabs({
                 </div>
 
                 {tab.id === "annual" ? (
-                  <div className="text-xs text-muted-foreground">
-                    {isActive ? "Using yearly prices" : "Using monthly prices"}
+                  <div className="space-y-2">
+                    <div className="text-xs text-muted-foreground">
+                      {isActive ? "Using yearly prices" : "Using monthly prices"}
+                    </div>
+                    {isActive && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Label className="text-xs text-muted-foreground">Seats</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={annualSeats}
+                          onChange={(e) => setAnnualSeats(Math.max(1, parseInt(e.target.value) || 1))}
+                          className="h-7 text-sm mt-1"
+                          data-testid="input-annual-seats"
+                        />
+                      </div>
+                    )}
                   </div>
                 ) : isEditing ? (
                   <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
@@ -629,6 +670,7 @@ export default function AdminRevenue() {
   const [aiUsageRate, setAiUsageRate] = useState(0.1);
   const [supervisorCallRate, setSupervisorCallRate] = useState(0.05);
   const [activeTabs, setActiveTabs] = useState<Set<PricingTab>>(new Set(["tier1", "tier2"]));
+  const [annualSeats, setAnnualSeats] = useState(100);
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/admin/dashboard/stats"],
@@ -649,18 +691,18 @@ export default function AdminRevenue() {
     const missRate = stats.totalCheckIns > 0
       ? (stats.totalMissedCheckIns / (stats.totalCheckIns + stats.totalMissedCheckIns))
       : 0.05;
-    return calculateProjection(total, orgPct, missRate, aiUsageRate, supervisorCallRate, costModel, activeTabs);
-  }, [stats, aiUsageRate, supervisorCallRate, costModel, activeTabs]);
+    return calculateProjection(total, orgPct, missRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats);
+  }, [stats, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats]);
 
   const scaleProjections = useMemo(() => {
     return [500, 1000, 2500, 5000, 10000, 25000, 50000].map(
-      (n) => calculateProjection(n, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs)
+      (n) => calculateProjection(n, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats)
     );
-  }, [orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs]);
+  }, [orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats]);
 
   const customProjection = useMemo(() => {
-    return calculateProjection(customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs);
-  }, [customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs]);
+    return calculateProjection(customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats);
+  }, [customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats]);
 
   const handleLogout = async () => {
     await logout();
@@ -699,6 +741,8 @@ export default function AdminRevenue() {
           setActiveTabs={setActiveTabs}
           pricingData={pricingData}
           isSuperAdmin={isSuperAdmin}
+          annualSeats={annualSeats}
+          setAnnualSeats={setAnnualSeats}
         />
 
         <section>
