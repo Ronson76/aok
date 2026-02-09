@@ -123,7 +123,8 @@ function calculateProjection(
   supervisorCallRate: number,
   costModel: CostModel,
   activeTabs: Set<PricingTab>,
-  annualSeats: number = 100
+  annualSeats: number = 2000,
+  annualFlatFee: number = 10000
 ): ProjectionResult {
   const useAnnual = activeTabs.has("annual");
   const useOrg = activeTabs.has("org");
@@ -135,7 +136,6 @@ function calculateProjection(
   let annualRevenue: number;
 
   if (useAnnual) {
-    const annualFlatFee = costModel.individual_yearly;
     annualRevenue = annualFlatFee;
     monthlyRevenue = annualRevenue / 12;
   } else {
@@ -281,6 +281,8 @@ function PricingTabs({
   isSuperAdmin,
   annualSeats,
   setAnnualSeats,
+  annualFlatFee,
+  setAnnualFlatFee,
 }: {
   costModel: CostModel;
   activeTabs: Set<PricingTab>;
@@ -289,6 +291,8 @@ function PricingTabs({
   isSuperAdmin: boolean;
   annualSeats: number;
   setAnnualSeats: (n: number) => void;
+  annualFlatFee: number;
+  setAnnualFlatFee: (n: number) => void;
 }) {
   const { toast } = useToast();
   const [editingTab, setEditingTab] = useState<PricingTab | null>(null);
@@ -385,7 +389,7 @@ function PricingTabs({
               }}
               onDoubleClick={(e) => {
                 e.stopPropagation();
-                if (isSuperAdmin) startEditing(tab);
+                if (isSuperAdmin && tab.id !== "annual") startEditing(tab);
               }}
               data-testid={`tab-pricing-${tab.id}`}
             >
@@ -402,32 +406,40 @@ function PricingTabs({
                   <span className="text-sm font-semibold">{tab.label}</span>
                 </div>
 
-                {tab.id === "annual" && !isEditing ? (
-                  <div className="space-y-2">
+                {tab.id === "annual" ? (
+                  <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
                     <div>
-                      <div className="text-lg font-bold" data-testid="text-pricing-value-annual">
-                        {formatCurrency(costModel.individual_yearly)}
+                      <Label className="text-xs text-muted-foreground">Flat Annual Fee</Label>
+                      <div className="flex items-center gap-1 mt-1">
+                        <span className="text-xs text-muted-foreground">£</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="100"
+                          value={annualFlatFee}
+                          onChange={(e) => setAnnualFlatFee(Math.max(0, parseFloat(e.target.value) || 0))}
+                          className="h-7 text-sm"
+                          data-testid="input-annual-flat-fee"
+                        />
                       </div>
-                      <div className="text-xs text-muted-foreground">flat annual fee</div>
                     </div>
-                    {isActive && (
-                      <div onClick={(e) => e.stopPropagation()} className="space-y-1">
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Seats</Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            value={annualSeats}
-                            onChange={(e) => setAnnualSeats(Math.max(1, parseInt(e.target.value) || 1))}
-                            className="h-7 text-sm mt-1"
-                            data-testid="input-annual-seats"
-                          />
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          = {formatCurrency(costModel.individual_yearly / annualSeats)}/seat
-                        </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Seats</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={annualSeats}
+                        onChange={(e) => setAnnualSeats(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="h-7 text-sm mt-1"
+                        data-testid="input-annual-seats"
+                      />
+                    </div>
+                    <div className="pt-1 border-t">
+                      <div className="text-lg font-bold" data-testid="text-annual-per-seat">
+                        {formatCurrency(annualSeats > 0 ? annualFlatFee / annualSeats : 0)}
                       </div>
-                    )}
+                      <div className="text-xs text-muted-foreground">per seat</div>
+                    </div>
                   </div>
                 ) : isEditing ? (
                   <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
@@ -652,7 +664,8 @@ export default function AdminRevenue() {
   const [aiUsageRate, setAiUsageRate] = useState(0.1);
   const [supervisorCallRate, setSupervisorCallRate] = useState(0.05);
   const [activeTabs, setActiveTabs] = useState<Set<PricingTab>>(new Set(["tier1", "tier2"]));
-  const [annualSeats, setAnnualSeats] = useState(100);
+  const [annualSeats, setAnnualSeats] = useState(2000);
+  const [annualFlatFee, setAnnualFlatFee] = useState(10000);
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/admin/dashboard/stats"],
@@ -673,18 +686,18 @@ export default function AdminRevenue() {
     const missRate = stats.totalCheckIns > 0
       ? (stats.totalMissedCheckIns / (stats.totalCheckIns + stats.totalMissedCheckIns))
       : 0.05;
-    return calculateProjection(total, orgPct, missRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats);
-  }, [stats, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats]);
+    return calculateProjection(total, orgPct, missRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee);
+  }, [stats, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee]);
 
   const scaleProjections = useMemo(() => {
     return [500, 1000, 2500, 5000, 10000, 25000, 50000].map(
-      (n) => calculateProjection(n, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats)
+      (n) => calculateProjection(n, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee)
     );
-  }, [orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats]);
+  }, [orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee]);
 
   const customProjection = useMemo(() => {
-    return calculateProjection(customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats);
-  }, [customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats]);
+    return calculateProjection(customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee);
+  }, [customUsers, orgPercent, missedRate, aiUsageRate, supervisorCallRate, costModel, activeTabs, annualSeats, annualFlatFee]);
 
   const handleLogout = async () => {
     await logout();
@@ -725,6 +738,8 @@ export default function AdminRevenue() {
           isSuperAdmin={isSuperAdmin}
           annualSeats={annualSeats}
           setAnnualSeats={setAnnualSeats}
+          annualFlatFee={annualFlatFee}
+          setAnnualFlatFee={setAnnualFlatFee}
         />
 
         <section>
