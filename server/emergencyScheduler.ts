@@ -1,5 +1,5 @@
 import { storage } from "./storage";
-import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder, sendSmsCheckinLink, sendMissedCheckInAlert } from "./notifications";
+import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder, sendSmsCheckinLink } from "./notifications";
 import { ObjectStorageService } from "./replit_integrations/object_storage";
 
 let schedulerInterval: NodeJS.Timeout | null = null;
@@ -385,19 +385,59 @@ async function processOverdueErrandSessions(): Promise<void> {
         const user = await storage.getUserById(session.userId);
         if (!user) continue;
         const contacts = await storage.getConfirmedContacts(session.userId);
-        if (contacts.length > 0) {
-          const activityLabel = session.customLabel || session.activityType.replace(/_/g, ' ');
-          let locationInfo = '';
-          if (session.lastKnownLat && session.lastKnownLng) {
-            locationInfo = ` Last known location: https://maps.google.com/?q=${session.lastKnownLat},${session.lastKnownLng}`;
-          }
-          const message = `${user.name} has not completed their activity (${activityLabel}) within the expected time and grace period has expired.${locationInfo}`;
-          const contactEmails = contacts.map(c => c.email);
-          await storage.createAlertLog(session.userId, contactEmails, `Activity overdue: ${activityLabel}`);
-          await sendMissedCheckInAlert(user.name, contacts, message, session.lastKnownLat || undefined, session.lastKnownLng || undefined);
-          console.log(`[ERRAND] Contacts notified for overdue session ${session.id}`);
+        if (contacts.length === 0) {
+          console.log(`[ERRAND] No confirmed contacts for user ${session.userId}, skipping alerts`);
+          await storage.markErrandSessionNotified(session.id);
+          continue;
         }
+
+        const activityLabel = session.customLabel || session.activityType.replace(/_/g, ' ');
+        const contactEmails = contacts.map(c => c.email);
+
+        const location = session.lastKnownLat && session.lastKnownLng
+          ? { latitude: parseFloat(session.lastKnownLat), longitude: parseFloat(session.lastKnownLng) }
+          : undefined;
+
+        const settings = await storage.getSettings(session.userId);
+
+        const alertResult = await sendEmergencyAlert(
+          contacts,
+          user,
+          location,
+          false,
+          settings?.additionalInfo
+        );
+
+        const voiceResult = await sendVoiceAlerts(contacts, user, 'emergency');
+
+        const notificationSummary = [];
+        if (alertResult.emailsSent > 0) notificationSummary.push(`${alertResult.emailsSent} email(s)`);
+        if (alertResult.smsSent > 0) notificationSummary.push(`${alertResult.smsSent} SMS(s)`);
+        if (voiceResult.callsMade > 0) notificationSummary.push(`${voiceResult.callsMade} voice call(s)`);
+
+        await storage.createAlertLog(
+          session.userId,
+          contactEmails,
+          `ACTIVITY OVERDUE: ${activityLabel} - ${notificationSummary.join(', ') || 'no contacts'} notified`
+        );
+
+        const existingAlert = await storage.getActiveEmergencyAlert(session.userId);
+        if (!existingAlert) {
+          const activeAlert = await storage.createActiveEmergencyAlert(
+            session.userId,
+            session.lastKnownLat || null,
+            session.lastKnownLng || null,
+            null
+          );
+          await storage.linkErrandSessionToAlert(session.id, activeAlert.id);
+          console.log(`[ERRAND] Created emergency alert ${activeAlert.id} for overdue session ${session.id} (5-min location updates active)`);
+        } else {
+          await storage.linkErrandSessionToAlert(session.id, existingAlert.id);
+          console.log(`[ERRAND] Linked existing emergency alert ${existingAlert.id} to session ${session.id}`);
+        }
+
         await storage.markErrandSessionNotified(session.id);
+        console.log(`[ERRAND] Contacts notified for overdue session ${session.id}: ${notificationSummary.join(', ')}`);
       } catch (e) {
         console.error(`[ERRAND] Error processing grace-expired session ${session.id}:`, e);
       }

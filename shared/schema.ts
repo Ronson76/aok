@@ -1757,6 +1757,7 @@ export const errandSessions = pgTable("errand_sessions", {
   notifiedAt: timestamp("notified_at"),
   completedAt: timestamp("completed_at"),
   gpsPoints: jsonb("gps_points").$type<Array<{ lat: number; lng: number; timestamp: number }>>().default([]),
+  emergencyAlertId: varchar("emergency_alert_id").references(() => activeEmergencyAlerts.id),
 });
 
 export const insertErrandSessionSchema = createInsertSchema(errandSessions).omit({
@@ -1773,6 +1774,7 @@ export const insertErrandSessionSchema = createInsertSchema(errandSessions).omit
   notifiedAt: true,
   completedAt: true,
   gpsPoints: true,
+  emergencyAlertId: true,
 }).extend({
   activityType: z.enum(errandActivityTypes),
   expectedDurationMins: z.number().min(5).max(480),

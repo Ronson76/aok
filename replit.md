@@ -34,7 +34,7 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Core**: Contact, CheckIn, Settings, AlertLog
 - **Wellness**: MoodEntry, Pet, DigitalDocument
 - **Fitness**: FitnessActivity, FitnessFollow, ActivityLike, ActivityComment, PlannedRoute
-- **Activities**: ErrandSession (activity type, duration, GPS points, grace period, status)
+- **Activities**: ErrandSession (activity type, duration, GPS points, grace period, status, emergencyAlertId linking to activeEmergencyAlerts)
 
 ### Core Features
 - **Check-in System**: Users set frequency; missed check-ins trigger alerts.

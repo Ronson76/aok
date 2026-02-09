@@ -252,6 +252,8 @@ export interface IStorage {
   getOverdueErrandSessions(): Promise<ErrandSession[]>;
   getGraceExpiredErrandSessions(): Promise<ErrandSession[]>;
   markErrandSessionNotified(id: string): Promise<void>;
+  linkErrandSessionToAlert(sessionId: string, alertId: string): Promise<void>;
+  getErrandSessionByAlertId(alertId: string): Promise<ErrandSession | undefined>;
 
   // Tier Permissions
   getTierPermissions(tier: SubscriptionTier): Promise<TierPermission | undefined>;
@@ -2294,6 +2296,7 @@ class DatabaseStorage implements IStorage {
         graceEndsAt: newGraceEnd,
         lastCheckInAt: new Date(),
         notifiedAt: null,
+        emergencyAlertId: null,
       })
       .where(eq(errandSessions.id, id))
       .returning();
@@ -2360,6 +2363,18 @@ class DatabaseStorage implements IStorage {
     await getDb().update(errandSessions)
       .set({ notifiedAt: new Date(), status: "overdue" as ErrandSessionStatus })
       .where(eq(errandSessions.id, id));
+  }
+
+  async linkErrandSessionToAlert(sessionId: string, alertId: string): Promise<void> {
+    await getDb().update(errandSessions)
+      .set({ emergencyAlertId: alertId })
+      .where(eq(errandSessions.id, sessionId));
+  }
+
+  async getErrandSessionByAlertId(alertId: string): Promise<ErrandSession | undefined> {
+    const [session] = await getDb().select().from(errandSessions)
+      .where(eq(errandSessions.emergencyAlertId, alertId));
+    return session;
   }
 
   async getTierPermissions(tier: SubscriptionTier): Promise<TierPermission | undefined> {
