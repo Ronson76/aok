@@ -152,6 +152,17 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "demo",
+    title: "Demo page",
+    content: [
+      "Visit the **Demo** page at **/demo** to see a guided walkthrough of how aok works.",
+      "The demo covers three sections: **Individual** users, **Organisation** accounts, and **Lone Worker** features.",
+      "Click a section tab to see a step-by-step breakdown of the key features and how they protect you.",
+      "The demo also explains how the protection net works across four layers.",
+      "You can access the demo from the landing page by clicking **See Demo**, or go directly to **/demo**.",
+    ],
+  },
+  {
     id: "digital-will",
     title: "Digital will",
     content: [
