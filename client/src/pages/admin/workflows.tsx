@@ -294,6 +294,17 @@ export default function AdminWorkflows() {
 
         <FlowArrow />
 
+        <WorkflowSection icon={CreditCard} title="Revenue Dashboard" description="Pricing tabs and projection modelling" color="purple">
+          <StepBox icon={Layers} label="Pricing Tabs" sublabel="Tier 1, Tier 2, Tier 3, Organisation, Annual" />
+          <StepBox icon={CheckCircle} label="Toggle Tiers" sublabel="Click tabs to include/exclude from projections" />
+          <StepBox icon={CreditCard} label="Edit Prices" sublabel="Super admins double-click tabs to edit monthly/yearly prices" />
+          <StepBox icon={Users} label="Annual Seats" sublabel="Set number of seats for flat annual fee calculations" />
+          <StepBox icon={Activity} label="Revenue Projections" sublabel="Calculations update based on active tiers and seat count" />
+          <StepBox icon={Shield} label="Cost Analysis" sublabel="Per-unit costs, hosting tiers, margin calculations" />
+        </WorkflowSection>
+
+        <FlowArrow />
+
         <WorkflowSection icon={Clock} title="Background Schedulers" description="Automated server-side processes" color="amber">
           <StepBox icon={AlertTriangle} label="Emergency Alert Scheduler" sublabel="Checks every 60 seconds for overdue alerts" badge="60s" />
           <StepBox icon={Bell} label="Push Notification Scheduler" sublabel="Checks every 30 seconds for pending notifications" badge="30s" />
