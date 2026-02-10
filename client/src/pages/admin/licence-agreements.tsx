@@ -195,6 +195,28 @@ const documentContentMap: Record<string, { title: string; sections: Array<{ head
       { heading: "Core Value Proposition", content: "A-OK proves that people were not ignored. That proof protects users, organisations, and decision-makers." },
     ],
   },
+  "final-pitch": {
+    title: "A-OK \u2014 Final Pitch (Full)",
+    sections: [
+      { heading: "Safeguarding, Done Properly", content: "Because safety isn\u2019t about buttons \u2014 it\u2019s about people not being ignored." },
+      { heading: "The Problem Everyone Is Quietly Avoiding", content: "There are hundreds of \u201Csafety\u201D, \u201Ccheck-in\u201D, and \u201Clone worker\u201D apps on the market. Most of them do the same thing: a panic button, a timer, an automated escalation, a false sense of reassurance. And almost all of them fail at the moment it actually matters. They assume safety based on a click, a timer expiring, or an automated process. A-OK starts from a different principle: Safety is only confirmed when a real human confirms it." },
+      { heading: "What A-OK Is", content: "A-OK is a consent-driven safeguarding and check-in platform designed to ensure that no alert is ignored and no situation is quietly closed without real confirmation. It does not pretend to be an emergency service, a medical device, or a call centre. Instead, it creates accountability, visibility, and proof \u2014 the things organisations actually need when something goes wrong." },
+      { heading: "How A-OK Works", content: "When a user misses a check-in, triggers an alert, or enters a risk scenario, A-OK immediately notifies their pre-nominated trusted contacts. From that moment: the alert cannot be cancelled digitally, no buttons can dismiss it, and no automation can assume safety. The alert only ends when a trusted contact confirms they have spoken directly to the user and verified their safety. Until that happens, live location is shared with all contacts, location updates refresh automatically, and the safeguarding process remains active and visible. No clicks. No assumptions. No silent failures." },
+      { heading: "Why This Is an Industry First", content: "Most apps answer the question: \u201CDid the system do something?\u201D A-OK answers the only question that actually matters: \u201CDid a human check that this person is okay?\u201D That single design decision changes everything." },
+      { heading: "1. It Forces Real Human Intervention", content: "A-OK removes the biggest weakness in safeguarding systems: passive acknowledgement. No manager clicking \u201Cresolved\u201D. No system quietly timing out. No risk disappearing on a dashboard. If safety isn\u2019t confirmed, the alert stays alive." },
+      { heading: "2. It\u2019s Legally Clean by Design", content: "A-OK is consent-first, transparent, and fully auditable. Every action is agreed in advance, configurable, and logged. This aligns directly with safeguarding frameworks, GDPR principles, and duty-of-care expectations. No medical claims. No emergency impersonation. No regulatory grey zones." },
+      { heading: "3. It Creates Proof, Not Just Alerts", content: "A-OK automatically records check-ins and missed check-ins, alert triggers, location updates, contact confirmations, and resolution timestamps. When scrutiny comes \u2014 from regulators, insurers, families, or courts \u2014 organisations can show clear, reasonable action. That\u2019s not reassurance. That\u2019s protection." },
+      { heading: "YMCA, Housing Associations & Supported Living", content: "Ensures residents are not silently ignored. Supports safeguarding without intrusive monitoring. Provides clear evidence of duty-of-care actions." },
+      { heading: "Local Authorities & Care Providers", content: "Scales across vulnerable adults, children, and staff. Reduces risk exposure without increasing liability. Creates audit-ready safeguarding records." },
+      { heading: "Care Homes & Outreach Services", content: "Supports lone staff and off-site visits. Enforces escalation that can\u2019t be bypassed. Simple, consistent safeguarding logic across teams." },
+      { heading: "Students & Universities", content: "Protects students living independently. Supports welfare without surveillance. Works for nights out, travel, and wellbeing checks." },
+      { heading: "Lone Workers", content: "No reliance on managers being available. Trusted contacts stay informed in real time. Safety can\u2019t be \u201Cclosed\u201D unless confirmed." },
+      { heading: "Solo Travellers", content: "Family or friends see live location if something goes wrong. No panic-button theatrics. Just accountability and visibility until safety is confirmed." },
+      { heading: "Why Users Trust A-OK", content: "It doesn\u2019t overpromise. It doesn\u2019t track secretly. It doesn\u2019t pretend to \u201Crescue\u201D. Users know exactly who is notified, what is shared, and when escalation happens. And they know one crucial thing: if something goes wrong, they won\u2019t be quietly forgotten." },
+      { heading: "Why Investors Get Excited", content: "A-OK isn\u2019t another feature app. It\u2019s safeguarding infrastructure. No call centres, no emergency response liability, extremely scalable, low operational cost per user, high institutional demand. The moat: contact-verified resolution logic, consent-driven architecture, audit and compliance positioning. The buyers: housing providers, local authorities, universities, care groups, insurers, large employers. A-OK sits in the gap between reassurance apps and emergency services \u2014 a space no one owns cleanly." },
+      { heading: "The Core Truth", content: "A-OK doesn\u2019t promise to save people. It promises something more realistic \u2014 and more powerful: that when someone needs help, they are not ignored. And that organisations can prove they did the right thing. That\u2019s why it works. That\u2019s why it scales. That\u2019s why it matters." },
+    ],
+  },
 };
 
 const documentIdTitleMap: Record<string, string> = {
@@ -211,6 +233,7 @@ const documentIdTitleMap: Record<string, string> = {
   "housing-pitch": "Housing Association Pitch",
   "investor-snapshot": "Investor Snapshot",
   "general-pitch": "General Pitch",
+  "final-pitch": "Final Pitch",
 };
 
 function exportDocumentPdf(documentId: string, title: string) {
@@ -368,6 +391,8 @@ interface DocumentSignature {
 
 export default function AdminLicenceAgreements() {
   const { toast } = useToast();
+  const [viewDocOpen, setViewDocOpen] = useState(false);
+  const [viewDocId, setViewDocId] = useState("");
   const [signModalOpen, setSignModalOpen] = useState(false);
   const [signDocumentId, setSignDocumentId] = useState("");
   const [signDocumentTitle, setSignDocumentTitle] = useState("");
@@ -785,6 +810,7 @@ export default function AdminLicenceAgreements() {
                 { title: "Housing Association Pitch (YMCA)", route: "#", icon: Building2, docId: "housing-pitch", exportOnly: true },
                 { title: "Investor Snapshot (5 USPs)", route: "#", icon: TrendingUp, docId: "investor-snapshot", exportOnly: true },
                 { title: "General Pitch (One-Page)", route: "#", icon: FileText, docId: "general-pitch", exportOnly: true },
+                { title: "Final Pitch (Full)", route: "#", icon: FileText, docId: "final-pitch", exportOnly: true },
               ].map((doc) => (
                 <div key={doc.docId} className="flex items-center gap-3 p-3 border rounded-md" data-testid={`quicklink-${doc.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
                   <doc.icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -810,14 +836,24 @@ export default function AdminLicenceAgreements() {
                         Sign
                       </Button>
                     )}
-                    {doc.route !== "#" && (
+                    {doc.route !== "#" ? (
                       <Link href={doc.route}>
                         <Button variant="outline" size="sm" data-testid={`quicklink-view-${doc.docId}`}>
                           <ExternalLink className="w-3 h-3 mr-1" />
                           View
                         </Button>
                       </Link>
-                    )}
+                    ) : documentContentMap[doc.docId] ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        data-testid={`quicklink-view-${doc.docId}`}
+                        onClick={() => { setViewDocId(doc.docId); setViewDocOpen(true); }}
+                      >
+                        <ExternalLink className="w-3 h-3 mr-1" />
+                        View
+                      </Button>
+                    ) : null}
                   </div>
                 </div>
               ))}
@@ -875,6 +911,39 @@ export default function AdminLicenceAgreements() {
           Naiyatech Ltd - Licence Agreements Overview
         </div>
       </div>
+
+      <Dialog open={viewDocOpen} onOpenChange={setViewDocOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-view-document">
+          <DialogHeader>
+            <DialogTitle data-testid="text-view-dialog-title">
+              {documentContentMap[viewDocId]?.title || "Document"}
+            </DialogTitle>
+            <DialogDescription>Internal document preview</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {documentContentMap[viewDocId]?.sections.map((section, idx) => (
+              <div key={idx}>
+                <h3 className="font-semibold text-sm mb-1">{section.heading}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{section.content}</p>
+              </div>
+            ))}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { exportDocumentPdf(viewDocId, documentContentMap[viewDocId]?.title || "Document"); }}
+              data-testid="button-view-export-pdf"
+            >
+              <Download className="w-3 h-3 mr-1" />
+              Export PDF
+            </Button>
+            <Button variant="outline" onClick={() => setViewDocOpen(false)} data-testid="button-close-view">
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={signModalOpen} onOpenChange={setSignModalOpen}>
         <DialogContent className="sm:max-w-lg" data-testid="dialog-sign-document">
