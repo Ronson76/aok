@@ -30,6 +30,7 @@ import {
   Download,
   PenLine,
   History,
+  TrendingUp,
 } from "lucide-react";
 import jsPDF from "jspdf";
 
@@ -162,6 +163,38 @@ const documentContentMap: Record<string, { title: string; sections: Array<{ head
       { heading: "Regulatory Alignment", content: "A-OK supports organisations operating under Ofsted, CQC, and local-authority frameworks by evidencing reasonable steps to safeguard children and vulnerable adults. The platform provides documented oversight, escalation records, and monitoring logs that align with expectations under the Children\u2019s Homes Regulations 2015, Working Together to Safeguard Children, and adult safeguarding duties under the Care Act 2014. A-OK is a risk-mitigation and compliance support tool and does not replace statutory safeguarding responsibilities." },
     ],
   },
+  "housing-pitch": {
+    title: "A-OK \u2014 YMCA / Housing Association Pitch",
+    sections: [
+      { heading: "A-OK: Safeguarding for People, Not Just Policies", content: "A-OK supports housing providers and charities in meeting their safeguarding and duty-of-care obligations without positioning itself as an emergency or medical service." },
+      { heading: "Designed For", content: "Vulnerable adults and young people. Outreach workers and lone staff. Residents living independently. Supported and transitional accommodation." },
+      { heading: "Key Safeguarding Benefits", content: "Ensures missed check-ins are never ignored. Forces real human contact before alerts are closed. Shares live location automatically until safety is confirmed. Creates a clear, auditable safeguarding record." },
+      { heading: "Why This Works for Housing Providers", content: "No call centre costs. No emergency service liability. Simple deployment across staff and residents. Clear boundaries between safeguarding and emergency response." },
+      { heading: "Outcome", content: "A-OK provides early intervention, accountability, and proof of reasonable action \u2014 protecting both residents and organisations." },
+    ],
+  },
+  "investor-snapshot": {
+    title: "A-OK \u2014 Investor Snapshot (5 USPs)",
+    sections: [
+      { heading: "A-OK: A Scalable Safeguarding Platform", content: "A-OK operates in the gap between \u201CI\u2019m fine\u201D and \u201Ccall emergency services.\u201D" },
+      { heading: "1. Contact-Verified Emergency Resolution (Industry First)", content: "Alerts can only be cancelled once a trusted contact confirms a real conversation with the user." },
+      { heading: "2. Persistent Live Location Until Safety Is Proven", content: "Continuous location sharing remains active until confirmation occurs." },
+      { heading: "3. No Call Centre = Scalable, Low-Liability Model", content: "No human operators, no emergency impersonation, no false authority." },
+      { heading: "4. Consent-First by Design", content: "Every action is explicitly agreed, configurable, and logged \u2014 GDPR-aligned from day one." },
+      { heading: "5. Built for Accountability, Not Just Alerts", content: "Full audit trails provide defensibility for organisations, insurers, and regulators." },
+    ],
+  },
+  "general-pitch": {
+    title: "A-OK \u2014 One-Page Pitch (General)",
+    sections: [
+      { heading: "A-OK: Safeguarding Without False Promises", content: "A-OK is a consent-driven safeguarding and check-in platform designed to ensure people are never ignored when something goes wrong. It does not pretend to be an emergency service and does not rely on call centres or automated assumptions of safety." },
+      { heading: "How A-OK Works", content: "When a user triggers an alert or misses a check-in, their pre-nominated trusted contacts are notified immediately. The alert cannot be cancelled digitally. The emergency remains active until a trusted contact confirms they have spoken directly to the user, and the user\u2019s safety is verbally verified. Until that confirmation occurs, live location tracking is automatically shared with all contacts and location updates refresh at regular intervals. No acknowledgement buttons. No silent cancellations. No assumed safety." },
+      { heading: "Why This Matters", content: "Most safety apps rely on clicks, timers, or automation. A-OK enforces real human confirmation, creating accountability, urgency, and a clear safeguarding trail." },
+      { heading: "What A-OK Is", content: "A safeguarding and welfare escalation platform. A check-in and accountability system. A duty-of-care support tool." },
+      { heading: "What A-OK Is Not", content: "Not an emergency service. Not a medical device. Not a call centre." },
+      { heading: "Core Value Proposition", content: "A-OK proves that people were not ignored. That proof protects users, organisations, and decision-makers." },
+    ],
+  },
 };
 
 const documentIdTitleMap: Record<string, string> = {
@@ -175,6 +208,9 @@ const documentIdTitleMap: Record<string, string> = {
   "ip-ownership": "IP Ownership Agreement",
   nda: "NDA",
   "pricing-justification": "Pricing Justification",
+  "housing-pitch": "Housing Association Pitch",
+  "investor-snapshot": "Investor Snapshot",
+  "general-pitch": "General Pitch",
 };
 
 function exportDocumentPdf(documentId: string, title: string) {
@@ -746,6 +782,9 @@ export default function AdminLicenceAgreements() {
                 { title: "IP Ownership Agreement", route: "/ip-ownership", icon: KeyRound, docId: "ip-ownership" },
                 { title: "NDA (Confidentiality)", route: "/nda", icon: Lock, docId: "nda" },
                 { title: "Pricing Justification (Ofsted/CQC)", route: "#", icon: CreditCard, docId: "pricing-justification", exportOnly: true },
+                { title: "Housing Association Pitch (YMCA)", route: "#", icon: Building2, docId: "housing-pitch", exportOnly: true },
+                { title: "Investor Snapshot (5 USPs)", route: "#", icon: TrendingUp, docId: "investor-snapshot", exportOnly: true },
+                { title: "General Pitch (One-Page)", route: "#", icon: FileText, docId: "general-pitch", exportOnly: true },
               ].map((doc) => (
                 <div key={doc.docId} className="flex items-center gap-3 p-3 border rounded-md" data-testid={`quicklink-${doc.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
                   <doc.icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
