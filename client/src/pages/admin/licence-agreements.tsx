@@ -152,6 +152,16 @@ const documentContentMap: Record<string, { title: string; sections: Array<{ head
       { heading: "7. Governing Law", content: "This agreement is governed by the laws of England and Wales. Any disputes shall be subject to the exclusive jurisdiction of the courts of England and Wales." },
     ],
   },
+  "pricing-justification": {
+    title: "A-OK Safeguarding Platform \u2013 \u00A314.99 Per Person Pricing Justification",
+    sections: [
+      { heading: "Context: UK Safeguarding Costs", content: "Adult safeguarding referrals typically cost between \u00A3198 and \u00A31,250 per person. High-risk interventions such as domestic abuse refuge placement can exceed \u00A38,850 for six months, and specialist residential placements for children can exceed \u00A34,000 per week." },
+      { heading: "A-OK Cost Comparison", content: "At \u00A314.99 per person per month (\u00A3179.88 per year), A-OK costs less than a single safeguarding referral while operating continuously throughout the year to reduce escalation, repeat incidents, and emergency response." },
+      { heading: "Operational Value", content: "A-OK provides time-bound check-ins, automated escalation, audit trails, and demonstrable monitoring. It complements\u2014rather than replaces\u2014statutory safeguarding services and supports proactive risk management." },
+      { heading: "Key Statement", content: "\u201CAt \u00A314.99 per person, A-OK costs less than a single safeguarding referral, yet operates continuously to prevent escalation into the very high-cost interventions local authorities are forced to fund.\u201D" },
+      { heading: "Regulatory Alignment", content: "A-OK supports organisations operating under Ofsted, CQC, and local-authority frameworks by evidencing reasonable steps to safeguard children and vulnerable adults. The platform provides documented oversight, escalation records, and monitoring logs that align with expectations under the Children\u2019s Homes Regulations 2015, Working Together to Safeguard Children, and adult safeguarding duties under the Care Act 2014. A-OK is a risk-mitigation and compliance support tool and does not replace statutory safeguarding responsibilities." },
+    ],
+  },
 };
 
 const documentIdTitleMap: Record<string, string> = {
@@ -164,6 +174,7 @@ const documentIdTitleMap: Record<string, string> = {
   "lone-worker-addendum": "Lone Worker Addendum",
   "ip-ownership": "IP Ownership Agreement",
   nda: "NDA",
+  "pricing-justification": "Pricing Justification",
 };
 
 function exportDocumentPdf(documentId: string, title: string) {
@@ -734,6 +745,7 @@ export default function AdminLicenceAgreements() {
                 { title: "Lone Worker Licence Addendum", route: "/lone-worker-addendum", icon: HardHat, docId: "lone-worker-addendum" },
                 { title: "IP Ownership Agreement", route: "/ip-ownership", icon: KeyRound, docId: "ip-ownership" },
                 { title: "NDA (Confidentiality)", route: "/nda", icon: Lock, docId: "nda" },
+                { title: "Pricing Justification (Ofsted/CQC)", route: "#", icon: CreditCard, docId: "pricing-justification" },
               ].map((doc) => (
                 <div key={doc.docId} className="flex items-center gap-3 p-3 border rounded-md" data-testid={`quicklink-${doc.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
                   <doc.icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -757,12 +769,14 @@ export default function AdminLicenceAgreements() {
                       <PenLine className="w-3 h-3 mr-1" />
                       Sign
                     </Button>
-                    <Link href={doc.route}>
-                      <Button variant="outline" size="sm" data-testid={`quicklink-view-${doc.docId}`}>
-                        <ExternalLink className="w-3 h-3 mr-1" />
-                        View
-                      </Button>
-                    </Link>
+                    {doc.route !== "#" && (
+                      <Link href={doc.route}>
+                        <Button variant="outline" size="sm" data-testid={`quicklink-view-${doc.docId}`}>
+                          <ExternalLink className="w-3 h-3 mr-1" />
+                          View
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 </div>
               ))}
