@@ -745,7 +745,7 @@ export default function AdminLicenceAgreements() {
                 { title: "Lone Worker Licence Addendum", route: "/lone-worker-addendum", icon: HardHat, docId: "lone-worker-addendum" },
                 { title: "IP Ownership Agreement", route: "/ip-ownership", icon: KeyRound, docId: "ip-ownership" },
                 { title: "NDA (Confidentiality)", route: "/nda", icon: Lock, docId: "nda" },
-                { title: "Pricing Justification (Ofsted/CQC)", route: "#", icon: CreditCard, docId: "pricing-justification" },
+                { title: "Pricing Justification (Ofsted/CQC)", route: "#", icon: CreditCard, docId: "pricing-justification", exportOnly: true },
               ].map((doc) => (
                 <div key={doc.docId} className="flex items-center gap-3 p-3 border rounded-md" data-testid={`quicklink-${doc.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
                   <doc.icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -760,15 +760,17 @@ export default function AdminLicenceAgreements() {
                       <Download className="w-3 h-3 mr-1" />
                       PDF
                     </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      data-testid={`quicklink-sign-${doc.docId}`}
-                      onClick={() => openSignModal(doc.docId, doc.title)}
-                    >
-                      <PenLine className="w-3 h-3 mr-1" />
-                      Sign
-                    </Button>
+                    {!("exportOnly" in doc && doc.exportOnly) && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        data-testid={`quicklink-sign-${doc.docId}`}
+                        onClick={() => openSignModal(doc.docId, doc.title)}
+                      >
+                        <PenLine className="w-3 h-3 mr-1" />
+                        Sign
+                      </Button>
+                    )}
                     {doc.route !== "#" && (
                       <Link href={doc.route}>
                         <Button variant="outline" size="sm" data-testid={`quicklink-view-${doc.docId}`}>
