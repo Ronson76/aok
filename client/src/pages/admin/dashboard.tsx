@@ -758,7 +758,7 @@ export default function AdminDashboard() {
                   onClick={() => setLocation("/admin/licence-agreements")}
                   data-testid="nav-licence-agreements"
                 >
-                  Licences
+                  Documents
                 </Button>
               )}
               {isSuperAdmin && (
