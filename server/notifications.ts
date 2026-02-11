@@ -1537,6 +1537,157 @@ If you cannot reach them, consider contacting local emergency services.
   return { emailsSent, emailsFailed, smsSent, smsFailed, whatsappSent, whatsappFailed };
 }
 
+export async function sendActivityOverdueAlert(
+  contacts: Contact[],
+  user: User,
+  activityLabel: string,
+  expectedDurationMins: number,
+  gpsLocation?: { latitude: number; longitude: number },
+  additionalInfo?: string | null
+): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number; whatsappSent: number; whatsappFailed: number }> {
+  const isOrganization = user.accountType === "organization" && !!user.referenceId;
+  const displayName = getUserDisplayName(user);
+  const identifier = isOrganization
+    ? `Reference ID: ${user.referenceId}`
+    : displayName;
+  const subjectIdentifier = isOrganization
+    ? `Reference ${user.referenceId}`
+    : displayName;
+
+  let emailsSent = 0;
+  let emailsFailed = 0;
+  let smsSent = 0;
+  let smsFailed = 0;
+  let whatsappSent = 0;
+  let whatsappFailed = 0;
+
+  let what3wordsAddress: string | null = null;
+  if (gpsLocation) {
+    what3wordsAddress = await getWhat3WordsAddress(gpsLocation.latitude, gpsLocation.longitude);
+  }
+
+  const durationDisplay = expectedDurationMins >= 60
+    ? `${Math.floor(expectedDurationMins / 60)}h ${expectedDurationMins % 60 > 0 ? `${expectedDurationMins % 60}m` : ''}`
+    : `${expectedDurationMins} minutes`;
+
+  for (const contact of contacts) {
+    const emailSubject = `ACTIVITY OVERDUE: ${subjectIdentifier} has not returned from ${activityLabel}`;
+
+    let locationHtml = "";
+    if (what3wordsAddress) {
+      const w3wUrl = `https://what3words.com/${what3wordsAddress}`;
+      locationHtml += `<p style="margin: 0 0 4px 0;"><strong>Last known GPS location:</strong></p>`;
+      locationHtml += `<p style="margin: 0 0 4px 0;">what3words: <strong>///${what3wordsAddress}</strong></p>`;
+      locationHtml += `<p style="margin: 0 0 12px 0;"><a href="${w3wUrl}" style="color: #F97316;">View on map</a></p>`;
+    } else if (gpsLocation) {
+      const mapsUrl = `https://www.google.com/maps?q=${gpsLocation.latitude},${gpsLocation.longitude}`;
+      locationHtml += `<p style="margin: 0 0 4px 0;"><strong>Last known GPS location:</strong></p>`;
+      locationHtml += `<p style="margin: 0 0 4px 0;">Coordinates: ${gpsLocation.latitude.toFixed(6)}, ${gpsLocation.longitude.toFixed(6)}</p>`;
+      locationHtml += `<p style="margin: 0 0 12px 0;"><a href="${mapsUrl}" style="color: #F97316;">View on map</a></p>`;
+    } else {
+      locationHtml += `<p style="margin: 0 0 8px 0; color: #92400e;">GPS location not available</p>`;
+    }
+
+    if (user.addressLine1) {
+      locationHtml += `<p style="margin: 12px 0 4px 0;"><strong>Registered address:</strong></p>`;
+      locationHtml += `<p style="margin: 0;">${user.addressLine1}`;
+      if (user.addressLine2) locationHtml += `<br/>${user.addressLine2}`;
+      locationHtml += `<br/>${user.city || ""}, ${user.postalCode || ""}`;
+      if (user.country) locationHtml += `<br/>${user.country}`;
+      locationHtml += `</p>`;
+    }
+
+    if (user.mobileNumber) {
+      locationHtml += `<p style="margin: 12px 0 0 0;"><strong>Mobile:</strong> <a href="tel:${user.mobileNumber.replace(/[^+\d]/g, '')}" style="color: #F97316;">${user.mobileNumber}</a></p>`;
+    }
+
+    let additionalHtml = "";
+    if (additionalInfo) {
+      try {
+        const parsed = JSON.parse(additionalInfo);
+        if (parsed.healthConditions?.length) {
+          additionalHtml += `<p style="margin: 0 0 8px 0;"><strong>Health Conditions:</strong> ${parsed.healthConditions.join(', ')}</p>`;
+        }
+        if (parsed.medications?.length) {
+          additionalHtml += `<p style="margin: 0 0 8px 0;"><strong>Medications:</strong> ${parsed.medications.join(', ')}</p>`;
+        }
+        if (parsed.allergies?.length) {
+          additionalHtml += `<p style="margin: 0 0 8px 0;"><strong>Allergies:</strong> ${parsed.allergies.join(', ')}</p>`;
+        }
+        if (parsed.notes) {
+          additionalHtml += `<p style="margin: 0;"><strong>Notes:</strong> ${parsed.notes}</p>`;
+        }
+      } catch {}
+    }
+
+    const mainContent = `
+      <p style="margin: 0 0 12px 0;"><strong>${identifier}</strong> started an activity — <strong>${activityLabel}</strong> — with an expected duration of <strong>${durationDisplay}</strong>, but has not checked back in.</p>
+      <p style="margin: 0 0 12px 0;">The expected time plus a 10-minute grace period has now passed without a response. This may indicate they need assistance.</p>
+      <p style="margin: 0; font-weight: 600; color: #DC2626;">Please try to contact them immediately.</p>
+    `;
+
+    const htmlEmail = createBrandedEmail({
+      recipientName: contact.name,
+      subject: emailSubject,
+      alertType: 'missed_checkin',
+      mainContent,
+      locationSection: locationHtml,
+      additionalInfo: additionalHtml || undefined,
+      customFooterNote: 'If you cannot reach them, consider contacting local emergency services.'
+    });
+
+    const smsLocationInfo = what3wordsAddress
+      ? `Location: ///${what3wordsAddress}`
+      : gpsLocation
+        ? `Map: https://maps.google.com/?q=${gpsLocation.latitude},${gpsLocation.longitude}`
+        : '';
+
+    const plainText = `ACTIVITY OVERDUE - ${identifier}
+
+Hi ${contact.name},
+
+${identifier} started an activity (${activityLabel}) with an expected duration of ${durationDisplay} but has not checked back in. The expected time plus a 10-minute grace period has now passed.
+
+${smsLocationInfo}
+${user.mobileNumber ? `Mobile: ${user.mobileNumber}` : ''}
+
+Please try to contact them immediately. If you cannot reach them, consider contacting local emergency services.
+
+- The aok Team`;
+
+    try {
+      await sendEmail(contact.email, emailSubject, plainText, htmlEmail);
+      emailsSent++;
+      console.log(`[ACTIVITY OVERDUE] Email sent to ${contact.name} (${contact.email})`);
+    } catch (error) {
+      emailsFailed++;
+      console.error(`[ACTIVITY OVERDUE] Failed to send email to ${contact.email}:`, error);
+    }
+
+    if (contact.phone) {
+      const smsBody = `ACTIVITY OVERDUE from aok: ${identifier} has not returned from ${activityLabel} (expected ${durationDisplay}). ${smsLocationInfo} ${user.mobileNumber ? `Call them: ${user.mobileNumber}` : "Contact them immediately."}`.trim();
+
+      const smsResult = await sendSMS(contact.phone, smsBody);
+      if (smsResult.success) {
+        smsSent++;
+        console.log(`[ACTIVITY OVERDUE] SMS sent to ${contact.name} (${contact.phone})`);
+      } else {
+        smsFailed++;
+        console.error(`[ACTIVITY OVERDUE] Failed to send SMS to ${contact.phone}:`, smsResult.error);
+      }
+
+      const whatsappResult = await sendWhatsApp(contact.phone, smsBody);
+      if (whatsappResult.success) {
+        whatsappSent++;
+      } else {
+        whatsappFailed++;
+      }
+    }
+  }
+
+  return { emailsSent, emailsFailed, smsSent, smsFailed, whatsappSent, whatsappFailed };
+}
+
 // Sent when client requests emergency end - asks contacts to confirm they've spoken to client
 // ALERTS CONTINUE until a contact confirms
 export async function sendEmergencyConfirmationRequest(
@@ -2069,6 +2220,51 @@ export async function sendVoiceAlerts(
     if (result.success) {
       callsMade++;
       console.log(`[VOICE ALERT] Call initiated to ${contact.name} at ${contact.phone}`);
+    } else {
+      callsFailed++;
+      console.error(`[VOICE ALERT] Failed to call ${contact.name} at ${contact.phone}: ${result.error}`);
+    }
+  }
+
+  return { callsMade, callsFailed };
+}
+
+export async function sendActivityVoiceAlerts(
+  contacts: Contact[],
+  user: User,
+  activityLabel: string
+): Promise<{ callsMade: number; callsFailed: number }> {
+  const contactsToCall = contacts.filter(c => c.phone);
+
+  if (contactsToCall.length === 0) {
+    console.log(`[VOICE ALERT] No contacts to call for activity overdue`);
+    return { callsMade: 0, callsFailed: 0 };
+  }
+
+  const credentials = await getTwilioCredentials();
+  if (!credentials) {
+    console.log('[VOICE ALERT] Twilio not configured - skipping voice calls');
+    return { callsMade: 0, callsFailed: 0 };
+  }
+
+  const isOrganization = user.accountType === "organization" && !!user.referenceId;
+  const displayName = getUserDisplayName(user);
+  const identifier = isOrganization
+    ? `Reference ${user.referenceId}`
+    : displayName;
+
+  const message = `This is an urgent alert from A O K. ${identifier} started an activity, ${activityLabel}, but has not checked back in. The expected time plus a 10 minute grace period has now passed. Please try to contact them immediately. If you cannot reach them, consider contacting emergency services.`;
+
+  let callsMade = 0;
+  let callsFailed = 0;
+
+  for (const contact of contactsToCall) {
+    if (!contact.phone) continue;
+
+    const result = await makeVoiceCall(contact.phone, message);
+    if (result.success) {
+      callsMade++;
+      console.log(`[VOICE ALERT] Activity overdue call initiated to ${contact.name} at ${contact.phone}`);
     } else {
       callsFailed++;
       console.error(`[VOICE ALERT] Failed to call ${contact.name} at ${contact.phone}: ${result.error}`);
