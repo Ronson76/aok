@@ -664,17 +664,6 @@ export default function Landing() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-sky-500/10 p-3 w-fit mb-4">
-                  <Map className="h-6 w-6 text-sky-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Route Planning</h3>
-                <p className="text-muted-foreground text-sm">
-                  Plan walking, running, or cycling routes on an interactive map with turn-by-turn directions, live weather forecasts, sunset times, and nearby safety points.
-                </p>
-              </CardContent>
-            </Card>
 
             <Card className="border-0 shadow-lg">
               <CardContent className="pt-6">
