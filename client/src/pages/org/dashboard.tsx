@@ -410,11 +410,14 @@ export default function OrganizationDashboard() {
       });
     }
     
-    // Filter by reference number (clientOrdinal)
+    // Filter by reference code, bundle ID, or client ordinal
     if (searchRef.trim()) {
+      const refLower = searchRef.trim().toLowerCase();
       result = result.filter(client => {
+        const refCode = (client.referenceCode || "").toLowerCase();
+        const bundle = (client.bundleId || "").toLowerCase();
         const ordinal = String(client.clientOrdinal || "");
-        return ordinal.includes(searchRef.trim());
+        return refCode.includes(refLower) || bundle.includes(refLower) || ordinal.includes(refLower);
       });
     }
     
