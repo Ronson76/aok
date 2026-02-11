@@ -424,6 +424,12 @@ export default function OrgSafeguardingPage() {
     }
   };
 
+  const toStringArray = (val: unknown): string[] => {
+    if (Array.isArray(val)) return val.map(String).filter(Boolean);
+    if (typeof val === "string" && val.trim()) return val.split(",").map(b => b.trim()).filter(Boolean);
+    return [];
+  };
+
   const formatIncidentType = (type: string) => {
     if (type === "emergency_alert") return "Emergency Alert";
     return type.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
@@ -1226,10 +1232,10 @@ export default function OrgSafeguardingPage() {
                         {concern.clientId && (
                           <p className="text-sm text-muted-foreground">Client: {getClientName(concern.clientId)}</p>
                         )}
-                        {concern.observedBehaviours && concern.observedBehaviours.length > 0 && (
+                        {concern.observedBehaviours && toStringArray(concern.observedBehaviours).length > 0 && (
                           <div className="flex items-center gap-1 flex-wrap">
                             <span className="text-sm text-muted-foreground">Behaviours:</span>
-                            {concern.observedBehaviours.map((b, i) => (
+                            {toStringArray(concern.observedBehaviours).map((b, i) => (
                               <Badge key={i} variant="outline" className="text-xs">{b}</Badge>
                             ))}
                           </div>
@@ -1420,7 +1426,7 @@ export default function OrgSafeguardingPage() {
                             Trigger: {rule.triggerType.replace(/_/g, " ")} ({rule.triggerThreshold}x)
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            Notify: {rule.notifyEmails.join(", ")}
+                            Notify: {toStringArray(rule.notifyEmails).join(", ") || "Safeguarding lead"}
                           </p>
                         </div>
                         <Button
@@ -1540,9 +1546,9 @@ export default function OrgSafeguardingPage() {
                         
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
-                            <p className="text-muted-foreground">Confirmed by ({conf.confirmedBy.length})</p>
+                            <p className="text-muted-foreground">Confirmed by ({(Array.isArray(conf.confirmedBy) ? conf.confirmedBy : []).length})</p>
                             <div className="space-y-1">
-                              {conf.confirmedBy.map((contact, idx) => (
+                              {(Array.isArray(conf.confirmedBy) ? conf.confirmedBy : []).map((contact, idx) => (
                                 <div key={idx}>
                                   <p className="font-medium">{contact.name}</p>
                                   <p className="text-xs text-muted-foreground">{contact.email}</p>
@@ -1573,7 +1579,7 @@ export default function OrgSafeguardingPage() {
                         <div className="pt-2 border-t space-y-1">
                           <p className="text-xs font-medium text-muted-foreground">Confirmation Audit Trail</p>
                           <div className="space-y-2">
-                            {conf.confirmedBy.map((contact, idx) => (
+                            {(Array.isArray(conf.confirmedBy) ? conf.confirmedBy : []).map((contact, idx) => (
                               <div key={idx} className="grid grid-cols-3 gap-2 text-xs">
                                 <div>
                                   <span className="text-muted-foreground">Contact: </span>
