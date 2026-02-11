@@ -2792,3 +2792,75 @@ export async function sendAdminInviteEmail(
     return false;
   }
 }
+
+export async function sendLowBatteryAlert(
+  contacts: Contact[],
+  user: User,
+  batteryLevel: number,
+  activityType: string
+): Promise<{ emailsSent: number; emailsFailed: number }> {
+  const displayName = getUserDisplayName(user);
+  const isOrganization = user.accountType === "organization" && !!user.referenceId;
+  const identifier = isOrganization ? `Reference ID: ${user.referenceId}` : displayName;
+  const subjectIdentifier = isOrganization ? `Reference ${user.referenceId}` : displayName;
+
+  let emailsSent = 0;
+  let emailsFailed = 0;
+
+  const primaryContacts = contacts.filter(c => c.isPrimary && c.confirmedAt);
+
+  let locationHtml = "";
+  if (user.latitude && user.longitude) {
+    let what3wordsAddress: string | null = null;
+    try {
+      what3wordsAddress = await getWhat3WordsAddress(parseFloat(user.latitude), parseFloat(user.longitude));
+    } catch (e) {}
+    if (what3wordsAddress) {
+      const w3wUrl = `https://what3words.com/${what3wordsAddress}`;
+      locationHtml = `<p style="margin: 0 0 8px 0;"><strong>Last known GPS location:</strong></p>
+        <p style="margin: 0 0 4px 0;">what3words: <strong>///${what3wordsAddress}</strong></p>
+        <p style="margin: 0 0 12px 0;"><a href="${w3wUrl}" style="color: #F97316;">View on map</a></p>`;
+    } else {
+      const googleMapsUrl = `https://www.google.com/maps?q=${user.latitude},${user.longitude}`;
+      locationHtml = `<p style="margin: 0 0 8px 0;"><strong>Last known GPS location:</strong></p>
+        <p style="margin: 0 0 12px 0;"><a href="${googleMapsUrl}" style="color: #F97316;">View on map</a></p>`;
+    }
+  }
+
+  const batteryPct = Math.round(batteryLevel);
+
+  for (const contact of primaryContacts) {
+    const emailSubject = `LOW BATTERY: ${subjectIdentifier}'s device is at ${batteryPct}% during ${activityType}`;
+    const htmlBody = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <img src="cid:shieldIcon" alt="Alert" width="48" height="48" style="display: inline-block;" />
+        </div>
+        <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+          <h2 style="color: #92400E; margin: 0 0 8px 0; font-size: 18px;">Low Battery Warning</h2>
+          <p style="color: #92400E; margin: 0; font-size: 14px;">
+            <strong>${identifier}</strong>'s device battery is at <strong>${batteryPct}%</strong> during an active <strong>${activityType}</strong> activity.
+          </p>
+        </div>
+        <div style="background: #F9FAFB; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+          <p style="margin: 0 0 8px 0; font-size: 14px;">If the device runs out of battery, aok will no longer be able to monitor their safety or share their location.</p>
+          <p style="margin: 0; font-size: 14px;">Please consider reaching out to <strong>${displayName}</strong> to ensure they are safe.</p>
+        </div>
+        ${locationHtml ? `<div style="background: #F9FAFB; border-radius: 8px; padding: 16px; margin-bottom: 20px;">${locationHtml}</div>` : ""}
+        <p style="color: #6B7280; font-size: 12px; text-align: center; margin-top: 24px;">This is an automated alert from aok. Do not reply to this email.</p>
+      </div>`;
+
+    const textBody = `LOW BATTERY WARNING: ${identifier}'s device is at ${batteryPct}% during an active ${activityType} activity. If the device runs out of battery, aok will no longer be able to monitor their safety. Please consider reaching out to ${displayName}.`;
+
+    try {
+      await sendEmail(contact.email, emailSubject, textBody, htmlBody);
+      emailsSent++;
+      console.log(`[LOW BATTERY] Alert sent to ${contact.name} (${contact.email})`);
+    } catch (err) {
+      emailsFailed++;
+      console.error(`[LOW BATTERY] Failed to send to ${contact.email}:`, err);
+    }
+  }
+
+  return { emailsSent, emailsFailed };
+}

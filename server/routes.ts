@@ -3994,6 +3994,39 @@ export async function registerRoutes(
     }
   });
 
+  const lowBatteryAlertedSessions = new Set<string>();
+
+  app.post("/api/errands/low-battery", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const { batteryLevel } = req.body;
+      if (batteryLevel == null || typeof batteryLevel !== "number") {
+        return res.status(400).json({ error: "batteryLevel is required as a number" });
+      }
+      if (batteryLevel >= 20) {
+        return res.status(400).json({ error: "Battery level is not low enough to trigger alert" });
+      }
+      const session = await storage.getActiveErrandSession(req.userId!);
+      if (!session) {
+        return res.status(400).json({ error: "No active activity session — low battery alerts only apply during activities" });
+      }
+      if (lowBatteryAlertedSessions.has(session.id)) {
+        return res.json({ success: true, alreadySent: true, emailsSent: 0, emailsFailed: 0 });
+      }
+      lowBatteryAlertedSessions.add(session.id);
+      const user = await storage.getUser(req.userId!);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      const contacts = await storage.getContacts(req.userId!);
+      const { sendLowBatteryAlert } = await import("./notifications");
+      const activityLabel = session.customLabel || session.activityType;
+      const result = await sendLowBatteryAlert(contacts, user, batteryLevel, activityLabel);
+      console.log(`[LOW BATTERY] Alert sent for user ${req.userId} at ${Math.round(batteryLevel)}% — ${result.emailsSent} emails sent`);
+      res.json({ success: true, ...result });
+    } catch (error: any) {
+      console.error("[LOW BATTERY] Error:", error);
+      res.status(500).json({ error: "Failed to send low battery alert" });
+    }
+  });
+
   // ===== ACTIVITY MEMORIES ROUTES =====
 
   app.get("/api/memories", authMiddleware, async (req, res) => {
