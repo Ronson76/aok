@@ -23,7 +23,7 @@ import {
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
   ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles,
   MessageCircle, MessageSquare, ArrowLeft, TreeDeciduous, Leaf, Timer,
-  Map, HardHat, Flame, Moon
+  Map, HardHat, Flame, Moon, BatteryLow
 } from "lucide-react";
 import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
@@ -633,6 +633,21 @@ export default function Landing() {
                 <h3 className="text-lg font-semibold mb-2">Activities Tracker</h3>
                 <p className="text-muted-foreground text-sm">
                   Log everyday activities like walking, shopping, or appointments with a built-in timer and grace period. If you don't check back in, your contacts are alerted.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg ring-2 ring-primary/20">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="rounded-full bg-yellow-500/10 p-3 w-fit">
+                    <BatteryLow className="h-6 w-6 text-yellow-500" />
+                  </div>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary border-0">New</Badge>
+                </div>
+                <h3 className="text-lg font-semibold mb-2" data-testid="text-feature-low-battery">Low Battery Alert</h3>
+                <p className="text-muted-foreground text-sm">
+                  If your phone battery drops below 20% during an active activity, your primary contacts are automatically emailed so they know to keep a closer eye. Only fires once per session.
                 </p>
               </CardContent>
             </Card>
