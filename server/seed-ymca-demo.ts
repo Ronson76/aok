@@ -168,6 +168,7 @@ export async function seedYmcaDemo(): Promise<{ orgId: string; orgEmail: string;
       email: client.contactEmail,
       phone: client.contactPhone,
       phoneType: "mobile",
+      relationship: "Family",
       isPrimary: true,
       confirmedAt,
     });
@@ -280,7 +281,7 @@ export async function seedYmcaDemo(): Promise<{ orgId: string; orgEmail: string;
     }
 
     if (i < 4) {
-      const activityTypes = ["walking", "shopping", "appointment", "dog_walking"];
+      const activityTypes: Array<"walking" | "shopping" | "appointment" | "dog_walking"> = ["walking", "shopping", "appointment", "dog_walking"];
       const labels = ["Walk to pharmacy", "Weekly shop at Asda", "GP appointment", "Walking Buster in the park"];
       const durations = [30, 45, 60, 40];
       for (let j = 0; j < 3; j++) {
@@ -389,38 +390,24 @@ export async function seedYmcaDemo(): Promise<{ orgId: string; orgEmail: string;
     }
   }
 
-  await db.insert(escalationRules).values([
-    {
+  const escalationData = [
+    { name: "Missed Check-In Escalation", description: "Automatically escalate when a client misses 3 consecutive check-ins within 72 hours", triggerType: "missed_checkins", threshold: 3, timeWindowHours: 72 as number | null, action: "notify_lead" },
+    { name: "High Risk Incident Alert", description: "Immediately notify safeguarding lead when a high severity incident is reported", triggerType: "high_risk_incident", threshold: 1, timeWindowHours: null as number | null, action: "notify_lead" },
+    { name: "Repeat Incident Pattern", description: "Flag when same client has 3 or more incidents within 30 days", triggerType: "repeat_incidents", threshold: 3, timeWindowHours: 720 as number | null, action: "create_case" },
+  ];
+
+  for (const rule of escalationData) {
+    await db.insert(escalationRules).values({
       organizationId: orgUser.id,
-      name: "Missed Check-In Escalation",
-      description: "Automatically escalate when a client misses 3 consecutive check-ins within 72 hours",
-      triggerType: "missed_checkins",
-      threshold: 3,
-      timeWindowHours: 72,
-      action: "notify_lead",
+      name: rule.name,
+      description: rule.description,
+      triggerType: rule.triggerType,
+      threshold: rule.threshold,
+      timeWindowHours: rule.timeWindowHours,
+      action: rule.action,
       isActive: true,
-    },
-    {
-      organizationId: orgUser.id,
-      name: "High Risk Incident Alert",
-      description: "Immediately notify safeguarding lead when a high severity incident is reported",
-      triggerType: "high_risk_incident",
-      threshold: 1,
-      timeWindowHours: null,
-      action: "notify_lead",
-      isActive: true,
-    },
-    {
-      organizationId: orgUser.id,
-      name: "Repeat Incident Pattern",
-      description: "Flag when same client has 3 or more incidents within 30 days",
-      triggerType: "repeat_incidents",
-      threshold: 3,
-      timeWindowHours: 720,
-      action: "create_case",
-      isActive: true,
-    },
-  ]);
+    });
+  }
 
   const auditActions = [
     { action: "create", entityType: "client", desc: "Added client Margaret Thompson (YMCA-001)", days: 80 },
@@ -443,7 +430,7 @@ export async function seedYmcaDemo(): Promise<{ orgId: string; orgEmail: string;
   for (const audit of auditActions) {
     await db.insert(auditTrail).values({
       organizationId: orgUser.id,
-      userId: orgUser.id,
+      userId: orgUser.id as string | null,
       userEmail: ORG_EMAIL,
       userRole: "admin",
       action: audit.action,
