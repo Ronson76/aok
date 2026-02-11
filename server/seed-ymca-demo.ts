@@ -409,22 +409,22 @@ export async function seedYmcaDemo(): Promise<{ orgId: string; orgEmail: string;
     });
   }
 
-  const auditActions = [
-    { action: "create", entityType: "client", desc: "Added client Margaret Thompson (YMCA-001)", days: 80 },
-    { action: "create", entityType: "client", desc: "Added client Arthur Williams (YMCA-002)", days: 79 },
-    { action: "create", entityType: "client", desc: "Bulk imported 8 clients via spreadsheet", days: 75 },
-    { action: "update", entityType: "client", desc: "Updated emergency contacts for Dorothy Evans (YMCA-003)", days: 60 },
-    { action: "create", entityType: "incident", desc: "Created incident report: Medical issue - Dorothy Evans", days: 28 },
-    { action: "update", entityType: "escalation_rule", desc: "Updated missed check-in escalation threshold from 5 to 3", days: 45 },
-    { action: "create", entityType: "welfare_concern", desc: "Filed welfare concern for Harold Brown (YMCA-010)", days: 15 },
-    { action: "create", entityType: "case_file", desc: "Opened case file for Frank Taylor (YMCA-008) - risk level RED", days: 25 },
-    { action: "update", entityType: "case_file", desc: "Added case note: Multi-disciplinary team meeting", days: 3 },
-    { action: "read", entityType: "client", desc: "Exported client check-in report for compliance audit", days: 7 },
-    { action: "update", entityType: "client", desc: "Enabled emergency recording for 5 clients", days: 50 },
-    { action: "create", entityType: "escalation_rule", desc: "Created new escalation rule: Repeat Incident Pattern", days: 40 },
-    { action: "update", entityType: "incident", desc: "Resolved incident: Missing person concern - Patricia Clarke", days: 8 },
-    { action: "update", entityType: "client", desc: "Updated check-in schedule for George Harris to every 12 hours", days: 20 },
-    { action: "export", entityType: "report", desc: "Generated monthly safeguarding summary report", days: 1 },
+  const auditActions: Array<{ action: string; entityType: string; newData: Record<string, any>; previousData?: Record<string, any>; days: number }> = [
+    { action: "create", entityType: "client", newData: { clientName: "Margaret Thompson", clientEmail: "margaret.t@example.com", bundleId: "YMCA-001", nickname: "Room 12" }, days: 80 },
+    { action: "create", entityType: "client", newData: { clientName: "Arthur Williams", clientEmail: "arthur.w@example.com", bundleId: "YMCA-002", nickname: "Room 7" }, days: 79 },
+    { action: "create", entityType: "client", newData: { clientName: "Bulk Import", importCount: 8, method: "spreadsheet" }, days: 75 },
+    { action: "update", entityType: "client_emergency_contacts", newData: { clientName: "Dorothy Evans", contactCount: 2 }, previousData: { contactCount: 1 }, days: 60 },
+    { action: "create", entityType: "incident", newData: { title: "Medical concern - Dorothy Evans", severity: "high", clientName: "Dorothy Evans" }, days: 28 },
+    { action: "update", entityType: "escalation_rule", newData: { name: "Missed Check-in Threshold", threshold: 3 }, previousData: { threshold: 5 }, days: 45 },
+    { action: "create", entityType: "welfare_concern", newData: { type: "Social isolation", urgency: "medium", clientName: "Harold Brown" }, days: 15 },
+    { action: "create", entityType: "case_file", newData: { title: "Welfare Investigation - Frank Taylor", riskLevel: "red", clientName: "Frank Taylor" }, days: 25 },
+    { action: "update", entityType: "case_file", newData: { title: "Welfare Investigation - Frank Taylor", status: "in_progress", noteAdded: "Multi-disciplinary team meeting completed" }, days: 3 },
+    { action: "export", entityType: "client", newData: { reportType: "Check-in compliance audit", format: "PDF", clientCount: 10 }, days: 7 },
+    { action: "update", entityType: "client_features", newData: { featureEmergencyRecording: true, clientCount: 5 }, previousData: { featureEmergencyRecording: false }, days: 50 },
+    { action: "create", entityType: "escalation_rule", newData: { name: "Repeat Incident Pattern", triggerCount: 3, timeWindowDays: 30 }, days: 40 },
+    { action: "update", entityType: "incident", newData: { title: "Missing person concern - Patricia Clarke", status: "resolved", resolution: "Client located safe at neighbour's home" }, previousData: { status: "open" }, days: 8 },
+    { action: "update", entityType: "client_schedule", newData: { clientName: "George Harris", scheduleStartTime: "08:00", checkInIntervalHours: 12 }, previousData: { checkInIntervalHours: 24 }, days: 20 },
+    { action: "create", entityType: "risk_report", newData: { reportType: "Monthly safeguarding summary", riskLevel: "low", period: "January 2026" }, days: 1 },
   ];
 
   for (const audit of auditActions) {
@@ -435,7 +435,8 @@ export async function seedYmcaDemo(): Promise<{ orgId: string; orgEmail: string;
       userRole: "admin",
       action: audit.action,
       entityType: audit.entityType,
-      details: audit.desc,
+      newData: audit.newData,
+      previousData: audit.previousData || null,
       createdAt: daysAgo(audit.days),
     });
   }
