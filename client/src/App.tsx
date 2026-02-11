@@ -809,7 +809,10 @@ function Router() {
 
 function App() {
   const [showSplash, setShowSplash] = useState(() => {
-    return sessionStorage.getItem("splashShown") !== "true";
+    if (sessionStorage.getItem("splashShown") === "true") return false;
+    const path = window.location.pathname;
+    if (path.startsWith("/org/") || path.startsWith("/admin/") || path === "/guide" || path === "/demo") return false;
+    return true;
   });
 
   const handleSplashComplete = () => {
