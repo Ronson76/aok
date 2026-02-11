@@ -1754,7 +1754,7 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
-  // Get audit trail
+  // Get audit trail (safeguarding page - legacy)
   app.get("/api/org/safeguarding/audit-trail", requireOrganization, async (req, res) => {
     try {
       const orgId = (req.user as any).id;
@@ -1763,6 +1763,26 @@ export function registerOrganizationRoutes(app: Express) {
       res.json(trail);
     } catch (error) {
       console.error("Error fetching audit trail:", error);
+      res.status(500).json({ error: "Failed to fetch audit trail" });
+    }
+  });
+
+  // Get comprehensive filtered audit trail (dashboard)
+  app.get("/api/org/audit-trail", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const filters: any = {};
+      if (req.query.entityType) filters.entityType = req.query.entityType as string;
+      if (req.query.action) filters.action = req.query.action as string;
+      if (req.query.search) filters.search = req.query.search as string;
+      if (req.query.startDate) filters.startDate = new Date(req.query.startDate as string);
+      if (req.query.endDate) filters.endDate = new Date(req.query.endDate as string);
+      filters.limit = parseInt(req.query.limit as string) || 50;
+      filters.offset = parseInt(req.query.offset as string) || 0;
+      const result = await storage.getFilteredAuditTrail(orgId, filters);
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching filtered audit trail:", error);
       res.status(500).json({ error: "Failed to fetch audit trail" });
     }
   });

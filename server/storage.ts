@@ -231,6 +231,7 @@ export interface IStorage {
 
   // Safeguarding - Audit Trail
   getAuditTrail(organizationId: string, limit?: number): Promise<AuditTrailEntry[]>;
+  getFilteredAuditTrail(organizationId: string, filters: { entityType?: string; action?: string; search?: string; startDate?: Date; endDate?: Date; limit?: number; offset?: number }): Promise<{ entries: AuditTrailEntry[]; total: number }>;
   createAuditEntry(organizationId: string, data: { userId?: string; userEmail?: string; userRole?: string; action: string; entityType: string; entityId?: string; previousData?: any; newData?: any; ipAddress?: string; userAgent?: string }): Promise<AuditTrailEntry>;
 
   // Safeguarding - Risk Reports
@@ -1882,6 +1883,33 @@ class DatabaseStorage implements IStorage {
       .where(eq(auditTrail.organizationId, organizationId))
       .orderBy(desc(auditTrail.createdAt))
       .limit(limit);
+  }
+
+  async getFilteredAuditTrail(organizationId: string, filters: { entityType?: string; action?: string; search?: string; startDate?: Date; endDate?: Date; limit?: number; offset?: number }): Promise<{ entries: AuditTrailEntry[]; total: number }> {
+    const conditions = [eq(auditTrail.organizationId, organizationId)];
+    if (filters.entityType) conditions.push(eq(auditTrail.entityType, filters.entityType));
+    if (filters.action) conditions.push(eq(auditTrail.action, filters.action));
+    if (filters.startDate) conditions.push(gte(auditTrail.createdAt, filters.startDate));
+    if (filters.endDate) conditions.push(lte(auditTrail.createdAt, filters.endDate));
+    if (filters.search) {
+      conditions.push(sql`(${auditTrail.userEmail} ILIKE ${'%' + filters.search + '%'} OR ${auditTrail.entityType} ILIKE ${'%' + filters.search + '%'} OR CAST(${auditTrail.newData} AS TEXT) ILIKE ${'%' + filters.search + '%'})`);
+    }
+
+    const whereClause = and(...conditions);
+    const [totalResult] = await getDb()
+      .select({ count: count() })
+      .from(auditTrail)
+      .where(whereClause);
+
+    const entries = await getDb()
+      .select()
+      .from(auditTrail)
+      .where(whereClause)
+      .orderBy(desc(auditTrail.createdAt))
+      .limit(filters.limit || 50)
+      .offset(filters.offset || 0);
+
+    return { entries, total: totalResult.count };
   }
 
   async createAuditEntry(organizationId: string, data: { userId?: string; userEmail?: string; userRole?: string; action: string; entityType: string; entityId?: string; previousData?: any; newData?: any; ipAddress?: string; userAgent?: string }): Promise<AuditTrailEntry> {

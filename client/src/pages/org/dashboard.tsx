@@ -11,12 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon, Video, Scale, PenLine, Share2, Copy } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon, Video, Scale, PenLine, Share2, Copy, ClipboardList, ChevronDown, ChevronUp, Filter, ArrowLeft, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import type { OrganizationDashboardStats, OrganizationClientWithDetails, OrganizationBundle, OrganizationClientProfile, AlertLog, OrgClientStatus, Contact } from "@shared/schema";
+import type { OrganizationDashboardStats, OrganizationClientWithDetails, OrganizationBundle, OrganizationClientProfile, AlertLog, OrgClientStatus, Contact, AuditTrailEntry } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
@@ -287,6 +287,32 @@ export default function OrganizationDashboard() {
 
   const { data: archivedClients } = useQuery<any[]>({
     queryKey: ["/api/org/clients/archived"],
+  });
+
+  // Audit trail state
+  const [auditEntityFilter, setAuditEntityFilter] = useState<string>("all");
+  const [auditActionFilter, setAuditActionFilter] = useState<string>("all");
+  const [auditSearch, setAuditSearch] = useState("");
+  const [auditPage, setAuditPage] = useState(0);
+  const [showAuditTrail, setShowAuditTrail] = useState(false);
+  const [expandedAuditEntry, setExpandedAuditEntry] = useState<string | null>(null);
+  const AUDIT_PAGE_SIZE = 20;
+
+  const auditQueryParams = new URLSearchParams();
+  if (auditEntityFilter !== "all") auditQueryParams.set("entityType", auditEntityFilter);
+  if (auditActionFilter !== "all") auditQueryParams.set("action", auditActionFilter);
+  if (auditSearch.trim()) auditQueryParams.set("search", auditSearch.trim());
+  auditQueryParams.set("limit", String(AUDIT_PAGE_SIZE));
+  auditQueryParams.set("offset", String(auditPage * AUDIT_PAGE_SIZE));
+
+  const { data: auditData, isLoading: auditLoading } = useQuery<{ entries: AuditTrailEntry[]; total: number }>({
+    queryKey: ["/api/org/audit-trail", auditEntityFilter, auditActionFilter, auditSearch, auditPage],
+    queryFn: async () => {
+      const res = await fetch(`/api/org/audit-trail?${auditQueryParams.toString()}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch audit trail");
+      return res.json();
+    },
+    enabled: showAuditTrail,
   });
 
   const { data: legalDocsData, refetch: refetchLegalDocs } = useQuery<{
@@ -1270,6 +1296,127 @@ export default function OrganizationDashboard() {
     );
   }
 
+  const getAuditDescription = (entry: AuditTrailEntry): { text: string; icon: React.ReactNode; actionVariant: string } => {
+    const data = (entry.newData || {}) as Record<string, any>;
+    const clientRef = data.clientEmail || data.nickname || data.clientName || data.email || "";
+    const entityLabel = entry.entityType.replace(/_/g, " ");
+
+    const iconMap: Record<string, React.ReactNode> = {
+      client: <User className="h-4 w-4 text-blue-500" />,
+      client_emergency_contacts: <Phone className="h-4 w-4 text-orange-500" />,
+      client_schedule: <Clock className="h-4 w-4 text-purple-500" />,
+      client_status: <Settings className="h-4 w-4 text-yellow-600" />,
+      client_features: <Settings className="h-4 w-4 text-indigo-500" />,
+      emergency_alert: <AlertOctagon className="h-4 w-4 text-destructive" />,
+      incident: <AlertTriangle className="h-4 w-4 text-destructive" />,
+      welfare_concern: <Shield className="h-4 w-4 text-amber-600" />,
+      case_file: <FileText className="h-4 w-4 text-blue-600" />,
+      case_note: <PenLine className="h-4 w-4 text-green-600" />,
+      escalation_rule: <Bell className="h-4 w-4 text-red-500" />,
+      risk_report: <TrendingUp className="h-4 w-4 text-orange-600" />,
+      staff_invite: <Mail className="h-4 w-4 text-indigo-500" />,
+      team_invite: <UserPlus className="h-4 w-4 text-blue-500" />,
+      team_member_role: <Shield className="h-4 w-4 text-purple-500" />,
+      team_member_status: <CheckCircle className="h-4 w-4 text-green-500" />,
+      team_member: <Users className="h-4 w-4 text-blue-600" />,
+    };
+
+    const actionVariantMap: Record<string, string> = {
+      create: "default",
+      update: "secondary",
+      delete: "destructive",
+      archive: "destructive",
+      restore: "default",
+      pause: "secondary",
+      resume: "default",
+      reset_password: "secondary",
+      acknowledge: "default",
+      export: "outline",
+    };
+
+    const icon = iconMap[entry.entityType] || <ClipboardList className="h-4 w-4 text-muted-foreground" />;
+    const actionVariant = actionVariantMap[entry.action] || "outline";
+
+    let text = "";
+    switch (entry.entityType) {
+      case "client":
+        if (entry.action === "create") text = `Added client${clientRef ? ` "${clientRef}"` : ""}`;
+        else if (entry.action === "archive") text = `Archived client${clientRef ? ` "${clientRef}"` : ""}`;
+        else if (entry.action === "restore") text = `Restored client${clientRef ? ` "${clientRef}"` : ""}`;
+        else if (entry.action === "update") text = `Updated client details${clientRef ? ` for "${clientRef}"` : ""}`;
+        else if (entry.action === "reset_password") text = `Reset password${clientRef ? ` for "${clientRef}"` : ""}`;
+        else if (entry.action === "pause") text = `Paused client${clientRef ? ` "${clientRef}"` : ""}`;
+        else if (entry.action === "resume") text = `Resumed client${clientRef ? ` "${clientRef}"` : ""}`;
+        else if (entry.action === "reset_scheduler") text = `Reset check-in scheduler${clientRef ? ` for "${clientRef}"` : ""}`;
+        else text = `${entry.action} ${entityLabel}${clientRef ? ` "${clientRef}"` : ""}`;
+        break;
+      case "client_emergency_contacts":
+        text = `Updated emergency contacts${clientRef ? ` for "${clientRef}"` : ""}`;
+        break;
+      case "client_schedule":
+        text = `Changed check-in schedule${data.scheduleStartTime ? ` (start: ${data.scheduleStartTime}, every ${data.checkInIntervalHours}h)` : ""}`;
+        break;
+      case "client_status":
+        text = `Changed client status to "${data.status || data.newStatus || "unknown"}"${clientRef ? ` for "${clientRef}"` : ""}`;
+        break;
+      case "client_features":
+        text = `Updated feature settings${clientRef ? ` for "${clientRef}"` : ""}`;
+        break;
+      case "emergency_alert":
+        text = `Emergency alert ${entry.action === "acknowledge" ? "acknowledged" : entry.action}${data.alertType ? ` (${data.alertType})` : ""}`;
+        break;
+      case "incident":
+        text = entry.action === "create"
+          ? `Reported new incident${data.title ? `: "${data.title}"` : ""}${data.severity ? ` [${data.severity}]` : ""}`
+          : `Updated incident${data.title ? ` "${data.title}"` : ""}`;
+        break;
+      case "welfare_concern":
+        text = entry.action === "create"
+          ? `Raised welfare concern${data.type ? ` (${data.type})` : ""}${data.urgency ? ` [${data.urgency}]` : ""}`
+          : `Updated welfare concern${data.status ? ` — ${data.status}` : ""}`;
+        break;
+      case "case_file":
+        text = entry.action === "create"
+          ? `Created case file${data.title ? `: "${data.title}"` : ""}`
+          : `Updated case file${data.title ? ` "${data.title}"` : ""}`;
+        break;
+      case "case_note":
+        text = `Added note to case file`;
+        break;
+      case "escalation_rule":
+        if (entry.action === "create") text = `Created escalation rule${data.name ? ` "${data.name}"` : ""}`;
+        else if (entry.action === "update") text = `Updated escalation rule${data.name ? ` "${data.name}"` : ""}`;
+        else if (entry.action === "delete") text = `Deleted escalation rule`;
+        else text = `${entry.action} escalation rule`;
+        break;
+      case "risk_report":
+        text = `Generated risk report${data.reportType ? ` (${data.reportType})` : ""}${data.riskLevel ? ` [${data.riskLevel}]` : ""}`;
+        break;
+      case "staff_invite":
+        if (entry.action === "create") text = `Invited staff member${data.email ? ` "${data.email}"` : ""}${data.role ? ` as ${data.role}` : ""}`;
+        else if (entry.action === "delete") text = `Revoked staff invitation${data.email ? ` for "${data.email}"` : ""}`;
+        else if (entry.action === "update") text = `Updated staff invitation${data.email ? ` for "${data.email}"` : ""}`;
+        else text = `${entry.action} staff invitation`;
+        break;
+      case "team_invite":
+        text = `${entry.action === "create" ? "Sent" : entry.action} team invitation${data.email ? ` to "${data.email}"` : ""}`;
+        break;
+      case "team_member_role":
+        text = `Changed team member role${data.newRole ? ` to "${data.newRole}"` : ""}`;
+        break;
+      case "team_member_status":
+        text = `Changed team member status${data.newStatus ? ` to "${data.newStatus}"` : ""}`;
+        break;
+      case "team_member":
+        text = `Removed team member${data.email ? ` "${data.email}"` : ""}`;
+        break;
+      default:
+        text = `${entry.action.replace(/_/g, " ")} ${entityLabel}${clientRef ? ` "${clientRef}"` : ""}`;
+    }
+
+    return { text, icon, actionVariant };
+  };
+
   const activeBundles = stats?.bundles.filter(b => b.status === "active") || [];
   const hasSeatsAvailable = activeBundles.some(b => b.seatsUsed < b.seatLimit);
 
@@ -2250,6 +2397,220 @@ export default function OrganizationDashboard() {
             </Button>
           </Link>
         </CardContent>
+      </Card>
+
+      {/* Comprehensive Audit Trail */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <CardTitle className="text-base">Activity Log</CardTitle>
+              <CardDescription>Complete record of all actions taken in your organisation</CardDescription>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAuditTrail(!showAuditTrail)}
+            data-testid="button-toggle-audit-trail"
+          >
+            {showAuditTrail ? (
+              <><ChevronUp className="h-4 w-4 mr-1" /> Hide</>
+            ) : (
+              <><ChevronDown className="h-4 w-4 mr-1" /> Show</>
+            )}
+          </Button>
+        </CardHeader>
+        {showAuditTrail && (
+          <CardContent className="space-y-4">
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search activity..."
+                  value={auditSearch}
+                  onChange={(e) => { setAuditSearch(e.target.value); setAuditPage(0); }}
+                  className="pl-9"
+                  data-testid="input-audit-search"
+                />
+              </div>
+              <Select value={auditEntityFilter} onValueChange={(v) => { setAuditEntityFilter(v); setAuditPage(0); }}>
+                <SelectTrigger className="sm:w-48" data-testid="select-audit-entity-filter">
+                  <Filter className="h-4 w-4 mr-1 text-muted-foreground" />
+                  <SelectValue placeholder="All types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="client">Client Management</SelectItem>
+                  <SelectItem value="client_emergency_contacts">Emergency Contacts</SelectItem>
+                  <SelectItem value="client_schedule">Check-in Schedule</SelectItem>
+                  <SelectItem value="client_status">Client Status</SelectItem>
+                  <SelectItem value="client_features">Feature Settings</SelectItem>
+                  <SelectItem value="emergency_alert">Emergency Alerts</SelectItem>
+                  <SelectItem value="incident">Incidents</SelectItem>
+                  <SelectItem value="welfare_concern">Welfare Concerns</SelectItem>
+                  <SelectItem value="case_file">Case Files</SelectItem>
+                  <SelectItem value="case_note">Case Notes</SelectItem>
+                  <SelectItem value="escalation_rule">Escalation Rules</SelectItem>
+                  <SelectItem value="risk_report">Risk Reports</SelectItem>
+                  <SelectItem value="staff_invite">Staff Invitations</SelectItem>
+                  <SelectItem value="team_invite">Team Invitations</SelectItem>
+                  <SelectItem value="team_member_role">Team Roles</SelectItem>
+                  <SelectItem value="team_member_status">Team Status</SelectItem>
+                  <SelectItem value="team_member">Team Members</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={auditActionFilter} onValueChange={(v) => { setAuditActionFilter(v); setAuditPage(0); }}>
+                <SelectTrigger className="sm:w-40" data-testid="select-audit-action-filter">
+                  <SelectValue placeholder="All actions" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Actions</SelectItem>
+                  <SelectItem value="create">Created</SelectItem>
+                  <SelectItem value="update">Updated</SelectItem>
+                  <SelectItem value="delete">Deleted</SelectItem>
+                  <SelectItem value="archive">Archived</SelectItem>
+                  <SelectItem value="restore">Restored</SelectItem>
+                  <SelectItem value="pause">Paused</SelectItem>
+                  <SelectItem value="resume">Resumed</SelectItem>
+                  <SelectItem value="reset_password">Password Reset</SelectItem>
+                  <SelectItem value="export">Exported</SelectItem>
+                  <SelectItem value="acknowledge">Acknowledged</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Results */}
+            {auditLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : auditData && auditData.entries.length > 0 ? (
+              <div className="space-y-2">
+                {auditData.entries.map((entry) => {
+                  const desc = getAuditDescription(entry);
+                  const isExpanded = expandedAuditEntry === entry.id;
+                  const hasDetails = entry.newData || entry.previousData;
+                  return (
+                    <div
+                      key={entry.id}
+                      className="p-3 rounded-lg border space-y-2"
+                      data-testid={`audit-entry-${entry.id}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className="mt-0.5">{desc.icon}</div>
+                          <div className="min-w-0 space-y-0.5">
+                            <p className="text-sm font-medium" data-testid={`audit-description-${entry.id}`}>{desc.text}</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant={desc.actionVariant as any} className="text-xs capitalize">{entry.action.replace(/_/g, " ")}</Badge>
+                              <Badge variant="outline" className="text-xs capitalize">{entry.entityType.replace(/_/g, " ")}</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {entry.userEmail || "System"}{entry.userRole ? ` (${entry.userRole})` : ""}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm")}
+                          </span>
+                          {hasDetails && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setExpandedAuditEntry(isExpanded ? null : entry.id)}
+                              data-testid={`button-expand-audit-${entry.id}`}
+                            >
+                              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      {isExpanded && hasDetails && (
+                        <div className="ml-8 p-3 rounded-md bg-muted/50 space-y-2 text-xs">
+                          {entry.newData && (
+                            <div>
+                              <p className="font-medium text-muted-foreground mb-1">Details:</p>
+                              <div className="space-y-1">
+                                {Object.entries(entry.newData as Record<string, any>).map(([key, value]) => (
+                                  <div key={key} className="flex gap-2">
+                                    <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, " $1").replace(/_/g, " ").trim()}:</span>
+                                    <span className="font-medium">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {entry.previousData && (
+                            <div>
+                              <p className="font-medium text-muted-foreground mb-1">Previous values:</p>
+                              <div className="space-y-1">
+                                {Object.entries(entry.previousData as Record<string, any>).map(([key, value]) => (
+                                  <div key={key} className="flex gap-2">
+                                    <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, " $1").replace(/_/g, " ").trim()}:</span>
+                                    <span className="font-medium line-through">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Pagination */}
+                {auditData.total > AUDIT_PAGE_SIZE && (
+                  <div className="flex items-center justify-between pt-2">
+                    <p className="text-xs text-muted-foreground">
+                      Showing {auditPage * AUDIT_PAGE_SIZE + 1}–{Math.min((auditPage + 1) * AUDIT_PAGE_SIZE, auditData.total)} of {auditData.total}
+                    </p>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        disabled={auditPage === 0}
+                        onClick={() => setAuditPage(p => p - 1)}
+                        data-testid="button-audit-prev"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        disabled={(auditPage + 1) * AUDIT_PAGE_SIZE >= auditData.total}
+                        onClick={() => setAuditPage(p => p + 1)}
+                        data-testid="button-audit-next"
+                      >
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No activity records found</p>
+                {(auditEntityFilter !== "all" || auditActionFilter !== "all" || auditSearch) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => { setAuditEntityFilter("all"); setAuditActionFilter("all"); setAuditSearch(""); setAuditPage(0); }}
+                    data-testid="button-clear-audit-filters"
+                  >
+                    Clear filters
+                  </Button>
+                )}
+              </div>
+            )}
+          </CardContent>
+        )}
       </Card>
 
       <Card>
