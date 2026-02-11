@@ -1,5 +1,5 @@
 import { storage } from "./storage";
-import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder, sendSmsCheckinLink } from "./notifications";
+import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder, sendSmsCheckinLink, sendActivityOverdueAlert, sendActivityVoiceAlerts } from "./notifications";
 import { ObjectStorageService } from "./replit_integrations/object_storage";
 
 let schedulerInterval: NodeJS.Timeout | null = null;
@@ -400,15 +400,16 @@ async function processOverdueErrandSessions(): Promise<void> {
 
         const settings = await storage.getSettings(session.userId);
 
-        const alertResult = await sendEmergencyAlert(
+        const alertResult = await sendActivityOverdueAlert(
           contacts,
           user,
+          activityLabel,
+          session.expectedDurationMins,
           location,
-          false,
           settings?.additionalInfo
         );
 
-        const voiceResult = await sendVoiceAlerts(contacts, user, 'emergency');
+        const voiceResult = await sendActivityVoiceAlerts(contacts, user, activityLabel);
 
         const notificationSummary = [];
         if (alertResult.emailsSent > 0) notificationSummary.push(`${alertResult.emailsSent} email(s)`);
