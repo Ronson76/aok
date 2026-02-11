@@ -105,7 +105,7 @@ export default function OrganizationDashboard() {
         // Session may already be expired on server - that's fine
       }
       queryClient.clear();
-      setLocationRef.current("/login?sessionExpired=true");
+      setLocationRef.current("/org/staff-login?sessionExpired=true");
     }, SESSION_TIMEOUT_MS);
   }, []);
   
@@ -275,12 +275,14 @@ export default function OrganizationDashboard() {
     return `${hours} hour${hours !== 1 ? 's' : ''}`;
   };
 
-  const { data: stats, isLoading: statsLoading } = useQuery<OrganizationDashboardStats>({
+  const { data: stats, isLoading: statsLoading, isError: statsError } = useQuery<OrganizationDashboardStats>({
     queryKey: ["/api/org/dashboard"],
+    retry: false,
   });
 
-  const { data: clients, isLoading: clientsLoading } = useQuery<OrganizationClientWithDetails[]>({
+  const { data: clients, isLoading: clientsLoading, isError: clientsError } = useQuery<OrganizationClientWithDetails[]>({
     queryKey: ["/api/org/clients"],
+    retry: false,
   });
 
   const { data: archivedClients } = useQuery<any[]>({
@@ -1235,6 +1237,35 @@ export default function OrganizationDashboard() {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (statsError || clientsError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-background dark:from-indigo-950 dark:to-background flex flex-col items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <div className="flex justify-center mb-4">
+              <div className="rounded-full bg-destructive/10 p-4">
+                <AlertTriangle className="h-10 w-10 text-destructive" />
+              </div>
+            </div>
+            <CardTitle className="text-xl">Session Expired</CardTitle>
+            <CardDescription>
+              Your session has timed out for security. Please sign in again to continue.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              className="w-full"
+              data-testid="button-login-again"
+              onClick={() => setLocation("/org/staff-login?sessionExpired=true")}
+            >
+              Sign In Again
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }

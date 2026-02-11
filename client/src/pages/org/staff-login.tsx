@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Building2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Building2, Eye, EyeOff, AlertTriangle } from "lucide-react";
 
 export default function OrganizationStaffLogin() {
   const [, setLocation] = useLocation();
@@ -16,6 +16,14 @@ export default function OrganizationStaffLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("sessionExpired") === "true") {
+      setSessionExpired(true);
+    }
+  }, []);
 
   const loginMutation = useMutation({
     mutationFn: async () => {
@@ -78,6 +86,19 @@ export default function OrganizationStaffLogin() {
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
+              {sessionExpired && (
+                <Card className="border-destructive bg-destructive/10" data-testid="card-session-expired">
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                    <div>
+                      <p className="font-medium text-destructive">Session Expired</p>
+                      <p className="text-sm text-muted-foreground">
+                        Your session has timed out for security. Please sign in again.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <Input
