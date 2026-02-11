@@ -12,7 +12,7 @@ import {
   MapPin, Clock, CheckCircle, Phone, Loader2, Timer, History,
   XCircle, Navigation, Siren, Play, AlertTriangle, ChevronDown,
   ChevronUp, ShoppingCart, Footprints, Car, Calendar, Users,
-  Dog, Dumbbell, Package, Lock, Shield
+  Dog, Dumbbell, Package, Lock, Shield, BatteryLow
 } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { formatDistanceToNow, format, differenceInSeconds } from "date-fns";
@@ -356,6 +356,52 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
     return () => document.removeEventListener("visibilitychange", onVisibilityChange);
   }, []);
 
+  const lowBatterySentRef = useRef(false);
+  const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
+  const batteryHandlerRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    lowBatterySentRef.current = false;
+  }, [session.id]);
+
+  useEffect(() => {
+    if (session.status === "completed" || session.status === "cancelled") return;
+    let battery: any = null;
+
+    const checkBattery = (batt: any) => {
+      const level = Math.round(batt.level * 100);
+      setBatteryLevel(level);
+      if (level < 20 && !lowBatterySentRef.current) {
+        lowBatterySentRef.current = true;
+        apiRequest("POST", "/api/errands/low-battery", { batteryLevel: level })
+          .then(() => {
+            toast({
+              title: "Low Battery Alert Sent",
+              description: `Your primary contacts have been notified that your battery is at ${level}%.`,
+            });
+          })
+          .catch(() => {});
+      }
+    };
+
+    if ("getBattery" in navigator) {
+      (navigator as any).getBattery().then((batt: any) => {
+        battery = batt;
+        checkBattery(batt);
+        const handler = () => checkBattery(batt);
+        batteryHandlerRef.current = handler;
+        batt.addEventListener("levelchange", handler);
+      }).catch(() => {});
+    }
+
+    return () => {
+      if (battery && batteryHandlerRef.current) {
+        battery.removeEventListener("levelchange", batteryHandlerRef.current);
+        batteryHandlerRef.current = null;
+      }
+    };
+  }, [session.id, session.status]);
+
   useEffect(() => {
     if (geo.position && session.status !== "completed" && session.status !== "cancelled") {
       const isOverdueStatus = session.status === "overdue";
@@ -550,6 +596,19 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
 
   return (
     <div className="space-y-4">
+      {batteryLevel !== null && batteryLevel < 20 && (
+        <Card className="border-amber-500 border-2 bg-amber-500/5">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3">
+              <BatteryLow className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <div>
+                <span className="text-sm font-semibold text-amber-700 dark:text-amber-300" data-testid="text-low-battery">Battery Low ({batteryLevel}%)</span>
+                <p className="text-xs text-muted-foreground">Your primary contacts have been alerted</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {isOverdue && session.emergencyAlertId && (
         <Card className="border-red-500 border-2 bg-red-500/5">
           <CardContent className="p-4 space-y-4">

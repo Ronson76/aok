@@ -430,6 +430,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "If the grace period expires without a check-in, your emergency contacts are automatically notified with your last known location.",
       "While active, you can quickly **call your primary contact** or **call 999** from the session screen.",
       "Your activity history is displayed below the active session with status badges showing completed, cancelled, or overdue sessions.",
+      "**Low battery alert**: If your phone battery drops below 20% during an active activity, your primary contacts are automatically emailed a warning. This only happens once per session, and only during activities — not at any other time. A visual warning also appears on your screen.",
       "Activities tracking does not provide safety guarantees and depends on network, device, and GPS availability. It is not a substitute for emergency services.",
     ],
   },
