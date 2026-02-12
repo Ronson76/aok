@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Search, X, Users, UserPlus, Radio, Shield, FileText,
-  ChevronRight, ArrowLeft, Settings, HelpCircle
+  ChevronRight, ArrowLeft, Settings, HelpCircle, BarChart3
 } from "lucide-react";
 
 interface HelpTopic {
@@ -27,6 +27,7 @@ const HELP_CATEGORIES = [
   { id: "staff", label: "Staff", icon: UserPlus, color: "text-green-600" },
   { id: "lone-worker", label: "Lone Worker", icon: Radio, color: "text-orange-600" },
   { id: "safeguarding", label: "Safeguarding", icon: Shield, color: "text-red-600" },
+  { id: "analytics", label: "Analytics", icon: BarChart3, color: "text-purple-600" },
   { id: "reports", label: "Reports", icon: FileText, color: "text-muted-foreground" },
   { id: "account", label: "Account & Settings", icon: Settings, color: "text-indigo-600" },
 ];
@@ -153,6 +154,58 @@ const HELP_TOPICS: HelpTopic[] = [
       "The full document can be viewed and exported as PDF from the **Admin Dashboard** under the **Documents** tab.",
     ],
     relatedTopics: ["audit-trail-overview", "audit-integrity", "audit-retention", "gdpr-compliance"],
+  },
+  {
+    id: "analytics-overview",
+    title: "Analytics dashboard",
+    category: "analytics",
+    keywords: ["analytics", "dashboard", "charts", "data", "insights", "patterns", "statistics", "overview"],
+    content: [
+      "The **Analytics** page gives you a clear picture of safety patterns and active emergencies across your clients.",
+      "Access it by tapping the **Analytics** button on your organisation dashboard.",
+      "The page has three tabs: **Peak Times**, **Alert Heatmap**, and **Active SOS Alerts**.",
+      "All data updates automatically when you visit the page. No setup is needed.",
+    ],
+    relatedTopics: ["analytics-peak-times", "analytics-heatmap", "analytics-active-sos"],
+  },
+  {
+    id: "analytics-peak-times",
+    title: "Analytics — peak times",
+    category: "analytics",
+    keywords: ["peak", "times", "hours", "days", "patterns", "emergency", "alerts", "missed", "check-ins", "bar chart", "graph"],
+    content: [
+      "The **Peak Times** tab shows bar charts breaking down when emergency alerts and missed check-ins happen most often.",
+      "Charts are shown for both **hour of day** (0-23) and **day of week** (Mon-Sun).",
+      "Use this to identify patterns — for example, if emergencies cluster in evenings or missed check-ins spike on weekends.",
+      "This can help you adjust staffing, schedule more check-ins during risky periods, or provide additional support at peak times.",
+    ],
+    relatedTopics: ["analytics-overview", "analytics-heatmap"],
+  },
+  {
+    id: "analytics-heatmap",
+    title: "Analytics — alert heatmap",
+    category: "analytics",
+    keywords: ["heatmap", "map", "location", "geography", "where", "hotspot", "gps", "markers", "emergency"],
+    content: [
+      "The **Alert Heatmap** tab shows a map with markers for each location where an emergency alert has been triggered.",
+      "Red circles represent alert locations. Larger circles indicate more alerts from that area.",
+      "Tap a marker to see how many alerts occurred there and the what3words address if available.",
+      "Use this to spot geographic hotspots and take preventative action — such as reviewing routes or arranging transport in high-risk areas.",
+    ],
+    relatedTopics: ["analytics-overview", "analytics-active-sos"],
+  },
+  {
+    id: "analytics-active-sos",
+    title: "Analytics — active SOS alerts",
+    category: "analytics",
+    keywords: ["active", "sos", "emergency", "live", "current", "real-time", "alerts", "urgent"],
+    content: [
+      "The **Active SOS Alerts** tab shows any currently active emergency alerts from your clients.",
+      "Each alert card displays the client name, reference code, phone number, how long ago it was triggered, and the GPS coordinates.",
+      "If a what3words address is available, you can tap the link to view the precise location.",
+      "When there are no active alerts, you'll see a reassuring confirmation that all clients are safe.",
+    ],
+    relatedTopics: ["analytics-overview", "analytics-heatmap"],
   },
   {
     id: "bulk-import-clients",

@@ -453,7 +453,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "aok offers simple, transparent pricing with all features included:",
       "**7-Day Free Trial** — full access to every feature, no payment details required upfront. Cancel anytime during the trial.",
       "**Complete Wellbeing** — £6.99/month or £69.99/year (save 2 months). Includes check-ins, emergency alerts, SMS and voice call alerts, GPS location sharing, wellbeing AI chat, mood tracking, pet protection, digital will storage, GPS fitness tracking, activities tracker, and a tree planted via Ecologi.",
-      "**Organisations** — custom pricing for bundles of seats. Includes everything in Complete Wellbeing plus a dedicated organisation dashboard, bulk client management, staff roles, safeguarding hub, lone worker session management, Call Supervisor, reports, and emergency recording per-client controls.",
+      "**Organisations** — custom pricing for bundles of seats. Includes everything in Complete Wellbeing plus a dedicated organisation dashboard, bulk client management, staff roles, safeguarding hub, lone worker session management, Call Supervisor, reports, analytics dashboard, and emergency recording per-client controls.",
       "Apple Pay and Google Pay are supported for quick and easy payment.",
       "You can cancel at any time — your account stays active until the end of your billing period.",
       "If you're managed by an organisation, your access is included at no cost to you.",
@@ -515,6 +515,18 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "The framework is designed for housing providers, charitable organisations, universities, local authorities, and regulated care environments.",
       "Your organisation can view and export the full document as a PDF from the Admin Dashboard.",
       "It provides the evidential basis for demonstrating duty of care to regulators, insurers, and governance boards.",
+    ],
+  },
+  {
+    id: "analytics-dashboard",
+    title: "Analytics dashboard (organisations)",
+    content: [
+      "The **Analytics** page gives organisations a clear picture of safety patterns and active emergencies across their clients.",
+      "Access it from the **Analytics** button on your organisation dashboard.",
+      "**Peak Times** — bar charts showing when emergency alerts and missed check-ins happen most often, broken down by hour of day and day of week. Use this to identify patterns and adjust staffing or support schedules.",
+      "**Alert Heatmap** — a map view showing where emergency alerts have been triggered. Locations are marked with red circles sized by frequency, helping you spot geographic hotspots.",
+      "**Active SOS Alerts** — a live view of any currently active emergency alerts from your clients. Each card shows the client name, reference code, phone number, how long ago it was triggered, and the GPS location.",
+      "All data updates automatically when you visit the page. No setup is needed — analytics are generated from your existing check-in and emergency alert activity.",
     ],
   },
   {
