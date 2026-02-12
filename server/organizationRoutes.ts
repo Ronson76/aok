@@ -1787,6 +1787,30 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
+  // Verify audit trail hash chain integrity
+  app.get("/api/org/audit-trail/verify", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      const result = await storage.verifyAuditChain(orgId, startDate, endDate);
+
+      await storage.createAuditEntry(orgId, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "read",
+        entityType: "audit_verification",
+        eventType: "integrity_check",
+        newData: { valid: result.valid, totalChecked: result.totalChecked },
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error verifying audit chain:", error);
+      res.status(500).json({ error: "Failed to verify audit chain" });
+    }
+  });
+
   // Get risk reports
   app.get("/api/org/safeguarding/risk-reports", requireOrganization, async (req, res) => {
     try {
@@ -2545,6 +2569,79 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("[ORG] Error signing document:", error);
       res.status(500).json({ error: "Failed to sign document" });
+    }
+  });
+
+  // Get retention policy settings
+  app.get("/api/org/settings/retention", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const org = await storage.getUser(orgId);
+      if (!org) return res.status(404).json({ error: "Organisation not found" });
+      res.json({ retentionPolicyDays: (org as any).retentionPolicyDays || 2190 });
+    } catch (error) {
+      console.error("Error fetching retention settings:", error);
+      res.status(500).json({ error: "Failed to fetch retention settings" });
+    }
+  });
+
+  // Update retention policy settings
+  app.post("/api/org/settings/retention", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const { retentionPolicyDays } = req.body;
+
+      if (!retentionPolicyDays || retentionPolicyDays < 365 || retentionPolicyDays > 3650) {
+        return res.status(400).json({ error: "Retention policy must be between 365 and 3650 days" });
+      }
+
+      const org = await storage.getUser(orgId);
+      if (!org) return res.status(404).json({ error: "Organisation not found" });
+
+      const previousDays = (org as any).retentionPolicyDays || 2190;
+
+      await storage.updateUser(orgId, { retentionPolicyDays } as any);
+
+      await storage.createAuditEntry(orgId, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "update",
+        entityType: "retention_policy",
+        eventType: "settings_change",
+        previousData: { retentionPolicyDays: previousDays },
+        newData: { retentionPolicyDays },
+      });
+
+      res.json({ retentionPolicyDays });
+    } catch (error) {
+      console.error("Error updating retention settings:", error);
+      res.status(500).json({ error: "Failed to update retention settings" });
+    }
+  });
+
+  // Manual trigger for audit trail cleanup (applies retention policy)
+  app.post("/api/org/audit-trail/cleanup", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const org = await storage.getUser(orgId);
+      if (!org) return res.status(404).json({ error: "Organisation not found" });
+
+      const retentionDays = (org as any).retentionPolicyDays || 2190;
+      const purgedCount = await storage.purgeExpiredAuditEntries(orgId, retentionDays);
+
+      await storage.createAuditEntry(orgId, {
+        userEmail: (req.user as any).email,
+        userRole: "organisation",
+        action: "delete",
+        entityType: "audit_trail",
+        eventType: "retention_cleanup",
+        newData: { purgedCount, retentionDays },
+      });
+
+      res.json({ purgedCount, retentionDays });
+    } catch (error) {
+      console.error("Error running audit cleanup:", error);
+      res.status(500).json({ error: "Failed to run audit cleanup" });
     }
   });
 }

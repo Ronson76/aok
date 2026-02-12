@@ -8,6 +8,7 @@ let pushNotificationInterval: NodeJS.Timeout | null = null;
 let contactReminderInterval: NodeJS.Timeout | null = null;
 let recordingCleanupInterval: NodeJS.Timeout | null = null;
 let errandCheckInterval: NodeJS.Timeout | null = null;
+let auditRetentionInterval: NodeJS.Timeout | null = null;
 // Minimum interval between push notifications to same user (30 seconds)
 const PUSH_NOTIFICATION_COOLDOWN_MS = 30 * 1000;
 
@@ -297,6 +298,11 @@ export function startEmergencyScheduler(): void {
     await processOverdueErrandSessions();
   }, 60 * 1000);
 
+  console.log('[AUDIT RETENTION] Starting audit retention cleanup scheduler (checks every 24 hours)');
+  auditRetentionInterval = setInterval(async () => {
+    await processAuditRetentionCleanup();
+  }, 24 * 60 * 60 * 1000);
+
   // Run initial checks
   processOverdueEmergencyAlerts();
   processOverduePushNotifications();
@@ -335,6 +341,28 @@ async function cleanupExpiredRecordings(): Promise<void> {
   }
 }
 
+async function processAuditRetentionCleanup(): Promise<void> {
+  try {
+    const { getDb } = await import("./db");
+    const { users } = await import("../shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const db = getDb();
+    const orgs = await db.select({ id: users.id, retentionPolicyDays: users.retentionPolicyDays })
+      .from(users)
+      .where(eq(users.accountType, "organization"));
+
+    for (const org of orgs) {
+      const retentionDays = org.retentionPolicyDays || 2190;
+      const purged = await storage.purgeExpiredAuditEntries(org.id, retentionDays);
+      if (purged > 0) {
+        console.log(`[AUDIT RETENTION] Purged ${purged} expired audit entries for org ${org.id}`);
+      }
+    }
+  } catch (error) {
+    console.error('[AUDIT RETENTION] Error processing audit retention cleanup:', error);
+  }
+}
+
 export function stopEmergencyScheduler(): void {
   if (schedulerInterval) {
     clearInterval(schedulerInterval);
@@ -363,6 +391,10 @@ export function stopEmergencyScheduler(): void {
   if (errandCheckInterval) {
     clearInterval(errandCheckInterval);
     errandCheckInterval = null;
+  }
+  if (auditRetentionInterval) {
+    clearInterval(auditRetentionInterval);
+    auditRetentionInterval = null;
   }
   console.log('[EMERGENCY SCHEDULER] Scheduler stopped');
 }

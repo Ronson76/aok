@@ -296,7 +296,23 @@ export default function OrganizationDashboard() {
   const [auditPage, setAuditPage] = useState(0);
   const [showAuditTrail, setShowAuditTrail] = useState(false);
   const [expandedAuditEntry, setExpandedAuditEntry] = useState<string | null>(null);
+  const [showRetentionSettings, setShowRetentionSettings] = useState(false);
+  const [retentionDays, setRetentionDays] = useState(2190);
+  const [retentionSaving, setRetentionSaving] = useState(false);
+  const [retentionLoaded, setRetentionLoaded] = useState(false);
   const AUDIT_PAGE_SIZE = 20;
+
+  useEffect(() => {
+    if (showRetentionSettings && !retentionLoaded) {
+      fetch("/api/org/settings/retention", { credentials: "include" })
+        .then(r => r.json())
+        .then(data => {
+          if (data.retentionPolicyDays) setRetentionDays(data.retentionPolicyDays);
+          setRetentionLoaded(true);
+        })
+        .catch(() => {});
+    }
+  }, [showRetentionSettings, retentionLoaded]);
 
   const auditQueryParams = new URLSearchParams();
   if (auditEntityFilter !== "all") auditQueryParams.set("entityType", auditEntityFilter);
@@ -2484,6 +2500,114 @@ export default function OrganizationDashboard() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Export & Integrity Actions */}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const params = new URLSearchParams();
+                  if (auditEntityFilter !== "all") params.set("entityType", auditEntityFilter);
+                  if (auditActionFilter !== "all") params.set("action", auditActionFilter);
+                  window.open(`/api/org/reports/audit/csv?${params.toString()}`, "_blank");
+                }}
+                data-testid="button-export-audit-csv"
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-1" /> Export CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open("/api/org/reports/summary/pdf", "_blank")}
+                data-testid="button-export-summary-pdf"
+              >
+                <FileText className="h-4 w-4 mr-1" /> Summary PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const res = await fetch("/api/org/audit-trail/verify", { credentials: "include" });
+                    const result = await res.json();
+                    if (result.valid) {
+                      toast({ title: "Integrity Verified", description: `All ${result.totalChecked} entries verified. No tampering detected.` });
+                    } else {
+                      toast({ title: "Integrity Alert", description: `Chain broken at entry ${result.firstBrokenId}. Possible tampering detected.`, variant: "destructive" });
+                    }
+                  } catch {
+                    toast({ title: "Error", description: "Failed to verify audit chain.", variant: "destructive" });
+                  }
+                }}
+                data-testid="button-verify-audit-chain"
+              >
+                <ShieldCheck className="h-4 w-4 mr-1" /> Verify Integrity
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowRetentionSettings(!showRetentionSettings)}
+                data-testid="button-toggle-retention-settings"
+              >
+                <Settings className="h-4 w-4 mr-1" /> Retention Policy
+              </Button>
+            </div>
+
+            {showRetentionSettings && (
+              <div className="p-4 rounded-md border space-y-3 bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Audit Data Retention Policy</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Set how long audit trail records are kept before automatic deletion. Minimum 1 year, maximum 10 years. Default is 6 years.
+                </p>
+                <div className="flex items-center gap-3">
+                  <Select
+                    value={String(retentionDays)}
+                    onValueChange={(v) => setRetentionDays(Number(v))}
+                  >
+                    <SelectTrigger className="w-48" data-testid="select-retention-days">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="365">1 year</SelectItem>
+                      <SelectItem value="730">2 years</SelectItem>
+                      <SelectItem value="1095">3 years</SelectItem>
+                      <SelectItem value="1825">5 years</SelectItem>
+                      <SelectItem value="2190">6 years (default)</SelectItem>
+                      <SelectItem value="2555">7 years</SelectItem>
+                      <SelectItem value="3650">10 years</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    disabled={retentionSaving}
+                    onClick={async () => {
+                      setRetentionSaving(true);
+                      try {
+                        const res = await fetch("/api/org/settings/retention", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          credentials: "include",
+                          body: JSON.stringify({ retentionPolicyDays: retentionDays }),
+                        });
+                        if (!res.ok) throw new Error("Failed to save");
+                        toast({ title: "Saved", description: `Retention policy updated to ${Math.round(retentionDays / 365)} year(s).` });
+                      } catch {
+                        toast({ title: "Error", description: "Failed to save retention policy.", variant: "destructive" });
+                      } finally {
+                        setRetentionSaving(false);
+                      }
+                    }}
+                    data-testid="button-save-retention"
+                  >
+                    {retentionSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Results */}
             {auditLoading ? (

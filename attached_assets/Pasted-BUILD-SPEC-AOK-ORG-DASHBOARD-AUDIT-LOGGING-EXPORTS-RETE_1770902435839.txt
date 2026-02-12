@@ -1,0 +1,244 @@
+BUILD SPEC: AOK ORG DASHBOARD — AUDIT LOGGING + EXPORTS + RETENTION
+
+Goal
+Implement a tamper-evident audit trail and incident reporting system for AOK so organisations (YMCA, housing associations, care providers, local authorities, universities) can view, filter, and export audit records (PDF + CSV) at any time, and configure record retention.
+
+Non-negotiable rules
+1) All audit events are written server-side (never trust device time).
+2) Audit records are append-only (no hard edits). If a record must change, create a new “correction” event referencing the original.
+3) Every audit event must include: event_id, org_id, user_id, actor_id (who did it), actor_role, created_at_utc, ip_address, device_id (if applicable), app_version, event_type, event_payload (JSON), integrity_hash.
+4) Provide immutable event chain hashing per org (hash of event + previous_hash) to make tampering detectable.
+5) Encrypt data at rest and in transit. Use least privilege access.
+
+Data model (tables/collections)
+
+A) organisations
+- org_id (PK)
+- name
+- retention_policy_days (default 2190 = 6 years)
+- created_at_utc
+
+B) users
+- user_id (PK)
+- org_id (FK)
+- full_name
+- email
+- role (staff/resident/lone_worker/student/admin)
+- status (active/suspended)
+- created_at_utc
+- last_login_at_utc
+
+C) sessions (optional but recommended)
+- session_id (PK)
+- user_id
+- org_id
+- device_id
+- app_version
+- ip_address
+- login_at_utc
+- logout_at_utc
+
+D) activities
+- activity_id (PK)
+- user_id
+- org_id
+- activity_type (walk/home_visit/delivery/etc)
+- planned_duration_seconds
+- started_at_utc
+- start_lat, start_lng
+- ended_at_utc (nullable)
+- end_lat, end_lng (nullable)
+- status (active/completed/missed/escalated/cancelled)
+- grace_period_seconds
+- created_at_utc
+
+E) alerts
+- alert_id (PK)
+- org_id
+- user_id
+- activity_id (nullable)
+- trigger_reason (timeout/manual_panic/shake/forced)
+- triggered_at_utc
+- trigger_lat, trigger_lng
+- status (active/resolved/cancelled)
+- resolved_at_utc (nullable)
+- resolution_type (contact_confirmed_spoken/cancelled_by_user/admin_override/false_alarm)
+- created_at_utc
+
+F) alert_tracking_pings
+- ping_id (PK)
+- alert_id
+- ping_at_utc
+- lat, lng
+
+G) notifications
+- notification_id (PK)
+- org_id
+- alert_id
+- contact_id
+- channel (sms/push/email/whatsapp_if_supported)
+- sent_at_utc
+- delivery_status (queued/sent/delivered/failed)
+- delivered_at_utc (nullable)
+- failure_reason (nullable)
+
+H) contacts
+- contact_id (PK)
+- user_id (owner)
+- org_id
+- name
+- relationship
+- phone/email
+- created_at_utc
+
+I) contact_responses
+- response_id (PK)
+- org_id
+- alert_id
+- contact_id
+- responded_at_utc
+- response_type (acknowledged/spoke_to_user/unable_to_reach)
+- notes (nullable)
+
+J) safeguarding_notes (optional feature flag)
+- note_id (PK)
+- org_id
+- user_id
+- alert_id (nullable)
+- created_at_utc
+- created_by_actor_id
+- body
+- previous_note_id (nullable for versioning)
+- is_current (boolean)
+
+K) consent_records
+- consent_id (PK)
+- org_id
+- user_id
+- consent_type (terms/privacy/data_processing/emergency_contact)
+- accepted_at_utc
+- ip_address
+- user_agent
+- version
+
+L) admin_actions
+- admin_action_id (PK)
+- org_id
+- actor_id
+- action_type (view_user/edit_user/suspend_user/delete_user/export_report/view_alert)
+- target_type (user/activity/alert/report)
+- target_id
+- created_at_utc
+- ip_address
+
+M) audit_events (the master append-only audit trail)
+- event_id (PK)
+- org_id
+- user_id (nullable)
+- actor_id (nullable; system events allowed)
+- actor_role
+- event_type (enum below)
+- created_at_utc (server time)
+- ip_address (nullable)
+- device_id (nullable)
+- app_version (nullable)
+- payload_json (JSON)
+- previous_hash (nullable)
+- integrity_hash (hash(event fields + previous_hash))
+
+Audit event types to log (minimum set)
+
+AUTH
+- USER_CREATED
+- USER_LOGIN
+- USER_LOGOUT
+- USER_ROLE_CHANGED
+- USER_SUSPENDED
+- USER_DELETED (soft delete only; keep record)
+
+ACTIVITY
+- ACTIVITY_STARTED
+- ACTIVITY_EXTENDED
+- GRACE_PERIOD_STARTED
+- CHECKIN_RECEIVED
+- CHECKIN_MISSED
+
+ALERT
+- ALERT_TRIGGERED
+- CONTACTS_NOTIFIED
+- NOTIFICATION_DELIVERY_UPDATED
+- TRACKING_PING_RECORDED (every 5 minutes while active)
+- CONTACT_RESPONSE_RECORDED
+- ALERT_RESOLVED
+- ALERT_CANCEL_REQUESTED
+- ALERT_CANCELLED
+- ADMIN_OVERRIDE_RESOLUTION (if allowed)
+
+CONSENT
+- CONSENT_ACCEPTED
+- CONSENT_UPDATED_VERSION
+
+ADMIN + REPORTING
+- ADMIN_VIEWED_RECORD
+- ADMIN_EXPORTED_REPORT
+- ADMIN_EDITED_SETTINGS (incl retention)
+
+SYSTEM INTEGRITY
+- SYSTEM_UPTIME_RECORDED (daily)
+- INCIDENT_DOWNTIME_RECORDED
+- SERVICE_FAILURE (gps/notification provider)
+
+Organisation dashboard requirements
+
+1) Filters
+- date range
+- user
+- activity type
+- alert status
+- event type
+- admin actor
+
+2) Views
+- User timeline (activity + alerts + contacts + responses)
+- Incident report view (single alert with full timeline)
+- Org metrics summary (counts: activities, missed checkins, alerts, avg response time)
+
+3) Exports
+- Export Incident Report: PDF + CSV
+  Include: user identity, activity details, alert trigger, all notifications (with delivery status), all tracking pings, all contact responses, resolution details, and the full audit event list for that incident.
+- Export Audit Log: CSV (date range)
+- Export Monthly Summary: CSV + PDF
+
+PDF generation
+Generate server-side PDF with a consistent template (header with org name + report ID + generated_at_utc). Include a chronological timeline section.
+
+Retention policy + deletion
+
+Default retention: 6 years (2190 days) from event.created_at_utc.
+Allow org admins to set retention_policy_days (min 365, max 3650+ depending on plan).
+Implement a scheduled job:
+- daily, find audit_events older than retention_policy_days and purge OR archive to cold storage.
+- Always keep anonymised aggregate metrics even after purge.
+- For user deletion: soft delete user profile but keep audit_events, replacing personal fields in exports with “Deleted User” if required by org policy.
+
+Security + integrity
+- Role-based access control (org_admin, auditor_readonly, manager, standard_user).
+- Every export logs ADMIN_EXPORTED_REPORT in admin_actions + audit_events.
+- Integrity verification endpoint: verify hash chain for a date range; show “pass/fail” on dashboard.
+
+Implementation detail
+Use Postgres or equivalent. Use server timestamps (UTC). Provide API endpoints for:
+- POST /audit/event
+- GET /audit/events?filters…
+- GET /reports/incident/:alert_id/pdf
+- GET /reports/incident/:alert_id/csv
+- GET /reports/audit/csv
+- GET /reports/monthly/pdf
+- GET /reports/monthly/csv
+- POST /org/settings/retention
+
+Acceptance criteria
+- All listed event types are recorded.
+- Exported incident reports match dashboard timeline 1:1.
+- Hash chain verification passes unless records tampered.
+- Retention job runs daily and respects org policy.
