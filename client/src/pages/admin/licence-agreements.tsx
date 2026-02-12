@@ -195,6 +195,20 @@ const documentContentMap: Record<string, { title: string; sections: Array<{ head
       { heading: "Core Value Proposition", content: "A-OK proves that people were not ignored. That proof protects users, organisations, and decision-makers." },
     ],
   },
+  "safeguarding-compliance-framework": {
+    title: "AOK Board-Level Safeguarding, Audit & Compliance Framework",
+    sections: [
+      { heading: "Introduction", content: "This document outlines the structural safeguarding architecture underpinning AOK. It consolidates audit integrity, escalation controls, governance oversight, data retention standards and compliance positioning into a single framework suitable for executive leadership, compliance committees, insurers and board-level scrutiny." },
+      { heading: "1. Strategic Safeguarding Positioning", content: "AOK is designed as a compliance-enabling safeguarding infrastructure, not simply a notification tool. Every user action, activity lifecycle and escalation event is time-stamped and recorded server-side. The platform provides demonstrable duty-of-care evidence. The architecture supports litigation defensibility and regulatory transparency." },
+      { heading: "2. Audit Architecture & Record Integrity", content: "Server-side UTC timestamping for all system events. Append-only audit log structure (no silent editing). Tamper-evident event hashing to detect unauthorised alterations. Full traceability of users, roles, devices and session history. Administrative action logging for governance accountability." },
+      { heading: "3. Activity Monitoring & Escalation Controls", content: "Structured activity lifecycle tracking (start, duration, extension, grace period, completion). GPS location capture at activity commencement and escalation. Automated escalation triggers upon missed check-ins. Continuous 5-minute tracking pings during active alerts. Clear resolution recording including confirmation of contact verification." },
+      { heading: "4. Governance & Organisational Oversight", content: "Dashboard-level visibility across all safeguarding activities. Export logging and audit trail transparency. Role-based access controls to prevent unauthorised data exposure. Optional safeguarding note module with immutable version history. Organisation-wide reporting for board and compliance review." },
+      { heading: "5. Reporting & Evidential Documentation", content: "Individual safeguarding timelines (PDF and CSV exportable). Full incident reports suitable for legal, insurer or regulatory submission. Monthly safeguarding performance summaries. Organisation-wide escalation metrics and response time analysis. Date-range filtered audit extraction for investigations." },
+      { heading: "6. Data Security & Compliance Controls", content: "Encryption in transit and at rest. Controlled export permissions with logged access. Integrity verification capability for audit chains. GDPR-aligned data processing and lifecycle management." },
+      { heading: "7. Data Retention Framework", content: "Standard retention period: minimum 6 years (aligned with Limitation Act 1980). Extended retention options for regulated or children\u2019s service environments. Configurable organisational retention policies. Structured anonymisation and deletion controls where legally appropriate." },
+      { heading: "8. Organisational Risk Mitigation Impact", content: "Clear evidential safeguarding trail in the event of incident investigation. Strengthened insurer confidence and positioning. Enhanced board-level reporting capability. Reduced exposure to negligence claims. Transparent, accountable safeguarding governance." },
+    ],
+  },
   "final-pitch": {
     title: "A-OK \u2014 Final Pitch (Full)",
     sections: [
@@ -234,6 +248,7 @@ const documentIdTitleMap: Record<string, string> = {
   "investor-snapshot": "Investor Snapshot",
   "general-pitch": "General Pitch",
   "final-pitch": "Final Pitch",
+  "safeguarding-compliance-framework": "Safeguarding Compliance Framework",
 };
 
 function exportDocumentPdf(documentId: string, title: string) {
@@ -789,6 +804,60 @@ export default function AdminLicenceAgreements() {
           </div>
         </div>
 
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold flex items-center gap-2" data-testid="text-section-compliance">
+            <Shield className="w-5 h-5 text-purple-600" />
+            Board-Level Compliance
+          </h2>
+          <p className="text-sm text-muted-foreground mb-3">
+            Prepared for Supported Housing Providers, Housing Associations, Charitable Organisations, Universities, Local Authorities and Regulated Care Environments.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-1">
+            <Card data-testid="document-safeguarding-compliance-framework">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-md bg-purple-100 dark:bg-purple-900/30">
+                    <Shield className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-base">Safeguarding, Audit & Compliance Framework</CardTitle>
+                    <CardDescription className="text-sm">Board-level safeguarding architecture covering audit integrity, escalation controls, governance oversight, data retention and compliance</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      data-testid="button-export-pdf-safeguarding-compliance-framework"
+                      onClick={() => exportDocumentPdf("safeguarding-compliance-framework", "AOK Board-Level Safeguarding, Audit & Compliance Framework")}
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      Export PDF
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      data-testid="button-view-safeguarding-compliance-framework"
+                      onClick={() => { setViewDocId("safeguarding-compliance-framework"); setViewDocOpen(true); }}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                      View
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2 flex-wrap">
+                  <Badge variant="secondary" className="text-xs">Board-Level</Badge>
+                  <Badge variant="secondary" className="text-xs">Safeguarding</Badge>
+                  <Badge variant="secondary" className="text-xs">Audit</Badge>
+                  <Badge variant="secondary" className="text-xs">Compliance</Badge>
+                  <Badge variant="secondary" className="text-xs">Governance</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
         <Card data-testid="card-all-documents">
           <CardHeader>
             <CardTitle className="text-lg">All Legal Documents</CardTitle>
@@ -811,6 +880,7 @@ export default function AdminLicenceAgreements() {
                 { title: "Investor Snapshot (5 USPs)", route: "#", icon: TrendingUp, docId: "investor-snapshot", exportOnly: true },
                 { title: "General Pitch (One-Page)", route: "#", icon: FileText, docId: "general-pitch", exportOnly: true },
                 { title: "Final Pitch (Full)", route: "#", icon: FileText, docId: "final-pitch", exportOnly: true },
+                { title: "Safeguarding Compliance Framework", route: "#", icon: Shield, docId: "safeguarding-compliance-framework", exportOnly: true },
               ].map((doc) => (
                 <div key={doc.docId} className="flex items-center gap-3 p-3 border rounded-md" data-testid={`quicklink-${doc.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
                   <doc.icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
