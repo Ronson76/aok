@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon, Video, Scale, PenLine, Share2, Copy, ClipboardList, ChevronDown, ChevronUp, Filter, ArrowLeft, ArrowRight } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon, Video, Scale, PenLine, Share2, Copy, ClipboardList, ChevronDown, ChevronUp, Filter, ArrowLeft, ArrowRight, BarChart3 } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -1516,6 +1516,12 @@ export default function OrganizationDashboard() {
               <Button variant="outline" data-testid="button-team-management">
                 <Users className="h-4 w-4 mr-2" />
                 Team
+              </Button>
+            </Link>
+            <Link href="/org/analytics">
+              <Button variant="outline" data-testid="button-analytics">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Analytics
               </Button>
             </Link>
             <Button 

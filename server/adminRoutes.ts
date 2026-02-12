@@ -6,6 +6,8 @@ import { z } from "zod";
 import { sendPasswordResetEmail, sendAdminInviteEmail, sendOrgSetupInviteEmail } from "./notifications";
 import { randomBytes } from "crypto";
 import { getAllServiceStatuses } from "./serviceResilience";
+import { ensureDb } from "./db";
+import { sql } from "drizzle-orm";
 
 const ADMIN_SESSION_COOKIE = "admin_session";
 
@@ -1465,6 +1467,149 @@ export function registerAdminRoutes(app: Express) {
     } catch (error) {
       console.error("Error updating pricing config:", error);
       res.status(500).json({ error: "Failed to update pricing config" });
+    }
+  });
+
+  const orderedDays = [
+    { day: "Mon", dow: 1 },
+    { day: "Tue", dow: 2 },
+    { day: "Wed", dow: 3 },
+    { day: "Thu", dow: 4 },
+    { day: "Fri", dow: 5 },
+    { day: "Sat", dow: 6 },
+    { day: "Sun", dow: 0 },
+  ];
+
+  app.get("/api/admin/analytics/peak-times", adminAuthMiddleware, async (req, res) => {
+    try {
+      const db = ensureDb();
+
+      const alertsByHourResult = await db.execute(sql`
+        SELECT EXTRACT(HOUR FROM activated_at)::int AS hour, COUNT(*)::int AS count
+        FROM active_emergency_alerts
+        GROUP BY hour ORDER BY hour
+      `);
+
+      const alertsByDowResult = await db.execute(sql`
+        SELECT EXTRACT(DOW FROM activated_at)::int AS dow, COUNT(*)::int AS count
+        FROM active_emergency_alerts
+        GROUP BY dow ORDER BY dow
+      `);
+
+      const missedByHourResult = await db.execute(sql`
+        SELECT EXTRACT(HOUR FROM timestamp)::int AS hour, COUNT(*)::int AS count
+        FROM check_ins
+        WHERE status = 'missed'
+        GROUP BY hour ORDER BY hour
+      `);
+
+      const missedByDowResult = await db.execute(sql`
+        SELECT EXTRACT(DOW FROM timestamp)::int AS dow, COUNT(*)::int AS count
+        FROM check_ins
+        WHERE status = 'missed'
+        GROUP BY dow ORDER BY dow
+      `);
+
+      const alertsHourRows = (alertsByHourResult as any).rows || [];
+      const alertsDowRows = (alertsByDowResult as any).rows || [];
+      const missedHourRows = (missedByHourResult as any).rows || [];
+      const missedDowRows = (missedByDowResult as any).rows || [];
+
+      const alertsByHour = Array.from({ length: 24 }, (_, i) => {
+        const row = alertsHourRows.find((r: any) => Number(r.hour) === i);
+        return { hour: i, count: row ? Number(row.count) : 0 };
+      });
+
+      const alertsByDay = orderedDays.map(({ day, dow }) => {
+        const row = alertsDowRows.find((r: any) => Number(r.dow) === dow);
+        return { day, count: row ? Number(row.count) : 0 };
+      });
+
+      const missedByHour = Array.from({ length: 24 }, (_, i) => {
+        const row = missedHourRows.find((r: any) => Number(r.hour) === i);
+        return { hour: i, count: row ? Number(row.count) : 0 };
+      });
+
+      const missedByDay = orderedDays.map(({ day, dow }) => {
+        const row = missedDowRows.find((r: any) => Number(r.dow) === dow);
+        return { day, count: row ? Number(row.count) : 0 };
+      });
+
+      res.json({ alertsByHour, alertsByDay, missedByHour, missedByDay });
+    } catch (error) {
+      console.error("[ADMIN] Failed to get peak times analytics:", error);
+      res.status(500).json({ error: "Failed to get peak times analytics" });
+    }
+  });
+
+  app.get("/api/admin/analytics/alert-heatmap", adminAuthMiddleware, async (req, res) => {
+    try {
+      const db = ensureDb();
+
+      const result = await db.execute(sql`
+        SELECT latitude, longitude, what3words, COUNT(*)::int AS count
+        FROM active_emergency_alerts
+        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+        GROUP BY latitude, longitude, what3words
+      `);
+
+      const rows = (result as any).rows || result;
+      const points = (rows as any[]).map((r: any) => ({
+        lat: parseFloat(r.latitude),
+        lng: parseFloat(r.longitude),
+        count: Number(r.count),
+        ...(r.what3words ? { what3words: r.what3words } : {}),
+      }));
+
+      res.json({ points });
+    } catch (error) {
+      console.error("[ADMIN] Failed to get alert heatmap:", error);
+      res.status(500).json({ error: "Failed to get alert heatmap data" });
+    }
+  });
+
+  app.get("/api/admin/alerts/active-sos", adminAuthMiddleware, async (req, res) => {
+    try {
+      const db = ensureDb();
+
+      const result = await db.execute(sql`
+        SELECT
+          a.id AS alert_id,
+          COALESCE(oc.client_name, u.name) AS client_name,
+          COALESCE(oc.client_phone, u.mobile_number) AS client_phone,
+          oc.reference_code,
+          a.activated_at,
+          a.latitude,
+          a.longitude,
+          a.what3words,
+          oc.nickname,
+          org.name AS org_name
+        FROM active_emergency_alerts a
+        LEFT JOIN organization_clients oc ON oc.client_id = a.user_id
+        LEFT JOIN users u ON u.id = a.user_id
+        LEFT JOIN users org ON org.id = oc.organization_id
+        WHERE a.is_active = true
+        ORDER BY a.activated_at DESC
+      `);
+
+      const rows = (result as any).rows || result;
+      const alerts = (rows as any[]).map((r: any) => ({
+        alertId: r.alert_id,
+        clientName: r.client_name,
+        clientPhone: r.client_phone,
+        referenceCode: r.reference_code,
+        activatedAt: r.activated_at,
+        latitude: r.latitude,
+        longitude: r.longitude,
+        what3words: r.what3words,
+        nickname: r.nickname,
+        orgName: r.org_name,
+      }));
+
+      res.json(alerts);
+    } catch (error) {
+      console.error("[ADMIN] Failed to get active SOS alerts:", error);
+      res.status(500).json({ error: "Failed to get active SOS alerts" });
     }
   });
 }
