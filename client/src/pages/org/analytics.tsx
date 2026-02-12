@@ -116,6 +116,8 @@ function AlertHeatmap({ points }: { points: HeatmapData["points"] }) {
 function PeakTimesSection() {
   const { data, isLoading } = useQuery<PeakTimesData>({
     queryKey: ["/api/org/analytics/peak-times"],
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 
   if (isLoading) {
@@ -245,6 +247,8 @@ function PeakTimesSection() {
 function HeatmapSection() {
   const { data, isLoading } = useQuery<HeatmapData>({
     queryKey: ["/api/org/analytics/alert-heatmap"],
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 
   if (isLoading) {
@@ -289,6 +293,9 @@ function HeatmapSection() {
 function ActiveSOSSection() {
   const { data, isLoading } = useQuery<ActiveSOSAlert[]>({
     queryKey: ["/api/org/alerts/active-sos"],
+    refetchInterval: 15000,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   if (isLoading) {

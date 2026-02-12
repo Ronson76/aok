@@ -7,14 +7,12 @@ import { startEmergencyScheduler } from "./emergencyScheduler";
 import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
+import { apiRateLimiter, setCsrfCookie, csrfProtection } from "./security";
+import { logger } from "./logger";
 
 const app = express();
 
-// Trust proxy for production (Replit's reverse proxy)
-// This is required for secure cookies to work correctly
-if (process.env.NODE_ENV === "production") {
-  app.set("trust proxy", 1);
-}
+app.set("trust proxy", 1);
 
 const httpServer = createServer(app);
 
@@ -109,6 +107,12 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
+app.use(setCsrfCookie);
+
+app.use("/api/", apiRateLimiter);
+
+app.use(csrfProtection);
+
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",
@@ -153,8 +157,8 @@ app.use((req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
+    logger.error({ err, status, path: _req.path, method: _req.method }, "Unhandled error");
     res.status(status).json({ message });
-    throw err;
   });
 
   if (process.env.NODE_ENV === "production") {

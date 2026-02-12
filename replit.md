@@ -25,6 +25,13 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **API Design**: RESTful JSON API (`/api/` prefix)
 - **Build Process**: esbuild for production, tsx for development
 
+### Security & Resilience
+- **Rate Limiting**: express-rate-limit on login (10/15min) and password reset (5/hour) endpoints, plus global API rate limiting (120/min).
+- **CSRF Protection**: Double-submit cookie pattern with x-csrf-token header validation; excludes webhook endpoints.
+- **Service Resilience**: Retry with exponential backoff, circuit breakers (5 failures threshold, 60s cooldown), multi-provider fallback for notifications.
+- **Structured Logging**: pino-based JSON logging with module-specific child loggers (auth, notifications, resilience, analytics, scheduler); PII redaction.
+- **Database Indexes**: Performance indexes on active_emergency_alerts (activated_at, user_id, location, is_active), check_ins (user_id, timestamp), organization_clients (organization_id, client_id).
+
 ### Data Layer
 - **ORM**: Drizzle ORM for PostgreSQL
 - **Schema Definition**: Shared TypeScript schemas with Zod validation.

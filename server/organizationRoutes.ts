@@ -7,6 +7,8 @@ import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendCon
 import { plantTreeForNewSubscriber } from "./ecologiService";
 import { ensureDb } from "./db";
 import { sql, eq, and, isNotNull } from "drizzle-orm";
+import { loginRateLimiter, passwordResetRateLimiter } from "./security";
+import { getPeakTimes, getAlertHeatmap, getActiveSOSAlerts } from "./services/analyticsService";
 
 function generateReferenceCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -1158,7 +1160,7 @@ export function registerOrganizationRoutes(app: Express) {
   });
 
   // Organisation forgot password (public)
-  app.post("/api/org/auth/forgot-password", async (req, res) => {
+  app.post("/api/org/auth/forgot-password", passwordResetRateLimiter, async (req, res) => {
     try {
       const parsed = forgotPasswordSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -1196,7 +1198,7 @@ export function registerOrganizationRoutes(app: Express) {
   });
 
   // Organisation reset password (public)
-  app.post("/api/org/auth/reset-password", async (req, res) => {
+  app.post("/api/org/auth/reset-password", passwordResetRateLimiter, async (req, res) => {
     try {
       const parsed = resetPasswordSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -2647,77 +2649,11 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
-  const orderedDays = [
-    { day: "Mon", dow: 1 },
-    { day: "Tue", dow: 2 },
-    { day: "Wed", dow: 3 },
-    { day: "Thu", dow: 4 },
-    { day: "Fri", dow: 5 },
-    { day: "Sat", dow: 6 },
-    { day: "Sun", dow: 0 },
-  ];
-
   app.get("/api/org/analytics/peak-times", requireOrganization, async (req, res) => {
     try {
-      const db = ensureDb();
       const orgId = req.orgId || req.userId!;
-
-      const alertsByHourResult = await db.execute(sql`
-        SELECT EXTRACT(HOUR FROM a.activated_at)::int AS hour, COUNT(*)::int AS count
-        FROM active_emergency_alerts a
-        WHERE a.user_id IN (SELECT client_id FROM organization_clients WHERE organization_id = ${orgId} AND client_id IS NOT NULL)
-        GROUP BY hour ORDER BY hour
-      `);
-
-      const alertsByDowResult = await db.execute(sql`
-        SELECT EXTRACT(DOW FROM a.activated_at)::int AS dow, COUNT(*)::int AS count
-        FROM active_emergency_alerts a
-        WHERE a.user_id IN (SELECT client_id FROM organization_clients WHERE organization_id = ${orgId} AND client_id IS NOT NULL)
-        GROUP BY dow ORDER BY dow
-      `);
-
-      const missedByHourResult = await db.execute(sql`
-        SELECT EXTRACT(HOUR FROM c.timestamp)::int AS hour, COUNT(*)::int AS count
-        FROM check_ins c
-        WHERE c.status = 'missed'
-          AND c.user_id IN (SELECT client_id FROM organization_clients WHERE organization_id = ${orgId} AND client_id IS NOT NULL)
-        GROUP BY hour ORDER BY hour
-      `);
-
-      const missedByDowResult = await db.execute(sql`
-        SELECT EXTRACT(DOW FROM c.timestamp)::int AS dow, COUNT(*)::int AS count
-        FROM check_ins c
-        WHERE c.status = 'missed'
-          AND c.user_id IN (SELECT client_id FROM organization_clients WHERE organization_id = ${orgId} AND client_id IS NOT NULL)
-        GROUP BY dow ORDER BY dow
-      `);
-
-      const alertsHourRows = (alertsByHourResult as any).rows || [];
-      const alertsDowRows = (alertsByDowResult as any).rows || [];
-      const missedHourRows = (missedByHourResult as any).rows || [];
-      const missedDowRows = (missedByDowResult as any).rows || [];
-
-      const alertsByHour = Array.from({ length: 24 }, (_, i) => {
-        const row = alertsHourRows.find((r: any) => Number(r.hour) === i);
-        return { hour: i, count: row ? Number(row.count) : 0 };
-      });
-
-      const alertsByDay = orderedDays.map(({ day, dow }) => {
-        const row = alertsDowRows.find((r: any) => Number(r.dow) === dow);
-        return { day, count: row ? Number(row.count) : 0 };
-      });
-
-      const missedByHour = Array.from({ length: 24 }, (_, i) => {
-        const row = missedHourRows.find((r: any) => Number(r.hour) === i);
-        return { hour: i, count: row ? Number(row.count) : 0 };
-      });
-
-      const missedByDay = orderedDays.map(({ day, dow }) => {
-        const row = missedDowRows.find((r: any) => Number(r.dow) === dow);
-        return { day, count: row ? Number(row.count) : 0 };
-      });
-
-      res.json({ alertsByHour, alertsByDay, missedByHour, missedByDay });
+      const data = await getPeakTimes(orgId);
+      res.json(data);
     } catch (error) {
       console.error("[ORG] Failed to get peak times analytics:", error);
       res.status(500).json({ error: "Failed to get peak times analytics" });
@@ -2726,26 +2662,9 @@ export function registerOrganizationRoutes(app: Express) {
 
   app.get("/api/org/analytics/alert-heatmap", requireOrganization, async (req, res) => {
     try {
-      const db = ensureDb();
       const orgId = req.orgId || req.userId!;
-
-      const result = await db.execute(sql`
-        SELECT a.latitude, a.longitude, a.what3words, COUNT(*)::int AS count
-        FROM active_emergency_alerts a
-        WHERE a.latitude IS NOT NULL AND a.longitude IS NOT NULL
-          AND a.user_id IN (SELECT client_id FROM organization_clients WHERE organization_id = ${orgId} AND client_id IS NOT NULL)
-        GROUP BY a.latitude, a.longitude, a.what3words
-      `);
-
-      const rows = (result as any).rows || result;
-      const points = (rows as any[]).map((r: any) => ({
-        lat: parseFloat(r.latitude),
-        lng: parseFloat(r.longitude),
-        count: Number(r.count),
-        ...(r.what3words ? { what3words: r.what3words } : {}),
-      }));
-
-      res.json({ points });
+      const data = await getAlertHeatmap(orgId);
+      res.json(data);
     } catch (error) {
       console.error("[ORG] Failed to get alert heatmap:", error);
       res.status(500).json({ error: "Failed to get alert heatmap data" });
@@ -2754,40 +2673,8 @@ export function registerOrganizationRoutes(app: Express) {
 
   app.get("/api/org/alerts/active-sos", requireOrganization, async (req, res) => {
     try {
-      const db = ensureDb();
       const orgId = req.orgId || req.userId!;
-
-      const result = await db.execute(sql`
-        SELECT
-          a.id AS alert_id,
-          COALESCE(oc.client_name, u.name) AS client_name,
-          COALESCE(oc.client_phone, u.mobile_number) AS client_phone,
-          oc.reference_code,
-          a.activated_at,
-          a.latitude,
-          a.longitude,
-          a.what3words,
-          oc.nickname
-        FROM active_emergency_alerts a
-        INNER JOIN organization_clients oc ON oc.client_id = a.user_id AND oc.organization_id = ${orgId}
-        LEFT JOIN users u ON u.id = a.user_id
-        WHERE a.is_active = true
-        ORDER BY a.activated_at DESC
-      `);
-
-      const rows = (result as any).rows || result;
-      const alerts = (rows as any[]).map((r: any) => ({
-        alertId: r.alert_id,
-        clientName: r.client_name,
-        clientPhone: r.client_phone,
-        referenceCode: r.reference_code,
-        activatedAt: r.activated_at,
-        latitude: r.latitude,
-        longitude: r.longitude,
-        what3words: r.what3words,
-        nickname: r.nickname,
-      }));
-
+      const alerts = await getActiveSOSAlerts(orgId);
       res.json(alerts);
     } catch (error) {
       console.error("[ORG] Failed to get active SOS alerts:", error);
