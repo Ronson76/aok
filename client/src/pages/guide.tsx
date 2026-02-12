@@ -49,6 +49,18 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "audit-trail",
+    title: "Audit trail (organisations)",
+    content: [
+      "If you're managed by an organisation, all your check-ins, alerts, and account changes are automatically logged in a secure audit trail.",
+      "Your organisation uses this to meet regulatory and safeguarding requirements.",
+      "Every audit record is protected by a **tamper-evident hash chain** — a system that detects if any record has been changed or removed.",
+      "Your organisation can export audit data as **CSV** spreadsheets or **Summary PDF** reports for compliance reviews and board meetings.",
+      "They can also verify the integrity of the audit trail at any time, proving records haven't been tampered with.",
+      "Retention policies control how long records are kept — typically 6 years, in line with the Limitation Act 1980.",
+    ],
+  },
+  {
     id: "cancelling-subscription",
     title: "Cancelling your subscription",
     content: [
@@ -492,6 +504,17 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "If you've cancelled your subscription, you can reactivate it before the current billing period ends.",
       "Go to **Settings** and tap **Reactivate Subscription**.",
       "Your service will continue without interruption.",
+    ],
+  },
+  {
+    id: "safeguarding-compliance-framework",
+    title: "Safeguarding Compliance Framework (organisations)",
+    content: [
+      "The **Board-Level Safeguarding, Audit & Compliance Framework** is a comprehensive document outlining how aok supports safeguarding governance.",
+      "It covers audit architecture, activity monitoring, data security, retention policies, and organisational risk mitigation.",
+      "The framework is designed for housing providers, charitable organisations, universities, local authorities, and regulated care environments.",
+      "Your organisation can view and export the full document as a PDF from the Admin Dashboard.",
+      "It provides the evidential basis for demonstrating duty of care to regulators, insurers, and governance boards.",
     ],
   },
   {
