@@ -232,7 +232,9 @@ export interface IStorage {
   // Safeguarding - Audit Trail
   getAuditTrail(organizationId: string, limit?: number): Promise<AuditTrailEntry[]>;
   getFilteredAuditTrail(organizationId: string, filters: { entityType?: string; action?: string; search?: string; startDate?: Date; endDate?: Date; limit?: number; offset?: number }): Promise<{ entries: AuditTrailEntry[]; total: number }>;
-  createAuditEntry(organizationId: string, data: { userId?: string; userEmail?: string; userRole?: string; action: string; entityType: string; entityId?: string; previousData?: any; newData?: any; ipAddress?: string; userAgent?: string }): Promise<AuditTrailEntry>;
+  createAuditEntry(organizationId: string, data: { userId?: string; userEmail?: string; userRole?: string; actorId?: string; actorRole?: string; action: string; entityType: string; entityId?: string; eventType?: string; previousData?: any; newData?: any; ipAddress?: string; userAgent?: string; deviceId?: string; appVersion?: string }): Promise<AuditTrailEntry>;
+  verifyAuditChain(organizationId: string, startDate?: Date, endDate?: Date): Promise<{ valid: boolean; totalChecked: number; firstBrokenId?: string; firstBrokenAt?: Date }>;
+  purgeExpiredAuditEntries(organizationId: string, retentionDays: number): Promise<number>;
 
   // Safeguarding - Risk Reports
   getRiskReports(organizationId: string): Promise<RiskReport[]>;
@@ -1912,12 +1914,106 @@ class DatabaseStorage implements IStorage {
     return { entries, total: totalResult.count };
   }
 
-  async createAuditEntry(organizationId: string, data: { userId?: string; userEmail?: string; userRole?: string; action: string; entityType: string; entityId?: string; previousData?: any; newData?: any; ipAddress?: string; userAgent?: string }): Promise<AuditTrailEntry> {
+  async createAuditEntry(organizationId: string, data: { userId?: string; userEmail?: string; userRole?: string; actorId?: string; actorRole?: string; action: string; entityType: string; entityId?: string; eventType?: string; previousData?: any; newData?: any; ipAddress?: string; userAgent?: string; deviceId?: string; appVersion?: string }): Promise<AuditTrailEntry> {
+    const lastEntry = await getDb()
+      .select({ integrityHash: auditTrail.integrityHash })
+      .from(auditTrail)
+      .where(eq(auditTrail.organizationId, organizationId))
+      .orderBy(desc(auditTrail.createdAt))
+      .limit(1);
+
+    const previousHash = lastEntry.length > 0 ? (lastEntry[0].integrityHash || null) : null;
+
+    const now = new Date();
+    const hashPayload = JSON.stringify({
+      organizationId,
+      action: data.action,
+      entityType: data.entityType,
+      entityId: data.entityId || null,
+      eventType: data.eventType || null,
+      previousData: data.previousData || null,
+      newData: data.newData || null,
+      userId: data.userId || null,
+      userEmail: data.userEmail || null,
+      actorId: data.actorId || null,
+      createdAt: now.toISOString(),
+      previousHash: previousHash,
+    });
+    const integrityHash = createHash("sha256").update(hashPayload).digest("hex");
+
     const result = await getDb()
       .insert(auditTrail)
-      .values({ ...data, organizationId })
+      .values({
+        ...data,
+        organizationId,
+        previousHash,
+        integrityHash,
+        createdAt: now,
+      })
       .returning();
     return result[0];
+  }
+
+  async verifyAuditChain(organizationId: string, startDate?: Date, endDate?: Date): Promise<{ valid: boolean; totalChecked: number; firstBrokenId?: string; firstBrokenAt?: Date }> {
+    const conditions = [eq(auditTrail.organizationId, organizationId)];
+    if (startDate) conditions.push(gte(auditTrail.createdAt, startDate));
+    if (endDate) conditions.push(lte(auditTrail.createdAt, endDate));
+
+    const entries = await getDb()
+      .select()
+      .from(auditTrail)
+      .where(and(...conditions))
+      .orderBy(auditTrail.createdAt);
+
+    let totalChecked = 0;
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      if (!entry.integrityHash) continue;
+      totalChecked++;
+
+      const expectedPrevHash = i > 0 ? (entries[i - 1].integrityHash || null) : entry.previousHash;
+
+      const hashPayload = JSON.stringify({
+        organizationId: entry.organizationId,
+        action: entry.action,
+        entityType: entry.entityType,
+        entityId: entry.entityId || null,
+        eventType: entry.eventType || null,
+        previousData: entry.previousData || null,
+        newData: entry.newData || null,
+        userId: entry.userId || null,
+        userEmail: entry.userEmail || null,
+        actorId: entry.actorId || null,
+        createdAt: entry.createdAt.toISOString(),
+        previousHash: entry.previousHash,
+      });
+      const recomputedHash = createHash("sha256").update(hashPayload).digest("hex");
+
+      if (recomputedHash !== entry.integrityHash) {
+        return { valid: false, totalChecked, firstBrokenId: entry.id, firstBrokenAt: entry.createdAt };
+      }
+
+      if (i > 0 && entry.previousHash !== entries[i - 1].integrityHash) {
+        return { valid: false, totalChecked, firstBrokenId: entry.id, firstBrokenAt: entry.createdAt };
+      }
+    }
+
+    return { valid: true, totalChecked };
+  }
+
+  async purgeExpiredAuditEntries(organizationId: string, retentionDays: number): Promise<number> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+
+    const deleted = await getDb()
+      .delete(auditTrail)
+      .where(and(
+        eq(auditTrail.organizationId, organizationId),
+        lt(auditTrail.createdAt, cutoffDate)
+      ))
+      .returning({ id: auditTrail.id });
+
+    return deleted.length;
   }
 
   // ==================== SAFEGUARDING - RISK REPORTS ====================

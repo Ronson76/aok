@@ -65,6 +65,8 @@ export const users = pgTable("users", {
   orgFeatureWellbeingAi: boolean("org_feature_wellbeing_ai").notNull().default(true),
   orgFeatureFitnessTracking: boolean("org_feature_fitness_tracking").notNull().default(true),
   orgFeatureActivitiesTracker: boolean("org_feature_activities_tracker").notNull().default(true),
+  // Audit retention policy in days (default 2190 = 6 years, min 365, max 3650)
+  retentionPolicyDays: integer("retention_policy_days").notNull().default(2190),
   // Last known location (updated on check-in if provided)
   latitude: text("latitude"),
   longitude: text("longitude"),
@@ -1270,20 +1272,27 @@ export const missedCheckInEscalations = pgTable("missed_checkin_escalations", {
 
 export type MissedCheckInEscalation = typeof missedCheckInEscalations.$inferSelect;
 
-// Audit trail table - immutable log of all actions
+// Audit trail table - immutable, tamper-evident log of all actions
 export const auditTrail = pgTable("audit_trail", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   userId: varchar("user_id"),
   userEmail: text("user_email"),
   userRole: text("user_role"),
+  actorId: varchar("actor_id"),
+  actorRole: text("actor_role"),
   action: text("action").notNull(), // "create", "read", "update", "delete", "export"
   entityType: text("entity_type").notNull(), // "incident", "welfare_concern", "case_file", "escalation_rule"
   entityId: varchar("entity_id"),
+  eventType: text("event_type"),
   previousData: jsonb("previous_data"),
   newData: jsonb("new_data"),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
+  deviceId: text("device_id"),
+  appVersion: text("app_version"),
+  previousHash: text("previous_hash"),
+  integrityHash: text("integrity_hash"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
