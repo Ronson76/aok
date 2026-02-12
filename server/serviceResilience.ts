@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { resilienceLogger } from "./logger";
 
 function getDb() {
   if (!db) throw new Error("Database not initialized");
@@ -62,7 +63,7 @@ export function recordFailure(name: ServiceName, error: string): void {
   if (status.consecutiveFailures >= CIRCUIT_BREAKER_THRESHOLD) {
     status.circuitOpen = true;
     status.healthy = false;
-    console.warn(`[CIRCUIT BREAKER] ${name} circuit OPEN after ${status.consecutiveFailures} consecutive failures`);
+    resilienceLogger.warn({ service: name, failures: status.consecutiveFailures }, "Circuit breaker OPEN");
   }
 }
 
@@ -75,7 +76,7 @@ export function isCircuitOpen(name: ServiceName): boolean {
     if (elapsed > CIRCUIT_BREAKER_COOLDOWN_MS) {
       status.circuitOpen = false;
       status.healthy = true;
-      console.log(`[CIRCUIT BREAKER] ${name} circuit reset to closed after cooldown, allowing requests`);
+      resilienceLogger.info({ service: name }, "Circuit breaker reset to closed after cooldown");
       return false;
     }
   }
@@ -136,8 +137,7 @@ export async function withRetry<T>(
   } = options;
 
   if (serviceName && isCircuitOpen(serviceName)) {
-    const msg = `[RETRY] ${operation}: circuit breaker open for ${serviceName}, skipping`;
-    console.warn(msg);
+    resilienceLogger.warn({ service: serviceName, operation }, "Circuit breaker open, skipping retry");
     throw new Error(`Service ${serviceName} circuit breaker is open`);
   }
 
@@ -157,7 +157,7 @@ export async function withRetry<T>(
         if (serviceName) {
           recordFailure(serviceName, error?.message || String(error));
         }
-        console.error(`[RETRY] ${operation}: all ${maxAttempts} attempts failed. Last error: ${error?.message}`);
+        resilienceLogger.error({ service: serviceName, operation, attempt, maxAttempts, error: error?.message }, "All retry attempts exhausted");
         break;
       }
 
@@ -165,13 +165,13 @@ export async function withRetry<T>(
         if (serviceName) {
           recordFailure(serviceName, error?.message || String(error));
         }
-        console.error(`[RETRY] ${operation}: non-transient error on attempt ${attempt}, not retrying: ${error?.message}`);
+        resilienceLogger.error({ service: serviceName, operation, attempt, error: error?.message }, "Non-transient error, not retrying");
         break;
       }
 
       const delay = Math.min(initialDelayMs * Math.pow(2, attempt - 1), maxDelayMs);
       const jitter = delay * (0.5 + Math.random() * 0.5);
-      console.warn(`[RETRY] ${operation}: attempt ${attempt}/${maxAttempts} failed (${error?.message}), retrying in ${Math.round(jitter)}ms`);
+      resilienceLogger.warn({ service: serviceName, operation, attempt, maxAttempts, retryInMs: Math.round(jitter), error: error?.message }, "Transient error, retrying");
       await new Promise(resolve => setTimeout(resolve, jitter));
     }
   }
@@ -190,7 +190,7 @@ export async function withFallback<T>(
     const isLast = i === providers.length - 1;
 
     if (provider.serviceName && isCircuitOpen(provider.serviceName)) {
-      console.warn(`[FALLBACK] ${provider.name}: circuit breaker open, trying next provider`);
+      resilienceLogger.warn({ provider: provider.name, service: provider.serviceName }, "Fallback provider circuit open, skipping");
       continue;
     }
 
@@ -200,7 +200,7 @@ export async function withFallback<T>(
         recordSuccess(provider.serviceName);
       }
       if (i > 0) {
-        console.log(`[FALLBACK] ${provider.name}: succeeded as fallback (primary was ${primary.name})`);
+        resilienceLogger.info({ provider: provider.name, primary: primary.name }, "Fallback provider succeeded");
       }
       return result;
     } catch (error: any) {
@@ -208,12 +208,27 @@ export async function withFallback<T>(
         recordFailure(provider.serviceName, error?.message || String(error));
       }
       if (isLast) {
-        console.error(`[FALLBACK] All providers failed. Last error from ${provider.name}: ${error?.message}`);
+        resilienceLogger.error({ provider: provider.name, error: error?.message }, "All fallback providers failed");
         throw error;
       }
-      console.warn(`[FALLBACK] ${provider.name} failed (${error?.message}), trying ${providers[i + 1].name}`);
+      resilienceLogger.warn({ provider: provider.name, next: providers[i + 1].name, error: error?.message }, "Fallback provider failed, trying next");
     }
   }
 
   throw new Error("All fallback providers failed");
+}
+
+export async function resilientFetch(
+  url: string,
+  options: RequestInit & { serviceName?: ServiceName; operation?: string; maxAttempts?: number } = {}
+): Promise<Response> {
+  const { serviceName, operation = "fetch", maxAttempts = 2, ...fetchOptions } = options;
+
+  return withRetry(async () => {
+    const response = await fetch(url, fetchOptions);
+    if (!response.ok && response.status >= 500) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response;
+  }, { maxAttempts, serviceName, operation });
 }

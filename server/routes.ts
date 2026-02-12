@@ -15,6 +15,7 @@ import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClie
 import { stripeService } from "./stripeService";
 import { getEcologiImpact, plantTreeForNewSubscriber, isTestMode as isEcologiTestMode } from "./ecologiService";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
+import { loginRateLimiter, passwordResetRateLimiter } from "./security";
 
 // Helper function to render a simple HTML confirmation page
 function renderConfirmationPage(success: boolean, message: string): string {
@@ -889,7 +890,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", loginRateLimiter, async (req, res) => {
     try {
       const parsed = loginSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -1220,7 +1221,7 @@ export async function registerRoutes(
   });
 
   // Forgot password (public) - always returns success to prevent email enumeration
-  app.post("/api/auth/forgot-password", async (req, res) => {
+  app.post("/api/auth/forgot-password", passwordResetRateLimiter, async (req, res) => {
     try {
       const parsed = forgotPasswordSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -1262,7 +1263,7 @@ export async function registerRoutes(
   });
 
   // Reset password (public)
-  app.post("/api/auth/reset-password", async (req, res) => {
+  app.post("/api/auth/reset-password", passwordResetRateLimiter, async (req, res) => {
     try {
       const parsed = resetPasswordSchema.safeParse(req.body);
       if (!parsed.success) {

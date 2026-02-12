@@ -1,3 +1,4 @@
+import { withRetry, recordSuccess, recordFailure } from "./serviceResilience";
 
 const ECOLOGI_API_BASE = "https://public.ecologi.com";
 const ECOLOGI_USERNAME = "nghuman18";
@@ -22,18 +23,17 @@ interface TreePurchaseResponse {
 
 export async function getEcologiImpact(): Promise<EcologiImpact | null> {
   try {
-    const response = await fetch(`${ECOLOGI_API_BASE}/users/${ECOLOGI_USERNAME}/impact`);
-    
-    if (!response.ok) {
-      console.error("[ECOLOGI] Failed to fetch impact:", response.status, response.statusText);
-      return null;
-    }
-    
-    const data = await response.json() as EcologiImpact;
-    console.log("[ECOLOGI] Impact fetched:", data);
-    return data;
+    return await withRetry(async () => {
+      const response = await fetch(`${ECOLOGI_API_BASE}/users/${ECOLOGI_USERNAME}/impact`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch impact: ${response.status}`);
+      }
+      const data = await response.json() as EcologiImpact;
+      recordSuccess("ecologi");
+      return data;
+    }, { maxAttempts: 2, serviceName: "ecologi", operation: "getEcologiImpact" });
   } catch (error) {
-    console.error("[ECOLOGI] Error fetching impact:", error);
+    recordFailure("ecologi", (error as Error).message);
     return null;
   }
 }
