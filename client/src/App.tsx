@@ -62,6 +62,7 @@ import OrgMissedCheckInsReport from "@/pages/org/missed-checkins-report";
 import OrgEmergencyAlertsReport from "@/pages/org/emergency-alerts-report";
 import OrgTeamInvite from "@/pages/org/team-invite";
 import OrgTeam from "@/pages/org/team";
+import OrgAnalytics from "@/pages/org/analytics";
 import AdminTeam from "@/pages/admin/team";
 import AdminInvite from "@/pages/admin/invite";
 import AdminArchitecture from "@/pages/admin/architecture";
@@ -233,6 +234,7 @@ function AppRoutes() {
       <Route path="/org/safeguarding" component={() => <ProtectedRoute component={OrgSafeguarding} />} />
       <Route path="/org/lone-worker" component={() => <ProtectedRoute component={OrgLoneWorkerHub} />} />
       <Route path="/org/team" component={() => <ProtectedRoute component={OrgTeam} />} />
+      <Route path="/org/analytics" component={() => <ProtectedRoute component={OrgAnalytics} />} />
       <Route path="/org/missed-checkins" component={() => <ProtectedRoute component={OrgMissedCheckInsReport} />} />
       <Route path="/org/emergency-alerts" component={() => <ProtectedRoute component={OrgEmergencyAlertsReport} />} />
       <Route path="/app/contacts" component={() => <ProtectedRoute component={Contacts} />} />
@@ -795,7 +797,7 @@ function Router() {
   }
 
   // Org pages have their own layout/header, don't use AppLayout
-  if (location.startsWith("/org/dashboard") || location.startsWith("/org/safeguarding") || location.startsWith("/org/lone-worker") || location.startsWith("/org/team") || location.startsWith("/org/missed-checkins") || location.startsWith("/org/emergency-alerts")) {
+  if (location.startsWith("/org/dashboard") || location.startsWith("/org/safeguarding") || location.startsWith("/org/lone-worker") || location.startsWith("/org/team") || location.startsWith("/org/analytics") || location.startsWith("/org/missed-checkins") || location.startsWith("/org/emergency-alerts")) {
     return <AppRoutes />;
   }
 

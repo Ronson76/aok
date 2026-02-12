@@ -1,14 +1,29 @@
-import { Express, Request, Response } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import PDFDocument from "pdfkit";
-import { storage } from "./storage";
+import { storage, orgMemberStorage, organizationStorage } from "./storage";
 
-function requireOrganization(req: Request, res: Response, next: Function) {
-  if (!req.isAuthenticated || !req.isAuthenticated() || !(req.user as any)?.id) {
-    return res.status(401).json({ error: "Not authenticated" });
+async function requireOrganization(req: Request, res: Response, next: NextFunction) {
+  const orgMemberSessionId = req.cookies?.org_member_session;
+  if (orgMemberSessionId) {
+    const session = await orgMemberStorage.getMemberSession(orgMemberSessionId);
+    if (session) {
+      const member = await orgMemberStorage.getMemberById(session.memberId);
+      if (member && member.status === "active") {
+        req.userId = member.organizationId;
+        req.orgId = member.organizationId;
+        req.orgMember = (() => { const { passwordHash, ...p } = member; return p; })();
+        req.orgRole = member.role;
+        return next();
+      }
+    }
   }
-  if ((req.user as any).accountType !== "organization") {
-    return res.status(403).json({ error: "Organization access required" });
+
+  if (!req.user || (req.user as any).accountType !== "organization") {
+    return res.status(403).json({ error: "Access denied. Organisation account required." });
   }
+
+  req.orgId = req.userId;
+  req.orgRole = "owner";
   next();
 }
 
@@ -44,11 +59,11 @@ export function registerReportingRoutes(app: Express) {
 
       let clientName = "Unknown";
       if (incident.clientId) {
-        const client = await storage.getClientById(incident.clientId);
+        const client = await organizationStorage.getClientById(incident.clientId);
         if (client) clientName = client.name;
       }
 
-      const orgUser = await storage.getUser(orgId);
+      const orgUser = await storage.getUserById(orgId);
       const orgName = orgUser?.name || "Organisation";
 
       const doc = new PDFDocument({ margin: 50, size: "A4" });
@@ -179,7 +194,7 @@ export function registerReportingRoutes(app: Express) {
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : new Date(new Date().setMonth(new Date().getMonth() - 1));
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : new Date();
 
-      const orgUser = await storage.getUser(orgId);
+      const orgUser = await storage.getUserById(orgId);
       const orgName = orgUser?.name || "Organisation";
 
       const { entries, total } = await storage.getFilteredAuditTrail(orgId, {
