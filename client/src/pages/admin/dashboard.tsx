@@ -21,6 +21,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import type { DashboardStats, AdminOrganizationView, AdminOrganizationClientView, OrgClientStatus } from "@shared/schema";
 import { allTierFeatureKeys, featureLabels } from "@shared/schema";
 import AdminTeam from "@/pages/admin/team";
+import { ActiveSOSPanel } from "@/components/active-sos-panel";
 
 const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -1072,6 +1073,10 @@ export default function AdminDashboard() {
           <p className="text-muted-foreground">Failed to load statistics</p>
         )}
         
+        <div className="mt-10">
+          <ActiveSOSPanel apiEndpoint="/api/admin/alerts/active-sos" testIdPrefix="admin-dash" />
+        </div>
+
         {/* Organisations Section */}
         <h2 className="text-2xl font-semibold mb-6 mt-10">Organisations & Clients</h2>
         

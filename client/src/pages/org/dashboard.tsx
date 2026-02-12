@@ -21,6 +21,7 @@ import { formatDistanceToNow, format } from "date-fns";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from "wouter";
+import { ActiveSOSPanel } from "@/components/active-sos-panel";
 
 function getStatusIcon(status: "safe" | "pending" | "overdue", size: "sm" | "md" = "sm") {
   const iconClass = size === "sm" ? "h-4 w-4" : "h-6 w-6";
@@ -2423,6 +2424,8 @@ export default function OrganizationDashboard() {
           </Link>
         </CardContent>
       </Card>
+
+      <ActiveSOSPanel apiEndpoint="/api/org/alerts/active-sos" testIdPrefix="org-dash" />
 
       {/* Comprehensive Audit Trail */}
       <Card>
