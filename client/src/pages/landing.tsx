@@ -180,16 +180,16 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-background border-b shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-logo-home">
-              <ShieldCheck className="h-9 w-9 text-green-600" />
-              <span className="text-2xl font-bold text-green-600">aok</span>
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+            <Link href="/" className="flex items-center gap-1.5 sm:gap-2 hover:opacity-80 transition-opacity" data-testid="link-logo-home">
+              <ShieldCheck className="h-7 w-7 sm:h-9 sm:w-9 text-green-600" />
+              <span className="text-lg sm:text-2xl font-bold text-green-600">aok</span>
             </Link>
-            <div className="h-8 w-px bg-muted-foreground/30" />
+            <div className="hidden sm:block h-8 w-px bg-muted-foreground/30" />
             <Link 
               href="/app/wellbeing-ai"
-              className="flex flex-col items-start"
+              className="hidden sm:flex flex-col items-start"
               data-testid="link-health-insight"
             >
               <div className="relative h-7 w-7 flex items-center justify-center mb-0.5">
@@ -200,15 +200,15 @@ export default function Landing() {
               <span className="text-xs font-semibold text-green-600 leading-none whitespace-nowrap">Wellbeing AI</span>
             </Link>
           </div>
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-6">
             <a href="#features" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-features">Features</a>
             <a href="#how-it-works" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">How It Works</a>
             <a href="#use-cases" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-use-cases">Who Uses aok</a>
             <a href="#pricing" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-pricing">Pricing</a>
             <a href="#faq" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-faq">FAQ</a>
           </nav>
-          <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-2 mr-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="hidden lg:flex items-center gap-2 mr-2">
               <a href="#" className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-border hover-elevate" data-testid="link-app-store-header">
                 <SiApple className="h-5 w-5 text-black dark:text-white" />
                 <span className="text-sm font-medium">App Store</span>
@@ -223,10 +223,11 @@ export default function Landing() {
                 onClick={handleLogout} 
                 disabled={isLoggingOut}
                 variant="outline"
+                size="sm"
                 data-testid="button-logout"
               >
-                <LogOut className="h-4 w-4 mr-2" />
-                {isLoggingOut ? "Logging out..." : "Log Out"}
+                <LogOut className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">{isLoggingOut ? "Logging out..." : "Log Out"}</span>
               </Button>
             ) : (
               <Link href="/login">
@@ -237,7 +238,7 @@ export default function Landing() {
                 <Share2 className="h-4 w-4" />
               </Button>
               <DropdownMenu>
-              <DropdownMenuTrigger asChild className="md:hidden">
+              <DropdownMenuTrigger asChild className="lg:hidden">
                 <Button size="icon" variant="ghost" data-testid="button-menu">
                   <MoreVertical className="h-5 w-5" />
                 </Button>
