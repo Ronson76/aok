@@ -319,6 +319,31 @@ img {
   }
 }
 
+/* PWA safe-area insets for notch/home-indicator devices */
+html {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Scrollbar hide utility for horizontal scrolling navs */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Minimum touch target for mobile */
+@media (pointer: coarse) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
 /* Glow animation for the "You're aok" box */
 @keyframes glow {
   0%, 100% {

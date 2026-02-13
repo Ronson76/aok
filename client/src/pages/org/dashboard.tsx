@@ -1467,14 +1467,15 @@ export default function OrganizationDashboard() {
       </header>
       
       <div className="container mx-auto p-4 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="space-y-4">
           <div>
-            <h1 className="text-2xl font-bold" data-testid="text-org-dashboard-title">Organisation Dashboard</h1>
-            <p className="text-muted-foreground">View your clients' check-in status and wellbeing</p>
+            <h1 className="text-xl sm:text-2xl font-bold" data-testid="text-org-dashboard-title">Organisation Dashboard</h1>
+            <p className="text-sm text-muted-foreground">View your clients' check-in status and wellbeing</p>
           </div>
           <div className="flex gap-2 flex-wrap">
             <Button
               variant="outline"
+              size="sm"
               onClick={async () => {
                 const shareUrl = "https://aok.care/org/login";
                 const shareData = {
@@ -1502,49 +1503,51 @@ export default function OrganizationDashboard() {
               Share
             </Button>
             <Link href="/org/lone-worker">
-              <Button variant="outline" data-testid="button-lone-worker-hub">
+              <Button variant="outline" size="sm" data-testid="button-lone-worker-hub">
                 <Shield className="h-4 w-4 mr-2" />
-                Lone Worker Hub
+                <span className="hidden sm:inline">Lone Worker </span>Hub
               </Button>
             </Link>
             <Link href="/org/safeguarding">
-              <Button variant="outline" data-testid="button-safeguarding-hub">
+              <Button variant="outline" size="sm" data-testid="button-safeguarding-hub">
                 <Shield className="h-4 w-4 mr-2" />
-                Safeguarding Hub
+                <span className="hidden sm:inline">Safeguarding </span>Hub
               </Button>
             </Link>
             <Link href="/org/team">
-              <Button variant="outline" data-testid="button-team-management">
+              <Button variant="outline" size="sm" data-testid="button-team-management">
                 <Users className="h-4 w-4 mr-2" />
                 Team
               </Button>
             </Link>
             <Link href="/org/analytics">
-              <Button variant="outline" data-testid="button-analytics">
+              <Button variant="outline" size="sm" data-testid="button-analytics">
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Analytics
               </Button>
             </Link>
             <Button 
+              size="sm"
               data-testid="button-register-client" 
               disabled={!hasSeatsAvailable}
               onClick={() => setShowRegisterClientDialog(true)}
             >
               <UserPlus className="h-4 w-4 mr-2" />
-              Register Client
+              Register
             </Button>
             <Button 
               variant="outline"
+              size="sm"
               data-testid="button-import-clients"
               disabled={!hasSeatsAvailable}
               onClick={() => { resetImportForm(); setShowImportDialog(true); }}
             >
               <Upload className="h-4 w-4 mr-2" />
-              Import Clients
+              Import
             </Button>
-            <Button variant="outline" onClick={() => setShowChangePasswordDialog(true)} data-testid="button-org-change-password">
+            <Button variant="outline" size="sm" onClick={() => setShowChangePasswordDialog(true)} data-testid="button-org-change-password">
               <KeyRound className="h-4 w-4 mr-2" />
-              Change Password
+              <span className="hidden sm:inline">Change </span>Password
             </Button>
           <Dialog open={showAddClientDialog} onOpenChange={setShowAddClientDialog}>
             <DialogTrigger asChild>

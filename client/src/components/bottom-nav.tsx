@@ -102,7 +102,7 @@ export function BottomNav() {
   const showMoreMenu = !isOrganization && !isStaff && (!isOrgManagedClient || hasAnyWellnessFeatures);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-card-border z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-card-border z-50" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div className="max-w-md mx-auto flex items-center justify-around h-16">
         {navItems.map((item) => {
           const isActive = location === item.path;
