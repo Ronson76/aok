@@ -1747,7 +1747,7 @@ export type PlannedRoute = typeof plannedRoutes.$inferSelect;
 
 // ===== ACTIVITY / ERRANDS =====
 
-export const errandActivityTypes = ["walking", "shopping", "errands", "appointment", "visiting", "commute", "dog_walking", "exercise", "other"] as const;
+export const errandActivityTypes = ["walking", "shopping", "errands", "appointment", "visiting", "commute", "dog_walking", "exercise", "first_dates", "other"] as const;
 export type ErrandActivityType = typeof errandActivityTypes[number];
 
 export const errandSessionStatuses = ["active", "grace", "overdue", "completed", "cancelled"] as const;
