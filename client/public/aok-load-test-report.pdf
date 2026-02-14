@@ -1,0 +1,669 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 5963
+>>
+stream
+0.5670000000000001 w
+0 G
+BT
+/F1 10 Tf
+11.5 TL
+0.392 g
+56.6929133858267775 799.3703149606299121 Td
+(Naiyatech Ltd) Tj
+ET
+BT
+/F1 18 Tf
+20.6999999999999993 TL
+0. g
+56.6929133858267775 756.8506299212598378 Td
+(A-OK Platform Load Testing Report) Tj
+ET
+0.78 G
+56.6929133858267775 722.8348818897637784 m
+538.5870866141731312 722.8348818897637784 l
+S
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+56.6929133858267775 694.4884251968503577 Td
+(1. Executive Summary) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 674.6459055118109518 Td
+(This report presents the results of comprehensive load testing conducted on the A-OK safeguarding platform.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 660.4726771653542983 Td
+(Testing validated the platform's ability to handle concurrent users under progressive stress levels, from) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 646.2994488188976447 Td
+(baseline \(10 users\) through to extreme load \(10,000 users\). The platform demonstrated excellent) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 632.1262204724408775 Td
+(performance up to 1,000 concurrent users with zero errors and sub-15ms average response times.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+56.6929133858267775 600.9451181102361943 Td
+(2. Test Methodology) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 581.1025984251967884 Td
+(Load tests were conducted using k6, an industry-standard performance testing tool. Tests simulate realistic) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 566.9293700787401349 Td
+(user journeys including login, dashboard access, contacts management, check-in operations, settings) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 552.7561417322833677 Td
+(retrieval, mood tracking, feature access, contact creation, and logout. Each test level provisions dedicated) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 538.5829133858267141 Td
+(test user accounts and handles CSRF token management and session cookies authentically.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+56.6929133858267775 507.4018110236219741 Td
+(3. Test Levels) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 487.559291338582625 Td
+(Baseline: 10 virtual users \(~30 seconds\). Small: 100 virtual users \(~1 minute\). Medium: 500 virtual users) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 473.3860629921259147 Td
+(\(~1.5 minutes\). Large: 1,000 virtual users \(~1.5 minutes\). Stress: 5,000 virtual users \(~1.5 minutes\). Extreme:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 459.2128346456692611 Td
+(10,000 virtual users \(~1.5 minutes\). Up to 200 unique test user accounts are provisioned per test run to) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 445.0396062992125508 Td
+(ensure realistic distribution.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+56.6929133858267775 413.8585039370078107 Td
+(4. Results — Baseline \(10 Users\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 394.0159842519684616 Td
+(Average response time: 7.3ms. P95 response time: 18.2ms. Error rate: 0%. Throughput: 15.4) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 379.8427559055117513 Td
+(requests/second. All thresholds passed. The platform handles light load effortlessly with excellent response) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 365.6695275590550409 Td
+(times.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+56.6929133858267775 334.4884251968503008 Td
+(5. Results — Small \(100 Users\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 314.6459055118109518 Td
+(Average response time: 3.6ms. P95 response time: 11.5ms. Error rate: 0%. Throughput: 24.4) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 300.4726771653542983 Td
+(requests/second. All thresholds passed. Response times actually improved due to connection pooling and) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 286.2994488188975311 Td
+(warm caches.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+56.6929133858267775 255.1183464566928478 Td
+(6. Results — Medium \(500 Users\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 235.2758267716534419 Td
+(Average response time: 2.8ms. P95 response time: 8.9ms. Error rate: 0%. Throughput: 114.8) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 221.1025984251967884 Td
+(requests/second. All thresholds passed. The platform scales linearly with no degradation under medium load.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+56.6929133858267775 189.9214960629919915 Td
+(7. Results — Large \(1,000 Users\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 170.0789763779526993 Td
+(Average response time: 11ms. P95 response time: 32.4ms. Error rate: 0%. Throughput: 227.4) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 155.9057480314959321 Td
+(requests/second. All thresholds passed. This is the recommended maximum concurrent user level for the) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 141.7325196850392786 Td
+(current hosting configuration.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+56.6929133858267775 110.5514173228345953 Td
+(8. Results — Stress \(5,000 Users\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 90.7088976377951894 Td
+(Average response time: 3,456ms. P95 response time: 8,120ms. Error rate: 26%. Throughput: 320.8) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 76.5356692913385359 Td
+(requests/second. Thresholds failed. Connection limits on the hosting environment became the bottleneck.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 62.3624409448817687 Td
+(The application itself remained stable throughout — errors were connection timeouts and resets, not) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+56.6929133858267775 19.8427559055116944 Td
+(Generated from aok - Naiyatech Ltd) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+467.7209448818896931 19.8427559055116944 Td
+(Page 1 of 2) Tj
+ET
+endstream
+endobj
+5 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 6 0 R
+>>
+endobj
+6 0 obj
+<<
+/Length 3326
+>>
+stream
+0.5670000000000001 w
+0.78 G
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 785.1970866141732586 Td
+(application crashes.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+56.6929133858267775 754.0159842519684616 Td
+(9. Results — Extreme \(10,000 Users\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 734.1734645669291695 Td
+(The setup phase was rate-limited \(HTTP 429 responses\) preventing meaningful test execution. This is) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 720.0002362204724022 Td
+(expected behaviour — the login rate limiter correctly protects the platform from brute-force attempts.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 705.8270078740157487 Td
+(Production-scale tests at this level should use distributed test runners across multiple IPs.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+56.6929133858267775 674.6459055118109518 Td
+(10. Security Observations) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 654.8033858267716596 Td
+(Rate limiting correctly throttled concurrent login attempts from the same IP \(10 requests per 15 minutes\).) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 640.6301574803148924 Td
+(CSRF protection functioned correctly throughout all test levels. Session management remained consistent) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 626.4569291338582389 Td
+(under load. No security degradation observed at any test level.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+56.6929133858267775 595.2758267716535556 Td
+(11. Recommendations) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 575.4333070866141497 Td
+(The platform comfortably supports up to 1,000 concurrent users on current infrastructure. For deployments) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 561.2600787401574962 Td
+(exceeding 1,000 concurrent users, consider horizontal scaling, connection pooling optimisation, and load) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 547.086850393700729 Td
+(balancer configuration. The 5,000-user bottleneck is infrastructure-related, not application-related, and can be) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 532.9136220472440755 Td
+(resolved with appropriate hosting upgrades.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+56.6929133858267775 501.7325196850393354 Td
+(12. Conclusion) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 481.8899999999999295 Td
+(The A-OK platform demonstrates robust performance characteristics suitable for production deployment.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 467.716771653543276 Td
+(Response times remain excellent \(sub-15ms average\) up to 1,000 concurrent users with zero errors. The) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 453.5435433070865656 Td
+(application's security measures \(rate limiting, CSRF protection, session management\) function correctly) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+56.6929133858267775 439.3703149606298552 Td
+(under load without compromising performance. The platform is production-ready for its target user base.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+56.6929133858267775 19.8427559055116944 Td
+(Generated from aok - Naiyatech Ltd) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+467.7209448818896931 19.8427559055116944 Td
+(Page 2 of 2) Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R 5 0 R ]
+/Count 2
+>>
+endobj
+7 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+8 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+9 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+10 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+11 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+12 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+13 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+14 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+15 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+16 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+17 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+18 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+19 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+20 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 7 0 R
+/F2 8 0 R
+/F3 9 0 R
+/F4 10 0 R
+/F5 11 0 R
+/F6 12 0 R
+/F7 13 0 R
+/F8 14 0 R
+/F9 15 0 R
+/F10 16 0 R
+/F11 17 0 R
+/F12 18 0 R
+/F13 19 0 R
+/F14 20 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+21 0 obj
+<<
+/Producer (jsPDF 4.1.0)
+/CreationDate (D:20260214023835-00'00')
+>>
+endobj
+22 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 23
+0000000000 65535 f 
+0000009682 00000 n 
+0000011507 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000006167 00000 n 
+0000006304 00000 n 
+0000009745 00000 n 
+0000009870 00000 n 
+0000010000 00000 n 
+0000010133 00000 n 
+0000010271 00000 n 
+0000010395 00000 n 
+0000010524 00000 n 
+0000010656 00000 n 
+0000010792 00000 n 
+0000010920 00000 n 
+0000011047 00000 n 
+0000011176 00000 n 
+0000011309 00000 n 
+0000011411 00000 n 
+0000011757 00000 n 
+0000011843 00000 n 
+trailer
+<<
+/Size 23
+/Root 22 0 R
+/Info 21 0 R
+/ID [ <1D9DDAC6B24FCA7105292B16B6B77E0F> <1D9DDAC6B24FCA7105292B16B6B77E0F> ]
+>>
+startxref
+11947
+%%EOF
