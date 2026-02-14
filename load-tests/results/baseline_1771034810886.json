@@ -1,0 +1,49 @@
+{
+  "testLevel": "baseline",
+  "targetVUs": 10,
+  "setupUsers": 10,
+  "duration": "20s",
+  "timestamp": "2026-02-14T02:06:50.886Z",
+  "metrics": {
+    "httpReqDuration": {
+      "avg": 39.41428117391304,
+      "p95": 69.06899704999995,
+      "p99": 0,
+      "max": 3981.161967
+    },
+    "loginDuration": {
+      "avg": 6.142857142857143,
+      "p95": 14
+    },
+    "dashboardDuration": {
+      "avg": 0,
+      "p95": 0
+    },
+    "contactsDuration": {
+      "avg": 0,
+      "p95": 0
+    },
+    "errorRate": 0.11494252873563218,
+    "totalRequests": 77,
+    "httpReqs": 184,
+    "reqsPerSecond": 2.83471404486983
+  },
+  "thresholds": {
+    "contacts_duration": {
+      "p(95)<1500": true
+    },
+    "dashboard_duration": {
+      "p(95)<2000": true
+    },
+    "http_req_duration": {
+      "p(95)<3000": true,
+      "p(99)<5000": true
+    },
+    "errors": {
+      "rate<0.1": false
+    },
+    "login_duration": {
+      "p(95)<2000": true
+    }
+  }
+}
