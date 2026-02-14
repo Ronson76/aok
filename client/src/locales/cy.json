@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "home": "Hafan",
+    "settings": "Gosodiadau",
+    "contacts": "Cysylltiadau",
+    "history": "Hanes",
+    "more": "Mwy",
+    "checkIn": "Cofrestru"
+  },
+  "dashboard": {
+    "title": "Dangosfwrdd",
+    "subtitle": "Eich canolfan diogelwch personol",
+    "youreOk": "Rydych chi'n Iawn",
+    "nextCheckIn": "Cofrestriad Nesaf",
+    "checkInNow": "Cofrestru Nawr"
+  },
+  "emergency": {
+    "title": "Argyfwng",
+    "activateAlert": "Actifadu Rhybudd",
+    "callEmergency": "Ffonio Gwasanaethau Argyfwng",
+    "youreOffline": "Rydych chi All-lein"
+  },
+  "settings": {
+    "title": "Gosodiadau",
+    "frequency": "Amlder Cofrestru",
+    "notifications": "Hysbysiadau",
+    "language": "Iaith",
+    "darkMode": "Modd Tywyll",
+    "twoFactor": "Dilysu Dau Ffactor"
+  },
+  "contacts": {
+    "title": "Cysylltiadau Argyfwng",
+    "addContact": "Ychwanegu Cysylltiad",
+    "name": "Enw",
+    "phone": "Ffôn",
+    "email": "E-bost",
+    "relationship": "Perthynas"
+  },
+  "common": {
+    "save": "Cadw",
+    "cancel": "Canslo",
+    "delete": "Dileu",
+    "edit": "Golygu",
+    "loading": "Yn llwytho...",
+    "error": "Gwall",
+    "success": "Llwyddiant",
+    "retry": "Ceisio Eto",
+    "back": "Yn ôl",
+    "next": "Nesaf",
+    "signIn": "Mewngofnodi",
+    "signOut": "Allgofnodi",
+    "search": "Chwilio",
+    "noResults": "Dim canlyniadau"
+  },
+  "auth": {
+    "login": "Mewngofnodi",
+    "register": "Cofrestru",
+    "forgotPassword": "Wedi Anghofio Cyfrinair?",
+    "twoFactorTitle": "Dilysu Dau Ffactor",
+    "twoFactorDescription": "Rhowch y cod dilysu a anfonwyd i'ch dyfais",
+    "enterCode": "Rhowch God"
+  },
+  "offline": {
+    "title": "Rydych chi All-lein",
+    "description": "Gwiriwch eich cysylltiad rhyngrwyd a cheisiwch eto.",
+    "tryAgain": "Ceisio Eto"
+  }
+}

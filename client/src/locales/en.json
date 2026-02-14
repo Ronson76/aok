@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "home": "Home",
+    "settings": "Settings",
+    "contacts": "Contacts",
+    "history": "History",
+    "more": "More",
+    "checkIn": "Check In"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Your personal safety hub",
+    "youreOk": "You're OK",
+    "nextCheckIn": "Next Check-In",
+    "checkInNow": "Check In Now"
+  },
+  "emergency": {
+    "title": "Emergency",
+    "activateAlert": "Activate Alert",
+    "callEmergency": "Call Emergency Services",
+    "youreOffline": "You're Offline"
+  },
+  "settings": {
+    "title": "Settings",
+    "frequency": "Check-In Frequency",
+    "notifications": "Notifications",
+    "language": "Language",
+    "darkMode": "Dark Mode",
+    "twoFactor": "Two-Factor Authentication"
+  },
+  "contacts": {
+    "title": "Emergency Contacts",
+    "addContact": "Add Contact",
+    "name": "Name",
+    "phone": "Phone",
+    "email": "Email",
+    "relationship": "Relationship"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "retry": "Retry",
+    "back": "Back",
+    "next": "Next",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "search": "Search",
+    "noResults": "No results found"
+  },
+  "auth": {
+    "login": "Log In",
+    "register": "Register",
+    "forgotPassword": "Forgot Password?",
+    "twoFactorTitle": "Two-Factor Authentication",
+    "twoFactorDescription": "Enter the verification code sent to your device",
+    "enterCode": "Enter Code"
+  },
+  "offline": {
+    "title": "You're Offline",
+    "description": "Please check your internet connection and try again.",
+    "tryAgain": "Try Again"
+  }
+}

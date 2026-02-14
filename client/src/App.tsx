@@ -594,7 +594,7 @@ function AppLayout() {
         </div>
       )}
       
-      <main className="pb-16">
+      <main id="main-content" tabIndex={-1} className="pb-16">
         <AppRoutes />
       </main>
       <BottomNav />
@@ -828,6 +828,7 @@ function App() {
         <TooltipProvider>
           <AuthProvider>
             <HeartbeatProvider>
+              <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[9999] focus:bg-background focus:text-foreground focus:px-4 focus:py-2 focus:rounded focus:border focus:border-border" data-testid="link-skip-to-content">Skip to main content</a>
               {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
               <Router />
               <OfflineEmergencyOverlay />

@@ -352,6 +352,43 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "The overlay shows quick-dial buttons for your **primary contact** and **999**.",
       "The overlay disappears automatically when your connection is restored.",
       "This provides access to emergency calling even without data.",
+      "aok also caches your app data so you can still view previously loaded pages while offline.",
+      "If you navigate to a page while offline, you will see a dedicated offline screen with a **Try Again** button and an emergency call option.",
+    ],
+  },
+  {
+    id: "two-factor-authentication",
+    title: "Two-factor authentication (2FA)",
+    content: [
+      "Two-factor authentication adds an extra layer of security to your account.",
+      "When enabled, you will need to enter a 6-digit code from an authenticator app (such as Google Authenticator or Authy) each time you log in.",
+      "To set up 2FA, go to **Settings** and tap **Set Up 2FA**.",
+      "You will be shown a QR code to scan with your authenticator app, plus a secret key you can copy for manual entry.",
+      "Enter the 6-digit code displayed in your authenticator app to verify and enable 2FA.",
+      "To disable 2FA, go to **Settings**, tap **Manage 2FA**, and enter your password to confirm.",
+      "We strongly recommend enabling 2FA for extra account protection, especially if you use aok for safety monitoring.",
+    ],
+  },
+  {
+    id: "language-settings",
+    title: "Language settings",
+    content: [
+      "aok is available in multiple languages: **English**, **Cymraeg (Welsh)**, and **Espa\u00f1ol (Spanish)**.",
+      "To change your language, look for the language selector in the app settings or navigation area.",
+      "The app will remember your language preference and apply it automatically next time you visit.",
+      "If your browser is set to Welsh or Spanish, the app will automatically use that language on your first visit.",
+    ],
+  },
+  {
+    id: "accessibility",
+    title: "Accessibility",
+    content: [
+      "aok is designed to be accessible to everyone.",
+      "You can use keyboard navigation throughout the app. Press **Tab** to move between elements and **Enter** to activate them.",
+      "A **Skip to main content** link is available at the top of every page for screen reader and keyboard users.",
+      "All interactive elements have descriptive labels for screen readers.",
+      "The app supports both light and dark modes for comfortable viewing in any lighting condition.",
+      "Touch targets on mobile are at least 44px for comfortable tapping.",
     ],
   },
   {

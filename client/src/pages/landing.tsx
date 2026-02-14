@@ -183,7 +183,7 @@ export default function Landing() {
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-3">
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <Link href="/" className="flex items-center gap-1.5 sm:gap-2 hover:opacity-80 transition-opacity" data-testid="link-logo-home">
-              <ShieldCheck className="h-7 w-7 sm:h-9 sm:w-9 text-green-600" />
+              <ShieldCheck className="h-7 w-7 sm:h-9 sm:w-9 text-green-600" aria-label="aok shield logo" />
               <span className="text-lg sm:text-2xl font-bold text-green-600">aok</span>
             </Link>
             <div className="hidden sm:block h-8 w-px bg-muted-foreground/30" />

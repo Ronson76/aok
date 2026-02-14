@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -14,13 +15,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PasswordInput } from "@/components/password-input";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Loader2, MoreVertical, Mail } from "lucide-react";
+import { ShieldCheck, Loader2, MoreVertical, Mail, ArrowLeft } from "lucide-react";
 import { loginSchema, type LoginInput } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [totpCode, setTotpCode] = useState("");
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -31,7 +36,7 @@ export default function Login() {
   });
 
   const loginMutation = useMutation({
-    mutationFn: async (data: LoginInput) => {
+    mutationFn: async (data: LoginInput & { totpCode?: string }) => {
       const res = await apiRequest("POST", "/api/auth/login", data);
       if (!res.ok) {
         const error = await res.json();
@@ -39,7 +44,13 @@ export default function Login() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      if (data?.requires2FA) {
+        setLoginEmail(form.getValues("email") || loginEmail);
+        setLoginPassword(form.getValues("password") || loginPassword);
+        setRequires2FA(true);
+        return;
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       setLocation("/app");
     },
@@ -53,7 +64,19 @@ export default function Login() {
   });
 
   const onSubmit = (data: LoginInput) => {
+    setLoginEmail(data.email);
+    setLoginPassword(data.password);
     loginMutation.mutate(data);
+  };
+
+  const handleVerifyTotp = () => {
+    if (totpCode.length !== 6) return;
+    loginMutation.mutate({ email: loginEmail, password: loginPassword, totpCode });
+  };
+
+  const handleBackToLogin = () => {
+    setRequires2FA(false);
+    setTotpCode("");
   };
 
   return (
@@ -81,82 +104,132 @@ export default function Login() {
             <ShieldCheck className="h-12 w-12 text-green-600" />
             <span className="text-2xl font-bold text-green-600">aok</span>
           </Link>
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
+          <CardTitle className="text-2xl">
+            {requires2FA ? "Two-Factor Authentication" : "Welcome Back"}
+          </CardTitle>
           <CardDescription>
-            Sign in to your aok account
+            {requires2FA
+              ? "Enter the 6-digit code from your authenticator app"
+              : "Sign in to your aok account"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="you@example.com"
-                        {...field}
-                        data-testid="input-email"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center justify-between">
-                      <FormLabel>Password</FormLabel>
-                      <Link 
-                        href="/forgot-password" 
-                        className="text-sm text-primary hover:underline"
-                        data-testid="link-forgot-password"
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
-                    <FormControl>
-                      <PasswordInput
-                        placeholder="Enter your password"
-                        {...field}
-                        data-testid="input-password"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          {requires2FA ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="Enter 6-digit code"
+                  value={totpCode}
+                  onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleVerifyTotp();
+                  }}
+                  data-testid="input-login-totp"
+                />
+              </div>
               <Button
-                type="submit"
+                type="button"
                 className="w-full"
-                disabled={loginMutation.isPending}
-                data-testid="button-login"
+                disabled={totpCode.length !== 6 || loginMutation.isPending}
+                onClick={handleVerifyTotp}
+                data-testid="button-verify-totp"
               >
                 {loginMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
+                    Verifying...
                   </>
                 ) : (
-                  "Sign In"
+                  "Verify"
                 )}
               </Button>
-            </form>
-          </Form>
+              <button
+                type="button"
+                className="flex items-center gap-1 text-sm text-primary hover:underline mx-auto"
+                onClick={handleBackToLogin}
+                data-testid="link-back-to-login"
+              >
+                <ArrowLeft className="h-3 w-3" />
+                Back to login
+              </button>
+            </div>
+          ) : (
+            <>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="you@example.com"
+                            {...field}
+                            data-testid="input-email"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center justify-between">
+                          <FormLabel>Password</FormLabel>
+                          <Link 
+                            href="/forgot-password" 
+                            className="text-sm text-primary hover:underline"
+                            data-testid="link-forgot-password"
+                          >
+                            Forgot password?
+                          </Link>
+                        </div>
+                        <FormControl>
+                          <PasswordInput
+                            placeholder="Enter your password"
+                            {...field}
+                            data-testid="input-password"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={loginMutation.isPending}
+                    data-testid="button-login"
+                  >
+                    {loginMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      "Sign In"
+                    )}
+                  </Button>
+                </form>
+              </Form>
 
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link href="/onboarding" className="text-primary hover:underline" data-testid="link-register">
-              Sign up
-            </Link>
-          </div>
+              <div className="mt-6 text-center text-sm text-muted-foreground">
+                Don't have an account?{" "}
+                <Link href="/onboarding" className="text-primary hover:underline" data-testid="link-register">
+                  Sign up
+                </Link>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

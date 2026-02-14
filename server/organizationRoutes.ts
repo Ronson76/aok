@@ -1267,7 +1267,7 @@ export function registerOrganizationRoutes(app: Express) {
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
 
-      const { passwordHash: _, ...profile } = user;
+      const { passwordHash: _, twoFactorSecret: _s, ...profile } = user;
       res.json({ success: true, user: profile, message: "Password set successfully. Welcome to aok!" });
     } catch (error) {
       console.error("Organisation setup password error:", error);

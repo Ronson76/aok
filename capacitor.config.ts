@@ -13,19 +13,24 @@ const config: CapacitorConfig = {
     contentInset: 'automatic',
     preferredContentMode: 'mobile',
     scheme: 'aok',
-    backgroundColor: '#ffffff'
+    backgroundColor: '#0f172a',
+    allowsLinkPreview: false
   },
   android: {
     allowMixedContent: false,
     captureInput: true,
     webContentsDebuggingEnabled: false,
-    backgroundColor: '#ffffff'
+    backgroundColor: '#0f172a',
+    buildOptions: {
+      keystorePath: undefined,
+      keystoreAlias: undefined,
+    }
   },
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
       launchAutoHide: true,
-      backgroundColor: '#16a34a',
+      backgroundColor: '#0f172a',
       androidScaleType: 'CENTER_CROP',
       showSpinner: false,
       splashFullScreen: true,
@@ -38,6 +43,20 @@ const config: CapacitorConfig = {
       smallIcon: 'ic_stat_icon',
       iconColor: '#16a34a',
       sound: 'alarm.wav'
+    },
+    Geolocation: {
+      permissions: ['location', 'coarseLocation']
+    },
+    Haptics: {
+      selectionStart: true
+    },
+    StatusBar: {
+      style: 'DARK',
+      backgroundColor: '#0f172a'
+    },
+    Keyboard: {
+      resize: 'body',
+      resizeOnFullScreen: true
     }
   }
 };

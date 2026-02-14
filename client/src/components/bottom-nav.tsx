@@ -102,7 +102,7 @@ export function BottomNav() {
   const showMoreMenu = !isOrganization && !isStaff && (!isOrgManagedClient || hasAnyWellnessFeatures);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-card-border z-50" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+    <nav role="navigation" aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 bg-card border-t border-card-border z-50" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div className="max-w-md mx-auto flex items-center justify-around h-16">
         {navItems.map((item) => {
           const isActive = location === item.path;
@@ -112,6 +112,8 @@ export function BottomNav() {
             <Link
               key={item.path}
               href={item.path}
+              aria-label={item.label}
+              aria-current={isActive ? "page" : undefined}
               className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[56px] ${
                 isActive
                   ? "text-primary"
@@ -129,6 +131,8 @@ export function BottomNav() {
           <DropdownMenu open={moreOpen} onOpenChange={setMoreOpen}>
             <DropdownMenuTrigger asChild>
               <button
+                aria-label="Wellbeing"
+                aria-current={isMoreActive ? "page" : undefined}
                 className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[56px] ${
                   isMoreActive
                     ? "text-primary"
@@ -212,6 +216,8 @@ export function BottomNav() {
         {!isOrganization && !isOrgManagedClient && !isStaff && (
           <Link
             href={settingsNavItem.path}
+            aria-label={settingsNavItem.label}
+            aria-current={location === settingsNavItem.path ? "page" : undefined}
             className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[56px] ${
               location === settingsNavItem.path
                 ? "text-primary"
