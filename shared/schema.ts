@@ -75,6 +75,8 @@ export const users = pgTable("users", {
   archivedAt: timestamp("archived_at"),
   archivedBy: text("archived_by"),
   archivedEmail: text("archived_email"),
+  twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
+  twoFactorSecret: text("two_factor_secret"),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ 
@@ -422,6 +424,8 @@ export const adminUsers = pgTable("admin_users", {
   role: text("role").notNull().$type<AdminRole>().default("analyst"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   lastLoginAt: timestamp("last_login_at"),
+  twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
+  twoFactorSecret: text("two_factor_secret"),
 });
 
 export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({

@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, AlertTriangle, Smartphone, Eye, EyeOff, ExternalLink, CreditCard, AlertCircle, MapPin, Vibrate, Video, Trash2, Download, Play, FileVideo, Shield } from "lucide-react";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, AlertTriangle, Smartphone, Eye, EyeOff, ExternalLink, CreditCard, AlertCircle, MapPin, Vibrate, Video, Trash2, Download, Play, FileVideo, Shield, ShieldCheck } from "lucide-react";
 import ShakeDetector from "@/lib/shake-detector";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
 import type { Settings as SettingsType, EmergencyRecording } from "@shared/schema";
+import { TwoFactorSetup } from "@/components/two-factor-setup";
 import { useState, useEffect, useCallback } from "react";
 
 // Allowed interval values: 5 mins for testing, then 1-48 hours
@@ -368,6 +369,7 @@ export default function Settings() {
   
   const [showRedAlertConfirmDialog, setShowRedAlertConfirmDialog] = useState(false);
   const [showRedAlertDisableDialog, setShowRedAlertDisableDialog] = useState(false);
+  const [show2FADialog, setShow2FADialog] = useState(false);
   
   
   const isOrganization = user?.accountType === "organization";
@@ -1030,6 +1032,46 @@ export default function Settings() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+            Two-Factor Authentication
+          </CardTitle>
+          <CardDescription>
+            Add an extra layer of security to your account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-0.5">
+              <Label className="font-medium">Status</Label>
+              <p className="text-sm text-muted-foreground">
+                {user?.twoFactorEnabled ? "2FA is currently enabled" : "2FA is not enabled"}
+              </p>
+            </div>
+            <Badge variant={user?.twoFactorEnabled ? "default" : "secondary"} data-testid="badge-2fa-status">
+              {user?.twoFactorEnabled ? "Enabled" : "Disabled"}
+            </Badge>
+          </div>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setShow2FADialog(true)}
+            data-testid="button-manage-2fa"
+          >
+            <ShieldCheck className="h-4 w-4 mr-2" />
+            {user?.twoFactorEnabled ? "Manage 2FA" : "Set Up 2FA"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <TwoFactorSetup
+        isOpen={show2FADialog}
+        onClose={() => setShow2FADialog(false)}
+        isEnabled={user?.twoFactorEnabled || false}
+      />
 
       <Card>
         <CardContent className="pt-6">

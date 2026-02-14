@@ -9,6 +9,7 @@ import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
 import { apiRateLimiter, setCsrfCookie, csrfProtection } from "./security";
 import { logger } from "./logger";
+import { ensurePerformanceIndexes } from "./performanceIndexes";
 
 const app = express();
 
@@ -169,6 +170,7 @@ app.use((req, res, next) => {
   }
 
   startEmergencyScheduler();
+  ensurePerformanceIndexes().catch(err => console.error('Performance indexes error:', err));
 
   const port = parseInt(process.env.PORT || "5000", 10);
   httpServer.listen(

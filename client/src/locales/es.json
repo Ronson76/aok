@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "settings": "Configuración",
+    "contacts": "Contactos",
+    "history": "Historial",
+    "more": "Más",
+    "checkIn": "Registro"
+  },
+  "dashboard": {
+    "title": "Panel",
+    "subtitle": "Tu centro de seguridad personal",
+    "youreOk": "Estás Bien",
+    "nextCheckIn": "Próximo Registro",
+    "checkInNow": "Registrarse Ahora"
+  },
+  "emergency": {
+    "title": "Emergencia",
+    "activateAlert": "Activar Alerta",
+    "callEmergency": "Llamar a Servicios de Emergencia",
+    "youreOffline": "Estás Sin Conexión"
+  },
+  "settings": {
+    "title": "Configuración",
+    "frequency": "Frecuencia de Registro",
+    "notifications": "Notificaciones",
+    "language": "Idioma",
+    "darkMode": "Modo Oscuro",
+    "twoFactor": "Autenticación de Dos Factores"
+  },
+  "contacts": {
+    "title": "Contactos de Emergencia",
+    "addContact": "Añadir Contacto",
+    "name": "Nombre",
+    "phone": "Teléfono",
+    "email": "Correo Electrónico",
+    "relationship": "Relación"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "retry": "Reintentar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "signIn": "Iniciar Sesión",
+    "signOut": "Cerrar Sesión",
+    "search": "Buscar",
+    "noResults": "Sin resultados"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "register": "Registrarse",
+    "forgotPassword": "¿Olvidaste tu Contraseña?",
+    "twoFactorTitle": "Autenticación de Dos Factores",
+    "twoFactorDescription": "Introduce el código de verificación enviado a tu dispositivo",
+    "enterCode": "Introducir Código"
+  },
+  "offline": {
+    "title": "Estás Sin Conexión",
+    "description": "Por favor, comprueba tu conexión a internet e inténtalo de nuevo.",
+    "tryAgain": "Reintentar"
+  }
+}

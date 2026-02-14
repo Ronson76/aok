@@ -5,6 +5,8 @@ import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertU
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { randomBytes } from "crypto";
+import * as OTPAuth from "otpauth";
+import QRCode from "qrcode";
 import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification, sendContactRemovedNotification, sendWelcomeEmail, makeVoiceCall } from "./notifications";
 import { registerAdminRoutes } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
@@ -378,7 +380,7 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ error: "User not found" });
   }
 
-  const { passwordHash, ...userProfile } = user;
+  const { passwordHash, twoFactorSecret, ...userProfile } = user;
   req.userId = user.id;
   req.user = userProfile;
   next();
@@ -792,7 +794,7 @@ export async function registerRoutes(
           maxAge: 14 * 24 * 60 * 60 * 1000,
         });
 
-        const { passwordHash: _, ...userProfile } = { ...existingUser, passwordHash: newPasswordHash, name: name || existingUser.name };
+        const { passwordHash: _, twoFactorSecret: _s, ...userProfile } = { ...existingUser, passwordHash: newPasswordHash, name: name || existingUser.name };
         return res.status(201).json(userProfile);
       }
 
@@ -882,7 +884,7 @@ export async function registerRoutes(
         maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days - client-side inactivity timer handles security
       });
 
-      const { passwordHash: _, ...userProfile } = user;
+      const { passwordHash: _, twoFactorSecret: _s, ...userProfile } = user;
       res.status(201).json(userProfile);
     } catch (error) {
       console.error("Registration error:", error);
@@ -898,6 +900,7 @@ export async function registerRoutes(
       }
 
       const { email, password } = parsed.data;
+      const totpCode = req.body.totpCode as string | undefined;
 
       const user = await storage.getUserByEmail(email.toLowerCase());
       if (!user) {
@@ -909,23 +912,38 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
-      // Check if user is disabled
       if (user.disabled) {
         return res.status(403).json({ error: "Your account has been disabled. Please contact support." });
       }
 
-      // Create session
+      if (user.twoFactorEnabled && user.twoFactorSecret) {
+        if (!totpCode) {
+          return res.status(200).json({ requires2FA: true, email });
+        }
+        const totp = new OTPAuth.TOTP({
+          issuer: "aok",
+          label: user.email,
+          algorithm: "SHA1",
+          digits: 6,
+          period: 30,
+          secret: OTPAuth.Secret.fromBase32(user.twoFactorSecret),
+        });
+        const valid = totp.validate({ token: totpCode, window: 1 });
+        if (valid === null) {
+          return res.status(401).json({ error: "Invalid verification code" });
+        }
+      }
+
       const session = await storage.createSession(user.id);
 
-      // Set cookie
       res.cookie("session", session.id, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days - client-side inactivity timer handles security
+        maxAge: 14 * 24 * 60 * 60 * 1000,
       });
 
-      const { passwordHash, ...userProfile } = user;
+      const { passwordHash, twoFactorSecret, ...userProfile } = user;
       res.json(userProfile);
     } catch (error) {
       console.error("Login error:", error);
@@ -940,6 +958,101 @@ export async function registerRoutes(
     }
     res.clearCookie("session");
     res.json({ success: true });
+  });
+
+  // 2FA Setup - Generate TOTP secret and QR code
+  app.post("/api/auth/2fa/setup", async (req, res) => {
+    try {
+      const sessionId = req.cookies?.session;
+      if (!sessionId) return res.status(401).json({ error: "Not authenticated" });
+      const session = await storage.getSession(sessionId);
+      if (!session) return res.status(401).json({ error: "Not authenticated" });
+      const user = await storage.getUserById(session.userId);
+      if (!user) return res.status(401).json({ error: "Not authenticated" });
+
+      const secret = new OTPAuth.Secret({ size: 20 });
+      const totp = new OTPAuth.TOTP({
+        issuer: "aok",
+        label: user.email,
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret,
+      });
+
+      const otpauthUrl = totp.toString();
+      const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
+
+      res.json({
+        secret: secret.base32,
+        qrCode: qrCodeDataUrl,
+        otpauthUrl,
+      });
+    } catch (error) {
+      console.error("2FA setup error:", error);
+      res.status(500).json({ error: "Failed to setup 2FA" });
+    }
+  });
+
+  // 2FA Verify and Enable
+  app.post("/api/auth/2fa/verify", async (req, res) => {
+    try {
+      const sessionId = req.cookies?.session;
+      if (!sessionId) return res.status(401).json({ error: "Not authenticated" });
+      const session = await storage.getSession(sessionId);
+      if (!session) return res.status(401).json({ error: "Not authenticated" });
+      const user = await storage.getUserById(session.userId);
+      if (!user) return res.status(401).json({ error: "Not authenticated" });
+
+      const { secret, token } = req.body;
+      if (!secret || !token) {
+        return res.status(400).json({ error: "Secret and token are required" });
+      }
+
+      const totp = new OTPAuth.TOTP({
+        issuer: "aok",
+        label: user.email,
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: OTPAuth.Secret.fromBase32(secret),
+      });
+
+      const valid = totp.validate({ token, window: 1 });
+      if (valid === null) {
+        return res.status(400).json({ error: "Invalid verification code. Please try again." });
+      }
+
+      await storage.updateUser2FA(user.id, true, secret);
+      res.json({ success: true, message: "Two-factor authentication enabled" });
+    } catch (error) {
+      console.error("2FA verify error:", error);
+      res.status(500).json({ error: "Failed to verify 2FA" });
+    }
+  });
+
+  // 2FA Disable
+  app.post("/api/auth/2fa/disable", async (req, res) => {
+    try {
+      const sessionId = req.cookies?.session;
+      if (!sessionId) return res.status(401).json({ error: "Not authenticated" });
+      const session = await storage.getSession(sessionId);
+      if (!session) return res.status(401).json({ error: "Not authenticated" });
+      const user = await storage.getUserById(session.userId);
+      if (!user) return res.status(401).json({ error: "Not authenticated" });
+
+      const { password } = req.body;
+      if (!password) return res.status(400).json({ error: "Password is required to disable 2FA" });
+
+      const validPassword = await bcrypt.compare(password, user.passwordHash);
+      if (!validPassword) return res.status(401).json({ error: "Invalid password" });
+
+      await storage.updateUser2FA(user.id, false, null);
+      res.json({ success: true, message: "Two-factor authentication disabled" });
+    } catch (error) {
+      console.error("2FA disable error:", error);
+      res.status(500).json({ error: "Failed to disable 2FA" });
+    }
   });
 
   // Organisation staff login
@@ -971,18 +1084,33 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
-      // Check if user is disabled
       if (user.disabled) {
         return res.status(403).json({ error: "Your account has been disabled. Please contact support." });
       }
 
-      // Create session
+      const totpCode = req.body.totpCode as string | undefined;
+      if (user.twoFactorEnabled && user.twoFactorSecret) {
+        if (!totpCode) {
+          return res.status(200).json({ requires2FA: true, email });
+        }
+        const totp = new OTPAuth.TOTP({
+          issuer: "aok",
+          label: user.email,
+          algorithm: "SHA1",
+          digits: 6,
+          period: 30,
+          secret: OTPAuth.Secret.fromBase32(user.twoFactorSecret),
+        });
+        const valid = totp.validate({ token: totpCode, window: 1 });
+        if (valid === null) {
+          return res.status(401).json({ error: "Invalid verification code" });
+        }
+      }
+
       const session = await storage.createSession(user.id);
       console.log("[ORG LOGIN] Session created:", session.id, "for user:", user.id);
 
-      // Set cookie
       const isProduction = process.env.NODE_ENV === "production";
-      console.log("[ORG LOGIN] Setting cookie, secure:", isProduction, "NODE_ENV:", process.env.NODE_ENV);
       res.cookie("session", session.id, {
         httpOnly: true,
         secure: isProduction,
@@ -990,7 +1118,7 @@ export async function registerRoutes(
         maxAge: 14 * 24 * 60 * 60 * 1000,
       });
 
-      const { passwordHash, ...userProfile } = user;
+      const { passwordHash, twoFactorSecret, ...userProfile } = user;
       console.log("[ORG LOGIN] Login successful for:", user.email);
       res.json(userProfile);
     } catch (error) {
@@ -1171,7 +1299,7 @@ export async function registerRoutes(
       return res.status(403).json({ error: "Your account has been disabled. Please contact support." });
     }
 
-    const { passwordHash, ...userProfile } = user;
+    const { passwordHash, twoFactorSecret, ...userProfile } = user;
     
     // Check if user is a staff member (accepted a staff invite)
     const staffInfo = await storage.isStaffMember(user.id);

@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { initializeNativeApp, isNative } from "./lib/native";
+import './lib/i18n';
 
 if (isNative()) {
   initializeNativeApp();

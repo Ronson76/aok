@@ -10,6 +10,8 @@ import { ensureDb } from "./db";
 import { sql } from "drizzle-orm";
 import { loginRateLimiter, passwordResetRateLimiter } from "./security";
 import { getPeakTimes, getAlertHeatmap, getActiveSOSAlerts } from "./services/analyticsService";
+import * as OTPAuth from "otpauth";
+import QRCode from "qrcode";
 
 const ADMIN_SESSION_COOKIE = "admin_session";
 
@@ -84,6 +86,25 @@ export function registerAdminRoutes(app: Express) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
+      const totpCode = req.body.totpCode as string | undefined;
+      if (admin.twoFactorEnabled && admin.twoFactorSecret) {
+        if (!totpCode) {
+          return res.status(200).json({ requires2FA: true, email });
+        }
+        const totp = new OTPAuth.TOTP({
+          issuer: "aok Admin",
+          label: admin.email,
+          algorithm: "SHA1",
+          digits: 6,
+          period: 30,
+          secret: OTPAuth.Secret.fromBase32(admin.twoFactorSecret),
+        });
+        const valid = totp.validate({ token: totpCode, window: 1 });
+        if (valid === null) {
+          return res.status(401).json({ error: "Invalid verification code" });
+        }
+      }
+
       const session = await adminStorage.createAdminSession(admin.id);
       await adminStorage.updateAdminLastLogin(admin.id);
 
@@ -91,10 +112,10 @@ export function registerAdminRoutes(app: Express) {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        maxAge: 12 * 60 * 60 * 1000, // 12 hours
+        maxAge: 12 * 60 * 60 * 1000,
       });
 
-      const { passwordHash, ...profile } = admin;
+      const { passwordHash, twoFactorSecret, ...profile } = admin;
       await adminStorage.createAuditLog(admin.id, "login", "admin", admin.id, "Admin logged in");
       
       res.json({ admin: profile });
@@ -118,6 +139,88 @@ export function registerAdminRoutes(app: Express) {
   // Get current admin
   app.get("/api/admin/auth/me", adminAuthMiddleware, (req, res) => {
     res.json({ admin: req.admin });
+  });
+
+  // Admin 2FA Setup
+  app.post("/api/admin/auth/2fa/setup", adminAuthMiddleware, async (req, res) => {
+    try {
+      const admin = req.admin!;
+      const secret = new OTPAuth.Secret({ size: 20 });
+      const totp = new OTPAuth.TOTP({
+        issuer: "aok Admin",
+        label: admin.email,
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret,
+      });
+      const otpauthUrl = totp.toString();
+      const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
+      res.json({ secret: secret.base32, qrCode: qrCodeDataUrl, otpauthUrl });
+    } catch (error) {
+      console.error("Admin 2FA setup error:", error);
+      res.status(500).json({ error: "Failed to setup 2FA" });
+    }
+  });
+
+  // Admin 2FA Verify and Enable
+  app.post("/api/admin/auth/2fa/verify", adminAuthMiddleware, async (req, res) => {
+    try {
+      const admin = req.admin!;
+      const { secret, token } = req.body;
+      if (!secret || !token) return res.status(400).json({ error: "Secret and token required" });
+
+      const totp = new OTPAuth.TOTP({
+        issuer: "aok Admin",
+        label: admin.email,
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: OTPAuth.Secret.fromBase32(secret),
+      });
+      const valid = totp.validate({ token, window: 1 });
+      if (valid === null) return res.status(400).json({ error: "Invalid verification code" });
+
+      await adminStorage.updateAdmin2FA(admin.id, true, secret);
+      await adminStorage.createAuditLog(admin.id, "2fa_enabled", "admin", admin.id, "Admin enabled 2FA");
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Admin 2FA verify error:", error);
+      res.status(500).json({ error: "Failed to verify 2FA" });
+    }
+  });
+
+  // Admin 2FA Disable
+  app.post("/api/admin/auth/2fa/disable", adminAuthMiddleware, async (req, res) => {
+    try {
+      const admin = req.admin!;
+      const { password } = req.body;
+      if (!password) return res.status(400).json({ error: "Password required" });
+
+      const fullAdmin = await adminStorage.getAdminByEmail(admin.email);
+      if (!fullAdmin) return res.status(401).json({ error: "Admin not found" });
+
+      const validPassword = await bcrypt.compare(password, fullAdmin.passwordHash);
+      if (!validPassword) return res.status(401).json({ error: "Invalid password" });
+
+      await adminStorage.updateAdmin2FA(admin.id, false, null);
+      await adminStorage.createAuditLog(admin.id, "2fa_disabled", "admin", admin.id, "Admin disabled 2FA");
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Admin 2FA disable error:", error);
+      res.status(500).json({ error: "Failed to disable 2FA" });
+    }
+  });
+
+  // Notification Health Check
+  app.get("/api/admin/notifications/health", adminAuthMiddleware, async (req, res) => {
+    try {
+      const statuses = getAllServiceStatuses();
+      res.json({ providers: statuses, timestamp: new Date().toISOString() });
+    } catch (error) {
+      console.error("Notification health check error:", error);
+      res.status(500).json({ error: "Failed to check notification health" });
+    }
   });
 
   // Dashboard stats
@@ -252,7 +355,7 @@ export function registerAdminRoutes(app: Express) {
         `Created organization: ${name} (${email})${requiredDocuments?.length ? ` with ${requiredDocuments.length} required documents` : ""} - setup invite sent`
       );
 
-      const { passwordHash: _, ...profile } = user;
+      const { passwordHash: _, twoFactorSecret: _s, ...profile } = user;
       res.status(201).json(profile);
     } catch (error) {
       console.error("Error creating organization:", error);
@@ -317,7 +420,8 @@ export function registerAdminRoutes(app: Express) {
         `${disabled ? "Disabled" : "Enabled"} user ${user.email}`
       );
 
-      res.json(user);
+      const { passwordHash: _p, twoFactorSecret: _t, ...safeUser } = user;
+      res.json(safeUser);
     } catch (error) {
       console.error("Error updating user disabled status:", error);
       res.status(500).json({ error: "Failed to update user status" });
@@ -811,7 +915,8 @@ export function registerAdminRoutes(app: Express) {
         `Updated user features: ${JSON.stringify(parsed.data)}`
       );
 
-      res.json(user);
+      const { passwordHash: _p, twoFactorSecret: _t, ...safeUser } = user;
+      res.json(safeUser);
     } catch (error) {
       console.error("Error updating user features:", error);
       res.status(500).json({ error: "Failed to update user features" });

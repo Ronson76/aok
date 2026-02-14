@@ -58,6 +58,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserById(id: string): Promise<User | undefined>;
   updateUserPassword(userId: string, passwordHash: string): Promise<void>;
+  updateUser2FA(userId: string, enabled: boolean, secret: string | null): Promise<void>;
 
   // Sessions
   createSession(userId: string): Promise<Session>;
@@ -360,6 +361,10 @@ class DatabaseStorage implements IStorage {
   // Password reset
   async updateUserPassword(userId: string, passwordHash: string): Promise<void> {
     await getDb().update(users).set({ passwordHash }).where(eq(users.id, userId));
+  }
+
+  async updateUser2FA(userId: string, enabled: boolean, secret: string | null): Promise<void> {
+    await getDb().update(users).set({ twoFactorEnabled: enabled, twoFactorSecret: secret }).where(eq(users.id, userId));
   }
 
   async createPasswordResetToken(userId: string): Promise<string> {
@@ -2622,6 +2627,7 @@ export interface IAdminStorage {
   getAdminById(id: string): Promise<AdminUser | undefined>;
   hasAnyAdmin(): Promise<boolean>;
   updateAdminLastLogin(adminId: string): Promise<void>;
+  updateAdmin2FA(adminId: string, enabled: boolean, secret: string | null): Promise<void>;
   
   // Admin sessions
   createAdminSession(adminId: string): Promise<AdminSession>;
@@ -2690,6 +2696,10 @@ class AdminStorage implements IAdminStorage {
 
   async updateAdminLastLogin(adminId: string): Promise<void> {
     await getDb().update(adminUsers).set({ lastLoginAt: new Date() }).where(eq(adminUsers.id, adminId));
+  }
+
+  async updateAdmin2FA(adminId: string, enabled: boolean, secret: string | null): Promise<void> {
+    await getDb().update(adminUsers).set({ twoFactorEnabled: enabled, twoFactorSecret: secret }).where(eq(adminUsers.id, adminId));
   }
 
   // Admin sessions
@@ -3192,7 +3202,7 @@ class AdminStorage implements IAdminStorage {
     
     if (result.length === 0) return undefined;
     
-    const { passwordHash, ...profile } = result[0];
+    const { passwordHash, twoFactorSecret, ...profile } = result[0];
     return profile;
   }
 
