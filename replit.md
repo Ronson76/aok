@@ -18,6 +18,8 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Build Tool**: Vite
 - **Design Principles**: Mobile-first, card-based layout, consistent spacing, bottom navigation.
 - **Native App Support**: Capacitor 8 for iOS and Android app build capability with native plugins.
+- **Internationalisation (i18n)**: i18next with English, Welsh (Cymraeg), and Spanish (Español) translations; browser language detection; inline resources from `client/src/locales/`.
+- **Accessibility**: Skip-to-content links, ARIA navigation roles, `aria-current="page"` on active nav items, `role="alert"` on form errors, `aria-labels` on icon-only buttons, 44px touch targets.
 
 ### Backend
 - **Runtime**: Node.js with Express
@@ -26,11 +28,25 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Build Process**: esbuild for production, tsx for development
 
 ### Security & Resilience
+- **Two-Factor Authentication (2FA)**: TOTP-based using OTPAuth library; 6-digit codes, 30-second period, 1-window validation tolerance. Available for user, organisation, and admin accounts. QR code setup flow. Secrets excluded from all API responses.
 - **Rate Limiting**: express-rate-limit on login (10/15min) and password reset (5/hour) endpoints, plus global API rate limiting (120/min).
 - **CSRF Protection**: Double-submit cookie pattern with x-csrf-token header validation; excludes webhook endpoints.
 - **Service Resilience**: Retry with exponential backoff, circuit breakers (5 failures threshold, 60s cooldown), multi-provider fallback for notifications.
 - **Structured Logging**: pino-based JSON logging with module-specific child loggers (auth, notifications, resilience, analytics, scheduler); PII redaction.
-- **Database Indexes**: Performance indexes on active_emergency_alerts (activated_at, user_id, location, is_active), check_ins (user_id, timestamp), organization_clients (organization_id, client_id).
+- **Database Indexes**: 12 performance indexes created automatically on startup via `server/performanceIndexes.ts` (using `CREATE INDEX IF NOT EXISTS` for idempotency) covering active_emergency_alerts (activated_at, user_id, location, is_active), check_ins (user_id, timestamp), organization_clients (organization_id, client_id), sessions, mood_entries, contacts, and audit_logs.
+- **Notification Health Checks**: `/api/admin/notifications/health` endpoint monitoring external service status (Resend, SendGrid, Gmail, Outlook, Twilio).
+
+### PWA & Offline Support
+- **Service Worker**: `client/public/sw.js` (v3) with app shell caching, API response caching with offline fallback, and dedicated `offline.html` fallback page.
+- **Offline Emergency Overlay**: Quick-dial buttons for primary contact and 999 when connection is lost.
+- **Safe Area Insets**: `viewport-fit=cover` meta tag for notch devices; safe-area-inset padding applied.
+- **Install Prompt**: PWA installable on iOS (Safari) and Android (Chrome).
+
+### Native App (Capacitor)
+- **Framework**: Capacitor 8 with `capacitor.config.ts`.
+- **Plugins**: Geolocation (background/foreground), Haptics, Status Bar, Keyboard.
+- **Theme**: Dark theme backgrounds (`#0f172a`), status bar overlay.
+- **Permissions**: Location (always/when-in-use), camera, microphone.
 
 ### Data Layer
 - **ORM**: Drizzle ORM for PostgreSQL
@@ -46,9 +62,29 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Admin Dashboard**: Role-based access for user/organization management, license agreements, revenue tracking, feature permissions, and security audit logging.
 - **Organization Features**: Client and staff management (including bulk import), monitoring, dynamic feature control per client, safeguarding hub, analytics dashboard (peak times, alert heatmap, active SOS alerts), comprehensive audit trail with tamper-evident hash chains, PDF/CSV exports, integrity verification, and configurable retention policies.
 - **AI Integration**: In-app AI chat for wellbeing with mood pattern detection, streaming responses, and voice chat mode.
+- **Two-Factor Authentication**: TOTP-based 2FA for all account types (user, organisation, admin) with QR code setup, authenticator app verification, and password-protected disable flow.
+- **Multi-Language Support**: English, Welsh (Cymraeg), and Spanish (Español) with automatic browser language detection and persistent preference.
 
 ### Legal / Licence Agreements
 - Comprehensive suite of legal documents including EULA, Enterprise Licence, DPA, SLA, Lone Worker Addendum, IP Ownership, NDA, Privacy Policy, and Terms and Conditions.
+
+## Key Files
+- `server/routes.ts` — Main API routes (auth, check-ins, contacts, emergencies, settings, 2FA)
+- `server/adminRoutes.ts` — Admin dashboard API routes
+- `server/organizationRoutes.ts` — Organisation management API routes
+- `server/storage.ts` — Database storage layer (Drizzle ORM)
+- `server/performanceIndexes.ts` — Database performance indexes (auto-created on startup)
+- `shared/schema.ts` — Shared TypeScript/Zod schemas and Drizzle table definitions
+- `client/src/pages/login.tsx` — Login page with 2FA support
+- `client/src/pages/settings.tsx` — Settings page with 2FA setup, language switcher
+- `client/src/pages/guide.tsx` — Public How-to Guide (A-Z searchable)
+- `client/src/components/org-help-center.tsx` — Organisation Help Centre (categorised, searchable)
+- `client/src/components/two-factor-setup.tsx` — 2FA QR code setup component
+- `client/src/lib/i18n.ts` — i18next configuration and initialisation
+- `client/src/locales/en.json`, `cy.json`, `es.json` — Translation files
+- `client/public/sw.js` — Service worker for offline PWA support
+- `client/public/offline.html` — Offline fallback page
+- `capacitor.config.ts` — Capacitor native app configuration
 
 ## External Dependencies
 
@@ -72,4 +108,13 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Retry Mechanisms**: Exponential backoff for critical notifications.
 - **Email Fallback Chain**: Sequential fallback across multiple email providers.
 - **Circuit Breaker**: Isolates failing services to prevent cascading failures.
-- **Health Tracking**: Real-time monitoring of external service status.
+- **Health Tracking**: Real-time monitoring of external service status via `/api/admin/notifications/health`.
+
+## Recent Changes
+- **2FA Security Hardening**: `twoFactorSecret` excluded from all user profile API responses across routes, admin, org, and storage layers. 2FA TOTP verification added to organisation login flow.
+- **Multi-Language Support**: i18next with EN/CY/ES translations, browser detection, language switcher component.
+- **Offline PWA**: Service worker v3, offline.html fallback, app shell caching, API response caching.
+- **Performance Indexes**: 12 database indexes auto-created on startup for critical query paths.
+- **Accessibility**: Skip links, ARIA roles, keyboard navigation, 44px touch targets.
+- **Capacitor Polish**: Dark theme backgrounds, geolocation/haptics/status bar/keyboard plugins configured.
+- **Notification Health**: Admin endpoint for monitoring external notification service status.

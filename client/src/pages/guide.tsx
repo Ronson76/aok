@@ -284,7 +284,9 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "aok works as a web app that can be installed on your phone's home screen.",
       "On **iPhone**: open aok in Safari, tap the Share button, then **Add to Home Screen**.",
       "On **Android**: open aok in Chrome, tap the menu (three dots), then **Add to Home Screen** or **Install App**.",
-      "Once installed, it works just like a native app with offline support.",
+      "Once installed, it works just like a native app with offline support, push notifications, and full-screen display.",
+      "aok also supports safe-area insets on devices with a notch or rounded corners, so the interface never gets cut off.",
+      "A native iOS and Android app is also available via Capacitor for organisations requiring app store distribution.",
     ],
   },
   {
@@ -294,6 +296,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "Open aok and enter your email address and password.",
       "You can also log in using **Google** for a quicker sign-in experience.",
       "If you're managed by an organisation, you may log in using your unique **reference number** instead.",
+      "If you've enabled **two-factor authentication (2FA)**, you'll be asked for a 6-digit code from your authenticator app after entering your password.",
       "If you've forgotten your password, use the **Forgot Password** link.",
     ],
   },
@@ -623,11 +626,13 @@ const GUIDE_TOPICS: GuideTopic[] = [
     id: "troubleshooting",
     title: "Troubleshooting common issues",
     content: [
-      "**Can't log in?** — check your email and password are correct, or use Forgot Password.",
+      "**Can't log in?** — check your email and password are correct, or use Forgot Password. If you have 2FA enabled, make sure you're entering the correct 6-digit code from your authenticator app.",
       "**Contacts not receiving alerts?** — make sure they've confirmed via the email link within 10 minutes.",
       "**Missed check-in not triggering alerts?** — ensure you have at least one confirmed emergency contact.",
       "**SMS not arriving?** — check your phone number is correct in Settings.",
       "**App not loading?** — try refreshing, clearing your browser cache, or reinstalling from your home screen.",
+      "**App showing offline?** — check your internet connection. aok will show an emergency overlay with quick-dial buttons when offline. The app caches recent pages so you can still view previously loaded content.",
+      "**Language wrong?** — go to Settings and use the language selector to choose English, Cymraeg, or Español. Your browser's language is detected automatically on first visit.",
     ],
   },
   {
