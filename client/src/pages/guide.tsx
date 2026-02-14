@@ -473,7 +473,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
     id: "activities",
     title: "Activities tracker",
     content: [
-      "The Activities tracker lets you log everyday activities — walking, shopping, errands, appointments, visiting, commuting, dog walking, exercise, or anything else — and automatically notifies your emergency contacts if you don't check back in on time.",
+      "The Activities tracker lets you log everyday activities — walking, shopping, errands, appointments, visiting, commuting, dog walking, exercise, first dates, or anything else — and automatically notifies your emergency contacts if you don't check back in on time.",
       "Go to **Wellbeing > Activities** from the bottom menu.",
       "Choose an activity type from the grid, set how long you expect to be, and optionally add a custom label (e.g. 'Walking to the pharmacy').",
       "Tap **Start Activity** to begin your session. Your phone's GPS tracks your location throughout.",

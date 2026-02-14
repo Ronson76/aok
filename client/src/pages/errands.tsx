@@ -12,7 +12,7 @@ import {
   MapPin, Clock, CheckCircle, Phone, Loader2, Timer, History,
   XCircle, Navigation, Siren, Play, AlertTriangle, ChevronDown,
   ChevronUp, ShoppingCart, Footprints, Car, Calendar, Users,
-  Dog, Dumbbell, Package, Lock, Shield, BatteryLow
+  Dog, Dumbbell, Package, Lock, Shield, BatteryLow, Heart
 } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { formatDistanceToNow, format, differenceInSeconds } from "date-fns";
@@ -64,6 +64,7 @@ const ACTIVITY_TYPES: { value: ErrandActivityType; label: string; icon: any }[] 
   { value: "commute", label: "Commute", icon: Car },
   { value: "dog_walking", label: "Dog Walking", icon: Dog },
   { value: "exercise", label: "Exercise", icon: Dumbbell },
+  { value: "first_dates", label: "First Dates", icon: Heart },
   { value: "other", label: "Other", icon: MapPin },
 ];
 
@@ -277,6 +278,7 @@ function StartSessionForm({ onStarted }: { onStarted: () => void }) {
               activityType === "errands" ? "e.g. Dropping off parcels" :
               activityType === "appointment" ? "e.g. Dentist at 2pm" :
               activityType === "visiting" ? "e.g. Visiting Mum" :
+              activityType === "first_dates" ? "e.g. Coffee date at Costa" :
               "e.g. Describe your activity"
             }
             value={customLabel}
