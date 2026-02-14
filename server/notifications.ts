@@ -2788,6 +2788,15 @@ export async function sendWelcomeEmail(
         </ol>
       </div>
       
+      <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin: 24px 0;">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #1e40af;">Download the aok App</h3>
+        <p style="margin: 0 0 16px 0; color: #1e3a5f;">Get aok on your phone for the best experience with instant check-ins, emergency alerts, and GPS tracking.</p>
+        <div style="text-align: center;">
+          <a href="https://apps.apple.com/app/aok-safety/id0000000000" style="display: inline-block; margin: 0 8px 8px 0; padding: 12px 24px; background-color: #000000; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">Download on the App Store</a>
+          <a href="https://play.google.com/store/apps/details?id=care.aok.app" style="display: inline-block; margin: 0 0 8px 0; padding: 12px 24px; background-color: #01875f; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">Get it on Google Play</a>
+        </div>
+      </div>
+
       <p style="margin: 0 0 16px 0;"><strong>Need help?</strong> Visit our FAQ section or reach out to our support team at any time.</p>
       
       <p style="margin: 0;">Best regards!</p>
@@ -2811,6 +2820,10 @@ HERE'S HOW TO GET STARTED:
 2. Add your emergency contacts - They'll be notified if you miss a check-in or trigger an SOS
 3. Mark up to 3 as Primary - Primary contacts receive every successful check-in notification
 4. Complete your first check-in - Just tap the check-in button when prompted
+
+DOWNLOAD THE AOK APP:
+- Apple App Store: https://apps.apple.com/app/aok-safety/id0000000000
+- Google Play Store: https://play.google.com/store/apps/details?id=care.aok.app
 
 Need help? Visit our FAQ section or reach out to our support team at any time.
 
