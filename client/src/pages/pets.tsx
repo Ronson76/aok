@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, PawPrint, Trash2, Pencil, Loader2, Stethoscope, Phone, Dog, Cat, Bird, Fish, Rabbit, ArrowLeft, type LucideIcon } from "lucide-react";
+import { Plus, PawPrint, Trash2, Pencil, Loader2, Stethoscope, Phone, Dog, Cat, Bird, Fish, Rabbit, ArrowLeft, Upload, FileText, Download, Eye, X, type LucideIcon } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
@@ -59,6 +59,133 @@ const petIcons: Record<string, LucideIcon> = {
   reptile: PawPrint,
   other: PawPrint,
 };
+
+function InsuranceDocumentSection({ pet }: { pet: Pet }) {
+  const { toast } = useToast();
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const deleteMutation = useMutation({
+    mutationFn: () => apiRequest("DELETE", `/api/pets/${pet.id}/insurance`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pets"] });
+      toast({ title: "Document removed", description: "Insurance document has been deleted." });
+    },
+    onError: () => {
+      toast({ title: "Failed to remove document", variant: "destructive" });
+    },
+  });
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const urlRes = await apiRequest("POST", `/api/pets/${pet.id}/insurance/upload-url`, {});
+      const { uploadURL, objectPath } = await urlRes.json();
+
+      await fetch(uploadURL, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+      });
+
+      await apiRequest("POST", `/api/pets/${pet.id}/insurance/finalize`, {
+        objectPath,
+        fileName: file.name,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/pets"] });
+      toast({ title: "Document uploaded", description: `${file.name} has been saved.` });
+    } catch {
+      toast({ title: "Upload failed", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="pt-2 border-t" onClick={(e) => e.stopPropagation()}>
+      <span className="font-medium flex items-center gap-1 mb-2">
+        <FileText className="h-3 w-3" /> Insurance Document
+      </span>
+      {pet.insuranceDocumentName ? (
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge variant="secondary" className="text-xs" data-testid={`badge-insurance-${pet.id}`}>
+            <FileText className="h-3 w-3 mr-1" />
+            {pet.insuranceDocumentName}
+          </Badge>
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => window.open(`/api/pets/${pet.id}/insurance/view`, "_blank")}
+              data-testid={`button-view-insurance-${pet.id}`}
+            >
+              <Eye className="h-4 w-4 text-muted-foreground" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => {
+                const link = document.createElement("a");
+                link.href = `/api/pets/${pet.id}/insurance/download`;
+                link.download = pet.insuranceDocumentName || "insurance-document";
+                link.click();
+              }}
+              data-testid={`button-download-insurance-${pet.id}`}
+            >
+              <Download className="h-4 w-4 text-muted-foreground" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              disabled={deleteMutation.isPending}
+              onClick={() => deleteMutation.mutate()}
+              data-testid={`button-delete-insurance-${pet.id}`}
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <X className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <input
+            type="file"
+            className="hidden"
+            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            ref={fileInputRef}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleUpload(file);
+              e.target.value = "";
+            }}
+            data-testid={`input-insurance-file-${pet.id}`}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
+            data-testid={`button-upload-insurance-${pet.id}`}
+          >
+            {uploading ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <Upload className="h-4 w-4 mr-2" />
+            )}
+            {uploading ? "Uploading..." : "Upload Insurance Document"}
+          </Button>
+          <p className="text-xs text-muted-foreground mt-1">
+            PDF, JPG, PNG, DOC accepted
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Pets() {
   const { toast } = useToast();
@@ -588,6 +715,7 @@ export default function Pets() {
                           <p className="text-muted-foreground">{pet.specialInstructions}</p>
                         </div>
                       )}
+                      <InsuranceDocumentSection pet={pet} />
                     </div>
                   )}
                 </CardContent>

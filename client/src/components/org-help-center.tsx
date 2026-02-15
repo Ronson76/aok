@@ -274,7 +274,7 @@ const HELP_TOPICS: HelpTopic[] = [
       "**Wellbeing AI** — AI chat companion for emotional support.",
       "**Shake to SOS** — shake the phone to trigger an emergency alert.",
       "**Mood Tracking** — daily mood logging and pattern tracking.",
-      "**Pet Protection** — store pet care details for emergencies.",
+      "**Pet Protection** — store pet care details for emergencies. Clients can also upload insurance documents (PDF, JPG, PNG, DOC) for each pet — viewable, downloadable, and removable from the expanded pet card.",
       "**Digital Will** — secure document storage.",
       "**Fitness Tracking** — record runs, walks, and rides with GPS tracking, route maps, and social features. For personal wellbeing only — does not provide medical advice or health monitoring.",
       "**Route Planning** — plan walks, runs, and cycle routes with weather forecasts, safety cues, and sharing with contacts. Part of Fitness Tracking.",

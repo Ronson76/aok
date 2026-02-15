@@ -410,6 +410,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "Store details about your pets so emergency contacts know who needs looking after if something happens to you.",
       "Go to **Wellbeing > Pet Protection** to add your pets.",
       "You can include their name, species, breed, vet details, and care instructions.",
+      "**Insurance documents** — Expand any pet's card and use the **Upload Insurance Document** button to attach their insurance policy (PDF, JPG, PNG, or DOC). Once uploaded you can view it inline, download it, or remove it.",
       "This information is shared with your emergency contacts if an alert is triggered.",
     ],
   },
