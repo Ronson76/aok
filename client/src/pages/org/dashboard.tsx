@@ -1897,7 +1897,7 @@ export default function OrganizationDashboard() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Scroll className="h-4 w-4 text-slate-500" />
-                    <span className="text-sm">Digital Will</span>
+                    <span className="text-sm">Documents</span>
                   </div>
                   <Switch
                     checked={regFeatures.featureDigitalWill}
@@ -2877,7 +2877,7 @@ export default function OrganizationDashboard() {
                               <span title="Pet Protection"><PawPrint className="h-3 w-3 text-rose-500" /></span>
                             )}
                             {client.features.featureDigitalWill && (
-                              <span title="Digital Will"><Scroll className="h-3 w-3 text-slate-500" /></span>
+                              <span title="Documents"><Scroll className="h-3 w-3 text-slate-500" /></span>
                             )}
                             {client.features.featureEmergencyRecording && (
                               <span title="Emergency Recording"><Video className="h-3 w-3 text-red-500" /></span>
@@ -3802,8 +3802,8 @@ export default function OrganizationDashboard() {
                           <Scroll className="h-5 w-5 text-slate-500" />
                         </div>
                         <div>
-                          <p className="font-medium">Digital Will</p>
-                          <p className="text-sm text-muted-foreground">Store important documents securely</p>
+                          <p className="font-medium">Documents</p>
+                          <p className="text-sm text-muted-foreground">Store important documents like travel insurance, wills, and more</p>
                         </div>
                       </div>
                       <Switch

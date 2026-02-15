@@ -731,8 +731,8 @@ export default function AdminUsers() {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="feature-digital-will" className="font-medium">Digital Will</Label>
-                <p className="text-xs text-muted-foreground">Secure document storage</p>
+                <Label htmlFor="feature-digital-will" className="font-medium">Documents</Label>
+                <p className="text-xs text-muted-foreground">Important document storage (travel insurance, wills, etc.)</p>
               </div>
               <Switch
                 id="feature-digital-will"

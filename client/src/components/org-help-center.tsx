@@ -275,7 +275,7 @@ const HELP_TOPICS: HelpTopic[] = [
       "**Shake to SOS** — shake the phone to trigger an emergency alert.",
       "**Mood Tracking** — daily mood logging and pattern tracking.",
       "**Pet Protection** — store pet care details for emergencies. Clients can also upload insurance documents (PDF, JPG, PNG, DOC) for each pet — viewable, downloadable, and removable from the expanded pet card.",
-      "**Digital Will** — secure document storage.",
+      "**Important Documents** — securely store travel insurance, wills, healthcare directives, and any other important paperwork.",
       "**Fitness Tracking** — record runs, walks, and rides with GPS tracking, route maps, and social features. For personal wellbeing only — does not provide medical advice or health monitoring.",
       "**Route Planning** — plan walks, runs, and cycle routes with weather forecasts, safety cues, and sharing with contacts. Part of Fitness Tracking.",
       "**Activities Tracker** — log everyday activities (walking, shopping, errands, appointments, visiting, commuting, dog walking, exercise, first dates) with GPS tracking and automatic contact notification if the expected duration plus 10-minute grace period expires. A **low battery alert** is automatically sent to primary contacts if the client's device drops below 20% during an active activity.",
@@ -809,7 +809,7 @@ const HELP_TOPICS: HelpTopic[] = [
     content: [
       "When the aok team creates your organisation, they set **default feature toggles** that apply to every new client you add.",
       "These defaults control which of the 14 features are turned on by default for new clients:",
-      "Check-in, Shake to SOS, Emergency Alert, GPS Location, Push Notifications, Primary Contact, SMS Backup, Emergency Recording, Mood Tracking, Pet Protection, Digital Will, Wellbeing AI, Fitness Tracking, and Activities Tracker.",
+      "Check-in, Shake to SOS, Emergency Alert, GPS Location, Push Notifications, Primary Contact, SMS Backup, Emergency Recording, Mood Tracking, Pet Protection, Important Documents, Wellbeing AI, Fitness Tracking, and Activities Tracker.",
       "You can change feature settings for individual clients at any time from their detail view, overriding the defaults.",
       "If you need to change the default feature set for your entire organisation, contact the aok team.",
     ],
@@ -1013,7 +1013,7 @@ const HELP_TOPICS: HelpTopic[] = [
     content: [
       "aok has two feature tiers that control which features are available:",
       "**Tier 1 — Essential** includes core safety features: Check-in, Shake to SOS, Emergency Alert, GPS Location Sharing, Push Notifications, Primary Contact Notifications, SMS Check-in Fallback, and Emergency Recording.",
-      "**Tier 2 — Complete Wellbeing** includes everything in Tier 1 plus: Mood Tracking, Pet Protection, Digital Will Storage, Wellbeing AI Chat, GPS Fitness Tracking, and Activities Tracker.",
+      "**Tier 2 — Complete Wellbeing** includes everything in Tier 1 plus: Mood Tracking, Pet Protection, Important Document Storage, Wellbeing AI Chat, GPS Fitness Tracking, and Activities Tracker.",
       "The aok admin team manages which features are enabled at each tier level.",
       "Your organisation's clients receive features based on the tier assigned to your organisation and any per-client feature overrides you configure.",
       "You can always enable or disable individual features for specific clients from their detail view, regardless of their tier.",

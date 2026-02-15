@@ -148,7 +148,7 @@ export default function Landing() {
         { text: "Emergency recording (opt-in)", icon: Lock },
         { text: "Mood & wellness tracking", icon: TrendingUp },
         { text: "Pet protection profiles", icon: PawPrint },
-        { text: "Digital will storage", icon: Scroll },
+        { text: "Important document storage", icon: Scroll },
         { text: "Wellbeing AI (Exclusive)", icon: Sparkles },
         { text: "Activities tracker", icon: MapPin },
       ],
@@ -607,9 +607,9 @@ export default function Landing() {
                 <div className="rounded-full bg-slate-500/10 p-3 w-fit mb-4">
                   <Scroll className="h-6 w-6 text-slate-500" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Digital Will Storage</h3>
+                <h3 className="text-lg font-semibold mb-2">Important Documents</h3>
                 <p className="text-muted-foreground text-sm">
-                  Securely store important documents like wills, power of attorney, and healthcare directives.
+                  Securely store travel insurance, wills, power of attorney, healthcare directives, and other important documents.
                 </p>
               </CardContent>
             </Card>

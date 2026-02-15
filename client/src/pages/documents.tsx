@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, FileText, Trash2, Pencil, Loader2, Shield, Lock, Eye, EyeOff, Scroll, Scale, Heart, ShieldCheck, KeyRound, Mail, File, ArrowLeft, type LucideIcon } from "lucide-react";
+import { Plus, FileText, Trash2, Pencil, Loader2, Shield, Lock, Eye, EyeOff, Scroll, Scale, Heart, ShieldCheck, KeyRound, Mail, File, ArrowLeft, Plane, type LucideIcon } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
@@ -54,6 +54,7 @@ const documentIcons: Record<string, LucideIcon> = {
   power_of_attorney: Scale,
   healthcare_directive: Heart,
   insurance: ShieldCheck,
+  travel_insurance: Plane,
   account_info: KeyRound,
   letter: Mail,
   other: File,
@@ -64,6 +65,7 @@ const documentLabels: Record<string, string> = {
   power_of_attorney: "Power of Attorney",
   healthcare_directive: "Healthcare Directive",
   insurance: "Insurance",
+  travel_insurance: "Travel Insurance",
   account_info: "Account Information",
   letter: "Personal Letter",
   other: "Other",
@@ -223,7 +225,7 @@ export default function Documents() {
             </Button>
           </Link>
           <FileText className="h-7 w-7 text-primary" />
-          <h1 className="text-2xl font-semibold">Digital Will</h1>
+          <h1 className="text-2xl font-semibold">Documents</h1>
         </div>
 
         <Dialog
@@ -256,7 +258,7 @@ export default function Documents() {
                     <FormItem>
                       <FormLabel>Title</FormLabel>
                       <FormControl>
-                        <Input placeholder="My Last Will" {...field} data-testid="input-doc-title" />
+                        <Input placeholder="e.g. Travel Insurance, My Will" {...field} data-testid="input-doc-title" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -326,7 +328,7 @@ export default function Documents() {
                         />
                       </FormControl>
                       <FormDescription>
-                        This content is stored securely and will only be released to your designated executors.
+                        This content is stored securely and shared with your emergency contacts when needed.
                       </FormDescription>
                     </FormItem>
                   )}
@@ -356,7 +358,7 @@ export default function Documents() {
             <div>
               <p className="text-sm font-medium">Secure Storage</p>
               <p className="text-xs text-muted-foreground">
-                Your documents are encrypted and will only be released to your emergency contacts when needed.
+                Your documents are stored securely and shared with your emergency contacts when needed.
               </p>
             </div>
           </div>
@@ -371,7 +373,7 @@ export default function Documents() {
             </div>
             <h3 className="text-lg font-medium mb-2">No documents yet</h3>
             <p className="text-sm text-muted-foreground mb-4 max-w-xs">
-              Store your will, healthcare directives, and other important documents securely.
+              Store important documents like travel insurance, wills, healthcare directives, and more.
             </p>
             <Button onClick={() => setDialogOpen(true)} data-testid="button-add-first-document">
               <Plus className="h-4 w-4 mr-2" />

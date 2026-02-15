@@ -1655,8 +1655,8 @@ export default function AdminDashboard() {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <Label>Digital Will</Label>
-                  <p className="text-xs text-muted-foreground">Secure document storage</p>
+                  <Label>Documents</Label>
+                  <p className="text-xs text-muted-foreground">Important document storage (travel insurance, wills, etc.)</p>
                 </div>
                 <Switch
                   checked={clientFeatures.featureDigitalWill}

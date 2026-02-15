@@ -576,7 +576,7 @@ export const featureLabels: Record<string, string> = {
   featureEmergencyRecording: "Emergency Recording",
   featureMoodTracking: "Mood & Wellness Tracking",
   featurePetProtection: "Pet Protection Profiles",
-  featureDigitalWill: "Digital Will Storage",
+  featureDigitalWill: "Important Documents",
   featureWellbeingAi: "Wellbeing AI Chat",
   featureFitnessTracking: "GPS Fitness Tracking",
   featureActivitiesTracker: "Activities Tracker",
@@ -1044,7 +1044,7 @@ export type UpdatePet = z.infer<typeof updatePetSchema>;
 // ==================== DIGITAL WILL STORAGE ====================
 
 // Document types
-export const documentTypes = ["will", "power_of_attorney", "healthcare_directive", "insurance", "account_info", "letter", "other"] as const;
+export const documentTypes = ["will", "power_of_attorney", "healthcare_directive", "insurance", "travel_insurance", "account_info", "letter", "other"] as const;
 export type DocumentType = typeof documentTypes[number];
 
 // Digital documents table

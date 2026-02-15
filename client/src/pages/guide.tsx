@@ -176,10 +176,10 @@ const GUIDE_TOPICS: GuideTopic[] = [
   },
   {
     id: "digital-will",
-    title: "Digital will",
+    title: "Important documents",
     content: [
-      "Securely store important documents like your will, insurance details, or other vital information.",
-      "Go to **Wellbeing > Digital Will** to upload and manage your documents.",
+      "Securely store important documents like travel insurance, wills, healthcare directives, power of attorney, and any other vital paperwork.",
+      "Go to **Wellbeing > Documents** to upload and manage your important documents.",
       "Documents are encrypted and stored securely.",
       "This feature can be enabled or disabled by your organisation if you're managed by one.",
     ],
@@ -340,7 +340,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
     content: [
       "If your account is managed by an organisation (such as an employer, care provider, or support service), some aspects of your experience may differ.",
       "Your organisation sets your **check-in schedule** and can adjust it on your behalf.",
-      "Your organisation can **enable or disable features** such as mood tracking, pet protection, digital will, fitness tracking, activities tracker, wellbeing AI, and emergency recording.",
+      "Your organisation can **enable or disable features** such as mood tracking, pet protection, important documents, fitness tracking, activities tracker, wellbeing AI, and emergency recording.",
       "You may have a **Call Supervisor** button on your dashboard to quickly ring your supervisor.",
       "You log in using a unique **reference number** sent to you via SMS, rather than an email/password.",
       "Your subscription is covered by your organisation at no cost to you.",
@@ -493,7 +493,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
     content: [
       "aok offers simple, transparent pricing with all features included:",
       "**7-Day Free Trial** — full access to every feature, no payment details required upfront. Cancel anytime during the trial.",
-      "**Complete Wellbeing** — £6.99/month or £69.99/year (save 2 months). Includes check-ins, emergency alerts, SMS and voice call alerts, GPS location sharing, wellbeing AI chat, mood tracking, pet protection, digital will storage, GPS fitness tracking, activities tracker, and a tree planted via Ecologi.",
+      "**Complete Wellbeing** — £6.99/month or £69.99/year (save 2 months). Includes check-ins, emergency alerts, SMS and voice call alerts, GPS location sharing, wellbeing AI chat, mood tracking, pet protection, important document storage, GPS fitness tracking, activities tracker, and a tree planted via Ecologi.",
       "**Organisations** — custom pricing for bundles of seats. Includes everything in Complete Wellbeing plus a dedicated organisation dashboard, bulk client management, staff roles, safeguarding hub, lone worker session management, Call Supervisor, reports, analytics dashboard, and emergency recording per-client controls.",
       "Apple Pay and Google Pay are supported for quick and easy payment.",
       "You can cancel at any time — your account stays active until the end of your billing period.",
@@ -608,7 +608,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
     content: [
       "aok offers two feature tiers for individual users:",
       "**Tier 1 — Essential** includes core safety features: check-ins, emergency alerts, SMS and voice call alerts, GPS location sharing, push notifications, primary contact notifications, SMS check-in fallback, and Shake to SOS.",
-      "**Tier 2 — Complete Wellbeing** includes everything in Tier 1 plus: mood tracking, pet protection, digital will storage, wellbeing AI chat, GPS fitness tracking, activities tracker, and emergency recording.",
+      "**Tier 2 — Complete Wellbeing** includes everything in Tier 1 plus: mood tracking, pet protection, important document storage, wellbeing AI chat, GPS fitness tracking, activities tracker, and emergency recording.",
       "All individual subscribers get Tier 2 (Complete Wellbeing) by default at £6.99/month.",
       "If you're managed by an organisation, your available features may vary depending on what your organisation has enabled for your account.",
     ],

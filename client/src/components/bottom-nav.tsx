@@ -82,7 +82,7 @@ export function BottomNav() {
     { 
       path: "/app/documents", 
       icon: FileText, 
-      label: "Digital Will", 
+      label: "Documents", 
       enabled: features?.featureDigitalWill !== false && isRegistrationComplete 
     },
     { 
