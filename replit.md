@@ -57,7 +57,7 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Check-in System**: User-defined frequency, automated alerts on missed check-ins.
 - **Alert System**: Email and voice calls to emergency contacts.
 - **Emergency Features**: Emergency alert button with GPS, shake-to-SOS, offline emergency overlay, optional emergency recording.
-- **Wellness Features**: Mood/Wellness Tracking, Pet Protection, Digital Will Storage, GPS Fitness Tracking, Route Planning, Activities Tracker.
+- **Wellness Features**: Mood/Wellness Tracking, Pet Protection, Important Document Storage, GPS Fitness Tracking, Route Planning, Activities Tracker.
 - **Compliance**: Non-skippable onboarding with legal disclaimers and consent logging.
 - **Admin Dashboard**: Role-based access for user/organization management, license agreements, revenue tracking, feature permissions, and security audit logging.
 - **Organization Features**: Client and staff management (including bulk import), monitoring, dynamic feature control per client, safeguarding hub, analytics dashboard (peak times, alert heatmap, active SOS alerts), comprehensive audit trail with tamper-evident hash chains, PDF/CSV exports, integrity verification, and configurable retention policies.

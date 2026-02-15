@@ -88,7 +88,7 @@ export default function SLA() {
             <section>
               <h2 className="text-xl font-semibold mb-3">5. Covered Features</h2>
               <p className="text-muted-foreground leading-relaxed">
-                This SLA covers all core A-OK platform features including: Check-in System, Emergency Alerts, Call Supervisor, Push Notifications, SMS Backup, Fitness Tracking, Activity/Errands Tracker, AI Wellbeing Chat, Mood Tracking, Pet Protection, Digital Will Storage, and Organisation Management features. GPS accuracy and third-party mapping service availability (OpenStreetMap) are excluded from uptime calculations as they depend on external providers.
+                This SLA covers all core A-OK platform features including: Check-in System, Emergency Alerts, Call Supervisor, Push Notifications, SMS Backup, Fitness Tracking, Activity/Errands Tracker, AI Wellbeing Chat, Mood Tracking, Pet Protection, Important Document Storage, and Organisation Management features. GPS accuracy and third-party mapping service availability (OpenStreetMap) are excluded from uptime calculations as they depend on external providers.
               </p>
             </section>
 
