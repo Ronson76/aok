@@ -2935,6 +2935,132 @@ export async function registerRoutes(
     }
   });
 
+  const pendingPetInsuranceUploads = new Map<string, { objectPath: string; expiresAt: number }>();
+
+  function sanitizeFileName(name: string): string {
+    return name.replace(/[^\w.\-_ ]/g, "_").slice(0, 200);
+  }
+
+  // Pet insurance document upload URL
+  app.post("/api/pets/:id/insurance/upload-url", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const pet = await storage.getPet(req.userId, req.params.id);
+      if (!pet) return res.status(404).json({ error: "Pet not found" });
+
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+      const uploadKey = `${req.userId}:${req.params.id}`;
+      pendingPetInsuranceUploads.set(uploadKey, { objectPath, expiresAt: Date.now() + 15 * 60 * 1000 });
+      res.json({ uploadURL, objectPath });
+    } catch (error) {
+      console.error("[PET INSURANCE] Failed to generate upload URL:", error);
+      res.status(500).json({ error: "Failed to generate upload URL" });
+    }
+  });
+
+  // Finalize pet insurance document upload
+  app.post("/api/pets/:id/insurance/finalize", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { objectPath, fileName } = req.body;
+      if (!objectPath || typeof objectPath !== "string" || !fileName || typeof fileName !== "string") {
+        return res.status(400).json({ error: "Missing or invalid objectPath or fileName" });
+      }
+
+      const uploadKey = `${req.userId}:${req.params.id}`;
+      const pending = pendingPetInsuranceUploads.get(uploadKey);
+      if (!pending || pending.objectPath !== objectPath || pending.expiresAt < Date.now()) {
+        return res.status(403).json({ error: "Invalid or expired upload" });
+      }
+      pendingPetInsuranceUploads.delete(uploadKey);
+
+      const pet = await storage.getPet(req.userId, req.params.id);
+      if (!pet) return res.status(404).json({ error: "Pet not found" });
+
+      if (pet.insuranceDocumentPath) {
+        try {
+          const oldFile = await objectStorageService.getObjectEntityFile(pet.insuranceDocumentPath);
+          await oldFile.delete();
+        } catch (e) {
+          console.warn("[PET INSURANCE] Failed to clean up old document:", e);
+        }
+      }
+
+      const safeName = sanitizeFileName(fileName);
+      const updated = await storage.updatePet(req.userId, req.params.id, {
+        insuranceDocumentPath: objectPath,
+        insuranceDocumentName: safeName,
+      } as any);
+      res.json({ success: true, pet: updated });
+    } catch (error) {
+      console.error("[PET INSURANCE] Failed to finalize upload:", error);
+      res.status(500).json({ error: "Failed to save document" });
+    }
+  });
+
+  // Download pet insurance document
+  app.get("/api/pets/:id/insurance/download", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const pet = await storage.getPet(req.userId, req.params.id);
+      if (!pet) return res.status(404).json({ error: "Pet not found" });
+      if (!pet.insuranceDocumentPath) return res.status(404).json({ error: "No insurance document" });
+
+      const objectFile = await objectStorageService.getObjectEntityFile(pet.insuranceDocumentPath);
+      const safeName = sanitizeFileName(pet.insuranceDocumentName || "insurance-document");
+      res.set("Content-Disposition", `attachment; filename="${safeName}"`);
+      await objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("[PET INSURANCE] Failed to download:", error);
+      res.status(500).json({ error: "Failed to download document" });
+    }
+  });
+
+  // View pet insurance document (inline)
+  app.get("/api/pets/:id/insurance/view", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const pet = await storage.getPet(req.userId, req.params.id);
+      if (!pet) return res.status(404).json({ error: "Pet not found" });
+      if (!pet.insuranceDocumentPath) return res.status(404).json({ error: "No insurance document" });
+
+      const objectFile = await objectStorageService.getObjectEntityFile(pet.insuranceDocumentPath);
+      const safeName = sanitizeFileName(pet.insuranceDocumentName || "insurance-document");
+      res.set("Content-Disposition", `inline; filename="${safeName}"`);
+      await objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("[PET INSURANCE] Failed to view:", error);
+      res.status(500).json({ error: "Failed to view document" });
+    }
+  });
+
+  // Delete pet insurance document
+  app.delete("/api/pets/:id/insurance", async (req, res) => {
+    if (!req.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const pet = await storage.getPet(req.userId, req.params.id);
+      if (!pet) return res.status(404).json({ error: "Pet not found" });
+      if (!pet.insuranceDocumentPath) return res.status(404).json({ error: "No insurance document" });
+
+      try {
+        const objectFile = await objectStorageService.getObjectEntityFile(pet.insuranceDocumentPath);
+        await objectFile.delete();
+      } catch (e) {
+        console.warn("[PET INSURANCE] Failed to delete object from storage:", e);
+      }
+
+      await storage.updatePet(req.userId, req.params.id, {
+        insuranceDocumentPath: null,
+        insuranceDocumentName: null,
+      } as any);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[PET INSURANCE] Failed to delete:", error);
+      res.status(500).json({ error: "Failed to delete document" });
+    }
+  });
+
   // ==================== DIGITAL WILL ROUTES ====================
 
   // Get documents

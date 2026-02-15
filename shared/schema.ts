@@ -1006,6 +1006,8 @@ export const pets = pgTable("pets", {
   vetPhone: text("vet_phone"),
   vetAddress: text("vet_address"),
   specialInstructions: text("special_instructions"),
+  insuranceDocumentPath: text("insurance_document_path"),
+  insuranceDocumentName: text("insurance_document_name"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
