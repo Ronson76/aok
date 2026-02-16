@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon, Video, Scale, PenLine, Share2, Copy, ClipboardList, ChevronDown, ChevronUp, Filter, ArrowLeft, ArrowRight, BarChart3 } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon, Video, Scale, PenLine, Share2, Copy, ClipboardList, ChevronDown, ChevronUp, ChevronRight, Filter, ArrowLeft, ArrowRight, BarChart3, Calendar } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -304,6 +304,8 @@ export default function OrganizationDashboard() {
   const [auditPage, setAuditPage] = useState(0);
   const [showAuditTrail, setShowAuditTrail] = useState(false);
   const [expandedAuditEntry, setExpandedAuditEntry] = useState<string | null>(null);
+  const [auditGroupBy, setAuditGroupBy] = useState<"none" | "date" | "user">("date");
+  const [expandedAuditGroups, setExpandedAuditGroups] = useState<Set<string>>(new Set());
   const [showRetentionSettings, setShowRetentionSettings] = useState(false);
   const [retentionDays, setRetentionDays] = useState(2190);
   const [retentionSaving, setRetentionSaving] = useState(false);
@@ -2625,6 +2627,50 @@ export default function OrganizationDashboard() {
               </div>
             )}
 
+            {/* Group By selector */}
+            <div className="flex items-center gap-2">
+              <Select value={auditGroupBy} onValueChange={(v: "none" | "date" | "user") => { setAuditGroupBy(v); setExpandedAuditGroups(new Set()); }}>
+                <SelectTrigger className="w-44" data-testid="select-audit-group-by">
+                  <SelectValue placeholder="Group by..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">
+                    <span className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Group by Date</span>
+                  </SelectItem>
+                  <SelectItem value="user">
+                    <span className="flex items-center gap-2"><User className="h-4 w-4" /> Group by User</span>
+                  </SelectItem>
+                  <SelectItem value="none">No Grouping</SelectItem>
+                </SelectContent>
+              </Select>
+              {auditGroupBy !== "none" && auditData && auditData.entries.length > 0 && (
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const keys = new Set<string>();
+                      auditData.entries.forEach(e => {
+                        keys.add(auditGroupBy === "date" ? format(new Date(e.createdAt), "dd/MM/yyyy") : (e.userEmail || "System"));
+                      });
+                      setExpandedAuditGroups(keys);
+                    }}
+                    data-testid="button-audit-expand-all"
+                  >
+                    Expand All
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setExpandedAuditGroups(new Set())}
+                    data-testid="button-audit-collapse-all"
+                  >
+                    Collapse All
+                  </Button>
+                </div>
+              )}
+            </div>
+
             {/* Results */}
             {auditLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -2632,79 +2678,214 @@ export default function OrganizationDashboard() {
               </div>
             ) : auditData && auditData.entries.length > 0 ? (
               <div className="space-y-2">
-                {auditData.entries.map((entry) => {
-                  const desc = getAuditDescription(entry);
-                  const isExpanded = expandedAuditEntry === entry.id;
-                  const hasDetails = entry.newData || entry.previousData;
-                  return (
-                    <div
-                      key={entry.id}
-                      className="p-3 rounded-lg border space-y-2"
-                      data-testid={`audit-entry-${entry.id}`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3 min-w-0">
-                          <div className="mt-0.5">{desc.icon}</div>
-                          <div className="min-w-0 space-y-0.5">
-                            <p className="text-sm font-medium" data-testid={`audit-description-${entry.id}`}>{desc.text}</p>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Badge variant={desc.actionVariant as any} className="text-xs capitalize">{entry.action.replace(/_/g, " ")}</Badge>
-                              <Badge variant="outline" className="text-xs capitalize">{entry.entityType.replace(/_/g, " ")}</Badge>
+                {auditGroupBy === "none" ? (
+                  auditData.entries.map((entry) => {
+                    const desc = getAuditDescription(entry);
+                    const isExpanded = expandedAuditEntry === entry.id;
+                    const hasDetails = entry.newData || entry.previousData;
+                    return (
+                      <div
+                        key={entry.id}
+                        className="p-3 rounded-lg border space-y-2"
+                        data-testid={`audit-entry-${entry.id}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3 min-w-0">
+                            <div className="mt-0.5">{desc.icon}</div>
+                            <div className="min-w-0 space-y-0.5">
+                              <p className="text-sm font-medium" data-testid={`audit-description-${entry.id}`}>{desc.text}</p>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge variant={desc.actionVariant as any} className="text-xs capitalize">{entry.action.replace(/_/g, " ")}</Badge>
+                                <Badge variant="outline" className="text-xs capitalize">{entry.entityType.replace(/_/g, " ")}</Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {entry.userEmail || "System"}{entry.userRole ? ` (${entry.userRole})` : ""}
+                              </p>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                              {entry.userEmail || "System"}{entry.userRole ? ` (${entry.userRole})` : ""}
-                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              {format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm")}
+                            </span>
+                            {hasDetails && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setExpandedAuditEntry(isExpanded ? null : entry.id)}
+                                data-testid={`button-expand-audit-${entry.id}`}
+                              >
+                                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              </Button>
+                            )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm")}
-                          </span>
-                          {hasDetails && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setExpandedAuditEntry(isExpanded ? null : entry.id)}
-                              data-testid={`button-expand-audit-${entry.id}`}
-                            >
-                              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                            </Button>
-                          )}
-                        </div>
+                        {isExpanded && hasDetails && (
+                          <div className="ml-8 p-3 rounded-md bg-muted/50 space-y-2 text-xs">
+                            {entry.newData && (
+                              <div>
+                                <p className="font-medium text-muted-foreground mb-1">Details:</p>
+                                <div className="space-y-1">
+                                  {Object.entries(entry.newData as Record<string, any>).map(([key, value]) => (
+                                    <div key={key} className="flex gap-2">
+                                      <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, " $1").replace(/_/g, " ").trim()}:</span>
+                                      <span className="font-medium">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {entry.previousData && (
+                              <div>
+                                <p className="font-medium text-muted-foreground mb-1">Previous values:</p>
+                                <div className="space-y-1">
+                                  {Object.entries(entry.previousData as Record<string, any>).map(([key, value]) => (
+                                    <div key={key} className="flex gap-2">
+                                      <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, " $1").replace(/_/g, " ").trim()}:</span>
+                                      <span className="font-medium line-through">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      {isExpanded && hasDetails && (
-                        <div className="ml-8 p-3 rounded-md bg-muted/50 space-y-2 text-xs">
-                          {entry.newData && (
-                            <div>
-                              <p className="font-medium text-muted-foreground mb-1">Details:</p>
-                              <div className="space-y-1">
-                                {Object.entries(entry.newData as Record<string, any>).map(([key, value]) => (
-                                  <div key={key} className="flex gap-2">
-                                    <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, " $1").replace(/_/g, " ").trim()}:</span>
-                                    <span className="font-medium">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
-                                  </div>
-                                ))}
-                              </div>
+                    );
+                  })
+                ) : (
+                  (() => {
+                    const groups = new Map<string, typeof auditData.entries>();
+                    auditData.entries.forEach(entry => {
+                      const key = auditGroupBy === "date"
+                        ? format(new Date(entry.createdAt), "dd/MM/yyyy")
+                        : (entry.userEmail || "System");
+                      if (!groups.has(key)) groups.set(key, []);
+                      groups.get(key)!.push(entry);
+                    });
+                    const sorted = Array.from(groups.entries());
+                    if (auditGroupBy === "date") {
+                      sorted.sort((a, b) => {
+                        const dA = new Date(a[1][0].createdAt);
+                        const dB = new Date(b[1][0].createdAt);
+                        return dB.getTime() - dA.getTime();
+                      });
+                    } else {
+                      sorted.sort((a, b) => a[0].localeCompare(b[0]));
+                    }
+                    return sorted.map(([groupKey, groupEntries]) => {
+                      const isGroupOpen = expandedAuditGroups.has(groupKey);
+                      return (
+                        <div key={groupKey} className="rounded-lg border">
+                          <button
+                            onClick={() => {
+                              setExpandedAuditGroups(prev => {
+                                const next = new Set(prev);
+                                if (next.has(groupKey)) next.delete(groupKey);
+                                else next.add(groupKey);
+                                return next;
+                              });
+                            }}
+                            className="w-full text-left px-4 py-3 flex items-center justify-between gap-2 hover-elevate rounded-lg"
+                            data-testid={`button-audit-group-${groupKey.replace(/[^a-zA-Z0-9]/g, '-')}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isGroupOpen ? "rotate-90" : ""}`} />
+                              {auditGroupBy === "date" ? (
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <User className="h-4 w-4 text-muted-foreground" />
+                              )}
+                              <span className="text-sm font-medium">{groupKey}</span>
                             </div>
-                          )}
-                          {entry.previousData && (
-                            <div>
-                              <p className="font-medium text-muted-foreground mb-1">Previous values:</p>
-                              <div className="space-y-1">
-                                {Object.entries(entry.previousData as Record<string, any>).map(([key, value]) => (
-                                  <div key={key} className="flex gap-2">
-                                    <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, " $1").replace(/_/g, " ").trim()}:</span>
-                                    <span className="font-medium line-through">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+                            <Badge variant="secondary" className="text-xs">{groupEntries.length} entr{groupEntries.length !== 1 ? "ies" : "y"}</Badge>
+                          </button>
+                          {isGroupOpen && (
+                            <div className="px-4 pb-3 space-y-2 border-t pt-3">
+                              {groupEntries.map((entry) => {
+                                const desc = getAuditDescription(entry);
+                                const isExpanded = expandedAuditEntry === entry.id;
+                                const hasDetails = entry.newData || entry.previousData;
+                                return (
+                                  <div
+                                    key={entry.id}
+                                    className="p-3 rounded-lg border space-y-2"
+                                    data-testid={`audit-entry-${entry.id}`}
+                                  >
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="flex items-start gap-3 min-w-0">
+                                        <div className="mt-0.5">{desc.icon}</div>
+                                        <div className="min-w-0 space-y-0.5">
+                                          <p className="text-sm font-medium" data-testid={`audit-description-${entry.id}`}>{desc.text}</p>
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                            <Badge variant={desc.actionVariant as any} className="text-xs capitalize">{entry.action.replace(/_/g, " ")}</Badge>
+                                            <Badge variant="outline" className="text-xs capitalize">{entry.entityType.replace(/_/g, " ")}</Badge>
+                                          </div>
+                                          {auditGroupBy !== "user" && (
+                                            <p className="text-xs text-muted-foreground">
+                                              {entry.userEmail || "System"}{entry.userRole ? ` (${entry.userRole})` : ""}
+                                            </p>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                          {auditGroupBy === "date" 
+                                            ? format(new Date(entry.createdAt), "HH:mm")
+                                            : format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm")
+                                          }
+                                        </span>
+                                        {hasDetails && (
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setExpandedAuditEntry(isExpanded ? null : entry.id)}
+                                            data-testid={`button-expand-audit-${entry.id}`}
+                                          >
+                                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {isExpanded && hasDetails && (
+                                      <div className="ml-8 p-3 rounded-md bg-muted/50 space-y-2 text-xs">
+                                        {entry.newData && (
+                                          <div>
+                                            <p className="font-medium text-muted-foreground mb-1">Details:</p>
+                                            <div className="space-y-1">
+                                              {Object.entries(entry.newData as Record<string, any>).map(([key, value]) => (
+                                                <div key={key} className="flex gap-2">
+                                                  <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, " $1").replace(/_/g, " ").trim()}:</span>
+                                                  <span className="font-medium">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {entry.previousData && (
+                                          <div>
+                                            <p className="font-medium text-muted-foreground mb-1">Previous values:</p>
+                                            <div className="space-y-1">
+                                              {Object.entries(entry.previousData as Record<string, any>).map(([key, value]) => (
+                                                <div key={key} className="flex gap-2">
+                                                  <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, " $1").replace(/_/g, " ").trim()}:</span>
+                                                  <span className="font-medium line-through">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
-                                ))}
-                              </div>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
+                      );
+                    });
+                  })()
+                )}
 
                 {/* Pagination */}
                 {auditData.total > AUDIT_PAGE_SIZE && (
