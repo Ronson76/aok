@@ -1,5 +1,5 @@
 import { storage } from "./storage";
-import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder, sendSmsCheckinLink, sendActivityOverdueAlert, sendActivityVoiceAlerts } from "./notifications";
+import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder, sendSmsCheckinLink, sendActivityOverdueAlert, sendActivityVoiceAlerts, sendLoneWorkerMissedCheckInAlert } from "./notifications";
 import { ObjectStorageService } from "./replit_integrations/object_storage";
 
 let schedulerInterval: NodeJS.Timeout | null = null;
@@ -9,6 +9,7 @@ let contactReminderInterval: NodeJS.Timeout | null = null;
 let recordingCleanupInterval: NodeJS.Timeout | null = null;
 let errandCheckInterval: NodeJS.Timeout | null = null;
 let auditRetentionInterval: NodeJS.Timeout | null = null;
+let loneWorkerCheckInterval: NodeJS.Timeout | null = null;
 // Minimum interval between push notifications to same user (30 seconds)
 const PUSH_NOTIFICATION_COOLDOWN_MS = 30 * 1000;
 
@@ -303,6 +304,11 @@ export function startEmergencyScheduler(): void {
     await processAuditRetentionCleanup();
   }, 24 * 60 * 60 * 1000);
 
+  console.log('[LW SCHEDULER] Starting lone worker check-in monitor (checks every 30 seconds)');
+  loneWorkerCheckInterval = setInterval(async () => {
+    await processOverdueLoneWorkerSessions();
+  }, 30 * 1000);
+
   // Run initial checks
   processOverdueEmergencyAlerts();
   processOverduePushNotifications();
@@ -312,6 +318,7 @@ export function startEmergencyScheduler(): void {
   processSmsCheckinReminders();
   cleanupExpiredRecordings();
   processOverdueErrandSessions();
+  processOverdueLoneWorkerSessions();
 }
 
 async function cleanupExpiredRecordings(): Promise<void> {
@@ -338,6 +345,94 @@ async function cleanupExpiredRecordings(): Promise<void> {
     }
   } catch (error) {
     console.error('[RECORDING CLEANUP] Error cleaning up expired recordings:', error);
+  }
+}
+
+async function processOverdueLoneWorkerSessions(): Promise<void> {
+  try {
+    const overdueSessions = await storage.getOverdueLoneWorkerSessions();
+    for (const session of overdueSessions) {
+      try {
+        await storage.loneWorkerMarkCheckInDue(session.id);
+        console.log(`[LW SCHEDULER] Session ${session.id} (${session.userId}) marked as check_in_due`);
+      } catch (e) {
+        console.error(`[LW SCHEDULER] Error marking session ${session.id} as check_in_due:`, e);
+      }
+    }
+
+    const graceExpired = await storage.getGraceExpiredLoneWorkerSessions();
+    for (const session of graceExpired) {
+      try {
+        await storage.loneWorkerMarkUnresponsive(session.id);
+        console.log(`[LW SCHEDULER] Session ${session.id} marked as unresponsive — alerting supervisor`);
+
+        const worker = await storage.getUserById(session.userId);
+        if (!worker) {
+          console.log(`[LW SCHEDULER] Worker not found for session ${session.id}, skipping alerts`);
+          continue;
+        }
+
+        const org = await storage.getUserById(session.organizationId);
+        const orgName = org?.name || 'Organisation';
+
+        const { organizationStorage } = await import("./organizationStorage");
+        const staffInvite = await organizationStorage.getStaffInviteByUserId(session.userId);
+
+        const supervisorPhone = staffInvite?.supervisorPhone || org?.mobileNumber || null;
+        const supervisorEmail = staffInvite?.supervisorEmail || org?.email || null;
+        const supervisorName = staffInvite?.supervisorName || null;
+
+        const jobLabel = session.jobType.replace(/_/g, ' ');
+        const gpsLocation = session.lastLocationLat && session.lastLocationLng
+          ? { latitude: parseFloat(session.lastLocationLat), longitude: parseFloat(session.lastLocationLng) }
+          : null;
+
+        const alertResult = await sendLoneWorkerMissedCheckInAlert(
+          supervisorPhone,
+          supervisorEmail,
+          supervisorName,
+          worker.name || staffInvite?.staffName || 'Lone Worker',
+          jobLabel,
+          orgName,
+          gpsLocation,
+        );
+
+        await storage.createLoneWorkerEscalation(
+          session.id,
+          "monitoring_contact",
+          "missed_checkin",
+          [{ supervisorPhone, supervisorEmail, supervisorName }],
+          session.lastLocationLat || undefined,
+          session.lastLocationLng || undefined,
+        );
+
+        await storage.createAuditEntry(session.organizationId, {
+          userId: session.userId,
+          userEmail: worker.email,
+          userRole: "staff",
+          action: "missed_checkin_alert",
+          entityType: "lone_worker_session",
+          entityId: session.id,
+          newData: {
+            staffName: worker.name,
+            jobType: session.jobType,
+            emailsSent: alertResult.emailsSent,
+            smsSent: alertResult.smsSent,
+            callsMade: alertResult.callsMade,
+          },
+        });
+
+        const notificationSummary = [];
+        if (alertResult.emailsSent > 0) notificationSummary.push(`${alertResult.emailsSent} email(s)`);
+        if (alertResult.smsSent > 0) notificationSummary.push(`${alertResult.smsSent} SMS(s)`);
+        if (alertResult.callsMade > 0) notificationSummary.push(`${alertResult.callsMade} voice call(s)`);
+        console.log(`[LW SCHEDULER] Supervisor alerted for session ${session.id}: ${notificationSummary.join(', ') || 'no contact info'}`);
+      } catch (e) {
+        console.error(`[LW SCHEDULER] Error processing grace-expired session ${session.id}:`, e);
+      }
+    }
+  } catch (error) {
+    console.error('[LW SCHEDULER] Error processing overdue lone worker sessions:', error);
   }
 }
 
@@ -395,6 +490,10 @@ export function stopEmergencyScheduler(): void {
   if (auditRetentionInterval) {
     clearInterval(auditRetentionInterval);
     auditRetentionInterval = null;
+  }
+  if (loneWorkerCheckInterval) {
+    clearInterval(loneWorkerCheckInterval);
+    loneWorkerCheckInterval = null;
   }
   console.log('[EMERGENCY SCHEDULER] Scheduler stopped');
 }

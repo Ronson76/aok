@@ -313,6 +313,18 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "lone-worker-check-in-alarm",
+    title: "Lone worker check-in alarm",
+    content: [
+      "During an active shift, your device will sound an audible alarm when your scheduled check-in is due.",
+      "The alarm repeats every few seconds until you check in by pressing the **I'm OK** button.",
+      "This is the same protocol used for individual users — a two-tone beep plays through your device speaker to get your attention.",
+      "If you don't check in within the grace window (default 2 minutes), your status changes to **Unresponsive** and your supervisor is automatically alerted via **email**, **SMS**, and a **voice call**.",
+      "The alarm also sounds during the unresponsive state to remind you to check in.",
+      "Once you check in, the alarm stops and your next check-in is scheduled automatically.",
+    ],
+  },
+  {
     id: "login",
     title: "Logging in",
     content: [
@@ -368,6 +380,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "You log in using a unique **reference number** sent to you via SMS, rather than an email/password.",
       "Your subscription is covered by your organisation at no cost to you.",
       "Your organisation can view your check-in status but cannot read your private wellbeing data (mood entries, AI conversations).",
+      "**Note:** The Call Supervisor button is only available for lone worker staff members, not organisation clients.",
     ],
   },
   {
