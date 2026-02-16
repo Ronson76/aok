@@ -277,6 +277,10 @@ export default function OrgLoneWorkerHub() {
   const [ecEmail, setEcEmail] = useState("");
   const [ecRelationship, setEcRelationship] = useState("");
   const [emergencyRecordingEnabled, setEmergencyRecordingEnabled] = useState(false);
+  const [supName, setSupName] = useState("");
+  const [supPhone, setSupPhone] = useState("");
+  const [supCountryCode, setSupCountryCode] = useState("+44");
+  const [supEmail, setSupEmail] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [inviteFilter, setInviteFilter] = useState("all");
   const [auditFilter, setAuditFilter] = useState("all");
@@ -397,7 +401,7 @@ export default function OrgLoneWorkerHub() {
   };
 
   const createInviteMutation = useMutation({
-    mutationFn: async (data: { staffName: string; staffPhone: string; staffEmail: string; bundleId: string; emergencyContactName?: string; emergencyContactPhone?: string; emergencyContactEmail?: string; emergencyContactRelationship?: string; emergencyRecordingEnabled?: boolean }) => {
+    mutationFn: async (data: { staffName: string; staffPhone: string; staffEmail: string; bundleId: string; emergencyContactName?: string; emergencyContactPhone?: string; emergencyContactEmail?: string; emergencyContactRelationship?: string; emergencyRecordingEnabled?: boolean; supervisorName?: string; supervisorPhone?: string; supervisorEmail?: string }) => {
       const res = await apiRequest("POST", "/api/org/staff/invite", data);
       return res.json();
     },
@@ -486,6 +490,10 @@ export default function OrgLoneWorkerHub() {
     setEcEmail("");
     setEcRelationship("");
     setEmergencyRecordingEnabled(false);
+    setSupName("");
+    setSupPhone("");
+    setSupCountryCode("+44");
+    setSupEmail("");
     setResendingInviteId(null);
   };
 
@@ -693,6 +701,7 @@ export default function OrgLoneWorkerHub() {
     }
     const fullPhone = formatFullPhone(staffCountryCode, staffPhone);
     const fullEcPhone = formatFullPhone(ecCountryCode, ecPhone);
+    const fullSupPhone = supPhone.trim() ? formatFullPhone(supCountryCode, supPhone) : "";
     if (resendingInviteId) {
       resendMutation.mutate({ inviteId: resendingInviteId, staffName: staffName.trim(), staffPhone: fullPhone, staffEmail: staffEmail.trim() });
     } else {
@@ -706,6 +715,9 @@ export default function OrgLoneWorkerHub() {
         emergencyContactEmail: ecEmail.trim(),
         emergencyContactRelationship: ecRelationship.trim(),
         emergencyRecordingEnabled,
+        supervisorName: supName.trim(),
+        supervisorPhone: fullSupPhone,
+        supervisorEmail: supEmail.trim(),
       });
     }
   };
@@ -1300,6 +1312,38 @@ export default function OrgLoneWorkerHub() {
                 </Select>
               </div>
             )}
+            <div className="border-t pt-4 mt-2">
+              <p className="text-sm font-medium mb-3">Supervisor (Primary Contact)</p>
+              <p className="text-xs text-muted-foreground mb-3">The supervisor is notified first for missed check-ins and emergencies. Leave blank if not applicable.</p>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="supName">Supervisor Name</Label>
+                  <Input id="supName" value={supName} onChange={(e) => setSupName(e.target.value)} placeholder="e.g. Sarah Manager" data-testid="input-sup-name" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="supPhone">Supervisor Phone</Label>
+                  <div className="flex gap-2">
+                    <Select value={supCountryCode} onValueChange={setSupCountryCode}>
+                      <SelectTrigger className="w-28" data-testid="select-sup-country-code">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="+44">+44 UK</SelectItem>
+                        <SelectItem value="+1">+1 US</SelectItem>
+                        <SelectItem value="+353">+353 IE</SelectItem>
+                        <SelectItem value="+33">+33 FR</SelectItem>
+                        <SelectItem value="+49">+49 DE</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input id="supPhone" type="tel" value={supPhone} onChange={(e) => setSupPhone(e.target.value)} placeholder="7XXX XXXXXX" className="flex-1" data-testid="input-sup-phone" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="supEmail">Supervisor Email</Label>
+                  <Input id="supEmail" type="email" value={supEmail} onChange={(e) => setSupEmail(e.target.value)} placeholder="e.g. supervisor@company.com" data-testid="input-sup-email" />
+                </div>
+              </div>
+            </div>
             <div className="border-t pt-4 mt-2">
               <p className="text-sm font-medium mb-3">Emergency Contact *</p>
               <div className="space-y-3">
