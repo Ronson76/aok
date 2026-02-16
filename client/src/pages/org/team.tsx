@@ -88,7 +88,7 @@ export default function OrgTeam() {
       await logout();
     } catch (e) {}
     queryClient.clear();
-    setLocation("/org/login");
+    window.location.href = "/";
   };
 
   const { data: teamData, isLoading } = useQuery<TeamData>({
