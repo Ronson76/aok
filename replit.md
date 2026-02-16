@@ -111,6 +111,8 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Health Tracking**: Real-time monitoring of external service status via `/api/admin/notifications/health`.
 
 ## Recent Changes
+- **Supervisor Emergency Cancellation**: Supervisors can cancel emergencies for unresponsive/panic lone workers from the Live Monitor. Requires checkbox confirmation that they've spoken to the worker and entry of the worker's cancellation password. Failed attempts are audit-logged. `cancellationPinHash` stored on staff invites, set during registration. API: `POST /api/org/lone-worker/:sessionId/supervisor-cancel`.
+- **Cancellation Password on Registration**: Staff members must set a cancellation password (min 4 chars) when accepting an invite. Hashed with bcrypt, stored on the staff invite record.
 - **Lone Worker Supervisor System**: Supervisor designated as primary contact for missed check-ins and emergencies; emergency contacts are secondary. Supervisor fields (name, phone, email) stored on staff invites. Edit dialog in Lone Worker Hub staff tab with SMS phone verification.
 - **International Phone Handling**: Country code selector (UK +44 default, plus IE, DE, FR, US) on all phone fields. Auto-strips leading zeros for correct E.164 formatting.
 - **Live Location Map**: Location button per worker in Live Monitor expands inline Leaflet/OSM map with pulsing status-coloured marker, coordinates, last-updated time, and Google Maps link. Marker colour updates live with status changes. GPS sent immediately on shift start, then every 60 seconds.

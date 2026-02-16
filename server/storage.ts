@@ -3600,6 +3600,9 @@ export interface IOrganizationStorage {
   deleteStaffInvite(inviteId: string, organizationId: string): Promise<boolean>;
   acceptStaffInvite(inviteCode: string, userId: string): Promise<OrganizationStaffInvite | undefined>;
   incrementBundleSeatsUsed(bundleId: string): Promise<void>;
+  setCancellationPinHash(inviteId: string, pinHash: string): Promise<void>;
+  getCancellationPinHash(inviteId: string): Promise<string | null>;
+  getStaffInviteBySessionId(sessionId: string): Promise<OrganizationStaffInvite | undefined>;
 }
 
 class OrganizationStorage implements IOrganizationStorage {
@@ -4925,6 +4928,32 @@ class OrganizationStorage implements IOrganizationStorage {
       .update(organizationBundles)
       .set({ seatsUsed: sql`seats_used + 1` })
       .where(eq(organizationBundles.id, bundleId));
+  }
+
+  async setCancellationPinHash(inviteId: string, pinHash: string): Promise<void> {
+    await getDb()
+      .update(organizationStaffInvites)
+      .set({ cancellationPinHash: pinHash })
+      .where(eq(organizationStaffInvites.id, inviteId));
+  }
+
+  async getCancellationPinHash(inviteId: string): Promise<string | null> {
+    const [invite] = await getDb()
+      .select({ cancellationPinHash: organizationStaffInvites.cancellationPinHash })
+      .from(organizationStaffInvites)
+      .where(eq(organizationStaffInvites.id, inviteId))
+      .limit(1);
+    return invite?.cancellationPinHash || null;
+  }
+
+  async getStaffInviteBySessionId(sessionId: string): Promise<OrganizationStaffInvite | undefined> {
+    const [session] = await getDb()
+      .select({ userId: loneWorkerSessions.userId })
+      .from(loneWorkerSessions)
+      .where(eq(loneWorkerSessions.id, sessionId))
+      .limit(1);
+    if (!session) return undefined;
+    return this.getStaffInviteByUserId(session.userId);
   }
 }
 

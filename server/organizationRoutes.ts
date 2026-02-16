@@ -2049,7 +2049,8 @@ export function registerOrganizationRoutes(app: Express) {
     try {
       const orgId = (req.user as any).id;
       const invites = await organizationStorage.getStaffInvites(orgId);
-      res.json(invites);
+      const safeInvites = invites.map(({ cancellationPinHash, ...rest }) => rest);
+      res.json(safeInvites);
     } catch (error) {
       console.error("Error fetching staff invites:", error);
       res.status(500).json({ error: "Failed to fetch staff invites" });
@@ -2803,6 +2804,81 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("[ORG] Failed to get active SOS alerts:", error);
       res.status(500).json({ error: "Failed to get active SOS alerts" });
+    }
+  });
+
+  app.post("/api/org/lone-worker/:sessionId/supervisor-cancel", requireOrganization, async (req, res) => {
+    try {
+      const orgId = req.orgId || req.userId!;
+      const { sessionId } = req.params;
+      const { cancellationPin, confirmSpoken } = req.body;
+
+      if (!confirmSpoken) {
+        return res.status(400).json({ error: "You must confirm you have spoken to the lone worker" });
+      }
+      if (!cancellationPin || typeof cancellationPin !== "string") {
+        return res.status(400).json({ error: "Cancellation password is required" });
+      }
+
+      const session = await storage.getLoneWorkerSession(sessionId);
+      if (!session) return res.status(404).json({ error: "Session not found" });
+      if (session.organizationId !== orgId) {
+        return res.status(403).json({ error: "Not authorised to cancel this session" });
+      }
+      if (session.status !== "unresponsive" && session.status !== "panic") {
+        return res.status(400).json({ error: "Session is not in an emergency state" });
+      }
+
+      const invite = await organizationStorage.getStaffInviteBySessionId(sessionId);
+      if (!invite) {
+        return res.status(404).json({ error: "Staff invite not found for this session" });
+      }
+
+      const pinHash = await organizationStorage.getCancellationPinHash(invite.id);
+      if (!pinHash) {
+        return res.status(400).json({ error: "No cancellation password has been set for this staff member" });
+      }
+
+      const pinValid = await bcrypt.compare(cancellationPin, pinHash);
+      if (!pinValid) {
+        await storage.createAuditEntry(orgId, {
+          userId: orgId,
+          userEmail: req.user?.email || "unknown",
+          userRole: "organization",
+          action: "supervisor_cancel_failed",
+          entityType: "lone_worker_session",
+          entityId: sessionId,
+          newData: { reason: "incorrect_cancellation_password", staffName: invite.staffName },
+          ipAddress: req.ip || undefined,
+        });
+        return res.status(403).json({ error: "Incorrect cancellation password" });
+      }
+
+      const resolved = await storage.resolveLoneWorkerSession(sessionId, orgId, "safe", "Supervisor confirmed worker is safe — emergency cancelled with cancellation password");
+
+      await storage.createAuditEntry(orgId, {
+        userId: orgId,
+        userEmail: req.user?.email || "unknown",
+        userRole: "organization",
+        action: "supervisor_emergency_cancelled",
+        entityType: "lone_worker_session",
+        entityId: sessionId,
+        newData: {
+          outcome: "safe",
+          cancelledBy: "supervisor",
+          confirmSpoken: true,
+          staffName: invite.staffName,
+          previousStatus: session.status,
+        },
+        previousData: { status: session.status, jobType: session.jobType },
+        ipAddress: req.ip || undefined,
+      });
+
+      console.log(`[LONE WORKER] Supervisor cancelled emergency for session ${sessionId} (staff: ${invite.staffName})`);
+      res.json(resolved);
+    } catch (error: any) {
+      console.error("[LONE WORKER] Supervisor cancel error:", error);
+      res.status(500).json({ error: "Failed to cancel emergency" });
     }
   });
 }

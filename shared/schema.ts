@@ -1348,6 +1348,7 @@ export const organizationStaffInvites = pgTable("organization_staff_invites", {
   supervisorName: text("supervisor_name"),
   supervisorPhone: text("supervisor_phone"),
   supervisorEmail: text("supervisor_email"),
+  cancellationPinHash: text("cancellation_pin_hash"),
   inviteCode: varchar("invite_code", { length: 10 }).notNull().unique(),
   status: text("status").notNull().$type<StaffInviteStatus>().default("pending"),
   acceptedByUserId: varchar("accepted_by_user_id").references(() => users.id, { onDelete: "set null" }),
@@ -1362,6 +1363,7 @@ export const insertStaffInviteSchema = createInsertSchema(organizationStaffInvit
   acceptedByUserId: true,
   acceptedAt: true,
   createdAt: true,
+  cancellationPinHash: true,
 });
 
 export type InsertStaffInvite = z.infer<typeof insertStaffInviteSchema>;

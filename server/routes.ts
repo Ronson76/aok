@@ -736,6 +736,7 @@ export async function registerRoutes(
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(email.toLowerCase());
       const staffInviteCode = req.body.staffInviteCode;
+      const cancellationPin = req.body.cancellationPin;
 
       if (existingUser) {
         // Allow staff invite registrations where the email matches the invite
@@ -761,6 +762,11 @@ export async function registerRoutes(
           if (acceptedInvite) {
             await organizationStorage.incrementBundleSeatsUsed(acceptedInvite.bundleId);
             console.log(`[STAFF INVITE] Existing user ${existingUser.id} accepted staff invite ${staffInviteCode}, bundle ${acceptedInvite.bundleId} seat consumed`);
+            if (cancellationPin && typeof cancellationPin === "string" && cancellationPin.length >= 4) {
+              const pinHash = await bcrypt.hash(cancellationPin, 10);
+              await organizationStorage.setCancellationPinHash(acceptedInvite.id, pinHash);
+              console.log(`[STAFF INVITE] Cancellation PIN set for invite ${acceptedInvite.id}`);
+            }
           }
           if (invite?.emergencyRecordingEnabled) {
             try {
@@ -863,6 +869,11 @@ export async function registerRoutes(
           if (acceptedInvite) {
             await organizationStorage.incrementBundleSeatsUsed(acceptedInvite.bundleId);
             console.log(`[STAFF INVITE] User ${user.id} accepted staff invite ${staffInviteCode}, bundle ${acceptedInvite.bundleId} seat consumed`);
+            if (cancellationPin && typeof cancellationPin === "string" && cancellationPin.length >= 4) {
+              const pinHash = await bcrypt.hash(cancellationPin, 10);
+              await organizationStorage.setCancellationPinHash(acceptedInvite.id, pinHash);
+              console.log(`[STAFF INVITE] Cancellation PIN set for invite ${acceptedInvite.id}`);
+            }
           }
           if (invite?.emergencyRecordingEnabled) {
             try {
