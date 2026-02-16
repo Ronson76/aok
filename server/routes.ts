@@ -3459,6 +3459,24 @@ export async function registerRoutes(
 
   // ==================== LONE WORKER SESSION ROUTES ====================
 
+  app.get("/api/lone-worker/supervisor", authMiddleware, async (req, res) => {
+    try {
+      const user = req.user!;
+      const supervisor = await storage.getStaffSupervisorInfo(user.id);
+      if (!supervisor) {
+        return res.json({ hasSupervisor: false });
+      }
+      res.json({
+        hasSupervisor: true,
+        supervisorName: supervisor.supervisorName,
+        supervisorPhone: supervisor.supervisorPhone,
+        supervisorEmail: supervisor.supervisorEmail,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get supervisor info" });
+    }
+  });
+
   app.post("/api/lone-worker/start", authMiddleware, async (req, res) => {
     try {
       const user = req.user!;
