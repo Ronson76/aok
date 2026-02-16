@@ -289,7 +289,7 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
   const locationInterval = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
-    locationInterval.current = setInterval(() => {
+    const sendLocation = () => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((pos) => {
           apiRequest("POST", `/api/lone-worker/${session.id}/location`, {
@@ -298,7 +298,9 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
           }).catch(() => {});
         }, () => {}, { enableHighAccuracy: true, timeout: 5000 });
       }
-    }, 60000);
+    };
+    sendLocation();
+    locationInterval.current = setInterval(sendLocation, 60000);
     return () => clearInterval(locationInterval.current);
   }, [session.id]);
 

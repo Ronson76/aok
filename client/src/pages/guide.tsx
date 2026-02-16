@@ -279,6 +279,17 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "international-phone-numbers",
+    title: "International phone numbers",
+    content: [
+      "aok supports international phone numbers across the platform.",
+      "When entering a phone number — for your account, emergency contacts, or supervisor details — use the **country code selector** to pick the correct prefix.",
+      "Supported country codes include UK (+44), Ireland (+353), Germany (+49), France (+33), and USA (+1). UK (+44) is the default.",
+      "Leading zeros are automatically removed — so if you type '07700 900123', it will be stored correctly as '+447700900123'.",
+      "This applies to all phone fields including staff invitations, supervisor phone numbers, and emergency contact numbers.",
+    ],
+  },
+  {
     id: "installing-app",
     title: "Installing the app",
     content: [
@@ -288,6 +299,17 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "Once installed, it works just like a native app with offline support, push notifications, and full-screen display.",
       "aok also supports safe-area insets on devices with a notch or rounded corners, so the interface never gets cut off.",
       "A native iOS and Android app is also available via Capacitor for organisations requiring app store distribution.",
+    ],
+  },
+  {
+    id: "live-location-tracking",
+    title: "Live location tracking (lone workers)",
+    content: [
+      "If you're using the lone worker feature, your device automatically sends your GPS location to your supervisor during an active shift.",
+      "Your first position is sent as soon as the shift starts, then updated every 60 seconds.",
+      "Your supervisor can see your live position on a map in the **Live Monitor** — including your exact coordinates and when the location was last updated.",
+      "The map marker changes colour based on your status — green for active, orange if you've missed a check-in, red if you've triggered a panic alert.",
+      "Location data helps your supervisor find you quickly if something goes wrong.",
     ],
   },
   {
@@ -612,6 +634,17 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "**Tier 2 — Complete Wellbeing** includes everything in Tier 1 plus: mood tracking, pet protection, important document storage, wellbeing AI chat, GPS fitness tracking, activities tracker, and emergency recording.",
       "All individual subscribers get Tier 2 (Complete Wellbeing) by default at £16.99/month.",
       "If you're managed by an organisation, your available features may vary depending on what your organisation has enabled for your account.",
+    ],
+  },
+  {
+    id: "supervisor-details",
+    title: "Supervisor details (lone workers)",
+    content: [
+      "If you're part of an organisation's lone worker programme, you may have a designated **supervisor**.",
+      "Your supervisor is the primary person alerted if you miss a check-in or trigger a panic alert during a shift.",
+      "Your organisation sets up your supervisor's details — including their name, phone number, and email address.",
+      "Supervisor phone numbers are verified via SMS to make sure alerts reach the right person.",
+      "You may have a **Call Supervisor** button on your dashboard to quickly ring your supervisor.",
     ],
   },
   {
