@@ -523,42 +523,16 @@ export function registerOrganizationRoutes(app: Express) {
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       supervisorVerificationCodes.set(phone, { code, expiresAt: Date.now() + 10 * 60 * 1000 });
 
-      const { sendAppInviteSMS } = await import("./notifications");
       const smsBody = `aok Supervisor Verification: Your code is ${code}. Enter this code to confirm your mobile number.`;
-      const twilio = await import("twilio");
-      const accountSid = process.env.TWILIO_ACCOUNT_SID;
-      const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
-      const authToken = process.env.TWILIO_AUTH_TOKEN;
-      const apiKey = process.env.TWILIO_API_KEY;
-      const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
 
-      let smsSent = false;
-      if (accountSid && phoneNumber) {
-        try {
-          let client;
-          if (apiKey && apiKeySecret) {
-            client = twilio.default(apiKey, apiKeySecret, { accountSid });
-          } else if (authToken) {
-            client = twilio.default(accountSid, authToken);
-          }
-          if (client) {
-            await client.messages.create({
-              body: smsBody,
-              from: phoneNumber,
-              to: phone,
-            });
-            smsSent = true;
-          }
-        } catch (smsErr: any) {
-          console.error("[ORG] Failed to send supervisor verification SMS:", smsErr.message);
-        }
-      }
+      const { sendVerificationSMS } = await import("./notifications");
+      const result = await sendVerificationSMS(phone, smsBody);
 
-      if (!smsSent) {
+      if (!result.success) {
         console.log(`[ORG] Supervisor verification code for ${phone}: ${code}`);
       }
 
-      res.json({ success: true, smsSent });
+      res.json({ success: true, smsSent: result.success });
     } catch (error) {
       console.error("[ORG] Failed to send supervisor verification:", error);
       res.status(500).json({ error: "Failed to send verification SMS" });
