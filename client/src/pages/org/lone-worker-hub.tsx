@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/password-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
@@ -308,6 +309,10 @@ export default function OrgLoneWorkerHub() {
   const [editSupervisorSmsSent, setEditSupervisorSmsSent] = useState(false);
   const [expandedLocationSession, setExpandedLocationSession] = useState<string | null>(null);
   const [expandedStaffLocation, setExpandedStaffLocation] = useState<string | null>(null);
+  const [cancelEmergencySession, setCancelEmergencySession] = useState<any | null>(null);
+  const [cancelPin, setCancelPin] = useState("");
+  const [cancelConfirmSpoken, setCancelConfirmSpoken] = useState(false);
+  const [cancelPinError, setCancelPinError] = useState("");
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importStep, setImportStep] = useState<"upload" | "preview" | "importing" | "results">("upload");
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -459,6 +464,32 @@ export default function OrgLoneWorkerHub() {
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const supervisorCancelMutation = useMutation({
+    mutationFn: async (data: { sessionId: string; cancellationPin: string; confirmSpoken: boolean }) => {
+      const res = await apiRequest("POST", `/api/org/lone-worker/${data.sessionId}/supervisor-cancel`, {
+        cancellationPin: data.cancellationPin,
+        confirmSpoken: data.confirmSpoken,
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to cancel emergency");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/staff/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/staff/audit-trail"] });
+      setCancelEmergencySession(null);
+      setCancelPin("");
+      setCancelConfirmSpoken(false);
+      setCancelPinError("");
+      toast({ title: "Emergency cancelled", description: "The session has been resolved as safe." });
+    },
+    onError: (error: Error) => {
+      setCancelPinError(error.message);
     },
   });
 
@@ -1043,20 +1074,37 @@ export default function OrgLoneWorkerHub() {
                           )}
                         </div>
                       )}
-                      {s.status === "unresponsive" && (
-                        <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-950 rounded text-sm text-orange-700 dark:text-orange-300 flex items-center gap-2 flex-wrap">
-                          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                          <span>Missed check-in — staff member unresponsive</span>
-                          {s.lastLocationLat && s.lastLocationLng && (
-                            <a
-                              href={`https://maps.google.com/?q=${s.lastLocationLat},${s.lastLocationLng}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="ml-auto underline flex items-center gap-1"
-                            >
-                              <MapPin className="w-3 h-3" /> Last Known Location
-                            </a>
-                          )}
+                      {(s.status === "unresponsive" || s.status === "panic") && (
+                        <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-950 rounded text-sm text-orange-700 dark:text-orange-300 space-y-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                            <span>{s.status === "panic" ? "Panic triggered" : "Missed check-in — staff member unresponsive"}</span>
+                            {s.lastLocationLat && s.lastLocationLng && (
+                              <a
+                                href={`https://maps.google.com/?q=${s.lastLocationLat},${s.lastLocationLng}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ml-auto underline flex items-center gap-1"
+                              >
+                                <MapPin className="w-3 h-3" /> Last Known Location
+                              </a>
+                            )}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-orange-400 text-orange-700 dark:text-orange-300"
+                            onClick={() => {
+                              setCancelEmergencySession(s);
+                              setCancelPin("");
+                              setCancelConfirmSpoken(false);
+                              setCancelPinError("");
+                            }}
+                            data-testid={`button-cancel-emergency-${s.id}`}
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
+                            Cancel Emergency
+                          </Button>
                         </div>
                       )}
                       <div className="mt-3 flex items-center gap-2">
@@ -1736,6 +1784,84 @@ export default function OrgLoneWorkerHub() {
             <Button variant="destructive" onClick={() => { if (showDeleteConfirm) deleteMutation.mutate(showDeleteConfirm); }} disabled={deleteMutation.isPending} data-testid="button-confirm-delete">
               {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!cancelEmergencySession} onOpenChange={(open) => {
+        if (!open) {
+          setCancelEmergencySession(null);
+          setCancelPin("");
+          setCancelConfirmSpoken(false);
+          setCancelPinError("");
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" />
+              Cancel Emergency
+            </DialogTitle>
+            <DialogDescription>
+              Cancel the emergency for <strong>{cancelEmergencySession?.userName}</strong>. You must confirm you have spoken to the lone worker and verify their cancellation password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="flex items-start gap-3 p-3 rounded border bg-muted/30">
+              <input
+                type="checkbox"
+                id="confirm-spoken"
+                checked={cancelConfirmSpoken}
+                onChange={(e) => { setCancelConfirmSpoken(e.target.checked); setCancelPinError(""); }}
+                className="mt-1 h-5 w-5 rounded border-muted-foreground accent-primary"
+                data-testid="checkbox-confirm-spoken"
+              />
+              <label htmlFor="confirm-spoken" className="text-sm cursor-pointer">
+                I confirm that I have spoken directly to <strong>{cancelEmergencySession?.userName}</strong> and they have confirmed they are safe and well.
+              </label>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Staff Member's Cancellation Password</Label>
+              <PasswordInput
+                placeholder="Enter the cancellation password"
+                value={cancelPin}
+                onChange={(e) => { setCancelPin(e.target.value); setCancelPinError(""); }}
+                data-testid="input-cancel-pin"
+              />
+              <p className="text-xs text-muted-foreground">
+                This is the password the staff member created when they set up their account.
+              </p>
+            </div>
+            {cancelPinError && (
+              <p className="text-sm text-destructive" role="alert" data-testid="text-cancel-pin-error">{cancelPinError}</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelEmergencySession(null)} data-testid="button-cancel-emergency-dismiss">
+              Go Back
+            </Button>
+            <Button
+              disabled={!cancelConfirmSpoken || !cancelPin || supervisorCancelMutation.isPending}
+              onClick={() => {
+                if (!cancelConfirmSpoken) {
+                  setCancelPinError("You must confirm you have spoken to the worker");
+                  return;
+                }
+                if (!cancelPin) {
+                  setCancelPinError("Please enter the cancellation password");
+                  return;
+                }
+                supervisorCancelMutation.mutate({
+                  sessionId: cancelEmergencySession.id,
+                  cancellationPin: cancelPin,
+                  confirmSpoken: cancelConfirmSpoken,
+                });
+              }}
+              data-testid="button-confirm-cancel-emergency"
+            >
+              {supervisorCancelMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ShieldCheck className="h-4 w-4 mr-2" />}
+              Confirm & Cancel Emergency
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -661,6 +661,18 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "cancellation-password",
+    title: "Cancellation password (lone workers)",
+    content: [
+      "When you register as a lone worker staff member, you'll be asked to create a **cancellation password**.",
+      "This is a separate password from your login password — it's used as a security measure for **emergency cancellations**.",
+      "If you become unresponsive during a shift, your supervisor can cancel the emergency by confirming they've spoken to you and entering your cancellation password.",
+      "Your supervisor will ask you for this password over the phone to verify that you're genuinely safe.",
+      "This prevents anyone from cancelling an emergency without your knowledge.",
+      "The cancellation password must be at least 4 characters long. Choose something memorable but not easily guessable.",
+    ],
+  },
+  {
     id: "subscription-status",
     title: "Subscription status",
     content: [
