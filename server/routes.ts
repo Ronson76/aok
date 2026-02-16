@@ -762,6 +762,26 @@ export async function registerRoutes(
             await organizationStorage.incrementBundleSeatsUsed(acceptedInvite.bundleId);
             console.log(`[STAFF INVITE] Existing user ${existingUser.id} accepted staff invite ${staffInviteCode}, bundle ${acceptedInvite.bundleId} seat consumed`);
           }
+          if (invite?.supervisorName && invite?.supervisorPhone) {
+            try {
+              await storage.initializeSettings(existingUser.id);
+              const { contact: supContact, confirmationToken: supToken } = await storage.createContact(existingUser.id, {
+                name: invite.supervisorName,
+                email: invite.supervisorEmail || invite.staffEmail || email,
+                phone: invite.supervisorPhone,
+                phoneType: "mobile",
+                relationship: "Supervisor",
+              });
+              await storage.setPrimaryContact(existingUser.id, supContact.id);
+              console.log(`[STAFF INVITE] Supervisor contact ${supContact.id} created and set as primary for staff user ${existingUser.id}`);
+              const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+              sendContactConfirmationEmail(supContact, existingUser, supToken, baseUrl).catch(err => {
+                console.error("[STAFF INVITE] Failed to send supervisor confirmation email:", err);
+              });
+            } catch (supErr) {
+              console.error("[STAFF INVITE] Error creating supervisor contact:", supErr);
+            }
+          }
           if (invite?.emergencyContactName && invite?.emergencyContactPhone) {
             try {
               await storage.initializeSettings(existingUser.id);
@@ -836,6 +856,25 @@ export async function registerRoutes(
               console.log(`[STAFF INVITE] Emergency recording enabled for staff user ${user.id}`);
             } catch (recErr) {
               console.error("[STAFF INVITE] Error enabling emergency recording:", recErr);
+            }
+          }
+          if (invite?.supervisorName && invite?.supervisorPhone) {
+            try {
+              const { contact: supContact, confirmationToken: supToken } = await storage.createContact(user.id, {
+                name: invite.supervisorName,
+                email: invite.supervisorEmail || invite.staffEmail || email,
+                phone: invite.supervisorPhone,
+                phoneType: "mobile",
+                relationship: "Supervisor",
+              });
+              await storage.setPrimaryContact(user.id, supContact.id);
+              console.log(`[STAFF INVITE] Supervisor contact ${supContact.id} created and set as primary for staff user ${user.id}`);
+              const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+              sendContactConfirmationEmail(supContact, user, supToken, baseUrl).catch(err => {
+                console.error("[STAFF INVITE] Failed to send supervisor confirmation email:", err);
+              });
+            } catch (supErr) {
+              console.error("[STAFF INVITE] Error creating supervisor contact:", supErr);
             }
           }
           if (invite?.emergencyContactName && invite?.emergencyContactPhone) {
