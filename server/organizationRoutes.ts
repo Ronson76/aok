@@ -2066,6 +2066,9 @@ export function registerOrganizationRoutes(app: Express) {
     emergencyContactEmail: z.string().email("Valid email is required").min(1, "Emergency contact email is required"),
     emergencyContactRelationship: z.string().min(1, "Emergency contact relationship is required"),
     emergencyRecordingEnabled: z.boolean().optional().default(false),
+    supervisorName: z.string().optional().default(""),
+    supervisorPhone: z.string().optional().default(""),
+    supervisorEmail: z.string().optional().default(""),
   });
 
   app.get("/api/org/staff/invites", requireOrganization, async (req, res) => {
@@ -2089,7 +2092,7 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid data" });
       }
 
-      const { staffName, staffPhone, staffEmail, bundleId, emergencyContactName, emergencyContactPhone, emergencyContactEmail, emergencyContactRelationship, emergencyRecordingEnabled } = parsed.data;
+      const { staffName, staffPhone, staffEmail, bundleId, emergencyContactName, emergencyContactPhone, emergencyContactEmail, emergencyContactRelationship, emergencyRecordingEnabled, supervisorName, supervisorPhone, supervisorEmail } = parsed.data;
 
       const stats = await organizationStorage.getOrganizationDashboardStats(orgId);
       const bundle = stats.bundles.find(b => b.id === bundleId);
@@ -2114,6 +2117,9 @@ export function registerOrganizationRoutes(app: Express) {
         emergencyContactRelationship,
         emergencyRecordingEnabled: emergencyRecordingEnabled ?? false,
         inviteCode,
+        supervisorName: supervisorName || null,
+        supervisorPhone: supervisorPhone || null,
+        supervisorEmail: supervisorEmail || null,
       });
 
       await storage.createAuditEntry(orgId, {

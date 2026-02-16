@@ -3541,7 +3541,7 @@ export interface IOrganizationStorage {
   }[]>;
   
   // Staff invites
-  createStaffInvite(data: { organizationId: string; bundleId: string; staffName: string; staffPhone: string; staffEmail?: string; inviteCode: string; emergencyContactName?: string; emergencyContactPhone?: string; emergencyContactEmail?: string; emergencyContactRelationship?: string }): Promise<OrganizationStaffInvite>;
+  createStaffInvite(data: { organizationId: string; bundleId: string; staffName: string; staffPhone: string; staffEmail?: string; inviteCode: string; emergencyContactName?: string; emergencyContactPhone?: string; emergencyContactEmail?: string; emergencyContactRelationship?: string; emergencyRecordingEnabled?: boolean; supervisorName?: string | null; supervisorPhone?: string | null; supervisorEmail?: string | null }): Promise<OrganizationStaffInvite>;
   getStaffInvites(organizationId: string): Promise<OrganizationStaffInvite[]>;
   getStaffInviteByCode(inviteCode: string): Promise<OrganizationStaffInvite | undefined>;
   updateStaffInviteDetails(inviteId: string, organizationId: string, data: { staffName?: string; staffPhone?: string; staffEmail?: string }): Promise<OrganizationStaffInvite | undefined>;
@@ -4735,7 +4735,7 @@ class OrganizationStorage implements IOrganizationStorage {
     );
   }
 
-  async createStaffInvite(data: { organizationId: string; bundleId: string; staffName: string; staffPhone: string; staffEmail?: string; inviteCode: string; emergencyContactName?: string; emergencyContactPhone?: string; emergencyContactEmail?: string; emergencyContactRelationship?: string }): Promise<OrganizationStaffInvite> {
+  async createStaffInvite(data: { organizationId: string; bundleId: string; staffName: string; staffPhone: string; staffEmail?: string; inviteCode: string; emergencyContactName?: string; emergencyContactPhone?: string; emergencyContactEmail?: string; emergencyContactRelationship?: string; emergencyRecordingEnabled?: boolean; supervisorName?: string | null; supervisorPhone?: string | null; supervisorEmail?: string | null }): Promise<OrganizationStaffInvite> {
     const [invite] = await getDb().insert(organizationStaffInvites).values({
       organizationId: data.organizationId,
       bundleId: data.bundleId,
@@ -4747,6 +4747,10 @@ class OrganizationStorage implements IOrganizationStorage {
       emergencyContactPhone: data.emergencyContactPhone || null,
       emergencyContactEmail: data.emergencyContactEmail || null,
       emergencyContactRelationship: data.emergencyContactRelationship || null,
+      emergencyRecordingEnabled: data.emergencyRecordingEnabled ?? false,
+      supervisorName: data.supervisorName || null,
+      supervisorPhone: data.supervisorPhone || null,
+      supervisorEmail: data.supervisorEmail || null,
     }).returning();
     return invite;
   }
