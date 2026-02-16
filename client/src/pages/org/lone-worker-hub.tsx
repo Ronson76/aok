@@ -201,7 +201,13 @@ export default function OrgLoneWorkerHub() {
   }, [resetInactivityTimer]);
 
   const handleLogout = async () => {
-    await logout();
+    try {
+      await fetch("/api/org-member/logout", { method: "POST", credentials: "include" });
+    } catch (e) {}
+    try {
+      await logout();
+    } catch (e) {}
+    queryClient.clear();
     setLocation("/org/login");
   };
 
