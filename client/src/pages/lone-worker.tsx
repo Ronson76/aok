@@ -395,6 +395,7 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
   const [resolveNotes, setResolveNotes] = useState("");
   const [checkInDue, setCheckInDue] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showShiftDetails, setShowShiftDetails] = useState(false);
 
   const isPanic = session.status === "panic";
   const isUnresponsive = session.status === "unresponsive";
@@ -539,35 +540,20 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
       )}
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center justify-between flex-wrap gap-2">
-            <span className="flex items-center gap-2"><Radio className="w-4 h-4" /> Active Session</span>
-            {getStatusBadge(session.status)}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-muted-foreground">Job Type</p>
-              <p className="font-medium" data-testid="text-job-type">{JOB_TYPES.find(j => j.value === session.jobType)?.label || session.jobType}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Started</p>
-              <p className="font-medium" data-testid="text-started">{session.startedAt ? format(new Date(session.startedAt), "HH:mm") : "—"}</p>
-            </div>
-            {session.jobDescription && (
-              <div className="col-span-2">
-                <p className="text-muted-foreground">Description</p>
-                <p className="font-medium" data-testid="text-description">{session.jobDescription}</p>
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <Radio className="w-5 h-5" />
+              <div>
+                <p className="text-sm font-medium">{JOB_TYPES.find(j => j.value === session.jobType)?.label || session.jobType}</p>
+                <p className="text-xs text-muted-foreground">Started {session.startedAt ? format(new Date(session.startedAt), "HH:mm") : "—"}</p>
               </div>
-            )}
-            <div>
-              <p className="text-muted-foreground">Duration</p>
-              <p className="font-medium">{session.expectedDurationMins} mins</p>
             </div>
-            <div>
-              <p className="text-muted-foreground">Check-in Every</p>
-              <p className="font-medium">{session.checkInIntervalMins} mins</p>
+            <div className="flex items-center gap-2">
+              {getStatusBadge(session.status)}
+              <Button variant="outline" size="sm" onClick={() => setShowShiftDetails(true)} data-testid="button-shift-details">
+                <Eye className="w-4 h-4 mr-1" /> Shift Details
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -760,6 +746,111 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
             >
               {resolveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "End Shift"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showShiftDetails} onOpenChange={setShowShiftDetails}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Shift Details</DialogTitle>
+            <DialogDescription>Full details of your current shift.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground">Status</p>
+                <div className="mt-1">{getStatusBadge(session.status)}</div>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Job Type</p>
+                <p className="font-medium" data-testid="text-detail-job-type">{JOB_TYPES.find(j => j.value === session.jobType)?.label || session.jobType}</p>
+              </div>
+              {session.jobDescription && (
+                <div className="col-span-2">
+                  <p className="text-muted-foreground">Description</p>
+                  <p className="font-medium" data-testid="text-detail-description">{session.jobDescription}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-muted-foreground">Started</p>
+                <p className="font-medium" data-testid="text-detail-started">{session.startedAt ? format(new Date(session.startedAt), "dd/MM/yyyy HH:mm") : "—"}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Expected Duration</p>
+                <p className="font-medium">{session.expectedDurationMins} mins</p>
+              </div>
+              {session.expectedEndAt && (
+                <div>
+                  <p className="text-muted-foreground">Expected End</p>
+                  <p className="font-medium">{format(new Date(session.expectedEndAt), "HH:mm")}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-muted-foreground">Check-in Interval</p>
+                <p className="font-medium">Every {session.checkInIntervalMins} mins</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Grace Window</p>
+                <p className="font-medium">{session.graceWindowSecs ? `${Math.floor(session.graceWindowSecs / 60)} mins` : "2 mins"}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Last Check-in</p>
+                <p className="font-medium">{session.lastCheckInAt ? format(new Date(session.lastCheckInAt), "HH:mm") : "None yet"}</p>
+              </div>
+              {session.nextCheckInDue && (
+                <div>
+                  <p className="text-muted-foreground">Next Check-in Due</p>
+                  <p className="font-medium">{format(new Date(session.nextCheckInDue), "HH:mm")}</p>
+                </div>
+              )}
+              {session.lastLocationLat && session.lastLocationLng && (
+                <div className="col-span-2">
+                  <p className="text-muted-foreground">Last Known Location</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <MapPin className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    <span className="font-medium text-xs">{parseFloat(session.lastLocationLat).toFixed(6)}, {parseFloat(session.lastLocationLng).toFixed(6)}</span>
+                    <a
+                      href={`https://maps.google.com/?q=${session.lastLocationLat},${session.lastLocationLng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline text-xs ml-auto"
+                      data-testid="link-detail-google-maps"
+                    >
+                      View on Map
+                    </a>
+                  </div>
+                  {session.lastLocationAt && (
+                    <p className="text-xs text-muted-foreground mt-1">Updated {formatDistanceToNow(new Date(session.lastLocationAt), { addSuffix: true })}</p>
+                  )}
+                </div>
+              )}
+              {session.locationAddress && (
+                <div className="col-span-2">
+                  <p className="text-muted-foreground">Start Address</p>
+                  <p className="font-medium">{session.locationAddress}</p>
+                </div>
+              )}
+              {session.what3words && (
+                <div className="col-span-2">
+                  <p className="text-muted-foreground">what3words</p>
+                  <p className="font-medium">
+                    <a href={`https://what3words.com/${session.what3words}`} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                      ///{session.what3words}
+                    </a>
+                  </p>
+                </div>
+              )}
+              {isPanic && session.panicTriggeredAt && (
+                <div className="col-span-2">
+                  <p className="text-muted-foreground text-red-600">Panic Triggered</p>
+                  <p className="font-medium text-red-600">{format(new Date(session.panicTriggeredAt), "dd/MM/yyyy HH:mm:ss")}</p>
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowShiftDetails(false)} data-testid="button-close-shift-details">Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
