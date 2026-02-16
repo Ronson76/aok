@@ -600,7 +600,7 @@ export default function Dashboard() {
       }
       toast({
         title: "Red Alert Mode Deactivated",
-        description: "Your emergency alert has been cancelled. Location sharing has stopped.",
+        description: "Your emergency alert has been cancelled and location sharing has stopped.",
       });
     },
     onError: (error: any) => {
@@ -686,8 +686,9 @@ export default function Dashboard() {
         emergencyRecording.stopRecording();
       }
       toast({
-        title: "Emergency Alert Deactivated",
-        description: "Your contacts have been notified that you are safe.",
+        title: "Deactivation Request Sent",
+        description: "We've alerted your contacts. Once one of them confirms you're safe, the emergency will be fully deactivated.",
+        duration: 10000,
       });
     },
     onError: (error: any) => {

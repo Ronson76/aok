@@ -396,7 +396,7 @@ export default function Settings() {
   });
 
   const deleteRecordingMutation = useMutation({
-    mutationFn: async (recordingId: number) => {
+    mutationFn: async (recordingId: string) => {
       const res = await apiRequest("DELETE", `/api/emergency/recordings/${recordingId}`);
       return res.json();
     },
@@ -409,7 +409,8 @@ export default function Settings() {
     },
   });
 
-  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [playingRecordingId, setPlayingRecordingId] = useState<string | null>(null);
 
   // Track if user is actively changing the interval
   const [isChangingInterval, setIsChangingInterval] = useState(false);
@@ -955,9 +956,9 @@ export default function Settings() {
                           <span className="text-xs text-muted-foreground">
                             {recording.durationSeconds ? `${Math.floor(recording.durationSeconds / 60)}m ${recording.durationSeconds % 60}s` : "Unknown duration"}
                           </span>
-                          {recording.fileSizeBytes && (
+                          {recording.fileSize && (
                             <span className="text-xs text-muted-foreground">
-                              {(recording.fileSizeBytes / (1024 * 1024)).toFixed(1)} MB
+                              {(recording.fileSize / (1024 * 1024)).toFixed(1)} MB
                             </span>
                           )}
                           <Badge variant={recording.status === "ready" ? "secondary" : recording.status === "uploading" ? "outline" : "destructive"}>
@@ -968,16 +969,26 @@ export default function Settings() {
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       {recording.status === "ready" && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            window.open(`/api/emergency/recordings/${recording.id}/download`, "_blank");
-                          }}
-                          data-testid={`button-download-recording-${recording.id}`}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
+                        <>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setPlayingRecordingId(recording.id)}
+                            data-testid={`button-play-recording-${recording.id}`}
+                          >
+                            <Play className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              window.open(`/api/emergency/recordings/${recording.id}/download`, "_blank");
+                            }}
+                            data-testid={`button-download-recording-${recording.id}`}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </>
                       )}
                       <Button
                         size="icon"
@@ -1029,6 +1040,52 @@ export default function Settings() {
               {deleteRecordingMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Delete
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={playingRecordingId !== null} onOpenChange={(open) => !open && setPlayingRecordingId(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Emergency Recording</DialogTitle>
+            <DialogDescription>
+              {playingRecordingId && recordings?.find(r => r.id === playingRecordingId) && (
+                <>Recorded {format(new Date(recordings.find(r => r.id === playingRecordingId)!.createdAt!), "dd MMM yyyy, HH:mm")}</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="w-full">
+            {playingRecordingId && (
+              <video
+                key={playingRecordingId}
+                controls
+                autoPlay
+                playsInline
+                className="w-full rounded-md bg-black"
+                style={{ maxHeight: "60vh" }}
+                data-testid="video-recording-player"
+              >
+                <source src={`/api/emergency/recordings/${playingRecordingId}/stream`} type="video/webm" />
+                <source src={`/api/emergency/recordings/${playingRecordingId}/stream`} type="video/mp4" />
+                Your browser does not support video playback.
+              </video>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setPlayingRecordingId(null)} data-testid="button-close-player">
+              Close
+            </Button>
+            {playingRecordingId && (
+              <Button
+                onClick={() => {
+                  window.open(`/api/emergency/recordings/${playingRecordingId}/download`, "_blank");
+                }}
+                data-testid="button-download-from-player"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
