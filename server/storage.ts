@@ -3544,6 +3544,7 @@ export interface IOrganizationStorage {
   createStaffInvite(data: { organizationId: string; bundleId: string; staffName: string; staffPhone: string; staffEmail?: string; inviteCode: string; emergencyContactName?: string; emergencyContactPhone?: string; emergencyContactEmail?: string; emergencyContactRelationship?: string; emergencyRecordingEnabled?: boolean; supervisorName?: string | null; supervisorPhone?: string | null; supervisorEmail?: string | null }): Promise<OrganizationStaffInvite>;
   getStaffInvites(organizationId: string): Promise<OrganizationStaffInvite[]>;
   getStaffInviteByCode(inviteCode: string): Promise<OrganizationStaffInvite | undefined>;
+  getStaffInviteByUserId(userId: string): Promise<OrganizationStaffInvite | undefined>;
   updateStaffInviteDetails(inviteId: string, organizationId: string, data: { staffName?: string; staffPhone?: string; staffEmail?: string }): Promise<OrganizationStaffInvite | undefined>;
   revokeStaffInvite(inviteId: string, organizationId: string): Promise<boolean>;
   deleteStaffInvite(inviteId: string, organizationId: string): Promise<boolean>;
@@ -4768,6 +4769,17 @@ class OrganizationStorage implements IOrganizationStorage {
       .select()
       .from(organizationStaffInvites)
       .where(eq(organizationStaffInvites.inviteCode, inviteCode.toUpperCase()));
+    return invite;
+  }
+
+  async getStaffInviteByUserId(userId: string): Promise<OrganizationStaffInvite | undefined> {
+    const [invite] = await getDb()
+      .select()
+      .from(organizationStaffInvites)
+      .where(and(
+        eq(organizationStaffInvites.acceptedByUserId, userId),
+        eq(organizationStaffInvites.status, "accepted"),
+      ));
     return invite;
   }
 

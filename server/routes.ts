@@ -1789,33 +1789,51 @@ export async function registerRoutes(
     try {
       const userId = req.userId!;
       const user = await storage.getUserById(userId);
-      if (!user || !user.referenceId) {
-        return res.status(403).json({ error: "Only organisation-managed clients can use this feature" });
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      let supervisorPhone: string | null = null;
+      let callerName = user.name || "A staff member";
+      let supervisorDisplayName = "your supervisor";
+      let orgId: string | null = null;
+
+      // Check org client system first (referenceId)
+      if (user.referenceId) {
+        const orgClient = await organizationStorage.getClientByReferenceCode(user.referenceId);
+        if (orgClient) {
+          const org = await storage.getUserById(orgClient.organizationId);
+          if (org) {
+            supervisorPhone = orgClient.supervisorPhone || org.mobileNumber;
+            callerName = user.name || orgClient.clientName || "A client";
+            supervisorDisplayName = orgClient.supervisorName || "your supervisor";
+            orgId = orgClient.organizationId;
+          }
+        }
       }
 
-      const orgClient = await organizationStorage.getClientByReferenceCode(user.referenceId);
-      if (!orgClient) {
-        return res.status(404).json({ error: "Organisation record not found" });
+      // Check staff invite system (lone worker staff)
+      if (!supervisorPhone) {
+        const staffInvite = await organizationStorage.getStaffInviteByUserId(userId);
+        if (staffInvite) {
+          const org = await storage.getUserById(staffInvite.organizationId);
+          if (org) {
+            supervisorPhone = staffInvite.supervisorPhone || org.mobileNumber;
+            callerName = user.name || staffInvite.staffName || "A staff member";
+            supervisorDisplayName = staffInvite.supervisorName || "your supervisor";
+            orgId = staffInvite.organizationId;
+          }
+        }
       }
 
-      const org = await storage.getUserById(orgClient.organizationId);
-      if (!org) {
-        return res.status(404).json({ error: "Organisation not found" });
-      }
-
-      const supervisorPhone = orgClient.supervisorPhone || org.mobileNumber;
       if (!supervisorPhone) {
         return res.status(400).json({ error: "Your organisation has not set up a phone number for supervisor calls" });
       }
 
-      const callerName = user.name || orgClient.clientName || "A client";
-      const supervisorDisplayName = orgClient.supervisorName || "your supervisor";
       const message = `Hello, this is a call from A O K on behalf of ${callerName}. They are trying to reach ${supervisorDisplayName}. Please call them back or check on them in the A O K dashboard.`;
 
       const result = await makeVoiceCall(supervisorPhone, message);
 
       if (result.success) {
-        console.log(`[CALL SUPERVISOR] ${callerName} (${userId}) called supervisor at org ${orgClient.organizationId}`);
+        console.log(`[CALL SUPERVISOR] ${callerName} (${userId}) called supervisor at org ${orgId}`);
         res.json({ success: true, message: "Call placed to your supervisor" });
       } else {
         console.error(`[CALL SUPERVISOR] Failed:`, result.error);
@@ -1832,27 +1850,41 @@ export async function registerRoutes(
     try {
       const userId = req.userId!;
       const user = await storage.getUserById(userId);
-      if (!user || !user.referenceId) {
-        return res.status(403).json({ error: "Only organisation-managed clients can use this feature" });
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      // Check org client system first (referenceId)
+      if (user.referenceId) {
+        const orgClient = await organizationStorage.getClientByReferenceCode(user.referenceId);
+        if (orgClient) {
+          const org = await storage.getUserById(orgClient.organizationId);
+          if (org) {
+            const supervisorPhone = orgClient.supervisorPhone || org.mobileNumber;
+            return res.json({
+              organizationName: org.name,
+              hasPhoneNumber: !!supervisorPhone,
+              supervisorName: orgClient.supervisorName || null,
+              supervisorPhone: orgClient.supervisorPhone || null,
+            });
+          }
+        }
       }
 
-      const orgClient = await organizationStorage.getClientByReferenceCode(user.referenceId);
-      if (!orgClient) {
-        return res.status(404).json({ error: "Organisation record not found" });
+      // Check staff invite system (lone worker staff)
+      const staffInvite = await organizationStorage.getStaffInviteByUserId(userId);
+      if (staffInvite) {
+        const org = await storage.getUserById(staffInvite.organizationId);
+        if (org) {
+          const supervisorPhone = staffInvite.supervisorPhone || org.mobileNumber;
+          return res.json({
+            organizationName: org.name,
+            hasPhoneNumber: !!supervisorPhone,
+            supervisorName: staffInvite.supervisorName || null,
+            supervisorPhone: staffInvite.supervisorPhone || null,
+          });
+        }
       }
 
-      const org = await storage.getUserById(orgClient.organizationId);
-      if (!org) {
-        return res.status(404).json({ error: "Organisation not found" });
-      }
-
-      const supervisorPhone = orgClient.supervisorPhone || org.mobileNumber;
-      res.json({
-        organizationName: org.name,
-        hasPhoneNumber: !!supervisorPhone,
-        supervisorName: orgClient.supervisorName || null,
-        supervisorPhone: orgClient.supervisorPhone || null,
-      });
+      return res.json({ organizationName: null, hasPhoneNumber: false, supervisorName: null, supervisorPhone: null });
     } catch (error) {
       console.error("[SUPERVISOR INFO] Error:", error);
       res.status(500).json({ error: "Failed to get supervisor info" });
