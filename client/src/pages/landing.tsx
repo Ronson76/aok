@@ -32,10 +32,10 @@ import { useAuth } from "@/contexts/auth-context";
 import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_animation.mp4";
 import alertsVideo from "@assets/generated_videos/english_sms_alert_notification.mp4";
 
-const TIER1_MONTHLY_PRICE = 6.99;
-const TIER1_YEARLY_PRICE = 69.99;
-const TIER2_MONTHLY_PRICE = 9.99;
-const TIER2_YEARLY_PRICE = 99.99;
+const TIER1_MONTHLY_PRICE = 9.99;
+const TIER1_YEARLY_PRICE = 99.99;
+const TIER2_MONTHLY_PRICE = 16.99;
+const TIER2_YEARLY_PRICE = 169.99;
 
 interface EcologiImpact {
   trees: number;
