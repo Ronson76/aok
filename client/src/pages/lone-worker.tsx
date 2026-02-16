@@ -19,6 +19,73 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { formatDistanceToNow, format, differenceInSeconds } from "date-fns";
 import type { LoneWorkerSession } from "@shared/schema";
 
+let sharedAudioContext: AudioContext | null = null;
+
+function playLoneWorkerAlarm() {
+  try {
+    if (!sharedAudioContext) {
+      sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (sharedAudioContext.state === 'suspended') {
+      sharedAudioContext.resume();
+    }
+    const ctx = sharedAudioContext!;
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.5);
+      setTimeout(() => {
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.frequency.value = 1100;
+        osc2.type = 'sine';
+        gain2.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc2.start(ctx.currentTime);
+        osc2.stop(ctx.currentTime + 0.5);
+      }, 300);
+    } catch {}
+  } catch (e) {
+    console.error('[LW Audio] Failed to play alarm:', e);
+  }
+}
+
+const LW_ALARM_STORAGE_KEY = 'aok_lw_last_alarm_due_time';
+const LW_ALARM_DEBOUNCE_KEY = 'aok_lw_last_alarm_timestamp';
+const LW_ALARM_DEBOUNCE_MS = 60000;
+
+function getLwLastAlarmedDueTime(): string | null {
+  try { return localStorage.getItem(LW_ALARM_STORAGE_KEY); } catch { return null; }
+}
+function wasLwAlarmPlayedRecently(): boolean {
+  try {
+    const lastPlayed = localStorage.getItem(LW_ALARM_DEBOUNCE_KEY);
+    if (!lastPlayed) return false;
+    return Date.now() - parseInt(lastPlayed, 10) < LW_ALARM_DEBOUNCE_MS;
+  } catch { return false; }
+}
+function markLwAlarmPlayed() {
+  try { localStorage.setItem(LW_ALARM_DEBOUNCE_KEY, Date.now().toString()); } catch {}
+}
+function setLwLastAlarmedDueTime(dueTime: string | undefined | null) {
+  try {
+    if (!dueTime) return;
+    localStorage.setItem(LW_ALARM_STORAGE_KEY, dueTime);
+  } catch {}
+}
+function clearLwLastAlarmedDueTime() {
+  try { localStorage.removeItem(LW_ALARM_STORAGE_KEY); } catch {}
+}
+
 const JOB_TYPES: { value: string; label: string }[] = [
   { value: "visit", label: "Home Visit" },
   { value: "inspection", label: "Site Inspection" },
@@ -402,6 +469,46 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
   const isDue = session.status === "check_in_due" || checkInDue;
 
   const locationInterval = useRef<ReturnType<typeof setInterval>>();
+  const alarmIntervalRef = useRef<ReturnType<typeof setInterval>>();
+  const hasPlayedInitialAlarm = useRef(false);
+
+  useEffect(() => {
+    if (alarmIntervalRef.current) {
+      clearInterval(alarmIntervalRef.current);
+      alarmIntervalRef.current = undefined;
+    }
+
+    const currentDueTime = session.nextCheckInDue;
+
+    if ((isDue || isUnresponsive) && currentDueTime) {
+      const lastAlarmedDueTime = getLwLastAlarmedDueTime();
+      const alreadyAlarmed = lastAlarmedDueTime === currentDueTime;
+      const recentlyPlayed = wasLwAlarmPlayedRecently();
+
+      if (!hasPlayedInitialAlarm.current && !alreadyAlarmed && !recentlyPlayed) {
+        hasPlayedInitialAlarm.current = true;
+        setLwLastAlarmedDueTime(currentDueTime);
+        markLwAlarmPlayed();
+        playLoneWorkerAlarm();
+      } else if (alreadyAlarmed || recentlyPlayed) {
+        hasPlayedInitialAlarm.current = true;
+      }
+
+      alarmIntervalRef.current = setInterval(() => {
+        playLoneWorkerAlarm();
+      }, 5000);
+    } else if (!isDue && !isUnresponsive) {
+      hasPlayedInitialAlarm.current = false;
+      clearLwLastAlarmedDueTime();
+    }
+
+    return () => {
+      if (alarmIntervalRef.current) {
+        clearInterval(alarmIntervalRef.current);
+        alarmIntervalRef.current = undefined;
+      }
+    };
+  }, [isDue, isUnresponsive, session.nextCheckInDue]);
 
   useEffect(() => {
     geo.requestLocation();

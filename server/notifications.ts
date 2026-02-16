@@ -1695,6 +1695,98 @@ Please try to contact them immediately. If you cannot reach them, consider conta
   return { emailsSent, emailsFailed, smsSent, smsFailed, whatsappSent, whatsappFailed };
 }
 
+export async function sendLoneWorkerMissedCheckInAlert(
+  supervisorPhone: string | null,
+  supervisorEmail: string | null,
+  supervisorName: string | null,
+  workerName: string,
+  jobType: string,
+  organizationName: string,
+  gpsLocation?: { latitude: number; longitude: number } | null,
+): Promise<{ emailsSent: number; smsSent: number; callsMade: number }> {
+  let emailsSent = 0;
+  let smsSent = 0;
+  let callsMade = 0;
+
+  let what3wordsAddress: string | null = null;
+  if (gpsLocation) {
+    what3wordsAddress = await getWhat3WordsAddress(gpsLocation.latitude, gpsLocation.longitude);
+  }
+
+  const smsLocationInfo = what3wordsAddress
+    ? `Location: ///${what3wordsAddress}`
+    : gpsLocation
+      ? `Map: https://maps.google.com/?q=${gpsLocation.latitude},${gpsLocation.longitude}`
+      : '';
+
+  if (supervisorEmail) {
+    let locationHtml = "";
+    if (what3wordsAddress) {
+      const w3wUrl = `https://what3words.com/${what3wordsAddress}`;
+      locationHtml += `<p style="margin: 0 0 4px 0;"><strong>Last known GPS location:</strong></p>`;
+      locationHtml += `<p style="margin: 0 0 4px 0;">what3words: <strong>///${what3wordsAddress}</strong></p>`;
+      locationHtml += `<p style="margin: 0 0 12px 0;"><a href="${w3wUrl}" style="color: #F97316;">View on map</a></p>`;
+    } else if (gpsLocation) {
+      const mapsUrl = `https://www.google.com/maps?q=${gpsLocation.latitude},${gpsLocation.longitude}`;
+      locationHtml += `<p style="margin: 0 0 4px 0;"><strong>Last known GPS location:</strong></p>`;
+      locationHtml += `<p style="margin: 0 0 4px 0;">Coordinates: ${gpsLocation.latitude.toFixed(6)}, ${gpsLocation.longitude.toFixed(6)}</p>`;
+      locationHtml += `<p style="margin: 0 0 12px 0;"><a href="${mapsUrl}" style="color: #F97316;">View on map</a></p>`;
+    } else {
+      locationHtml += `<p style="margin: 0 0 8px 0; color: #92400e;">GPS location not available</p>`;
+    }
+
+    const emailSubject = `MISSED CHECK-IN: ${workerName} has not checked in (${jobType})`;
+    const mainContent = `
+      <p style="margin: 0 0 12px 0;"><strong>${workerName}</strong> has missed their scheduled check-in during a <strong>${jobType}</strong> shift.</p>
+      <p style="margin: 0 0 12px 0;">The check-in window plus grace period has now passed without a response. This may indicate they need assistance.</p>
+      <p style="margin: 0; font-weight: 600; color: #DC2626;">Please try to contact them immediately.</p>
+    `;
+
+    const htmlEmail = createBrandedEmail({
+      recipientName: supervisorName || 'Supervisor',
+      subject: emailSubject,
+      alertType: 'missed_checkin',
+      mainContent,
+      locationSection: locationHtml,
+      customFooterNote: 'If you cannot reach them, consider contacting local emergency services.'
+    });
+
+    const plainText = `MISSED CHECK-IN - ${workerName}\n\nHi ${supervisorName || 'Supervisor'},\n\n${workerName} has missed their scheduled check-in during a ${jobType} shift. The check-in window plus grace period has passed.\n\n${smsLocationInfo}\n\nPlease try to contact them immediately.\n\n- The aok Team`;
+
+    try {
+      await sendEmail(supervisorEmail, emailSubject, plainText, htmlEmail);
+      emailsSent++;
+      console.log(`[LW MISSED CHECK-IN] Email sent to supervisor ${supervisorName} (${supervisorEmail})`);
+    } catch (error) {
+      console.error(`[LW MISSED CHECK-IN] Failed to send email to ${supervisorEmail}:`, error);
+    }
+  }
+
+  if (supervisorPhone) {
+    const smsBody = `MISSED CHECK-IN from aok: ${workerName} has not checked in during their ${jobType} shift. ${smsLocationInfo} Please try to contact them immediately.`.trim();
+
+    const smsResult = await sendSMS(supervisorPhone, smsBody);
+    if (smsResult.success) {
+      smsSent++;
+      console.log(`[LW MISSED CHECK-IN] SMS sent to supervisor (${supervisorPhone})`);
+    } else {
+      console.error(`[LW MISSED CHECK-IN] Failed to send SMS to ${supervisorPhone}:`, smsResult.error);
+    }
+
+    const voiceMessage = `This is an urgent alert from A O K. ${workerName} has missed their scheduled check-in during a ${jobType} shift. The check-in window plus grace period has now passed without a response. Please try to contact them immediately. If you cannot reach them, consider contacting emergency services.`;
+
+    const callResult = await makeVoiceCall(supervisorPhone, voiceMessage);
+    if (callResult.success) {
+      callsMade++;
+      console.log(`[LW MISSED CHECK-IN] Voice call to supervisor (${supervisorPhone})`);
+    } else {
+      console.error(`[LW MISSED CHECK-IN] Failed to call ${supervisorPhone}:`, callResult.error);
+    }
+  }
+
+  return { emailsSent, smsSent, callsMade };
+}
+
 // Sent when client requests emergency end - asks contacts to confirm they've spoken to client
 // ALERTS CONTINUE until a contact confirms
 export async function sendEmergencyConfirmationRequest(

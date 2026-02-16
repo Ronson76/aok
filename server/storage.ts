@@ -2273,6 +2273,39 @@ class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async getOverdueLoneWorkerSessions(): Promise<LoneWorkerSession[]> {
+    const now = new Date();
+    return getDb()
+      .select()
+      .from(loneWorkerSessions)
+      .where(and(
+        eq(loneWorkerSessions.status, "active"),
+        lte(loneWorkerSessions.nextCheckInDue, now),
+      ));
+  }
+
+  async getGraceExpiredLoneWorkerSessions(): Promise<LoneWorkerSession[]> {
+    const now = new Date();
+    const results = await getDb()
+      .select()
+      .from(loneWorkerSessions)
+      .where(eq(loneWorkerSessions.status, "check_in_due"));
+    return results.filter(s => {
+      if (!s.nextCheckInDue) return false;
+      const graceEnd = new Date(s.nextCheckInDue.getTime() + (s.graceWindowSecs || 120) * 1000);
+      return now >= graceEnd;
+    });
+  }
+
+  async loneWorkerMarkCheckInDue(sessionId: string): Promise<LoneWorkerSession> {
+    const [session] = await getDb()
+      .update(loneWorkerSessions)
+      .set({ status: "check_in_due" as const })
+      .where(eq(loneWorkerSessions.id, sessionId))
+      .returning();
+    return session;
+  }
+
   async loneWorkerMarkUnresponsive(sessionId: string): Promise<LoneWorkerSession> {
     const [session] = await getDb()
       .update(loneWorkerSessions)
