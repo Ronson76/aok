@@ -4,13 +4,34 @@ import {
   users, contacts, checkIns, settings, alertLogs, moodEntries,
   organizationBundles, organizationClients, bundleUsage,
   incidents, welfareConcerns, caseFiles, caseNotes, auditTrail,
-  escalationRules, errandSessions, activeEmergencyAlerts
+  escalationRules, errandSessions, activeEmergencyAlerts,
+  organizationStaffInvites, loneWorkerSessions
 } from "@shared/schema";
 import { sql } from "drizzle-orm";
 
 const ORG_EMAIL = "demo-ymca@aok.care";
 const ORG_PASSWORD = "YmcaDemo2025!";
 const CLIENT_PASSWORD = "Demo1234!";
+const STAFF_PASSWORD = "Demo2025!";
+const CANCELLATION_PIN = "safe1234";
+
+interface DemoStaff {
+  name: string;
+  email: string;
+  phone: string;
+  supervisorName: string;
+  supervisorPhone: string;
+  supervisorEmail: string;
+  inviteCode: string;
+}
+
+const demoStaff: DemoStaff[] = [
+  { name: "Naiya Ghuman", email: "naiya.ghuman@demo.aok.care", phone: "+447700900001", supervisorName: "Sarah Matthews", supervisorPhone: "+447700900099", supervisorEmail: "sarah.matthews@demo.aok.care", inviteCode: "NAIYAINV01" },
+  { name: "Tom Carter", email: "tom.carter@demo.aok.care", phone: "+447700900002", supervisorName: "Mark Williams", supervisorPhone: "+447700900088", supervisorEmail: "mark.williams@demo.aok.care", inviteCode: "YMCA002TC" },
+  { name: "Priya Patel", email: "priya.patel@demo.aok.care", phone: "+447700900003", supervisorName: "Sarah Matthews", supervisorPhone: "+447700900099", supervisorEmail: "sarah.matthews@demo.aok.care", inviteCode: "YMCA003PP" },
+  { name: "James O'Connor", email: "james.oconnor@demo.aok.care", phone: "+447700900004", supervisorName: "Mark Williams", supervisorPhone: "+447700900088", supervisorEmail: "mark.williams@demo.aok.care", inviteCode: "YMCA004JO" },
+  { name: "Amara Johnson", email: "amara.johnson@demo.aok.care", phone: "+447700900005", supervisorName: "Sarah Matthews", supervisorPhone: "+447700900099", supervisorEmail: "sarah.matthews@demo.aok.care", inviteCode: "YMCA005AJ" },
+];
 
 interface DemoClient {
   name: string;
@@ -441,8 +462,129 @@ export async function seedYmcaDemo(): Promise<{ orgId: string; orgEmail: string;
     });
   }
 
+  const staffPasswordHash = await bcrypt.hash(STAFF_PASSWORD, 10);
+  const cancellationPinHash = await bcrypt.hash(CANCELLATION_PIN, 10);
+  const staffUserIds: string[] = [];
+
+  const jobTypes: Array<"field_visit" | "home_visit" | "patrol" | "maintenance" | "delivery" | "inspection" | "outreach" | "other"> = ["field_visit", "home_visit", "patrol", "maintenance", "outreach"];
+  const jobDescs = [
+    "Home visit to elderly client in Erdington area",
+    "Welfare check - Solihull community centre",
+    "Evening patrol of car park and grounds",
+    "Boiler repair at sheltered housing unit",
+    "Youth outreach session at Aston park",
+  ];
+
+  for (let i = 0; i < demoStaff.length; i++) {
+    const staff = demoStaff[i];
+    const coords = randomBirminghamCoords();
+
+    const [staffUser] = await db.insert(users).values({
+      email: staff.email,
+      passwordHash: staffPasswordHash,
+      accountType: "user",
+      name: staff.name,
+      mobileNumber: staff.phone,
+      addressLine1: `${10 + i} Demo Street`,
+      city: "Birmingham",
+      postalCode: `B${10 + i} 1AA`,
+      country: "United Kingdom",
+      termsAcceptedAt: daysAgo(60 - i),
+      latitude: coords.lat,
+      longitude: coords.lng,
+      lastLocationUpdatedAt: hoursAgo(Math.floor(Math.random() * 4)),
+    }).returning();
+
+    staffUserIds.push(staffUser.id);
+
+    await db.insert(organizationStaffInvites).values({
+      organizationId: orgUser.id,
+      bundleId: bundle.id,
+      staffName: staff.name,
+      staffPhone: staff.phone,
+      staffEmail: staff.email,
+      supervisorName: staff.supervisorName,
+      supervisorPhone: staff.supervisorPhone,
+      supervisorEmail: staff.supervisorEmail,
+      cancellationPinHash: cancellationPinHash,
+      inviteCode: staff.inviteCode,
+      status: "accepted",
+      acceptedByUserId: staffUser.id,
+      acceptedAt: daysAgo(55 - i),
+    });
+
+    await db.insert(settings).values({
+      userId: staffUser.id,
+      frequency: "daily",
+      intervalHours: "24",
+      scheduleStartTime: daysAgo(55 - i),
+      lastCheckIn: hoursAgo(Math.floor(Math.random() * 8)),
+      nextCheckInDue: new Date(Date.now() + 16 * 60 * 60 * 1000),
+      alertsEnabled: true,
+      pushStatus: "enabled",
+      shakeToSOSEnabled: true,
+    });
+
+    const sessionStatuses: Array<"active" | "unresponsive" | "resolved"> = [
+      "unresponsive", "unresponsive", "active", "active", "unresponsive"
+    ];
+    const sessionStatus = sessionStatuses[i];
+    const startedHoursAgo = 3 + i;
+    const sessionStart = hoursAgo(startedHoursAgo);
+    const expectedEnd = new Date(sessionStart.getTime() + 4 * 60 * 60 * 1000);
+
+    await db.insert(loneWorkerSessions).values({
+      userId: staffUser.id,
+      organizationId: orgUser.id,
+      jobType: jobTypes[i],
+      jobDescription: jobDescs[i],
+      expectedDurationMins: 240,
+      checkInIntervalMins: 30,
+      graceWindowSecs: 120,
+      status: sessionStatus,
+      locationLat: coords.lat,
+      locationLng: coords.lng,
+      locationAddress: `${10 + i} Demo Street, Birmingham`,
+      lastCheckInAt: sessionStatus === "unresponsive" ? hoursAgo(startedHoursAgo - 1) : hoursAgo(0.5),
+      nextCheckInDue: sessionStatus === "unresponsive" ? hoursAgo(1) : new Date(Date.now() + 25 * 60 * 1000),
+      lastLocationLat: coords.lat,
+      lastLocationLng: coords.lng,
+      lastLocationAt: hoursAgo(Math.random() * 2),
+      startedAt: sessionStart,
+      expectedEndAt: expectedEnd,
+    });
+
+    if (i < 3) {
+      const pastStart = daysAgo(3 + i);
+      const pastEnd = new Date(pastStart.getTime() + 3 * 60 * 60 * 1000);
+      await db.insert(loneWorkerSessions).values({
+        userId: staffUser.id,
+        organizationId: orgUser.id,
+        jobType: jobTypes[(i + 2) % 5],
+        jobDescription: `Previous shift - ${jobDescs[(i + 2) % 5]}`,
+        expectedDurationMins: 180,
+        checkInIntervalMins: 30,
+        graceWindowSecs: 120,
+        status: "resolved",
+        locationLat: coords.lat,
+        locationLng: coords.lng,
+        lastCheckInAt: pastEnd,
+        nextCheckInDue: pastEnd,
+        startedAt: pastStart,
+        expectedEndAt: pastEnd,
+        resolvedAt: pastEnd,
+        outcome: "completed_safe",
+        outcomeNotes: "Shift completed without incident",
+      });
+    }
+
+    console.log(`[DEMO SEED] Staff ${i + 1}/5: ${staff.name} (${sessionStatus}) - cancellation PIN set`);
+  }
+
   console.log("[DEMO SEED] YMCA demo seed complete!");
   console.log(`[DEMO SEED] Org login: ${ORG_EMAIL} / ${ORG_PASSWORD}`);
+  console.log(`[DEMO SEED] Staff password: ${STAFF_PASSWORD}`);
+  console.log(`[DEMO SEED] Staff cancellation PIN: ${CANCELLATION_PIN}`);
 
   return {
     orgId: orgUser.id,
