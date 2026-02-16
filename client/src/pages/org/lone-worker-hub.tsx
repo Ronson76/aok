@@ -281,6 +281,11 @@ export default function OrgLoneWorkerHub() {
   const [supPhone, setSupPhone] = useState("");
   const [supCountryCode, setSupCountryCode] = useState("+44");
   const [supEmail, setSupEmail] = useState("");
+  const [supSmsCode, setSupSmsCode] = useState("");
+  const [supSmsSending, setSupSmsSending] = useState(false);
+  const [supSmsVerifying, setSupSmsVerifying] = useState(false);
+  const [supSmsSent, setSupSmsSent] = useState(false);
+  const [supSmsVerified, setSupSmsVerified] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [inviteFilter, setInviteFilter] = useState("all");
   const [auditFilter, setAuditFilter] = useState("all");
@@ -494,6 +499,11 @@ export default function OrgLoneWorkerHub() {
     setSupPhone("");
     setSupCountryCode("+44");
     setSupEmail("");
+    setSupSmsCode("");
+    setSupSmsSending(false);
+    setSupSmsVerifying(false);
+    setSupSmsSent(false);
+    setSupSmsVerified(false);
     setResendingInviteId(null);
   };
 
@@ -686,6 +696,59 @@ export default function OrgLoneWorkerHub() {
     setShowInviteDialog(true);
   };
 
+  const handleSendSupSms = async () => {
+    if (!supPhone.trim()) {
+      toast({ title: "Missing phone", description: "Please enter the supervisor's phone number first.", variant: "destructive" });
+      return;
+    }
+    const fullPhone = formatFullPhone(supCountryCode, supPhone);
+    setSupSmsSending(true);
+    try {
+      const res = await fetch("/api/org/supervisor/send-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-csrf-token": document.cookie.match(/csrf_token=([^;]+)/)?.[1] || "" },
+        credentials: "include",
+        body: JSON.stringify({ phone: fullPhone, supervisorName: supName }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSupSmsSent(true);
+        toast({ title: "Code sent", description: "A verification code has been sent to the supervisor's phone." });
+      } else {
+        toast({ title: "Failed", description: data.error || "Could not send verification code.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to send verification SMS.", variant: "destructive" });
+    } finally {
+      setSupSmsSending(false);
+    }
+  };
+
+  const handleVerifySupSms = async () => {
+    if (!supSmsCode.trim()) return;
+    const fullPhone = formatFullPhone(supCountryCode, supPhone);
+    setSupSmsVerifying(true);
+    try {
+      const res = await fetch("/api/org/supervisor/verify-sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-csrf-token": document.cookie.match(/csrf_token=([^;]+)/)?.[1] || "" },
+        credentials: "include",
+        body: JSON.stringify({ phone: fullPhone, code: supSmsCode }),
+      });
+      const data = await res.json();
+      if (data.verified) {
+        setSupSmsVerified(true);
+        toast({ title: "Verified", description: "Supervisor phone number confirmed." });
+      } else {
+        toast({ title: "Not verified", description: data.error || "Incorrect code.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to verify code.", variant: "destructive" });
+    } finally {
+      setSupSmsVerifying(false);
+    }
+  };
+
   const handleSubmitInvite = () => {
     if (!staffName.trim() || !staffPhone.trim() || !staffEmail.trim()) {
       toast({ title: "Missing fields", description: "Please fill in name, mobile number, and email.", variant: "destructive" });
@@ -697,6 +760,10 @@ export default function OrgLoneWorkerHub() {
     }
     if (!selectedBundleId && !resendingInviteId) {
       toast({ title: "Missing fields", description: "Please select a bundle.", variant: "destructive" });
+      return;
+    }
+    if (supPhone.trim() && !supSmsVerified) {
+      toast({ title: "Verification required", description: "Please verify the supervisor's phone number before sending the invite.", variant: "destructive" });
       return;
     }
     const fullPhone = formatFullPhone(staffCountryCode, staffPhone);
@@ -1323,7 +1390,7 @@ export default function OrgLoneWorkerHub() {
                 <div className="space-y-1">
                   <Label htmlFor="supPhone">Supervisor Phone</Label>
                   <div className="flex gap-2">
-                    <Select value={supCountryCode} onValueChange={setSupCountryCode}>
+                    <Select value={supCountryCode} onValueChange={(v) => { setSupCountryCode(v); setSupSmsVerified(false); setSupSmsSent(false); setSupSmsCode(""); }}>
                       <SelectTrigger className="w-28" data-testid="select-sup-country-code">
                         <SelectValue />
                       </SelectTrigger>
@@ -1335,8 +1402,32 @@ export default function OrgLoneWorkerHub() {
                         <SelectItem value="+49">+49 DE</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Input id="supPhone" type="tel" value={supPhone} onChange={(e) => setSupPhone(e.target.value)} placeholder="7XXX XXXXXX" className="flex-1" data-testid="input-sup-phone" />
+                    <Input id="supPhone" type="tel" value={supPhone} onChange={(e) => { setSupPhone(e.target.value); setSupSmsVerified(false); setSupSmsSent(false); setSupSmsCode(""); }} placeholder="7XXX XXXXXX" className="flex-1" data-testid="input-sup-phone" />
                   </div>
+                  {supPhone.trim() && !supSmsVerified && (
+                    <div className="mt-2 space-y-2">
+                      {!supSmsSent ? (
+                        <Button type="button" size="sm" variant="outline" onClick={handleSendSupSms} disabled={supSmsSending} data-testid="button-send-sup-sms">
+                          {supSmsSending ? "Sending..." : "Send Verification Code"}
+                        </Button>
+                      ) : (
+                        <div className="flex gap-2 items-center">
+                          <Input type="text" placeholder="6-digit code" value={supSmsCode} onChange={(e) => setSupSmsCode(e.target.value)} className="w-32" maxLength={6} data-testid="input-sup-sms-code" />
+                          <Button type="button" size="sm" onClick={handleVerifySupSms} disabled={supSmsVerifying || !supSmsCode.trim()} data-testid="button-verify-sup-sms">
+                            {supSmsVerifying ? "Verifying..." : "Verify"}
+                          </Button>
+                          <Button type="button" size="sm" variant="ghost" onClick={handleSendSupSms} disabled={supSmsSending} data-testid="button-resend-sup-sms">
+                            Resend
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {supSmsVerified && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1" data-testid="text-sup-verified">
+                      <CheckCircle className="h-3 w-3" /> Phone verified
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="supEmail">Supervisor Email</Label>
