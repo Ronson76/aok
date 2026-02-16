@@ -101,10 +101,11 @@ export default function OrganizationDashboard() {
     }
     timeoutRef.current = setTimeout(async () => {
       try {
+        await fetch("/api/org-member/logout", { method: "POST", credentials: "include" });
+      } catch (e) {}
+      try {
         await logoutRef.current();
-      } catch (e) {
-        // Session may already be expired on server - that's fine
-      }
+      } catch (e) {}
       queryClient.clear();
       setLocationRef.current("/org/staff-login?sessionExpired=true");
     }, SESSION_TIMEOUT_MS);
@@ -148,8 +149,14 @@ export default function OrganizationDashboard() {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    await logout();
-    setLocation("/");
+    try {
+      await fetch("/api/org-member/logout", { method: "POST", credentials: "include" });
+    } catch (e) {}
+    try {
+      await logout();
+    } catch (e) {}
+    queryClient.clear();
+    setLocation("/org/login");
   };
   
   // New client registration form state
@@ -1448,10 +1455,7 @@ export default function OrganizationDashboard() {
           <div 
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" 
             data-testid="link-home-logo"
-            onClick={async () => {
-              await logout();
-              setLocation("/");
-            }}
+            onClick={handleLogout}
           >
             <ShieldCheck className="h-9 w-9 text-green-600" />
             <span className="text-2xl font-bold text-green-600">aok</span>
