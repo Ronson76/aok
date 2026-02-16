@@ -186,7 +186,7 @@ export default function OrgLoneWorkerHub() {
         // Session may already be expired on server - that's fine
       }
       queryClient.clear();
-      setLocationRef.current("/org/login");
+      window.location.href = "/";
     }, 15 * 60 * 1000);
   }, []);
 
@@ -208,7 +208,7 @@ export default function OrgLoneWorkerHub() {
       await logout();
     } catch (e) {}
     queryClient.clear();
-    setLocation("/org/login");
+    window.location.href = "/";
   };
 
   const { data: stats, isLoading: statsLoading } = useQuery<StaffStats>({

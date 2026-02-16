@@ -156,7 +156,7 @@ export default function OrganizationDashboard() {
       await logout();
     } catch (e) {}
     queryClient.clear();
-    setLocation("/org/login");
+    window.location.href = "/";
   };
   
   // New client registration form state
