@@ -271,14 +271,14 @@ function PreShiftSetup({ onStart }: { onStart: () => void }) {
   );
 }
 
-function LiveLocationCard({ session, position }: { session: LoneWorkerSession; position: { lat: number; lng: number } | null }) {
+function LiveLocationCard({ session, position }: { session: LoneWorkerSession; position: { lat: string; lng: string } | null }) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
   const [showMap, setShowMap] = useState(false);
 
-  const lat = position?.lat ?? (session.lastLocationLat ? parseFloat(session.lastLocationLat) : null);
-  const lng = position?.lng ?? (session.lastLocationLng ? parseFloat(session.lastLocationLng) : null);
+  const lat = position?.lat ? parseFloat(position.lat) : (session.lastLocationLat ? parseFloat(session.lastLocationLat) : null);
+  const lng = position?.lng ? parseFloat(position.lng) : (session.lastLocationLng ? parseFloat(session.lastLocationLng) : null);
   const hasLocation = lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng);
 
   useEffect(() => {
@@ -404,9 +404,11 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
   const locationInterval = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
+    geo.requestLocation();
     const sendLocation = () => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((pos) => {
+          geo.requestLocation();
           apiRequest("POST", `/api/lone-worker/${session.id}/location`, {
             lat: pos.coords.latitude.toString(),
             lng: pos.coords.longitude.toString(),
