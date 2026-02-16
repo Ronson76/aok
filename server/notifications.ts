@@ -738,7 +738,7 @@ ${userName} would like to add you as an emergency contact for a person they are 
 
 Reference ID: ${user.referenceId}
 
-aok is a personal safety check-in app. If this person misses a check-in, you will be notified automatically via email, SMS, or phone call.
+aok is a personal safety check-in app. ${contact.isPrimary ? 'As the primary contact (supervisor), you will be notified if this person misses a check-in or triggers an emergency alert.' : 'You will be notified if this person triggers an emergency alert.'}
 
 IMPORTANT: You must confirm within 24 hours to become an emergency contact.
 
@@ -756,7 +756,7 @@ Thank you,
 
 ${userName} would like to add you as their emergency contact on aok.
 
-aok is a personal safety check-in app. If ${userName} misses a check-in, you will be notified automatically via email, SMS, or phone call.
+aok is a personal safety check-in app. ${contact.isPrimary ? `As the primary contact, you will be notified if ${userName} misses a check-in or triggers an emergency alert.` : `You will be notified if ${userName} triggers an emergency alert.`}
 
 This means ${userName} trusts you to help ensure their safety.
 
@@ -792,7 +792,9 @@ Thank you,
        <p>This means ${userName} trusts you to help ensure their safety.</p>`
   }
   
-  <p><strong>aok</strong> is a personal safety check-in app. If ${isOrganization ? 'this person' : userName} misses a check-in, you will be notified automatically via email, SMS, or phone call.</p>
+  <p><strong>aok</strong> is a personal safety check-in app. ${contact.isPrimary 
+    ? `As the primary contact${isOrganization ? ' (supervisor)' : ''}, you will be notified if ${isOrganization ? 'this person' : userName} misses a check-in or triggers an emergency alert.`
+    : `You will be notified if ${isOrganization ? 'this person' : userName} triggers an emergency alert.`}</p>
   
   <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 20px 0;">
     <strong style="color: #92400e;">IMPORTANT:</strong> You must confirm within 24 hours to become an emergency contact.
@@ -872,31 +874,36 @@ export async function sendContactAddedNotification(
   const contactName = contact.name;
 
   const emailSubject = `You are now an emergency contact on aok`;
+  const isPrimary = !!contact.isPrimary;
+  const roleLabel = isPrimary ? "primary emergency contact (supervisor)" : "emergency contact";
+  const notifyDesc = isPrimary 
+    ? "you will be notified if they miss a scheduled check-in or trigger an emergency alert"
+    : "you will be notified if they trigger an emergency alert";
   const emailBody = isOrganization 
     ? `Hi ${contactName},
 
-Thank you for confirming! You are now an emergency contact for a person monitored by ${displayName} on aok.
+Thank you for confirming! You are now a ${roleLabel} for a person monitored by ${displayName} on aok.
 
 Reference ID: ${user.referenceId}
 
-You will be notified if this person misses a scheduled check-in.
+As a ${roleLabel}, ${notifyDesc}.
 
 Thank you for your support.
 
 - The aok Team`
     : `Hi ${contactName},
 
-Thank you for confirming! You are now an emergency contact for ${displayName} on aok.
+Thank you for confirming! You are now a ${roleLabel} for ${displayName} on aok.
 
-You will be notified if ${displayName} misses a scheduled check-in.
+As a ${roleLabel}, ${notifyDesc}.
 
 Thank you for being there for ${displayName}.
 
 - The aok Team`;
 
   const smsBody = isOrganization
-    ? `You're now an emergency contact for Reference ${user.referenceId} on aok. You'll be notified if they miss a check-in.`
-    : `You're now an emergency contact for ${displayName} on aok. You'll be notified if they miss a check-in.`;
+    ? `You're now a ${roleLabel} for Reference ${user.referenceId} on aok. ${isPrimary ? "You'll be notified for missed check-ins and emergencies." : "You'll be notified for emergencies."}`
+    : `You're now a ${roleLabel} for ${displayName} on aok. ${isPrimary ? "You'll be notified for missed check-ins and emergencies." : "You'll be notified for emergencies."}`;
 
   // Send email only for contact added notification (to save cost)
   try {
@@ -974,7 +981,7 @@ This is to inform you that you have been removed as an emergency contact for a p
 
 Reference ID: ${user.referenceId}
 
-You will no longer receive any check-in notifications or alerts for this person.
+You will no longer receive any alerts for this person.
 
 Thank you for your support.
 
@@ -983,7 +990,7 @@ Thank you for your support.
 
 This is to inform you that you have been removed as an emergency contact for ${displayName} on aok.
 
-You will no longer receive any check-in notifications or alerts for ${displayName}.
+You will no longer receive any alerts for ${displayName}.
 
 Thank you for being there.
 
