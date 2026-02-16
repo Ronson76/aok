@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon, Video, Scale, PenLine, Share2, Copy, ClipboardList, ChevronDown, ChevronUp, ChevronRight, Filter, ArrowLeft, ArrowRight, BarChart3, Calendar } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon, Video, Scale, PenLine, Share2, Copy, ClipboardList, ChevronDown, ChevronUp, ChevronRight, Filter, ArrowLeft, ArrowRight, BarChart3, Calendar, MessageSquare } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -169,6 +169,12 @@ export default function OrganizationDashboard() {
   const [regSupervisorName, setRegSupervisorName] = useState("");
   const [regSupervisorPhone, setRegSupervisorPhone] = useState("");
   const [regSupervisorEmail, setRegSupervisorEmail] = useState("");
+  const [regSupervisorCountryCode, setRegSupervisorCountryCode] = useState("+44");
+  const [supervisorSmsVerified, setSupervisorSmsVerified] = useState(false);
+  const [supervisorSmsCode, setSupervisorSmsCode] = useState("");
+  const [supervisorSmsSending, setSupervisorSmsSending] = useState(false);
+  const [supervisorSmsVerifying, setSupervisorSmsVerifying] = useState(false);
+  const [supervisorSmsSent, setSupervisorSmsSent] = useState(false);
   const [regScheduleStart, setRegScheduleStart] = useState("");
   const [regIntervalHours, setRegIntervalHours] = useState(24);
   const [regEmergencyContacts, setRegEmergencyContacts] = useState<Array<{
@@ -579,7 +585,7 @@ export default function OrganizationDashboard() {
         scheduleStartTime: regScheduleStart || undefined,
         checkInIntervalHours: regIntervalHours,
         supervisorName: regSupervisorName || undefined,
-        supervisorPhone: regSupervisorPhone || undefined,
+        supervisorPhone: regSupervisorPhone ? `${regSupervisorCountryCode}${regSupervisorPhone.replace(/\D/g, "")}` : undefined,
         supervisorEmail: regSupervisorEmail || undefined,
         emergencyContacts: regEmergencyContacts.length > 0 ? regEmergencyContacts : undefined,
         features: regFeatures,
@@ -776,6 +782,10 @@ export default function OrganizationDashboard() {
     setRegSupervisorName("");
     setRegSupervisorPhone("");
     setRegSupervisorEmail("");
+    setRegSupervisorCountryCode("+44");
+    setSupervisorSmsVerified(false);
+    setSupervisorSmsCode("");
+    setSupervisorSmsSent(false);
     setRegScheduleStart("");
     setRegIntervalHours(24);
     setRegEmergencyContacts([]);
@@ -1811,15 +1821,144 @@ export default function OrganizationDashboard() {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="regSupervisorPhone" className="text-xs">Mobile <span className="text-destructive">*</span></Label>
-                <Input
-                  id="regSupervisorPhone"
-                  type="tel"
-                  placeholder="+447XXX XXXXXX"
-                  value={regSupervisorPhone}
-                  onChange={(e) => setRegSupervisorPhone(e.target.value)}
-                  required
-                  data-testid="input-reg-supervisor-phone"
-                />
+                <div className="flex gap-2">
+                  <Select value={regSupervisorCountryCode} onValueChange={(v) => { setRegSupervisorCountryCode(v); setSupervisorSmsVerified(false); setSupervisorSmsSent(false); }}>
+                    <SelectTrigger className="w-24" data-testid="select-supervisor-country-code">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="+44">+44 UK</SelectItem>
+                      <SelectItem value="+1">+1 US</SelectItem>
+                      <SelectItem value="+353">+353 IE</SelectItem>
+                      <SelectItem value="+33">+33 FR</SelectItem>
+                      <SelectItem value="+49">+49 DE</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="flex-1 relative">
+                    <Input
+                      id="regSupervisorPhone"
+                      type="tel"
+                      placeholder="7XXX XXXXXX"
+                      value={regSupervisorPhone}
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/[^\d\s]/g, "");
+                        if (value.startsWith("0")) value = value.slice(1);
+                        setRegSupervisorPhone(value);
+                        setSupervisorSmsVerified(false);
+                        setSupervisorSmsSent(false);
+                      }}
+                      className={regSupervisorPhone && !isValidUKPhone(regSupervisorPhone) ? "border-yellow-500" : ""}
+                      required
+                      data-testid="input-reg-supervisor-phone"
+                    />
+                    {regSupervisorPhone && !isValidUKPhone(regSupervisorPhone) && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {regSupervisorPhone && !isValidUKPhone(regSupervisorPhone) && (
+                  <p className="text-xs text-yellow-600">Mobile numbers should be 10 digits (without leading zero)</p>
+                )}
+              </div>
+
+              {/* SMS Verification */}
+              <div className="space-y-2">
+                {!supervisorSmsVerified ? (
+                  <div className="space-y-2">
+                    {!supervisorSmsSent ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={!regSupervisorPhone || !isValidUKPhone(regSupervisorPhone) || supervisorSmsSending}
+                        onClick={async () => {
+                          setSupervisorSmsSending(true);
+                          try {
+                            const fullPhone = `${regSupervisorCountryCode}${regSupervisorPhone.replace(/\D/g, "")}`;
+                            const res = await apiRequest("POST", "/api/org/supervisor/send-verification", {
+                              phone: fullPhone,
+                              supervisorName: regSupervisorName,
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                              setSupervisorSmsSent(true);
+                              toast({ title: "Verification SMS sent", description: "A 6-digit code has been sent to the supervisor's mobile." });
+                            } else {
+                              toast({ title: "Failed to send SMS", description: data.error || "Please try again.", variant: "destructive" });
+                            }
+                          } catch (err: any) {
+                            toast({ title: "Failed to send SMS", description: err.message || "Please try again.", variant: "destructive" });
+                          } finally {
+                            setSupervisorSmsSending(false);
+                          }
+                        }}
+                        data-testid="button-send-supervisor-sms"
+                      >
+                        {supervisorSmsSending ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Sending...</> : <><MessageSquare className="h-4 w-4 mr-1" /> Send Verification SMS</>}
+                      </Button>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">Enter the 6-digit code sent to the supervisor's mobile:</p>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="000000"
+                            maxLength={6}
+                            value={supervisorSmsCode}
+                            onChange={(e) => setSupervisorSmsCode(e.target.value.replace(/\D/g, ""))}
+                            className="w-28"
+                            data-testid="input-supervisor-sms-code"
+                          />
+                          <Button
+                            type="button"
+                            variant="default"
+                            size="sm"
+                            disabled={supervisorSmsCode.length !== 6 || supervisorSmsVerifying}
+                            onClick={async () => {
+                              setSupervisorSmsVerifying(true);
+                              try {
+                                const fullPhone = `${regSupervisorCountryCode}${regSupervisorPhone.replace(/\D/g, "")}`;
+                                const res = await apiRequest("POST", "/api/org/supervisor/verify-sms", {
+                                  phone: fullPhone,
+                                  code: supervisorSmsCode,
+                                });
+                                const data = await res.json();
+                                if (data.verified) {
+                                  setSupervisorSmsVerified(true);
+                                  toast({ title: "Phone verified", description: "Supervisor's mobile number has been confirmed." });
+                                } else {
+                                  toast({ title: "Incorrect code", description: "The code entered does not match. Please try again.", variant: "destructive" });
+                                }
+                              } catch (err: any) {
+                                toast({ title: "Verification failed", description: err.message || "Please try again.", variant: "destructive" });
+                              } finally {
+                                setSupervisorSmsVerifying(false);
+                              }
+                            }}
+                            data-testid="button-verify-supervisor-sms"
+                          >
+                            {supervisorSmsVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => { setSupervisorSmsSent(false); setSupervisorSmsCode(""); }}
+                            data-testid="button-resend-supervisor-sms"
+                          >
+                            Resend
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="text-xs font-medium">Supervisor mobile verified</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -2014,7 +2153,7 @@ export default function OrganizationDashboard() {
             </Button>
             <Button 
               onClick={() => registerClientMutation.mutate()}
-              disabled={!regClientName || !regClientPhone || !regSupervisorName || !regSupervisorEmail || !regSupervisorPhone || registerClientMutation.isPending}
+              disabled={!regClientName || !regClientPhone || !regSupervisorName || !regSupervisorEmail || !regSupervisorPhone || !supervisorSmsVerified || registerClientMutation.isPending}
               data-testid="button-confirm-register-client"
             >
               {registerClientMutation.isPending ? (
