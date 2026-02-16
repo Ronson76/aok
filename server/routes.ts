@@ -762,6 +762,15 @@ export async function registerRoutes(
             await organizationStorage.incrementBundleSeatsUsed(acceptedInvite.bundleId);
             console.log(`[STAFF INVITE] Existing user ${existingUser.id} accepted staff invite ${staffInviteCode}, bundle ${acceptedInvite.bundleId} seat consumed`);
           }
+          if (invite?.emergencyRecordingEnabled) {
+            try {
+              await storage.initializeSettings(existingUser.id);
+              await storage.updateSettings(existingUser.id, { emergencyRecordingEnabled: true });
+              console.log(`[STAFF INVITE] Emergency recording enabled for returning staff user ${existingUser.id}`);
+            } catch (recErr) {
+              console.error("[STAFF INVITE] Error enabling emergency recording for returning user:", recErr);
+            }
+          }
           if (invite?.supervisorName && invite?.supervisorPhone) {
             try {
               await storage.initializeSettings(existingUser.id);
@@ -804,6 +813,11 @@ export async function registerRoutes(
         } catch (err) {
           console.error("[STAFF INVITE] Error processing staff invite:", err);
         }
+
+        // Send welcome email for returning staff users
+        sendWelcomeEmail(email, name || existingUser.name).catch(err => {
+          console.error("[WELCOME] Failed to send welcome email to returning staff user:", err);
+        });
 
         // Create session for existing user
         const session = await storage.createSession(existingUser.id);
@@ -900,12 +914,10 @@ export async function registerRoutes(
         }
       }
 
-      // Send welcome email for individual sign-ups
-      if (accountType === "individual") {
-        sendWelcomeEmail(email, name).catch(err => {
-          console.error("[WELCOME] Failed to send welcome email:", err);
-        });
-      }
+      // Send welcome email for all new users (individual and staff)
+      sendWelcomeEmail(email, name).catch(err => {
+        console.error("[WELCOME] Failed to send welcome email:", err);
+      });
 
       // Plant a tree for every person we onboard
       plantTreeForNewSubscriber(email).catch(err => {
