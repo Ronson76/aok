@@ -7,7 +7,7 @@ import {
   Search, Phone, Mail, ShieldCheck, LogOut, UserPlus, Trash2, Shield,
   Radio, MapPin, AlertTriangle, Siren, Eye, History, Briefcase,
   FileText, ChevronDown, ChevronUp, Upload, Download, FileSpreadsheet,
-  CheckCircle2, XOctagon, Video
+  CheckCircle2, XOctagon, Video, Edit2, MessageSquare, User
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,9 @@ interface StaffInvite {
   staffName: string;
   staffPhone: string;
   staffEmail: string | null;
+  supervisorName: string | null;
+  supervisorPhone: string | null;
+  supervisorEmail: string | null;
   inviteCode: string;
   status: "pending" | "accepted" | "revoked";
   acceptedByUserId: string | null;
@@ -149,6 +152,21 @@ export default function OrgLoneWorkerHub() {
   const [auditFilter, setAuditFilter] = useState("all");
   const [expandedAuditUsers, setExpandedAuditUsers] = useState<Set<string>>(new Set());
   const [expandedHistoryUsers, setExpandedHistoryUsers] = useState<Set<string>>(new Set());
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingInvite, setEditingInvite] = useState<StaffInvite | null>(null);
+  const [editStaffName, setEditStaffName] = useState("");
+  const [editStaffPhone, setEditStaffPhone] = useState("");
+  const [editStaffCountryCode, setEditStaffCountryCode] = useState("+44");
+  const [editStaffEmail, setEditStaffEmail] = useState("");
+  const [editSupervisorName, setEditSupervisorName] = useState("");
+  const [editSupervisorPhone, setEditSupervisorPhone] = useState("");
+  const [editSupervisorCountryCode, setEditSupervisorCountryCode] = useState("+44");
+  const [editSupervisorEmail, setEditSupervisorEmail] = useState("");
+  const [editSupervisorSmsVerified, setEditSupervisorSmsVerified] = useState(false);
+  const [editSupervisorSmsCode, setEditSupervisorSmsCode] = useState("");
+  const [editSupervisorSmsSending, setEditSupervisorSmsSending] = useState(false);
+  const [editSupervisorSmsVerifying, setEditSupervisorSmsVerifying] = useState(false);
+  const [editSupervisorSmsSent, setEditSupervisorSmsSent] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importStep, setImportStep] = useState<"upload" | "preview" | "importing" | "results">("upload");
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -339,6 +357,58 @@ export default function OrgLoneWorkerHub() {
     setEmergencyRecordingEnabled(false);
     setResendingInviteId(null);
   };
+
+  const isValidPhoneDigits = (phone: string) => {
+    const digitsOnly = phone.replace(/\D/g, "");
+    return digitsOnly.length === 10;
+  };
+
+  const openEditDialog = (invite: StaffInvite) => {
+    setEditingInvite(invite);
+    setEditStaffName(invite.staffName);
+    const phoneDigits = invite.staffPhone?.replace(/^\+\d{1,3}/, "") || "";
+    setEditStaffPhone(phoneDigits);
+    const countryMatch = invite.staffPhone?.match(/^(\+\d{1,3})/);
+    setEditStaffCountryCode(countryMatch ? countryMatch[1] : "+44");
+    setEditStaffEmail(invite.staffEmail || "");
+    setEditSupervisorName(invite.supervisorName || "");
+    const supPhoneDigits = invite.supervisorPhone?.replace(/^\+\d{1,3}/, "") || "";
+    setEditSupervisorPhone(supPhoneDigits);
+    const supCountryMatch = invite.supervisorPhone?.match(/^(\+\d{1,3})/);
+    setEditSupervisorCountryCode(supCountryMatch ? supCountryMatch[1] : "+44");
+    setEditSupervisorEmail(invite.supervisorEmail || "");
+    setEditSupervisorSmsVerified(false);
+    setEditSupervisorSmsCode("");
+    setEditSupervisorSmsSent(false);
+    setShowEditDialog(true);
+  };
+
+  const updateInviteDetailsMutation = useMutation({
+    mutationFn: async () => {
+      if (!editingInvite) throw new Error("No invite selected");
+      const fullStaffPhone = editStaffPhone ? `${editStaffCountryCode}${editStaffPhone.replace(/\D/g, "")}` : editingInvite.staffPhone;
+      const fullSupervisorPhone = editSupervisorPhone ? `${editSupervisorCountryCode}${editSupervisorPhone.replace(/\D/g, "")}` : "";
+      const res = await apiRequest("PATCH", `/api/org/staff/invite/${editingInvite.id}/details`, {
+        staffName: editStaffName,
+        staffPhone: fullStaffPhone,
+        staffEmail: editStaffEmail,
+        supervisorName: editSupervisorName || null,
+        supervisorPhone: fullSupervisorPhone || null,
+        supervisorEmail: editSupervisorEmail || null,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/staff/invites"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/staff/audit-trail"] });
+      setShowEditDialog(false);
+      setEditingInvite(null);
+      toast({ title: "Details updated", description: "Staff member details have been saved." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
 
   const importStaffMutation = useMutation({
     mutationFn: async ({ staff, bundleId }: { staff: typeof importData; bundleId: string }) => {
@@ -883,12 +953,22 @@ export default function OrgLoneWorkerHub() {
                                   <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{invite.staffPhone}</span>
                                   {invite.staffEmail && <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{invite.staffEmail}</span>}
                                 </div>
+                                {invite.supervisorName && (
+                                  <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                                    <span className="flex items-center gap-1"><User className="h-3 w-3" /> Supervisor: {invite.supervisorName}</span>
+                                    {invite.supervisorPhone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{invite.supervisorPhone}</span>}
+                                    {invite.supervisorEmail && <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{invite.supervisorEmail}</span>}
+                                  </div>
+                                )}
                                 <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                                   <span>Sent: {format(new Date(invite.createdAt), "dd/MM/yyyy HH:mm")}</span>
                                   {invite.acceptedAt && <span>Accepted: {format(new Date(invite.acceptedAt), "dd/MM/yyyy HH:mm")}</span>}
                                 </div>
                               </div>
-                              <div className="flex gap-2">
+                              <div className="flex gap-2 flex-wrap">
+                                <Button variant="outline" size="sm" onClick={() => openEditDialog(invite)} data-testid={`button-edit-${invite.id}`}>
+                                  <Edit2 className="h-3 w-3 mr-1" /> Edit
+                                </Button>
                                 {invite.status === "pending" && (
                                   <>
                                     <Button variant="outline" size="sm" onClick={() => openResendDialog(invite)} data-testid={`button-resend-${invite.id}`}>

@@ -466,13 +466,16 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
-  // Update client basic details (nickname, name, phone)
+  // Update client basic details (nickname, name, phone, supervisor)
   const updateClientDetailsSchema = z.object({
     nickname: z.string().optional(),
     clientName: z.string().optional(),
     clientPhone: z.string().optional(),
     clientEmail: z.string().email().optional().or(z.literal("")),
     alertsEnabled: z.boolean().optional(),
+    supervisorName: z.string().optional(),
+    supervisorPhone: z.string().optional(),
+    supervisorEmail: z.string().email().optional().or(z.literal("")),
   });
 
   app.patch("/api/org/clients/:clientId/details", requireOrganization, async (req, res) => {
@@ -505,6 +508,85 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("[ORG] Failed to update client details:", error);
       res.status(500).json({ error: "Failed to update client details" });
+    }
+  });
+
+  // ========== Supervisor SMS verification ==========
+  const supervisorVerificationCodes = new Map<string, { code: string; expiresAt: number }>();
+
+  app.post("/api/org/supervisor/send-verification", requireOrganization, async (req, res) => {
+    try {
+      const { phone, supervisorName } = req.body;
+      if (!phone || typeof phone !== "string") {
+        return res.status(400).json({ error: "Phone number is required" });
+      }
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      supervisorVerificationCodes.set(phone, { code, expiresAt: Date.now() + 10 * 60 * 1000 });
+
+      const { sendAppInviteSMS } = await import("./notifications");
+      const smsBody = `aok Supervisor Verification: Your code is ${code}. Enter this code to confirm your mobile number.`;
+      const twilio = await import("twilio");
+      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+      const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
+      const authToken = process.env.TWILIO_AUTH_TOKEN;
+      const apiKey = process.env.TWILIO_API_KEY;
+      const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
+
+      let smsSent = false;
+      if (accountSid && phoneNumber) {
+        try {
+          let client;
+          if (apiKey && apiKeySecret) {
+            client = twilio.default(apiKey, apiKeySecret, { accountSid });
+          } else if (authToken) {
+            client = twilio.default(accountSid, authToken);
+          }
+          if (client) {
+            await client.messages.create({
+              body: smsBody,
+              from: phoneNumber,
+              to: phone,
+            });
+            smsSent = true;
+          }
+        } catch (smsErr: any) {
+          console.error("[ORG] Failed to send supervisor verification SMS:", smsErr.message);
+        }
+      }
+
+      if (!smsSent) {
+        console.log(`[ORG] Supervisor verification code for ${phone}: ${code}`);
+      }
+
+      res.json({ success: true, smsSent });
+    } catch (error) {
+      console.error("[ORG] Failed to send supervisor verification:", error);
+      res.status(500).json({ error: "Failed to send verification SMS" });
+    }
+  });
+
+  app.post("/api/org/supervisor/verify-sms", requireOrganization, async (req, res) => {
+    try {
+      const { phone, code } = req.body;
+      if (!phone || !code) {
+        return res.status(400).json({ error: "Phone and code are required" });
+      }
+      const stored = supervisorVerificationCodes.get(phone);
+      if (!stored) {
+        return res.json({ verified: false, error: "No verification code found. Please request a new one." });
+      }
+      if (Date.now() > stored.expiresAt) {
+        supervisorVerificationCodes.delete(phone);
+        return res.json({ verified: false, error: "Verification code has expired. Please request a new one." });
+      }
+      if (stored.code !== code) {
+        return res.json({ verified: false, error: "Incorrect code" });
+      }
+      supervisorVerificationCodes.delete(phone);
+      res.json({ verified: true });
+    } catch (error) {
+      console.error("[ORG] Failed to verify supervisor SMS:", error);
+      res.status(500).json({ error: "Failed to verify SMS" });
     }
   });
 
@@ -2175,6 +2257,47 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error: any) {
       console.error("[ORG] Staff bulk import failed:", error);
       res.status(400).json({ error: error.message || "Staff bulk import failed" });
+    }
+  });
+
+  // Update staff invite details (name, phone, email, supervisor)
+  app.patch("/api/org/staff/invite/:inviteId/details", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const orgUser = req.user as any;
+      const { inviteId } = req.params;
+      const { staffName, staffPhone, staffEmail, supervisorName, supervisorPhone, supervisorEmail } = req.body || {};
+
+      const invites = await organizationStorage.getStaffInvites(orgId);
+      const invite = invites.find(i => i.id === inviteId);
+      if (!invite) {
+        return res.status(404).json({ error: "Invite not found" });
+      }
+
+      const updated = await organizationStorage.updateStaffInviteDetails(inviteId, orgId, {
+        ...(staffName ? { staffName } : {}),
+        ...(staffPhone ? { staffPhone } : {}),
+        ...(staffEmail !== undefined ? { staffEmail } : {}),
+        ...(supervisorName !== undefined ? { supervisorName } : {}),
+        ...(supervisorPhone !== undefined ? { supervisorPhone } : {}),
+        ...(supervisorEmail !== undefined ? { supervisorEmail } : {}),
+      });
+
+      await storage.createAuditEntry(orgId, {
+        userEmail: orgUser.email,
+        userRole: "organization",
+        action: "update",
+        entityType: "staff_invite",
+        entityId: inviteId,
+        previousData: { staffName: invite.staffName, staffPhone: invite.staffPhone, staffEmail: invite.staffEmail, supervisorName: invite.supervisorName, supervisorPhone: invite.supervisorPhone, supervisorEmail: invite.supervisorEmail },
+        newData: { staffName: staffName || invite.staffName, staffPhone: staffPhone || invite.staffPhone, staffEmail: staffEmail ?? invite.staffEmail, supervisorName: supervisorName ?? invite.supervisorName, supervisorPhone: supervisorPhone ?? invite.supervisorPhone, supervisorEmail: supervisorEmail ?? invite.supervisorEmail },
+        ipAddress: req.ip || undefined,
+      });
+
+      res.json(updated || invite);
+    } catch (error) {
+      console.error("[ORG] Failed to update staff invite details:", error);
+      res.status(500).json({ error: "Failed to update invite details" });
     }
   });
 
