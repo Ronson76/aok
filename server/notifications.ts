@@ -1737,9 +1737,10 @@ export async function sendLoneWorkerMissedCheckInAlert(
 
     const emailSubject = `MISSED CHECK-IN: ${workerName} has not checked in (${jobType})`;
     const mainContent = `
+      <p style="margin: 0 0 12px 0;">You are receiving this because you are the designated <strong>supervisor</strong> for <strong>${workerName}</strong>.</p>
       <p style="margin: 0 0 12px 0;"><strong>${workerName}</strong> has missed their scheduled check-in during a <strong>${jobType}</strong> shift.</p>
       <p style="margin: 0 0 12px 0;">The check-in window plus grace period has now passed without a response. This may indicate they need assistance.</p>
-      <p style="margin: 0; font-weight: 600; color: #DC2626;">Please try to contact them immediately.</p>
+      <p style="margin: 0; font-weight: 600; color: #DC2626;">As their supervisor, please try to contact them immediately.</p>
     `;
 
     const htmlEmail = createBrandedEmail({
@@ -1751,7 +1752,7 @@ export async function sendLoneWorkerMissedCheckInAlert(
       customFooterNote: 'If you cannot reach them, consider contacting local emergency services.'
     });
 
-    const plainText = `MISSED CHECK-IN - ${workerName}\n\nHi ${supervisorName || 'Supervisor'},\n\n${workerName} has missed their scheduled check-in during a ${jobType} shift. The check-in window plus grace period has passed.\n\n${smsLocationInfo}\n\nPlease try to contact them immediately.\n\n- The aok Team`;
+    const plainText = `MISSED CHECK-IN - ${workerName}\n\nHi ${supervisorName || 'Supervisor'},\n\nYou are receiving this because you are the designated supervisor for ${workerName}.\n\n${workerName} has missed their scheduled check-in during a ${jobType} shift. The check-in window plus grace period has passed.\n\n${smsLocationInfo}\n\nAs their supervisor, please try to contact them immediately.\n\n- The aok Team`;
 
     try {
       await sendEmail(supervisorEmail, emailSubject, plainText, htmlEmail);
@@ -1763,7 +1764,7 @@ export async function sendLoneWorkerMissedCheckInAlert(
   }
 
   if (supervisorPhone) {
-    const smsBody = `MISSED CHECK-IN from aok: ${workerName} has not checked in during their ${jobType} shift. ${smsLocationInfo} Please try to contact them immediately.`.trim();
+    const smsBody = `MISSED CHECK-IN from aok: As their supervisor, ${workerName} has not checked in during their ${jobType} shift. ${smsLocationInfo} Please try to contact them immediately.`.trim();
 
     const smsResult = await sendSMS(supervisorPhone, smsBody);
     if (smsResult.success) {
@@ -1773,7 +1774,7 @@ export async function sendLoneWorkerMissedCheckInAlert(
       console.error(`[LW MISSED CHECK-IN] Failed to send SMS to ${supervisorPhone}:`, smsResult.error);
     }
 
-    const voiceMessage = `This is an urgent alert from A O K. ${workerName} has missed their scheduled check-in during a ${jobType} shift. The check-in window plus grace period has now passed without a response. Please try to contact them immediately. If you cannot reach them, consider contacting emergency services.`;
+    const voiceMessage = `This is an urgent alert from A O K. You are receiving this call because you are the designated supervisor for ${workerName}. ${workerName} has missed their scheduled check-in during a ${jobType} shift. The check-in window plus grace period has now passed without a response. As their supervisor, please try to contact them immediately. If you cannot reach them, consider contacting emergency services.`;
 
     const callResult = await makeVoiceCall(supervisorPhone, voiceMessage);
     if (callResult.success) {
