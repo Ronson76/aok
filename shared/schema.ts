@@ -717,9 +717,9 @@ export const registerOrgClientSchema = z.object({
   bundleId: z.string().optional(),
   scheduleStartTime: z.string().optional(),
   checkInIntervalHours: z.number().min(1).max(48).default(24),
-  supervisorName: z.string().optional(),
-  supervisorPhone: z.string().optional(),
-  supervisorEmail: z.string().email().optional().or(z.literal("")),
+  supervisorName: z.string().min(1, "Supervisor name is required"),
+  supervisorPhone: z.string().min(10, "Supervisor phone number is required"),
+  supervisorEmail: z.string().email("Valid supervisor email is required"),
   emergencyContacts: z.array(z.object({
     name: z.string().min(1),
     email: z.string().email(),

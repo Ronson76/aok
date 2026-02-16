@@ -1190,9 +1190,10 @@ export async function registerRoutes(
           ...(orgClient.featureEmergencyRecording ? { emergencyRecordingEnabled: true } : {}),
         });
         
-        // Copy pending contacts to user's contacts
+        // Copy pending contacts to user's contacts (supervisor first as primary)
         const pendingContacts = await organizationStorage.getPendingClientContacts(orgClient.id);
-        for (const contact of pendingContacts) {
+        const sortedContacts = [...pendingContacts].sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
+        for (const contact of sortedContacts) {
           if (contact.email && contact.name) {
             await storage.createContact(user.id, {
               name: contact.name,
