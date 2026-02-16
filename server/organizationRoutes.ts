@@ -161,7 +161,7 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
       }
 
-      const { clientName, clientPhone, dateOfBirth, bundleId, scheduleStartTime, checkInIntervalHours, emergencyContacts, features, supervisorName, supervisorPhone } = parsed.data;
+      const { clientName, clientPhone, dateOfBirth, bundleId, scheduleStartTime, checkInIntervalHours, emergencyContacts, features, supervisorName, supervisorPhone, supervisorEmail } = parsed.data;
 
       // Get the organization details
       const org = await storage.getUserById(req.userId!);
@@ -192,6 +192,7 @@ export function registerOrganizationRoutes(app: Express) {
         checkInIntervalHours: checkInIntervalHours || 24,
         supervisorName: supervisorName || null,
         supervisorPhone: supervisorPhone || null,
+        supervisorEmail: supervisorEmail || null,
         features: features || {
           featureWellbeingAi: true,
           featureShakeToAlert: true,
@@ -209,10 +210,25 @@ export function registerOrganizationRoutes(app: Express) {
         });
       }
 
-      // Create emergency contacts for the pending client
+      // Add supervisor as a primary contact (gets missed check-in alerts)
+      if (supervisorName && supervisorEmail) {
+        await organizationStorage.addPendingClientContact(orgClient.id, {
+          name: supervisorName,
+          email: supervisorEmail,
+          phone: supervisorPhone || undefined,
+          phoneType: "mobile",
+          relationship: "Supervisor",
+          isPrimary: true,
+        });
+      }
+
+      // Add emergency contacts as secondary (only notified on emergencies)
       if (emergencyContacts && emergencyContacts.length > 0) {
         for (const contact of emergencyContacts) {
-          await organizationStorage.addPendingClientContact(orgClient.id, contact);
+          await organizationStorage.addPendingClientContact(orgClient.id, {
+            ...contact,
+            isPrimary: false,
+          });
         }
       }
 
