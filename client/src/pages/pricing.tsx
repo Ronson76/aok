@@ -30,8 +30,8 @@ export default function Pricing() {
     {
       name: "Essential",
       description: "Core check-in and alert tools for peace of mind.",
-      monthlyPrice: 6.99,
-      yearlyPrice: 69.99,
+      monthlyPrice: 9.99,
+      yearlyPrice: 99.99,
       features: [
         { text: "Flexible check-in timer (5 minutes to 48 hours)", icon: Clock },
         { text: "Up to 5 emergency contacts", icon: Users },
@@ -56,8 +56,8 @@ export default function Pricing() {
     {
       name: "Complete Wellbeing",
       description: "Everything in Essential plus wellness, AI, and more.",
-      monthlyPrice: 9.99,
-      yearlyPrice: 99.99,
+      monthlyPrice: 16.99,
+      yearlyPrice: 169.99,
       features: [
         { text: "Everything in Essential", icon: Check },
         { text: "Emergency recording (opt-in)", icon: Mic },
@@ -324,7 +324,7 @@ export default function Pricing() {
           <h2 className="text-2xl font-bold text-center mb-8" data-testid="text-faq-title">Frequently Asked Questions</h2>
           <div className="space-y-4">
             {[
-              { q: "What happens after my free trial?", a: "After 7 days, choose from Essential at £6.99/month (£69.99/year) or Complete Wellbeing at £9.99/month (£99.99/year). You can cancel anytime during the trial without being charged." },
+              { q: "What happens after my free trial?", a: "After 7 days, choose from Essential at £9.99/month (£99.99/year) or Complete Wellbeing at £16.99/month (£169.99/year). You can cancel anytime during the trial without being charged." },
               { q: "Can I cancel at any time?", a: "Yes, you can cancel your subscription at any time from Settings. Your account stays active until the end of your current billing period." },
               { q: "What payment methods do you accept?", a: "We accept all major debit and credit cards, Apple Pay, and Google Pay for quick and easy payment." },
               { q: "How does the organisation plan work?", a: "Organisations purchase bundles of seats and manage clients through a dedicated dashboard. Contact us for custom pricing based on your team size." },

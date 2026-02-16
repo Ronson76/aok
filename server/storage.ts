@@ -3398,10 +3398,10 @@ class AdminStorage implements IAdminStorage {
     if (existing.length > 0) return;
 
     const defaults = [
-      { key: "tier1_monthly", value: 6.99, label: "Tier 1 (Essential) Monthly", category: "subscription" },
-      { key: "tier1_yearly", value: 69.99, label: "Tier 1 (Essential) Yearly", category: "subscription" },
-      { key: "tier2_monthly", value: 9.99, label: "Tier 2 (Complete) Monthly", category: "subscription" },
-      { key: "tier2_yearly", value: 99.99, label: "Tier 2 (Complete) Yearly", category: "subscription" },
+      { key: "tier1_monthly", value: 9.99, label: "Tier 1 (Essential) Monthly", category: "subscription" },
+      { key: "tier1_yearly", value: 99.99, label: "Tier 1 (Essential) Yearly", category: "subscription" },
+      { key: "tier2_monthly", value: 16.99, label: "Tier 2 (Complete) Monthly", category: "subscription" },
+      { key: "tier2_yearly", value: 169.99, label: "Tier 2 (Complete) Yearly", category: "subscription" },
       { key: "tier3_monthly", value: 14.99, label: "Tier 3 (Premium) Monthly", category: "subscription" },
       { key: "tier3_yearly", value: 149.99, label: "Tier 3 (Premium) Yearly", category: "subscription" },
       { key: "org_monthly", value: 7.99, label: "Organisation Monthly", category: "subscription" },
