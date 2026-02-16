@@ -2661,6 +2661,9 @@ export function registerOrganizationRoutes(app: Express) {
         staffName: invite.staffName,
         staffPhone: invite.staffPhone,
         staffEmail: invite.staffEmail || "",
+        supervisorName: invite.supervisorName || "",
+        supervisorPhone: invite.supervisorPhone || "",
+        supervisorEmail: invite.supervisorEmail || "",
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to verify invite code" });
