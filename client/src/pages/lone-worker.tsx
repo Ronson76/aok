@@ -366,6 +366,7 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
   const resolveMutation = useMutation({
     mutationFn: () => apiRequest("POST", `/api/lone-worker/${session.id}/resolve`, { outcome: resolveOutcome, notes: resolveNotes }),
     onSuccess: () => {
+      if (locationInterval.current) clearInterval(locationInterval.current);
       queryClient.invalidateQueries({ queryKey: ["/api/lone-worker/active"] });
       setShowResolveDialog(false);
       toast({ title: "Session ended", description: "Your shift has been logged and resolved." });
