@@ -705,7 +705,7 @@ export default function OrgLoneWorkerHub() {
     try {
       const res = await fetch("/api/org/supervisor/send-verification", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-csrf-token": document.cookie.match(/csrf_token=([^;]+)/)?.[1] || "" },
+        headers: { "Content-Type": "application/json", "x-csrf-token": document.cookie.match(/(?:^|;\s*)csrf-token=([^;]*)/)?.[1] || "" },
         credentials: "include",
         body: JSON.stringify({ phone: fullPhone, supervisorName: supName }),
       });
@@ -730,7 +730,7 @@ export default function OrgLoneWorkerHub() {
     try {
       const res = await fetch("/api/org/supervisor/verify-sms", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-csrf-token": document.cookie.match(/csrf_token=([^;]+)/)?.[1] || "" },
+        headers: { "Content-Type": "application/json", "x-csrf-token": document.cookie.match(/(?:^|;\s*)csrf-token=([^;]*)/)?.[1] || "" },
         credentials: "include",
         body: JSON.stringify({ phone: fullPhone, code: supSmsCode }),
       });
@@ -1623,7 +1623,7 @@ export default function OrgLoneWorkerHub() {
                             try {
                               const res = await fetch("/api/org/supervisor/send-verification", {
                                 method: "POST",
-                                headers: { "Content-Type": "application/json", "x-csrf-token": document.cookie.match(/csrf_token=([^;]+)/)?.[1] || "" },
+                                headers: { "Content-Type": "application/json", "x-csrf-token": document.cookie.match(/(?:^|;\s*)csrf-token=([^;]*)/)?.[1] || "" },
                                 credentials: "include",
                                 body: JSON.stringify({ phone: fullPhone, supervisorName: editSupervisorName }),
                               });
@@ -1650,7 +1650,7 @@ export default function OrgLoneWorkerHub() {
                               try {
                                 const res = await fetch("/api/org/supervisor/verify-sms", {
                                   method: "POST",
-                                  headers: { "Content-Type": "application/json", "x-csrf-token": document.cookie.match(/csrf_token=([^;]+)/)?.[1] || "" },
+                                  headers: { "Content-Type": "application/json", "x-csrf-token": document.cookie.match(/(?:^|;\s*)csrf-token=([^;]*)/)?.[1] || "" },
                                   credentials: "include",
                                   body: JSON.stringify({ phone: fullPhone, code: editSupervisorSmsCode }),
                                 });
@@ -1674,7 +1674,7 @@ export default function OrgLoneWorkerHub() {
                               try {
                                 const res = await fetch("/api/org/supervisor/send-verification", {
                                   method: "POST",
-                                  headers: { "Content-Type": "application/json", "x-csrf-token": document.cookie.match(/csrf_token=([^;]+)/)?.[1] || "" },
+                                  headers: { "Content-Type": "application/json", "x-csrf-token": document.cookie.match(/(?:^|;\s*)csrf-token=([^;]*)/)?.[1] || "" },
                                   credentials: "include",
                                   body: JSON.stringify({ phone: fullPhone, supervisorName: editSupervisorName }),
                                 });
