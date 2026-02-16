@@ -381,8 +381,9 @@ const HELP_TOPICS: HelpTopic[] = [
     content: [
       "If a client has triggered an emergency alert and the situation has been resolved, you can deactivate it.",
       "Clients with active emergencies show a flashing red alert icon on the dashboard.",
-      "Open the client's details and tap **Deactivate Emergency** to stop the alert.",
-      "This will be logged in the audit trail for your records.",
+      "When a client requests to end their emergency (by holding the deactivate button), their emergency contacts receive a confirmation request. The emergency only fully ends once a contact confirms they have spoken to the client and they are safe.",
+      "Organisation admins can also deactivate a client's emergency from the dashboard by opening the client's details and tapping **Deactivate Emergency**.",
+      "All deactivations are logged in the audit trail for your records.",
     ],
     relatedTopics: ["alerts-emergency", "safeguarding-incidents"],
   },

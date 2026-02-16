@@ -2333,10 +2333,80 @@ export async function registerRoutes(
       }
 
       const objectFile = await objectStorageService.getObjectEntityFile(recording.objectPath);
-      await objectStorageService.downloadObject(objectFile, res);
+      const [metadata] = await objectFile.getMetadata();
+      res.set({
+        "Content-Type": metadata.contentType || "video/webm",
+        "Content-Length": metadata.size?.toString() || "",
+        "Content-Disposition": `attachment; filename="emergency-recording-${recording.id}.webm"`,
+      });
+      const stream = objectFile.createReadStream();
+      stream.on("error", (err: Error) => {
+        console.error("Stream error:", err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: "Error streaming file" });
+        }
+      });
+      stream.pipe(res);
     } catch (error) {
       console.error("[EMERGENCY RECORDING] Failed to download recording:", error);
       res.status(500).json({ error: "Failed to download recording" });
+    }
+  });
+
+  // Stream a recording for inline playback
+  app.get("/api/emergency/recordings/:id/stream", async (req, res) => {
+    try {
+      const recording = await storage.getEmergencyRecording(req.params.id);
+      if (!recording) {
+        return res.status(404).json({ error: "Recording not found" });
+      }
+
+      if (recording.userId !== req.userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      if (!recording.objectPath || recording.status !== "ready") {
+        return res.status(404).json({ error: "Recording file not available" });
+      }
+
+      const objectFile = await objectStorageService.getObjectEntityFile(recording.objectPath);
+      const [metadata] = await objectFile.getMetadata();
+      const contentType = metadata.contentType || "video/webm";
+      const fileSize = parseInt(metadata.size?.toString() || "0", 10);
+
+      const range = req.headers.range;
+      if (range && fileSize > 0) {
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        if (start >= fileSize || end >= fileSize || start > end) {
+          res.status(416).set({ "Content-Range": `bytes */${fileSize}` }).end();
+          return;
+        }
+        const chunkSize = end - start + 1;
+        res.status(206);
+        res.set({
+          "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+          "Accept-Ranges": "bytes",
+          "Content-Length": chunkSize.toString(),
+          "Content-Type": contentType,
+          "Content-Disposition": "inline",
+        });
+        const stream = objectFile.createReadStream({ start, end });
+        stream.pipe(res);
+      } else {
+        res.set({
+          "Content-Type": contentType,
+          "Content-Length": fileSize.toString(),
+          "Accept-Ranges": "bytes",
+          "Content-Disposition": "inline",
+        });
+        const stream = objectFile.createReadStream();
+        stream.pipe(res);
+      }
+    } catch (error) {
+      console.error("[EMERGENCY RECORDING] Failed to stream recording:", error);
+      res.status(500).json({ error: "Failed to stream recording" });
     }
   });
 
