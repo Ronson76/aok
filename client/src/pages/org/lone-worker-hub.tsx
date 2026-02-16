@@ -7,8 +7,9 @@ import {
   Search, Phone, Mail, ShieldCheck, LogOut, UserPlus, Trash2, Shield,
   Radio, MapPin, AlertTriangle, Siren, Eye, History, Briefcase,
   FileText, ChevronDown, ChevronUp, Upload, Download, FileSpreadsheet,
-  CheckCircle2, XOctagon, Video, Edit2, MessageSquare, User
+  CheckCircle2, XOctagon, Video, Edit2, MessageSquare, User, Navigation
 } from "lucide-react";
+import "leaflet/dist/leaflet.css";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -99,6 +100,135 @@ function statusPriority(status: string): number {
   }
 }
 
+function LiveLocationMap({ session }: { session: SessionWithUser }) {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+
+  const lat = session.lastLocationLat ? parseFloat(session.lastLocationLat) : null;
+  const lng = session.lastLocationLng ? parseFloat(session.lastLocationLng) : null;
+  const hasLocation = lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng);
+
+  useEffect(() => {
+    if (!hasLocation || !mapContainerRef.current) return;
+    let cancelled = false;
+    import("leaflet").then((L) => {
+      if (cancelled || !mapContainerRef.current) return;
+      if (mapInstanceRef.current) return;
+      const map = L.default.map(mapContainerRef.current!, {
+        center: [lat!, lng!],
+        zoom: 16,
+        zoomControl: true,
+        attributionControl: false,
+      });
+      L.default.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+      }).addTo(map);
+
+      const statusColor = session.status === "panic" ? "#dc2626" : session.status === "unresponsive" ? "#ea580c" : "#16a34a";
+      const icon = L.default.divIcon({
+        className: "live-location-marker",
+        html: `<div style="position:relative;background:${statusColor};width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 0 8px rgba(0,0,0,0.3)"><div style="position:absolute;top:-6px;left:-6px;width:28px;height:28px;border-radius:50%;border:2px solid ${statusColor};opacity:0.4;animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite"></div></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+      });
+      const marker = L.default.marker([lat!, lng!], { icon }).addTo(map);
+      marker.bindPopup(`<b>${session.userName}</b><br/>${session.status.replace(/_/g, " ")}`);
+      mapInstanceRef.current = map;
+      markerRef.current = marker;
+      setTimeout(() => map.invalidateSize(), 150);
+    });
+    return () => {
+      cancelled = true;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        markerRef.current = null;
+      }
+    };
+  }, [hasLocation]);
+
+  useEffect(() => {
+    if (mapInstanceRef.current && markerRef.current && hasLocation) {
+      markerRef.current.setLatLng([lat!, lng!]);
+      mapInstanceRef.current.panTo([lat!, lng!], { animate: true });
+    }
+  }, [lat, lng, hasLocation]);
+
+  useEffect(() => {
+    if (!markerRef.current) return;
+    import("leaflet").then((L) => {
+      if (!markerRef.current) return;
+      const statusColor = session.status === "panic" ? "#dc2626" : session.status === "unresponsive" ? "#ea580c" : "#16a34a";
+      const icon = L.default.divIcon({
+        className: "live-location-marker",
+        html: `<div style="position:relative;background:${statusColor};width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 0 8px rgba(0,0,0,0.3)"><div style="position:absolute;top:-6px;left:-6px;width:28px;height:28px;border-radius:50%;border:2px solid ${statusColor};opacity:0.4;animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite"></div></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+      });
+      markerRef.current.setIcon(icon);
+      markerRef.current.setPopupContent(`<b>${session.userName}</b><br/>${session.status.replace(/_/g, " ")}`);
+    });
+  }, [session.status, session.userName]);
+
+  if (!hasLocation) {
+    return (
+      <div className="mt-3 p-4 rounded border bg-muted/30 text-center" data-testid={`map-no-location-${session.id}`}>
+        <MapPin className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+        <p className="text-sm text-muted-foreground">No location data available yet</p>
+        <p className="text-xs text-muted-foreground mt-1">Location will appear once the worker's device sends GPS data</p>
+      </div>
+    );
+  }
+
+  const updatedAgo = session.lastLocationAt ? formatDistanceToNow(new Date(session.lastLocationAt), { addSuffix: true }) : null;
+
+  return (
+    <div className="mt-3 space-y-2" data-testid={`map-panel-${session.id}`}>
+      <style>{`
+        @keyframes ping { 75%, 100% { transform: scale(2); opacity: 0; } }
+      `}</style>
+      <div
+        ref={mapContainerRef}
+        className="w-full rounded border overflow-hidden"
+        style={{ height: "250px" }}
+        data-testid={`map-container-${session.id}`}
+      />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+        <div className="flex items-center gap-1.5 p-2 rounded border bg-muted/30">
+          <Navigation className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          <div>
+            <p className="text-muted-foreground">Coordinates</p>
+            <p className="font-mono font-medium">{lat!.toFixed(6)}, {lng!.toFixed(6)}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 p-2 rounded border bg-muted/30">
+          <Clock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          <div>
+            <p className="text-muted-foreground">Last Updated</p>
+            <p className="font-medium">{updatedAgo || "—"}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 p-2 rounded border bg-muted/30">
+          <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          <div>
+            <p className="text-muted-foreground">Open in Maps</p>
+            <a
+              href={`https://maps.google.com/?q=${lat},${lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary underline"
+              data-testid={`link-google-maps-${session.id}`}
+            >
+              Google Maps
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function getInviteStatusBadge(status: string) {
   switch (status) {
     case "pending": return <Badge variant="outline"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
@@ -167,6 +297,7 @@ export default function OrgLoneWorkerHub() {
   const [editSupervisorSmsSending, setEditSupervisorSmsSending] = useState(false);
   const [editSupervisorSmsVerifying, setEditSupervisorSmsVerifying] = useState(false);
   const [editSupervisorSmsSent, setEditSupervisorSmsSent] = useState(false);
+  const [expandedLocationSession, setExpandedLocationSession] = useState<string | null>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importStep, setImportStep] = useState<"upload" | "preview" | "importing" | "results">("upload");
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -849,6 +980,25 @@ export default function OrgLoneWorkerHub() {
                             </a>
                           )}
                         </div>
+                      )}
+                      <div className="mt-3 flex items-center gap-2">
+                        <Button
+                          variant={expandedLocationSession === s.id ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setExpandedLocationSession(expandedLocationSession === s.id ? null : s.id)}
+                          data-testid={`button-location-${s.id}`}
+                        >
+                          <MapPin className="w-3.5 h-3.5 mr-1.5" />
+                          {expandedLocationSession === s.id ? "Hide Location" : "Location"}
+                        </Button>
+                        {s.lastLocationLat && s.lastLocationLng && s.lastLocationAt && (
+                          <span className="text-xs text-muted-foreground">
+                            Updated {formatDistanceToNow(new Date(s.lastLocationAt), { addSuffix: true })}
+                          </span>
+                        )}
+                      </div>
+                      {expandedLocationSession === s.id && (
+                        <LiveLocationMap session={s} />
                       )}
                     </CardContent>
                   </Card>
