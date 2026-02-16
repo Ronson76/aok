@@ -464,6 +464,10 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
   const [showHistory, setShowHistory] = useState(false);
   const [showShiftDetails, setShowShiftDetails] = useState(false);
 
+  const supervisorQuery = useQuery<{ hasSupervisor: boolean; supervisorName?: string; supervisorPhone?: string; supervisorEmail?: string }>({
+    queryKey: ["/api/lone-worker/supervisor"],
+  });
+
   const isPanic = session.status === "panic";
   const isUnresponsive = session.status === "unresponsive";
   const isDue = session.status === "check_in_due" || checkInDue;
@@ -693,6 +697,32 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
                 className={isDue ? "bg-yellow-600 hover-elevate" : ""}
               >
                 {checkInMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle className="w-4 h-4 mr-1" /> {isDue ? "I'm OK" : "Not Yet Due"}</>}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {supervisorQuery.data?.hasSupervisor && supervisorQuery.data.supervisorPhone && (
+        <Card>
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Phone className="w-5 h-5 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Supervisor</p>
+                  <p className="text-xs text-muted-foreground">{supervisorQuery.data.supervisorName || "Your supervisor"}</p>
+                </div>
+              </div>
+              <Button
+                data-testid="button-call-supervisor"
+                variant="default"
+                size="lg"
+                asChild
+              >
+                <a href={`tel:${supervisorQuery.data.supervisorPhone}`}>
+                  <Phone className="w-4 h-4 mr-2" /> Call Supervisor
+                </a>
               </Button>
             </div>
           </CardContent>

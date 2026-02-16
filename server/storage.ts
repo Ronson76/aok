@@ -2135,6 +2135,23 @@ class DatabaseStorage implements IStorage {
 
   // ==================== LONE WORKER SESSIONS ====================
 
+  async getStaffSupervisorInfo(userId: string): Promise<{ supervisorName: string | null; supervisorPhone: string | null; supervisorEmail: string | null } | null> {
+    const result = await getDb()
+      .select({
+        supervisorName: organizationStaffInvites.supervisorName,
+        supervisorPhone: organizationStaffInvites.supervisorPhone,
+        supervisorEmail: organizationStaffInvites.supervisorEmail,
+      })
+      .from(organizationStaffInvites)
+      .where(and(
+        eq(organizationStaffInvites.acceptedByUserId, userId),
+        eq(organizationStaffInvites.status, "accepted"),
+      ))
+      .limit(1);
+    if (result.length === 0 || !result[0].supervisorPhone) return null;
+    return result[0];
+  }
+
   async isStaffMember(userId: string): Promise<{ isStaff: boolean; organizationId?: string; organizationName?: string }> {
     const result = await getDb()
       .select({
