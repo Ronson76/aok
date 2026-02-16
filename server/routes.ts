@@ -3588,6 +3588,7 @@ export async function registerRoutes(
     try {
       const session = await storage.getLoneWorkerSession(req.params.sessionId);
       if (!session || session.userId !== req.user!.id) return res.status(404).json({ error: "Session not found" });
+      if (session.status === "resolved" || session.endedAt) return res.status(400).json({ error: "Session ended" });
 
       const { lat, lng } = req.body;
       if (!lat || !lng) return res.status(400).json({ error: "Location required" });
