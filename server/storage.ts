@@ -3900,7 +3900,7 @@ class OrganizationStorage implements IOrganizationStorage {
     return result[0];
   }
 
-  async updateClientDetails(organizationClientId: string, details: { nickname?: string; clientName?: string; clientPhone?: string; clientEmail?: string; alertsEnabled?: boolean }): Promise<OrganizationClient | undefined> {
+  async updateClientDetails(organizationClientId: string, details: { nickname?: string; clientName?: string; clientPhone?: string; clientEmail?: string; alertsEnabled?: boolean; supervisorName?: string; supervisorPhone?: string; supervisorEmail?: string }): Promise<OrganizationClient | undefined> {
     const result = await getDb()
       .update(organizationClients)
       .set(details)
@@ -4767,11 +4767,14 @@ class OrganizationStorage implements IOrganizationStorage {
     return invite;
   }
 
-  async updateStaffInviteDetails(inviteId: string, organizationId: string, data: { staffName?: string; staffPhone?: string; staffEmail?: string }): Promise<OrganizationStaffInvite | undefined> {
+  async updateStaffInviteDetails(inviteId: string, organizationId: string, data: { staffName?: string; staffPhone?: string; staffEmail?: string; supervisorName?: string; supervisorPhone?: string; supervisorEmail?: string }): Promise<OrganizationStaffInvite | undefined> {
     const updateData: Record<string, any> = {};
     if (data.staffName !== undefined) updateData.staffName = data.staffName;
     if (data.staffPhone !== undefined) updateData.staffPhone = data.staffPhone;
     if (data.staffEmail !== undefined) updateData.staffEmail = data.staffEmail;
+    if (data.supervisorName !== undefined) updateData.supervisorName = data.supervisorName;
+    if (data.supervisorPhone !== undefined) updateData.supervisorPhone = data.supervisorPhone;
+    if (data.supervisorEmail !== undefined) updateData.supervisorEmail = data.supervisorEmail;
     if (Object.keys(updateData).length === 0) return undefined;
     const [invite] = await getDb()
       .update(organizationStaffInvites)
