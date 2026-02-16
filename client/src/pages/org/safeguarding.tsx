@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { OrgHelpButton } from "@/components/org-help-center";
-import { Shield, ArrowLeft, AlertTriangle, FileWarning, Folder, Scale, Clock, ChevronDown, ChevronRight, Plus, Eye, Check, X, Search, Filter, AlertCircle, FileText, Users, Activity, TrendingUp, Loader2, MessageSquare, Download } from "lucide-react";
+import { Shield, ArrowLeft, AlertTriangle, FileWarning, Folder, Scale, Clock, ChevronDown, ChevronUp, ChevronRight, Plus, Eye, Check, X, Search, Filter, AlertCircle, FileText, Users, User, Activity, TrendingUp, Loader2, MessageSquare, Download, Calendar } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -218,6 +218,8 @@ export default function OrgSafeguardingPage() {
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   
   // PDF download state
+  const [safeguardingAuditGroupBy, setSafeguardingAuditGroupBy] = useState<"none" | "date" | "user">("date");
+  const [expandedSafeguardingAuditGroups, setExpandedSafeguardingAuditGroups] = useState<Set<string>>(new Set());
   const [showPdfDialog, setShowPdfDialog] = useState(false);
   const [pdfType, setPdfType] = useState<"incidents" | "concerns" | "audit" | "confirmations" | null>(null);
   const [pdfDateRange, setPdfDateRange] = useState<"all" | "month" | "year" | "custom">("all");
@@ -1466,25 +1468,147 @@ export default function OrgSafeguardingPage() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                {/* Group By selector */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Select value={safeguardingAuditGroupBy} onValueChange={(v: "none" | "date" | "user") => { setSafeguardingAuditGroupBy(v); setExpandedSafeguardingAuditGroups(new Set()); }}>
+                    <SelectTrigger className="w-44" data-testid="select-safeguarding-audit-group-by">
+                      <SelectValue placeholder="Group by..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="date">
+                        <span className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Group by Date</span>
+                      </SelectItem>
+                      <SelectItem value="user">
+                        <span className="flex items-center gap-2"><User className="h-4 w-4" /> Group by User</span>
+                      </SelectItem>
+                      <SelectItem value="none">No Grouping</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {safeguardingAuditGroupBy !== "none" && auditTrail && auditTrail.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const keys = new Set<string>();
+                          auditTrail.forEach(e => {
+                            keys.add(safeguardingAuditGroupBy === "date" ? format(new Date(e.createdAt), "dd/MM/yyyy") : (e.userEmail || "System"));
+                          });
+                          setExpandedSafeguardingAuditGroups(keys);
+                        }}
+                        data-testid="button-safeguarding-audit-expand-all"
+                      >
+                        Expand All
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setExpandedSafeguardingAuditGroups(new Set())}
+                        data-testid="button-safeguarding-audit-collapse-all"
+                      >
+                        Collapse All
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
                 {auditTrail && auditTrail.length > 0 ? (
                   <div className="space-y-2">
-                    {auditTrail.map((entry) => (
-                      <div key={entry.id} className="p-3 rounded-lg border flex items-start justify-between gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs capitalize">{entry.action}</Badge>
-                            <span className="text-sm font-medium capitalize">{entry.entityType.replace(/_/g, " ")}</span>
+                    {safeguardingAuditGroupBy === "none" ? (
+                      auditTrail.map((entry) => (
+                        <div key={entry.id} className="p-3 rounded-lg border flex items-start justify-between gap-4" data-testid={`safeguarding-audit-entry-${entry.id}`}>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant="outline" className="text-xs capitalize">{entry.action}</Badge>
+                              <span className="text-sm font-medium capitalize">{entry.entityType.replace(/_/g, " ")}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              By: {entry.userEmail} ({entry.userRole})
+                            </p>
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            By: {entry.userEmail} ({entry.userRole})
-                          </p>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm")}
+                          </span>
                         </div>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm")}
-                        </span>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      (() => {
+                        const groups = new Map<string, AuditEntry[]>();
+                        auditTrail.forEach(entry => {
+                          const key = safeguardingAuditGroupBy === "date"
+                            ? format(new Date(entry.createdAt), "dd/MM/yyyy")
+                            : (entry.userEmail || "System");
+                          if (!groups.has(key)) groups.set(key, []);
+                          groups.get(key)!.push(entry);
+                        });
+                        const sorted = Array.from(groups.entries());
+                        if (safeguardingAuditGroupBy === "date") {
+                          sorted.sort((a, b) => {
+                            const dA = new Date(a[1][0].createdAt);
+                            const dB = new Date(b[1][0].createdAt);
+                            return dB.getTime() - dA.getTime();
+                          });
+                        } else {
+                          sorted.sort((a, b) => a[0].localeCompare(b[0]));
+                        }
+                        return sorted.map(([groupKey, groupEntries]) => {
+                          const isGroupOpen = expandedSafeguardingAuditGroups.has(groupKey);
+                          return (
+                            <div key={groupKey} className="rounded-lg border">
+                              <button
+                                onClick={() => {
+                                  setExpandedSafeguardingAuditGroups(prev => {
+                                    const next = new Set(prev);
+                                    if (next.has(groupKey)) next.delete(groupKey);
+                                    else next.add(groupKey);
+                                    return next;
+                                  });
+                                }}
+                                className="w-full text-left px-4 py-3 flex items-center justify-between gap-2 hover-elevate rounded-lg"
+                                data-testid={`button-safeguarding-audit-group-${groupKey.replace(/[^a-zA-Z0-9]/g, '-')}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isGroupOpen ? "rotate-90" : ""}`} />
+                                  {safeguardingAuditGroupBy === "date" ? (
+                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                  ) : (
+                                    <User className="h-4 w-4 text-muted-foreground" />
+                                  )}
+                                  <span className="text-sm font-medium">{groupKey}</span>
+                                </div>
+                                <Badge variant="secondary" className="text-xs">{groupEntries.length} entr{groupEntries.length !== 1 ? "ies" : "y"}</Badge>
+                              </button>
+                              {isGroupOpen && (
+                                <div className="px-4 pb-3 space-y-2 border-t pt-3">
+                                  {groupEntries.map((entry) => (
+                                    <div key={entry.id} className="p-3 rounded-lg border flex items-start justify-between gap-4" data-testid={`safeguarding-audit-entry-${entry.id}`}>
+                                      <div className="space-y-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <Badge variant="outline" className="text-xs capitalize">{entry.action}</Badge>
+                                          <span className="text-sm font-medium capitalize">{entry.entityType.replace(/_/g, " ")}</span>
+                                        </div>
+                                        {safeguardingAuditGroupBy !== "user" && (
+                                          <p className="text-sm text-muted-foreground">
+                                            By: {entry.userEmail} ({entry.userRole})
+                                          </p>
+                                        )}
+                                      </div>
+                                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                        {safeguardingAuditGroupBy === "date"
+                                          ? format(new Date(entry.createdAt), "HH:mm")
+                                          : format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm")
+                                        }
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        });
+                      })()
+                    )}
                   </div>
                 ) : (
                   <p className="text-center text-muted-foreground py-8">No audit entries yet</p>
