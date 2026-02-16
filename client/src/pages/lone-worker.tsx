@@ -271,6 +271,120 @@ function PreShiftSetup({ onStart }: { onStart: () => void }) {
   );
 }
 
+function LiveLocationCard({ session, position }: { session: LoneWorkerSession; position: { lat: number; lng: number } | null }) {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+  const [showMap, setShowMap] = useState(false);
+
+  const lat = position?.lat ?? (session.lastLocationLat ? parseFloat(session.lastLocationLat) : null);
+  const lng = position?.lng ?? (session.lastLocationLng ? parseFloat(session.lastLocationLng) : null);
+  const hasLocation = lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng);
+
+  useEffect(() => {
+    if (!showMap || !hasLocation || !mapContainerRef.current) return;
+    let cancelled = false;
+    import("leaflet").then((L) => {
+      if (cancelled || !mapContainerRef.current) return;
+      if (mapInstanceRef.current) {
+        markerRef.current?.setLatLng([lat!, lng!]);
+        mapInstanceRef.current.panTo([lat!, lng!], { animate: true });
+        return;
+      }
+      const map = L.default.map(mapContainerRef.current!, {
+        center: [lat!, lng!],
+        zoom: 16,
+        zoomControl: true,
+        attributionControl: false,
+      });
+      L.default.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+      }).addTo(map);
+      const statusColor = session.status === "panic" ? "#dc2626" : session.status === "unresponsive" ? "#ea580c" : "#16a34a";
+      const icon = L.default.divIcon({
+        className: "live-location-marker",
+        html: `<div style="position:relative;background:${statusColor};width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 0 8px rgba(0,0,0,0.3)"><div style="position:absolute;top:-6px;left:-6px;width:28px;height:28px;border-radius:50%;border:2px solid ${statusColor};opacity:0.4;animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite"></div></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+      });
+      const marker = L.default.marker([lat!, lng!], { icon }).addTo(map);
+      marker.bindPopup(`<b>Your Location</b>`);
+      mapInstanceRef.current = map;
+      markerRef.current = marker;
+      setTimeout(() => map.invalidateSize(), 150);
+    });
+    return () => {
+      cancelled = true;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        markerRef.current = null;
+      }
+    };
+  }, [showMap, lat, lng, hasLocation]);
+
+  useEffect(() => {
+    if (mapInstanceRef.current && markerRef.current && hasLocation) {
+      markerRef.current.setLatLng([lat!, lng!]);
+      mapInstanceRef.current.panTo([lat!, lng!], { animate: true });
+    }
+  }, [lat, lng]);
+
+  return (
+    <Card>
+      <CardContent className="py-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <MapPin className={`w-5 h-5 ${hasLocation ? "text-green-600" : "text-muted-foreground"}`} />
+            <div>
+              <p className="text-sm font-medium">Live Location</p>
+              <p className="text-xs text-muted-foreground">
+                {hasLocation
+                  ? session.lastLocationAt
+                    ? `Updated ${formatDistanceToNow(new Date(session.lastLocationAt), { addSuffix: true })}`
+                    : "Location captured"
+                  : "Waiting for location..."}
+              </p>
+            </div>
+          </div>
+          {hasLocation && (
+            <Button
+              variant={showMap ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowMap(!showMap)}
+              data-testid="button-toggle-live-location"
+            >
+              <Navigation className="w-4 h-4 mr-1" />
+              {showMap ? "Hide Map" : "View Map"}
+            </Button>
+          )}
+        </div>
+        {showMap && hasLocation && (
+          <div className="mt-3 space-y-2">
+            <div
+              ref={mapContainerRef}
+              style={{ height: "250px", width: "100%", borderRadius: "8px" }}
+              data-testid="map-live-location"
+            />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>{lat!.toFixed(6)}, {lng!.toFixed(6)}</span>
+              <a
+                href={`https://maps.google.com/?q=${lat},${lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline ml-auto"
+                data-testid="link-google-maps"
+              >
+                Open in Google Maps
+              </a>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onRefresh: () => void }) {
   const { toast } = useToast();
   const geo = useGeolocation();
@@ -458,6 +572,8 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
           </div>
         </CardContent>
       </Card>
+
+      <LiveLocationCard session={session} position={geo.position} />
 
       {session.nextCheckInDue && !isPanic && (
         <Card className={isDue ? "border-yellow-500 border-2" : ""}>
