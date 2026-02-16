@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Download, Search, AlertTriangle, MapPin, Calendar, User } from "lucide-react";
+import { ArrowLeft, Download, Search, AlertTriangle, MapPin, Calendar, User, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -30,6 +30,7 @@ type GroupBy = "none" | "date" | "name";
 export default function OrgEmergencyAlertsReport() {
   const [searchQuery, setSearchQuery] = useState("");
   const [groupBy, setGroupBy] = useState<GroupBy>("date");
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showPdfDialog, setShowPdfDialog] = useState(false);
   const [pdfDateRange, setPdfDateRange] = useState<"all" | "month" | "year" | "custom">("all");
   const [pdfCustomStartDate, setPdfCustomStartDate] = useState("");
@@ -89,6 +90,28 @@ export default function OrgEmergencyAlertsReport() {
 
     return sorted;
   }, [filteredAlerts, groupBy]);
+
+  const toggleGroup = useCallback((key: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }, []);
+
+  const expandAll = useCallback(() => {
+    if (groupedAlerts) {
+      setExpandedGroups(new Set(groupedAlerts.map(([key]) => key)));
+    }
+  }, [groupedAlerts]);
+
+  const collapseAll = useCallback(() => {
+    setExpandedGroups(new Set());
+  }, []);
 
   const getDateRange = (): { start: Date | null; end: Date | null; label: string } => {
     const now = new Date();
@@ -319,38 +342,62 @@ export default function OrgEmergencyAlertsReport() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {groupedAlerts?.map(([groupKey, groupItems]) => (
-              <Card key={groupKey}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center justify-between gap-2 flex-wrap text-lg">
-                    <span className="flex items-center gap-2">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {filteredAlerts.length} alert{filteredAlerts.length !== 1 ? "s" : ""} across {groupedAlerts?.length || 0} {groupBy === "date" ? "date" : "client"}{(groupedAlerts?.length || 0) !== 1 ? "s" : ""}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={expandAll} data-testid="button-expand-all">
+                  Expand All
+                </Button>
+                <Button variant="ghost" size="sm" onClick={collapseAll} data-testid="button-collapse-all">
+                  Collapse All
+                </Button>
+              </div>
+            </div>
+            {groupedAlerts?.map(([groupKey, groupItems]) => {
+              const isExpanded = expandedGroups.has(groupKey);
+              const activeCount = groupItems.filter(a => a.status === "active").length;
+              return (
+                <Card key={groupKey}>
+                  <button
+                    onClick={() => toggleGroup(groupKey)}
+                    className="w-full text-left px-4 py-3 flex items-center justify-between gap-2 hover-elevate rounded-lg"
+                    data-testid={`button-group-${groupKey.replace(/[^a-zA-Z0-9]/g, '-')}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <ChevronRight className={`h-5 w-5 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
                       {groupBy === "date" ? (
                         <Calendar className="h-5 w-5 text-muted-foreground" />
                       ) : (
                         <User className="h-5 w-5 text-muted-foreground" />
                       )}
-                      {groupKey}
-                    </span>
-                    <Badge variant="secondary">{groupItems.length} alert{groupItems.length !== 1 ? "s" : ""}</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {groupItems.map((item) =>
-                      renderAlertRow(
-                        item,
-                        groupBy !== "date",
-                        groupBy !== "name"
-                      )
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            <p className="text-sm text-muted-foreground text-center">
-              {filteredAlerts.length} alert{filteredAlerts.length !== 1 ? "s" : ""} across {groupedAlerts?.length || 0} {groupBy === "date" ? "date" : "client"}{(groupedAlerts?.length || 0) !== 1 ? "s" : ""}
-            </p>
+                      <span className="font-medium">{groupKey}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {activeCount > 0 && (
+                        <Badge variant="destructive">{activeCount} active</Badge>
+                      )}
+                      <Badge variant="secondary">{groupItems.length} alert{groupItems.length !== 1 ? "s" : ""}</Badge>
+                    </div>
+                  </button>
+                  {isExpanded && (
+                    <CardContent className="pt-0 pb-3">
+                      <div className="space-y-2 border-t pt-3">
+                        {groupItems.map((item) =>
+                          renderAlertRow(
+                            item,
+                            groupBy !== "date",
+                            groupBy !== "name"
+                          )
+                        )}
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              );
+            })}
           </div>
         )}
       </main>
