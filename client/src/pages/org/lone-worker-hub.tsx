@@ -307,6 +307,7 @@ export default function OrgLoneWorkerHub() {
   const [editSupervisorSmsVerifying, setEditSupervisorSmsVerifying] = useState(false);
   const [editSupervisorSmsSent, setEditSupervisorSmsSent] = useState(false);
   const [expandedLocationSession, setExpandedLocationSession] = useState<string | null>(null);
+  const [expandedStaffLocation, setExpandedStaffLocation] = useState<string | null>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importStep, setImportStep] = useState<"upload" | "preview" | "importing" | "results">("upload");
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -1167,7 +1168,11 @@ export default function OrgLoneWorkerHub() {
                         {searchQuery ? "No invitations match your search." : "No invitations in this category."}
                       </div>
                     ) : (
-                      filteredInvites.map((invite) => (
+                      filteredInvites.map((invite) => {
+                        const staffSession = invite.status === "accepted" && invite.acceptedByUserId
+                          ? activeSessions.find(s => s.userId === invite.acceptedByUserId)
+                          : null;
+                        return (
                         <Card key={invite.id} className="overflow-visible" data-testid={`card-invite-${invite.id}`}>
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -1175,6 +1180,11 @@ export default function OrgLoneWorkerHub() {
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="font-medium" data-testid={`text-staff-name-${invite.id}`}>{invite.staffName}</span>
                                   {getInviteStatusBadge(invite.status)}
+                                  {staffSession && (
+                                    <Badge variant="outline" className="text-green-700 border-green-300 dark:text-green-400 dark:border-green-700">
+                                      <Radio className="h-3 w-3 mr-1" /> On Shift
+                                    </Badge>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                                   <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{invite.staffPhone}</span>
@@ -1193,6 +1203,16 @@ export default function OrgLoneWorkerHub() {
                                 </div>
                               </div>
                               <div className="flex gap-2 flex-wrap">
+                                {staffSession && (
+                                  <Button
+                                    variant={expandedStaffLocation === invite.id ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setExpandedStaffLocation(expandedStaffLocation === invite.id ? null : invite.id)}
+                                    data-testid={`button-staff-location-${invite.id}`}
+                                  >
+                                    <MapPin className="h-3 w-3 mr-1" /> Location
+                                  </Button>
+                                )}
                                 <Button variant="outline" size="sm" onClick={() => openEditDialog(invite)} data-testid={`button-edit-${invite.id}`}>
                                   <Edit2 className="h-3 w-3 mr-1" /> Edit
                                 </Button>
@@ -1211,9 +1231,25 @@ export default function OrgLoneWorkerHub() {
                                 </Button>
                               </div>
                             </div>
+                            {staffSession && expandedStaffLocation === invite.id && (
+                              <div className="mt-3 pt-3 border-t">
+                                <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground flex-wrap">
+                                  <span className="flex items-center gap-1">
+                                    <Radio className="h-3 w-3" />
+                                    {JOB_LABELS[staffSession.jobType] || staffSession.jobType}
+                                  </span>
+                                  <span>Started {staffSession.startedAt ? format(new Date(staffSession.startedAt), "HH:mm") : "—"}</span>
+                                  {staffSession.lastLocationAt && (
+                                    <span>Location updated {formatDistanceToNow(new Date(staffSession.lastLocationAt), { addSuffix: true })}</span>
+                                  )}
+                                </div>
+                                <LiveLocationMap session={staffSession} />
+                              </div>
+                            )}
                           </CardContent>
                         </Card>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </Tabs>
