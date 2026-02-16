@@ -641,6 +641,10 @@ async function sendEmail(to: string, subject: string, body: string, html?: strin
   );
 }
 
+export async function sendVerificationSMS(to: string, body: string): Promise<{ success: boolean; error?: string }> {
+  return sendSMS(to, body);
+}
+
 async function sendSMS(to: string, body: string): Promise<{ success: boolean; error?: string }> {
   const credentials = await getTwilioCredentials();
   
