@@ -512,9 +512,10 @@ const HELP_TOPICS: HelpTopic[] = [
       "Leading zeros are automatically removed — so you can enter '07700 900123' and it will be stored as '+447700900123'.",
       "They'll receive an SMS with a unique invite link to create their account.",
       "Staff registration is free — their seat is covered by your organisation's bundle.",
+      "During registration, staff members will also set a **cancellation password** — a separate security password used for supervisor emergency cancellations. This password is securely stored and never visible to anyone.",
       "You can track, resend, or revoke invitations at any time.",
     ],
-    relatedTopics: ["team-roles", "lone-worker-overview", "lone-worker-supervisor"],
+    relatedTopics: ["team-roles", "lone-worker-overview", "lone-worker-supervisor", "supervisor-cancel-emergency"],
   },
   {
     id: "lone-worker-supervisor",
