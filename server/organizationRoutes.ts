@@ -161,7 +161,7 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
       }
 
-      const { clientName, clientPhone, dateOfBirth, bundleId, scheduleStartTime, checkInIntervalHours, emergencyContacts, features } = parsed.data;
+      const { clientName, clientPhone, dateOfBirth, bundleId, scheduleStartTime, checkInIntervalHours, emergencyContacts, features, supervisorName, supervisorPhone } = parsed.data;
 
       // Get the organization details
       const org = await storage.getUserById(req.userId!);
@@ -190,6 +190,8 @@ export function registerOrganizationRoutes(app: Express) {
         referenceCode,
         scheduleStartTime: scheduleStartTime ? parseScheduleTime(scheduleStartTime) : null,
         checkInIntervalHours: checkInIntervalHours || 24,
+        supervisorName: supervisorName || null,
+        supervisorPhone: supervisorPhone || null,
         features: features || {
           featureWellbeingAi: true,
           featureShakeToAlert: true,
@@ -215,7 +217,7 @@ export function registerOrganizationRoutes(app: Express) {
       }
 
       // Send SMS with app download link and reference code
-      const smsResult = await sendAppInviteSMS(clientPhone, referenceCode, org.name);
+      const smsResult = await sendAppInviteSMS(clientPhone, referenceCode, org.name, supervisorName);
       
       // Update registration status based on SMS result
       if (smsResult.success) {
@@ -386,7 +388,7 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(404).json({ error: "Organization not found" });
       }
 
-      const smsResult = await sendAppInviteSMS(orgClient.clientPhone, orgClient.referenceCode, org.name);
+      const smsResult = await sendAppInviteSMS(orgClient.clientPhone, orgClient.referenceCode, org.name, orgClient.supervisorName);
       
       res.json({
         success: smsResult.success,

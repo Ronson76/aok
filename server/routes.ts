@@ -1187,6 +1187,7 @@ export async function registerRoutes(
           frequency: orgClient.checkInIntervalHours === 24 ? "daily" : 
                      orgClient.checkInIntervalHours === 48 ? "every_two_days" : "daily",
           alertsEnabled: true,
+          ...(orgClient.featureEmergencyRecording ? { emergencyRecordingEnabled: true } : {}),
         });
         
         // Copy pending contacts to user's contacts
@@ -1750,14 +1751,16 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Organisation not found" });
       }
 
-      if (!org.mobileNumber) {
+      const supervisorPhone = orgClient.supervisorPhone || org.mobileNumber;
+      if (!supervisorPhone) {
         return res.status(400).json({ error: "Your organisation has not set up a phone number for supervisor calls" });
       }
 
       const callerName = user.name || orgClient.clientName || "A client";
-      const message = `Hello, this is a call from A O K on behalf of ${callerName}. They are trying to reach their supervisor. Please call them back or check on them in the A O K dashboard.`;
+      const supervisorDisplayName = orgClient.supervisorName || "your supervisor";
+      const message = `Hello, this is a call from A O K on behalf of ${callerName}. They are trying to reach ${supervisorDisplayName}. Please call them back or check on them in the A O K dashboard.`;
 
-      const result = await makeVoiceCall(org.mobileNumber, message);
+      const result = await makeVoiceCall(supervisorPhone, message);
 
       if (result.success) {
         console.log(`[CALL SUPERVISOR] ${callerName} (${userId}) called supervisor at org ${orgClient.organizationId}`);
@@ -1791,9 +1794,12 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Organisation not found" });
       }
 
+      const supervisorPhone = orgClient.supervisorPhone || org.mobileNumber;
       res.json({
         organizationName: org.name,
-        hasPhoneNumber: !!org.mobileNumber,
+        hasPhoneNumber: !!supervisorPhone,
+        supervisorName: orgClient.supervisorName || null,
+        supervisorPhone: orgClient.supervisorPhone || null,
       });
     } catch (error) {
       console.error("[SUPERVISOR INFO] Error:", error);

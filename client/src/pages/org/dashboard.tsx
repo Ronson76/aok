@@ -166,6 +166,8 @@ export default function OrganizationDashboard() {
   const [regCountryCode, setRegCountryCode] = useState("+44");
   const [regClientDOB, setRegClientDOB] = useState("");
   const [regBundleId, setRegBundleId] = useState("");
+  const [regSupervisorName, setRegSupervisorName] = useState("");
+  const [regSupervisorPhone, setRegSupervisorPhone] = useState("");
   const [regScheduleStart, setRegScheduleStart] = useState("");
   const [regIntervalHours, setRegIntervalHours] = useState(24);
   const [regEmergencyContacts, setRegEmergencyContacts] = useState<Array<{
@@ -575,6 +577,8 @@ export default function OrganizationDashboard() {
         bundleId: regBundleId || undefined,
         scheduleStartTime: regScheduleStart || undefined,
         checkInIntervalHours: regIntervalHours,
+        supervisorName: regSupervisorName || undefined,
+        supervisorPhone: regSupervisorPhone || undefined,
         emergencyContacts: regEmergencyContacts.length > 0 ? regEmergencyContacts : undefined,
         features: regFeatures,
       });
@@ -767,6 +771,8 @@ export default function OrganizationDashboard() {
     setRegCountryCode("+44");
     setRegClientDOB("");
     setRegBundleId("");
+    setRegSupervisorName("");
+    setRegSupervisorPhone("");
     setRegScheduleStart("");
     setRegIntervalHours(24);
     setRegEmergencyContacts([]);
@@ -1766,6 +1772,38 @@ export default function OrganizationDashboard() {
                   </Select>
                 </div>
               )}
+            </div>
+
+            {/* Supervisor Details */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                Supervisor Details
+              </Label>
+              <p className="text-xs text-muted-foreground">The client will be able to call their supervisor directly from their dashboard.</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label htmlFor="regSupervisorName" className="text-xs">Supervisor Name</Label>
+                  <Input
+                    id="regSupervisorName"
+                    placeholder="Jane Doe"
+                    value={regSupervisorName}
+                    onChange={(e) => setRegSupervisorName(e.target.value)}
+                    data-testid="input-reg-supervisor-name"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="regSupervisorPhone" className="text-xs">Supervisor Mobile</Label>
+                  <Input
+                    id="regSupervisorPhone"
+                    type="tel"
+                    placeholder="+447XXX XXXXXX"
+                    value={regSupervisorPhone}
+                    onChange={(e) => setRegSupervisorPhone(e.target.value)}
+                    data-testid="input-reg-supervisor-phone"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Emergency Contacts Section */}
