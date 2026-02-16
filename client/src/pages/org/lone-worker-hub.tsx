@@ -515,16 +515,14 @@ export default function OrgLoneWorkerHub() {
   const openEditDialog = (invite: StaffInvite) => {
     setEditingInvite(invite);
     setEditStaffName(invite.staffName);
-    const phoneDigits = invite.staffPhone?.replace(/^\+\d{1,3}/, "") || "";
-    setEditStaffPhone(phoneDigits);
-    const countryMatch = invite.staffPhone?.match(/^(\+\d{1,3})/);
-    setEditStaffCountryCode(countryMatch ? countryMatch[1] : "+44");
+    const staffParsed = parsePhoneForForm(invite.staffPhone || "");
+    setEditStaffPhone(staffParsed.phone);
+    setEditStaffCountryCode(staffParsed.countryCode);
     setEditStaffEmail(invite.staffEmail || "");
     setEditSupervisorName(invite.supervisorName || "");
-    const supPhoneDigits = invite.supervisorPhone?.replace(/^\+\d{1,3}/, "") || "";
-    setEditSupervisorPhone(supPhoneDigits);
-    const supCountryMatch = invite.supervisorPhone?.match(/^(\+\d{1,3})/);
-    setEditSupervisorCountryCode(supCountryMatch ? supCountryMatch[1] : "+44");
+    const supParsed = parsePhoneForForm(invite.supervisorPhone || "");
+    setEditSupervisorPhone(supParsed.phone);
+    setEditSupervisorCountryCode(supParsed.countryCode);
     setEditSupervisorEmail(invite.supervisorEmail || "");
     setEditSupervisorSmsVerified(false);
     setEditSupervisorSmsCode("");
@@ -535,8 +533,8 @@ export default function OrgLoneWorkerHub() {
   const updateInviteDetailsMutation = useMutation({
     mutationFn: async () => {
       if (!editingInvite) throw new Error("No invite selected");
-      const fullStaffPhone = editStaffPhone ? `${editStaffCountryCode}${editStaffPhone.replace(/\D/g, "")}` : editingInvite.staffPhone;
-      const fullSupervisorPhone = editSupervisorPhone ? `${editSupervisorCountryCode}${editSupervisorPhone.replace(/\D/g, "")}` : "";
+      const fullStaffPhone = editStaffPhone ? formatFullPhone(editStaffCountryCode, editStaffPhone) : editingInvite.staffPhone;
+      const fullSupervisorPhone = editSupervisorPhone ? formatFullPhone(editSupervisorCountryCode, editSupervisorPhone) : "";
       const res = await apiRequest("PATCH", `/api/org/staff/invite/${editingInvite.id}/details`, {
         staffName: editStaffName,
         staffPhone: fullStaffPhone,
