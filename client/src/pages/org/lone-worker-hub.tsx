@@ -1519,6 +1519,177 @@ export default function OrgLoneWorkerHub() {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Staff Details Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={(open) => { if (!open) { setShowEditDialog(false); setEditingInvite(null); } }}>
+        <DialogContent className="max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Edit Staff Details</DialogTitle>
+            <DialogDescription>Update the details for {editingInvite?.staffName}.</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-4 py-2">
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="editStaffName">Staff Name</Label>
+                <Input id="editStaffName" value={editStaffName} onChange={(e) => setEditStaffName(e.target.value)} data-testid="input-edit-staff-name" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="editStaffPhone">Staff Phone</Label>
+                <div className="flex gap-2">
+                  <Select value={editStaffCountryCode} onValueChange={setEditStaffCountryCode}>
+                    <SelectTrigger className="w-28" data-testid="select-edit-staff-country-code">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="+44">+44 UK</SelectItem>
+                      <SelectItem value="+1">+1 US</SelectItem>
+                      <SelectItem value="+353">+353 IE</SelectItem>
+                      <SelectItem value="+33">+33 FR</SelectItem>
+                      <SelectItem value="+49">+49 DE</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input id="editStaffPhone" type="tel" value={editStaffPhone} onChange={(e) => setEditStaffPhone(e.target.value)} placeholder="7XXX XXXXXX" className="flex-1" data-testid="input-edit-staff-phone" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="editStaffEmail">Staff Email</Label>
+                <Input id="editStaffEmail" type="email" value={editStaffEmail} onChange={(e) => setEditStaffEmail(e.target.value)} data-testid="input-edit-staff-email" />
+              </div>
+            </div>
+            <div className="border-t pt-4">
+              <p className="text-sm font-medium mb-3">Supervisor (Primary Contact)</p>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="editSupName">Supervisor Name</Label>
+                  <Input id="editSupName" value={editSupervisorName} onChange={(e) => setEditSupervisorName(e.target.value)} placeholder="e.g. Sarah Manager" data-testid="input-edit-sup-name" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="editSupPhone">Supervisor Phone</Label>
+                  <div className="flex gap-2">
+                    <Select value={editSupervisorCountryCode} onValueChange={(v) => { setEditSupervisorCountryCode(v); setEditSupervisorSmsVerified(false); setEditSupervisorSmsSent(false); setEditSupervisorSmsCode(""); }}>
+                      <SelectTrigger className="w-28" data-testid="select-edit-sup-country-code">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="+44">+44 UK</SelectItem>
+                        <SelectItem value="+1">+1 US</SelectItem>
+                        <SelectItem value="+353">+353 IE</SelectItem>
+                        <SelectItem value="+33">+33 FR</SelectItem>
+                        <SelectItem value="+49">+49 DE</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input id="editSupPhone" type="tel" value={editSupervisorPhone} onChange={(e) => { setEditSupervisorPhone(e.target.value); setEditSupervisorSmsVerified(false); setEditSupervisorSmsSent(false); setEditSupervisorSmsCode(""); }} placeholder="7XXX XXXXXX" className="flex-1" data-testid="input-edit-sup-phone" />
+                  </div>
+                  {editSupervisorPhone.trim() && !editSupervisorSmsVerified && (
+                    <div className="mt-2 space-y-2">
+                      {!editSupervisorSmsSent ? (
+                        <Button type="button" size="sm" variant="outline" disabled={editSupervisorSmsSending} data-testid="button-edit-send-sup-sms"
+                          onClick={async () => {
+                            const fullPhone = `${editSupervisorCountryCode}${editSupervisorPhone.replace(/\D/g, "").replace(/^0+/, "")}`;
+                            setEditSupervisorSmsSending(true);
+                            try {
+                              const res = await fetch("/api/org/supervisor/send-verification", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json", "x-csrf-token": document.cookie.match(/csrf_token=([^;]+)/)?.[1] || "" },
+                                credentials: "include",
+                                body: JSON.stringify({ phone: fullPhone, supervisorName: editSupervisorName }),
+                              });
+                              const data = await res.json();
+                              if (data.success) {
+                                setEditSupervisorSmsSent(true);
+                                toast({ title: "Code sent", description: "A verification code has been sent to the supervisor's phone." });
+                              } else {
+                                toast({ title: "Failed", description: data.error || "Could not send verification code.", variant: "destructive" });
+                              }
+                            } catch { toast({ title: "Error", description: "Failed to send verification SMS.", variant: "destructive" }); }
+                            finally { setEditSupervisorSmsSending(false); }
+                          }}
+                        >
+                          {editSupervisorSmsSending ? "Sending..." : "Send Verification Code"}
+                        </Button>
+                      ) : (
+                        <div className="flex gap-2 items-center">
+                          <Input type="text" placeholder="6-digit code" value={editSupervisorSmsCode} onChange={(e) => setEditSupervisorSmsCode(e.target.value)} className="w-32" maxLength={6} data-testid="input-edit-sup-sms-code" />
+                          <Button type="button" size="sm" disabled={editSupervisorSmsVerifying || !editSupervisorSmsCode.trim()} data-testid="button-edit-verify-sup-sms"
+                            onClick={async () => {
+                              const fullPhone = `${editSupervisorCountryCode}${editSupervisorPhone.replace(/\D/g, "").replace(/^0+/, "")}`;
+                              setEditSupervisorSmsVerifying(true);
+                              try {
+                                const res = await fetch("/api/org/supervisor/verify-sms", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json", "x-csrf-token": document.cookie.match(/csrf_token=([^;]+)/)?.[1] || "" },
+                                  credentials: "include",
+                                  body: JSON.stringify({ phone: fullPhone, code: editSupervisorSmsCode }),
+                                });
+                                const data = await res.json();
+                                if (data.verified) {
+                                  setEditSupervisorSmsVerified(true);
+                                  toast({ title: "Verified", description: "Supervisor phone number confirmed." });
+                                } else {
+                                  toast({ title: "Not verified", description: data.error || "Incorrect code.", variant: "destructive" });
+                                }
+                              } catch { toast({ title: "Error", description: "Failed to verify code.", variant: "destructive" }); }
+                              finally { setEditSupervisorSmsVerifying(false); }
+                            }}
+                          >
+                            {editSupervisorSmsVerifying ? "Verifying..." : "Verify"}
+                          </Button>
+                          <Button type="button" size="sm" variant="ghost" disabled={editSupervisorSmsSending} data-testid="button-edit-resend-sup-sms"
+                            onClick={async () => {
+                              const fullPhone = `${editSupervisorCountryCode}${editSupervisorPhone.replace(/\D/g, "").replace(/^0+/, "")}`;
+                              setEditSupervisorSmsSending(true);
+                              try {
+                                const res = await fetch("/api/org/supervisor/send-verification", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json", "x-csrf-token": document.cookie.match(/csrf_token=([^;]+)/)?.[1] || "" },
+                                  credentials: "include",
+                                  body: JSON.stringify({ phone: fullPhone, supervisorName: editSupervisorName }),
+                                });
+                                const data = await res.json();
+                                if (data.success) { toast({ title: "Code resent" }); }
+                                else { toast({ title: "Failed", description: data.error, variant: "destructive" }); }
+                              } catch { toast({ title: "Error", variant: "destructive" }); }
+                              finally { setEditSupervisorSmsSending(false); }
+                            }}
+                          >
+                            Resend
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {editSupervisorSmsVerified && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1" data-testid="text-edit-sup-verified">
+                      <CheckCircle className="h-3 w-3" /> Phone verified
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="editSupEmail">Supervisor Email</Label>
+                  <Input id="editSupEmail" type="email" value={editSupervisorEmail} onChange={(e) => setEditSupervisorEmail(e.target.value)} placeholder="e.g. supervisor@company.com" data-testid="input-edit-sup-email" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowEditDialog(false); setEditingInvite(null); }} data-testid="button-edit-cancel">Cancel</Button>
+            <Button
+              onClick={() => {
+                if (editSupervisorPhone.trim() && !editSupervisorSmsVerified) {
+                  toast({ title: "Verification required", description: "Please verify the supervisor's phone number before saving.", variant: "destructive" });
+                  return;
+                }
+                updateInviteDetailsMutation.mutate();
+              }}
+              disabled={updateInviteDetailsMutation.isPending}
+              data-testid="button-edit-save"
+            >
+              {updateInviteDetailsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Confirm Dialog */}
       <Dialog open={!!showDeleteConfirm} onOpenChange={(open) => { if (!open) setShowDeleteConfirm(null); }}>
         <DialogContent>
