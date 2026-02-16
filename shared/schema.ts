@@ -690,6 +690,10 @@ export const organizationClients = pgTable("organization_clients", {
   featureFitnessTracking: boolean("feature_fitness_tracking").notNull().default(true),
   // Emergency recording consent (off by default, org must opt in per client)
   featureEmergencyRecording: boolean("feature_emergency_recording").notNull().default(false),
+  // Supervisor details for lone workers
+  supervisorName: text("supervisor_name"),
+  supervisorPhone: text("supervisor_phone"),
+  supervisorEmail: text("supervisor_email"),
   // Soft-delete / archive fields
   archivedAt: timestamp("archived_at"),
   archivedBy: text("archived_by"),
@@ -713,6 +717,9 @@ export const registerOrgClientSchema = z.object({
   bundleId: z.string().optional(),
   scheduleStartTime: z.string().optional(),
   checkInIntervalHours: z.number().min(1).max(48).default(24),
+  supervisorName: z.string().optional(),
+  supervisorPhone: z.string().optional(),
+  supervisorEmail: z.string().email().optional().or(z.literal("")),
   emergencyContacts: z.array(z.object({
     name: z.string().min(1),
     email: z.string().email(),

@@ -3460,6 +3460,9 @@ export interface IOrganizationStorage {
     referenceCode: string;
     scheduleStartTime: Date | null;
     checkInIntervalHours: number;
+    supervisorName?: string | null;
+    supervisorPhone?: string | null;
+    supervisorEmail?: string | null;
     features?: {
       featureWellbeingAi: boolean;
       featureShakeToAlert: boolean;
@@ -4359,6 +4362,9 @@ class OrganizationStorage implements IOrganizationStorage {
     referenceCode: string;
     scheduleStartTime: Date | null;
     checkInIntervalHours: number;
+    supervisorName?: string | null;
+    supervisorPhone?: string | null;
+    supervisorEmail?: string | null;
     features?: {
       featureWellbeingAi: boolean;
       featureShakeToAlert: boolean;
@@ -4382,6 +4388,8 @@ class OrganizationStorage implements IOrganizationStorage {
         referenceCode: data.referenceCode,
         scheduleStartTime: data.scheduleStartTime,
         checkInIntervalHours: data.checkInIntervalHours,
+        supervisorName: data.supervisorName || null,
+        supervisorPhone: data.supervisorPhone || null,
         clientOrdinal: nextOrdinal,
         status: "active",
         registrationStatus: "pending_sms",

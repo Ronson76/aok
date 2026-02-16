@@ -2398,17 +2398,23 @@ export async function sendPushNotification(
 export async function sendAppInviteSMS(
   phoneNumber: string,
   referenceCode: string,
-  organizationName: string
+  organizationName: string,
+  supervisorName?: string | null
 ): Promise<{ success: boolean; error?: string }> {
   const directLoginUrl = `https://aok.care/org/client-login?ref=${referenceCode}`;
+  
+  const supervisorLine = supervisorName 
+    ? `\nYour supervisor ${supervisorName} will be contacted in an emergency.`
+    : `\nYour emergency contacts will be notified if you miss a check-in or trigger an alert.`;
   
   const message = `Hi! ${organizationName} has registered you for aok safety check-ins.
 
 Your code: ${referenceCode}
+${supervisorLine}
 
 Get started: ${directLoginUrl}
 
-After signing in, add aok to your home screen for the best experience.`;
+Add aok to your home screen for the best experience.`;
 
   console.log(`[SMS INVITE] Sending app invite to ${phoneNumber} with code ${referenceCode}`);
   return await sendSMS(phoneNumber, message);
