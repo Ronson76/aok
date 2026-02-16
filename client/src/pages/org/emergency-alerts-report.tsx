@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Download, Search, AlertTriangle, MapPin } from "lucide-react";
+import { ArrowLeft, Download, Search, AlertTriangle, MapPin, Calendar, User } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useMemo } from "react";
 import jsPDF from "jspdf";
@@ -25,8 +25,11 @@ interface EmergencyAlert {
   status: string;
 }
 
+type GroupBy = "none" | "date" | "name";
+
 export default function OrgEmergencyAlertsReport() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [groupBy, setGroupBy] = useState<GroupBy>("date");
   const [showPdfDialog, setShowPdfDialog] = useState(false);
   const [pdfDateRange, setPdfDateRange] = useState<"all" | "month" | "year" | "custom">("all");
   const [pdfCustomStartDate, setPdfCustomStartDate] = useState("");
@@ -53,6 +56,39 @@ export default function OrgEmergencyAlertsReport() {
     
     return result;
   }, [alerts, searchQuery]);
+
+  const groupedAlerts = useMemo(() => {
+    if (groupBy === "none") return null;
+
+    const groups = new Map<string, EmergencyAlert[]>();
+
+    for (const alert of filteredAlerts) {
+      let key: string;
+      if (groupBy === "date") {
+        key = format(new Date(alert.timestamp), "dd/MM/yyyy");
+      } else {
+        key = alert.clientName || "Unknown";
+      }
+
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      groups.get(key)!.push(alert);
+    }
+
+    const sorted = Array.from(groups.entries());
+    if (groupBy === "date") {
+      sorted.sort((a, b) => {
+        const dateA = new Date(a[1][0].timestamp);
+        const dateB = new Date(b[1][0].timestamp);
+        return dateB.getTime() - dateA.getTime();
+      });
+    } else {
+      sorted.sort((a, b) => a[0].localeCompare(b[0]));
+    }
+
+    return sorted;
+  }, [filteredAlerts, groupBy]);
 
   const getDateRange = (): { start: Date | null; end: Date | null; label: string } => {
     const now = new Date();
@@ -144,6 +180,53 @@ export default function OrgEmergencyAlertsReport() {
     setShowPdfDialog(false);
   };
 
+  const renderAlertRow = (item: EmergencyAlert, showDate: boolean, showName: boolean) => (
+    <div
+      key={item.id}
+      className="flex items-center justify-between p-4 rounded-lg border"
+      data-testid={`row-alert-${item.id}`}
+    >
+      <div className="flex items-center gap-4">
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+          item.status === "active" ? "bg-destructive/10" : "bg-muted"
+        }`}>
+          <AlertTriangle className={`h-5 w-5 ${
+            item.status === "active" ? "text-destructive" : "text-muted-foreground"
+          }`} />
+        </div>
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {showName && <p className="font-medium">{item.clientName}</p>}
+            {!showName && <p className="font-medium">{format(new Date(item.timestamp), "HH:mm")} - {item.clientName}</p>}
+            <Badge variant={item.status === "active" ? "destructive" : "secondary"}>
+              {item.status === "active" ? "Active" : "Resolved"}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {item.referenceCode ? `Ref: ${item.referenceCode}` : "No reference code"}
+          </p>
+          {item.what3words && (
+            <p className="text-sm text-muted-foreground flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              {item.what3words}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="text-right">
+        {showDate && (
+          <>
+            <p className="text-sm font-medium">{format(new Date(item.timestamp), "dd/MM/yyyy")}</p>
+            <p className="text-xs text-muted-foreground">{format(new Date(item.timestamp), "HH:mm")}</p>
+          </>
+        )}
+        {!showDate && (
+          <p className="text-sm font-medium">{format(new Date(item.timestamp), "dd/MM/yyyy")}</p>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
@@ -172,15 +255,31 @@ export default function OrgEmergencyAlertsReport() {
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by client, ref code, or location..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-              data-testid="input-search"
-            />
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by client, ref code, or location..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+                data-testid="input-search"
+              />
+            </div>
+            <Select value={groupBy} onValueChange={(v: GroupBy) => setGroupBy(v)}>
+              <SelectTrigger className="w-full sm:w-44" data-testid="select-group-by">
+                <SelectValue placeholder="Group by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">
+                  <span className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Group by Date</span>
+                </SelectItem>
+                <SelectItem value="name">
+                  <span className="flex items-center gap-2"><User className="h-4 w-4" /> Group by Name</span>
+                </SelectItem>
+                <SelectItem value="none">No Grouping</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Button
             variant="outline"
@@ -193,66 +292,67 @@ export default function OrgEmergencyAlertsReport() {
           </Button>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>All Emergency Alerts ({filteredAlerts.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className="h-20 w-full" />
-                ))}
-              </div>
-            ) : filteredAlerts.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-20 w-full" />
+            ))}
+          </div>
+        ) : filteredAlerts.length === 0 ? (
+          <Card>
+            <CardContent className="py-12">
+              <div className="text-center text-muted-foreground">
                 <AlertTriangle className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No emergency alerts found</p>
               </div>
-            ) : (
+            </CardContent>
+          </Card>
+        ) : groupBy === "none" ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>All Emergency Alerts ({filteredAlerts.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-2">
-                {filteredAlerts.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between p-4 rounded-lg border"
-                    data-testid={`row-alert-${item.id}`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        item.status === "active" ? "bg-destructive/10" : "bg-muted"
-                      }`}>
-                        <AlertTriangle className={`h-5 w-5 ${
-                          item.status === "active" ? "text-destructive" : "text-muted-foreground"
-                        }`} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">{item.clientName}</p>
-                          <Badge variant={item.status === "active" ? "destructive" : "secondary"}>
-                            {item.status === "active" ? "Active" : "Resolved"}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {item.referenceCode ? `Ref: ${item.referenceCode}` : "No reference code"}
-                        </p>
-                        {item.what3words && (
-                          <p className="text-sm text-muted-foreground flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {item.what3words}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">{format(new Date(item.timestamp), "dd/MM/yyyy")}</p>
-                      <p className="text-xs text-muted-foreground">{format(new Date(item.timestamp), "HH:mm")}</p>
-                    </div>
-                  </div>
-                ))}
+                {filteredAlerts.map((item) => renderAlertRow(item, true, true))}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {groupedAlerts?.map(([groupKey, groupItems]) => (
+              <Card key={groupKey}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center justify-between gap-2 flex-wrap text-lg">
+                    <span className="flex items-center gap-2">
+                      {groupBy === "date" ? (
+                        <Calendar className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <User className="h-5 w-5 text-muted-foreground" />
+                      )}
+                      {groupKey}
+                    </span>
+                    <Badge variant="secondary">{groupItems.length} alert{groupItems.length !== 1 ? "s" : ""}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {groupItems.map((item) =>
+                      renderAlertRow(
+                        item,
+                        groupBy !== "date",
+                        groupBy !== "name"
+                      )
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            <p className="text-sm text-muted-foreground text-center">
+              {filteredAlerts.length} alert{filteredAlerts.length !== 1 ? "s" : ""} across {groupedAlerts?.length || 0} {groupBy === "date" ? "date" : "client"}{(groupedAlerts?.length || 0) !== 1 ? "s" : ""}
+            </p>
+          </div>
+        )}
       </main>
 
       <Dialog open={showPdfDialog} onOpenChange={setShowPdfDialog}>
