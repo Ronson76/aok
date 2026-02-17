@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowDown, ArrowLeft, Shield, User, Building2, HardHat, AlertTriangle, Phone, Mail, Bell, MapPin, Clock, CheckCircle, XCircle, Siren, MessageSquare } from "lucide-react";
+import { ArrowDown, ArrowLeft, Shield, User, Building2, HardHat, AlertTriangle, Phone, Mail, Bell, MapPin, Clock, CheckCircle, XCircle, Siren, MessageSquare, Activity, Play, Timer, Battery, ShieldCheck } from "lucide-react";
 
-type FlowTab = "individual" | "organisation" | "loneworker";
+type FlowTab = "individual" | "organisation" | "loneworker" | "activity";
 
 function FlowStep({ icon: Icon, title, description, variant = "default" }: {
   icon: typeof User;
@@ -198,7 +198,7 @@ function LoneWorkerFlowchart() {
             <div className="flex flex-col items-center gap-0 w-full">
               <FlowStep icon={Phone} title="Supervisor calls worker" description="Supervisor calls the worker directly to verify their safety." variant="alert" />
               <FlowArrow />
-              <FlowStep icon={Shield} title="Supervisor cancels emergency" description="Supervisor enters the worker's cancellation password on the Live Monitor to confirm they've spoken to them." variant="success" />
+              <FlowStep icon={Shield} title="Supervisor cancels emergency" description="Supervisor enters the organisation password on the Live Monitor and confirms they've spoken to the worker." variant="success" />
             </div>
           }
         />
@@ -231,7 +231,7 @@ function LoneWorkerFlowchart() {
             <div className="flex flex-col items-center gap-0 w-full">
               <FlowStep icon={Phone} title="Supervisor calls worker" description="Supervisor contacts the worker to verify their safety." variant="action" />
               <FlowArrow />
-              <FlowStep icon={Shield} title="Cancellation password verified" description="Supervisor enters the worker's unique cancellation password and confirms they've spoken to them." variant="success" />
+              <FlowStep icon={ShieldCheck} title="Organisation password verified" description="Supervisor enters the organisation dashboard password and confirms they've spoken to the worker." variant="success" />
             </div>
           }
           right={
@@ -247,6 +247,77 @@ function LoneWorkerFlowchart() {
   );
 }
 
+function ActivityFlowchart() {
+  return (
+    <div className="space-y-0">
+      <h3 className="text-base font-semibold mb-4 text-center">Activity Tracker Flow</h3>
+      <div className="flex flex-col items-center gap-0">
+        <FlowStep icon={Activity} title="User selects an activity" description="The user chooses an activity type (walking, shopping, errands, dog walking, exercise, first date, etc.) from the activities grid." variant="default" />
+        <FlowArrow />
+        <FlowStep icon={Timer} title="Duration and label set" description="The user sets how long they expect to be and optionally adds a custom label (e.g. 'Walking to the pharmacy')." variant="default" />
+        <FlowArrow label="Tap 'Start Activity'" />
+        <FlowStep icon={Play} title="Activity session begins" description="A countdown timer starts. GPS tracking begins recording the user's location throughout the session." variant="action" />
+        <FlowArrow label="GPS active" />
+        <FlowStep icon={MapPin} title="Location tracked continuously" description="The user's GPS position is recorded throughout the activity. Primary contact and 999 quick-dial buttons are available on screen." variant="action" />
+        <FlowArrow />
+        <FlowBranch
+          leftLabel="Completes on time"
+          rightLabel="Timer runs out"
+          left={
+            <div className="flex flex-col items-center gap-0 w-full">
+              <FlowStep icon={CheckCircle} title="User taps 'I'm Done'" description="The user completes the activity before time runs out. Session is marked as completed." variant="success" />
+            </div>
+          }
+          right={
+            <div className="flex flex-col items-center gap-0 w-full">
+              <FlowStep icon={AlertTriangle} title="Grace period begins (10 mins)" description="The expected time has passed. A 10-minute grace period starts with an on-screen warning." variant="trigger" />
+              <FlowArrow />
+              <FlowBranch
+                leftLabel="User responds"
+                rightLabel="Grace expires"
+                left={
+                  <div className="flex flex-col items-center gap-0 w-full">
+                    <FlowStep icon={CheckCircle} title="'I'm OK — Need More Time'" description="The user taps to extend their session or completes the activity." variant="success" />
+                  </div>
+                }
+                right={
+                  <div className="flex flex-col items-center gap-0 w-full">
+                    <FlowStep icon={Mail} title="Emergency contacts alerted" description="All confirmed emergency contacts are automatically notified with the user's name and last known GPS location." variant="alert" />
+                  </div>
+                }
+              />
+            </div>
+          }
+        />
+      </div>
+
+      <div className="border-t my-8" />
+
+      <h3 className="text-base font-semibold mb-4 text-center">Low Battery Alert Flow</h3>
+      <div className="flex flex-col items-center gap-0">
+        <FlowStep icon={Activity} title="Activity session is active" description="The user has an active activity session running with GPS tracking." variant="action" />
+        <FlowArrow label="Battery drops below 20%" />
+        <FlowStep icon={Battery} title="Low battery detected" description="The device battery level falls below 20% during an active activity session." variant="trigger" />
+        <FlowArrow label="Immediately (once per session)" />
+        <FlowStep icon={Mail} title="Primary contacts emailed" description="An automatic email is sent to the user's primary emergency contacts warning that the user's battery is low during an active activity." variant="alert" />
+        <FlowArrow />
+        <FlowStep icon={AlertTriangle} title="On-screen warning displayed" description="A visual low-battery warning appears on the user's activity screen. This alert only triggers once per session." variant="trigger" />
+      </div>
+
+      <div className="border-t my-8" />
+
+      <h3 className="text-base font-semibold mb-4 text-center">Activity Cancellation Flow</h3>
+      <div className="flex flex-col items-center gap-0">
+        <FlowStep icon={Activity} title="Activity session is active" description="The user has an active activity session running." variant="action" />
+        <FlowArrow label="User taps 'Cancel'" />
+        <FlowStep icon={XCircle} title="Activity cancelled" description="The user cancels the activity before it completes. No alerts are sent to emergency contacts." variant="default" />
+        <FlowArrow />
+        <FlowStep icon={CheckCircle} title="Session saved as cancelled" description="The session is saved to the user's activity history with a 'cancelled' status badge. GPS tracking stops." variant="success" />
+      </div>
+    </div>
+  );
+}
+
 export default function Flowcharts() {
   const [activeTab, setActiveTab] = useState<FlowTab>("individual");
 
@@ -254,6 +325,7 @@ export default function Flowcharts() {
     { id: "individual", label: "Individual User", icon: User },
     { id: "organisation", label: "Organisation Client", icon: Building2 },
     { id: "loneworker", label: "Lone Worker", icon: HardHat },
+    { id: "activity", label: "Activity Flow", icon: Activity },
   ];
 
   return (
@@ -265,7 +337,7 @@ export default function Flowcharts() {
             <h1 className="text-xl font-bold">Alert Flowcharts</h1>
           </div>
           <p className="text-sm text-muted-foreground">
-            How missed check-ins and emergency alerts are handled for each user type.
+            How missed check-ins, emergency alerts, and activity tracking are handled for each user type.
           </p>
         </div>
 
@@ -289,6 +361,7 @@ export default function Flowcharts() {
             {activeTab === "individual" && <IndividualFlowchart />}
             {activeTab === "organisation" && <OrganisationFlowchart />}
             {activeTab === "loneworker" && <LoneWorkerFlowchart />}
+            {activeTab === "activity" && <ActivityFlowchart />}
           </CardContent>
         </Card>
 
