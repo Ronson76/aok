@@ -28,7 +28,7 @@ import {
   pricingConfig, PricingConfig
 } from "@shared/schema";
 import { ensureDb } from "./db";
-import { eq, ne, desc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray, inArray } from "drizzle-orm";
+import { eq, ne, desc, asc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql, notInArray, inArray } from "drizzle-orm";
 import { randomUUID, randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
 import { sendMissedCheckInAlert, sendPushNotification } from "./notifications";
@@ -236,6 +236,7 @@ export interface IStorage {
   createAuditEntry(organizationId: string, data: { userId?: string; userEmail?: string; userRole?: string; actorId?: string; actorRole?: string; action: string; entityType: string; entityId?: string; eventType?: string; previousData?: any; newData?: any; ipAddress?: string; userAgent?: string; deviceId?: string; appVersion?: string }): Promise<AuditTrailEntry>;
   verifyAuditChain(organizationId: string, startDate?: Date, endDate?: Date): Promise<{ valid: boolean; totalChecked: number; firstBrokenId?: string; firstBrokenAt?: Date }>;
   purgeExpiredAuditEntries(organizationId: string, retentionDays: number): Promise<number>;
+  getOldestAuditEntry(organizationId: string): Promise<{ createdAt: Date; totalCount: number } | null>;
 
   // Safeguarding - Risk Reports
   getRiskReports(organizationId: string): Promise<RiskReport[]>;
@@ -2035,6 +2036,27 @@ class DatabaseStorage implements IStorage {
       .returning({ id: auditTrail.id });
 
     return deleted.length;
+  }
+
+  async getOldestAuditEntry(organizationId: string): Promise<{ createdAt: Date; totalCount: number } | null> {
+    const oldest = await getDb()
+      .select({ createdAt: auditTrail.createdAt })
+      .from(auditTrail)
+      .where(eq(auditTrail.organizationId, organizationId))
+      .orderBy(asc(auditTrail.createdAt))
+      .limit(1);
+
+    if (oldest.length === 0) return null;
+
+    const countResult = await getDb()
+      .select({ count: sql<number>`count(*)::int` })
+      .from(auditTrail)
+      .where(eq(auditTrail.organizationId, organizationId));
+
+    return {
+      createdAt: oldest[0].createdAt,
+      totalCount: countResult[0]?.count || 0,
+    };
   }
 
   // ==================== SAFEGUARDING - RISK REPORTS ====================

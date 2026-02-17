@@ -2775,6 +2775,57 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
+  // Get audit data expiration warning (notification if oldest data expires within 6 months)
+  app.get("/api/org/audit-trail/expiration-warning", requireOrganization, async (req, res) => {
+    try {
+      const orgId = (req.user as any).id;
+      const org = await storage.getUser(orgId);
+      if (!org) return res.status(404).json({ error: "Organisation not found" });
+
+      const retentionDays = (org as any).retentionPolicyDays || 2190;
+
+      // Find the oldest audit entry for this org
+      const oldestEntry = await storage.getOldestAuditEntry(orgId);
+      if (!oldestEntry) {
+        return res.json({ warning: false });
+      }
+
+      const now = new Date();
+      const oldestDate = new Date(oldestEntry.createdAt);
+      const expirationDate = new Date(oldestDate.getTime() + retentionDays * 24 * 60 * 60 * 1000);
+      const msUntilExpiration = expirationDate.getTime() - now.getTime();
+      const daysUntilExpiration = Math.floor(msUntilExpiration / (1000 * 60 * 60 * 24));
+      const monthsUntilExpiration = Math.floor(daysUntilExpiration / 30);
+
+      // Show warning if within 6 months (180 days)
+      if (daysUntilExpiration <= 180 && daysUntilExpiration > 0) {
+        res.json({
+          warning: true,
+          monthsRemaining: Math.max(1, monthsUntilExpiration),
+          daysRemaining: daysUntilExpiration,
+          expirationDate: expirationDate.toISOString(),
+          oldestEntryDate: oldestDate.toISOString(),
+          totalEntries: oldestEntry.totalCount,
+        });
+      } else if (daysUntilExpiration <= 0) {
+        res.json({
+          warning: true,
+          monthsRemaining: 0,
+          daysRemaining: 0,
+          expirationDate: expirationDate.toISOString(),
+          oldestEntryDate: oldestDate.toISOString(),
+          totalEntries: oldestEntry.totalCount,
+          expired: true,
+        });
+      } else {
+        res.json({ warning: false });
+      }
+    } catch (error) {
+      console.error("Error checking audit expiration:", error);
+      res.status(500).json({ error: "Failed to check audit expiration" });
+    }
+  });
+
   app.get("/api/org/analytics/peak-times", requireOrganization, async (req, res) => {
     try {
       const orgId = req.orgId || req.userId!;
