@@ -4501,22 +4501,5 @@ export async function registerRoutes(
     }
   });
 
-  // Temporary seed endpoint for YMCA demo (admin-protected)
-  app.post("/api/admin/seed-ymca-demo", async (req, res) => {
-    try {
-      const adminEmail = process.env.ADMIN_EMAIL;
-      const adminPassword = process.env.ADMIN_PASSWORD;
-      const { email, password } = req.body;
-      if (!email || !password || email !== adminEmail || password !== adminPassword) {
-        return res.status(403).json({ error: "Forbidden" });
-      }
-      const { seedYmcaDemo } = await import("./seed-ymca-demo");
-      const result = await seedYmcaDemo();
-      res.json(result);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   return httpServer;
 }

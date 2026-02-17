@@ -74,7 +74,6 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - `server/organizationRoutes.ts` — Organisation management API routes
 - `server/storage.ts` — Database storage layer (Drizzle ORM)
 - `server/performanceIndexes.ts` — Database performance indexes (auto-created on startup)
-- `server/seed-ymca-demo.ts` — YMCA demo seed script (org, clients, staff, lone worker sessions)
 - `shared/schema.ts` — Shared TypeScript/Zod schemas and Drizzle table definitions
 - `client/src/pages/login.tsx` — Login page with 2FA support
 - `client/src/pages/settings.tsx` — Settings page with 2FA setup, language switcher
@@ -114,7 +113,6 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 ## Recent Changes
 - **Supervisor Emergency Cancellation**: Supervisors can cancel emergencies for unresponsive/panic lone workers from the Live Monitor. Requires checkbox confirmation that they've spoken to the worker and entry of the worker's cancellation password. Failed attempts are audit-logged. `cancellationPinHash` stored on staff invites, set during registration. API: `POST /api/org/lone-worker/:sessionId/supervisor-cancel`. `cancellationPinHash` stripped from all API responses (GET `/api/org/staff/invites`).
 - **Cancellation Password on Registration**: Staff members must set a cancellation password (min 4 chars) when accepting an invite. Hashed with bcrypt, stored on the staff invite record.
-- **Demo Seed Script**: `server/seed-ymca-demo.ts` now creates 5 demo staff users, accepted staff invites with cancellation PIN hashes, lone worker sessions (mix of active/unresponsive/resolved), and past resolved sessions. Demo staff password: "Demo2025!", demo cancellation PIN: "safe1234".
 - **Lone Worker Supervisor System**: Supervisor designated as primary contact for missed check-ins and emergencies; emergency contacts are secondary. Supervisor fields (name, phone, email) stored on staff invites. Edit dialog in Lone Worker Hub staff tab with SMS phone verification.
 - **International Phone Handling**: Country code selector (UK +44 default, plus IE, DE, FR, US) on all phone fields. Auto-strips leading zeros for correct E.164 formatting.
 - **Live Location Map**: Location button per worker in Live Monitor expands inline Leaflet/OSM map with pulsing status-coloured marker, coordinates, last-updated time, and Google Maps link. Marker colour updates live with status changes. GPS sent immediately on shift start, then every 60 seconds.
