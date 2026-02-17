@@ -156,6 +156,10 @@ export default function AdminUsers() {
 
   const [permanentDeleteUserId, setPermanentDeleteUserId] = useState<string | null>(null);
   const [permanentDeleteConfirmText, setPermanentDeleteConfirmText] = useState("");
+  const [showBulkArchiveDialog, setShowBulkArchiveDialog] = useState(false);
+  const [bulkArchiveConfirmText, setBulkArchiveConfirmText] = useState("");
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [bulkDeleteConfirmText, setBulkDeleteConfirmText] = useState("");
 
   const permanentDeleteMutation = useMutation({
     mutationFn: async (userId: string) => {
@@ -177,6 +181,54 @@ export default function AdminUsers() {
         variant: "destructive",
         title: "Permanent delete failed",
         description: error.message || "Could not permanently delete user",
+      });
+    },
+  });
+
+  const bulkArchiveMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/admin/users/archive-all");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/archived"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard/stats"] });
+      setShowBulkArchiveDialog(false);
+      setBulkArchiveConfirmText("");
+      toast({
+        title: "All users archived",
+        description: "All active users have been moved to the archive.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Bulk archive failed",
+        description: error.message || "Could not archive all users",
+      });
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", "/api/admin/users/archived/permanent-all");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/archived"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard/stats"] });
+      setShowBulkDeleteDialog(false);
+      setBulkDeleteConfirmText("");
+      toast({
+        title: "All archived users deleted",
+        description: "All archived users and their data have been permanently removed.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Bulk delete failed",
+        description: error.message || "Could not delete all archived users",
       });
     },
   });
@@ -360,23 +412,53 @@ export default function AdminUsers() {
               )}
             </div>
             
-            <div className="flex gap-2">
-              <Button 
-                variant={activeTab === "active" ? "default" : "outline"} 
-                size="sm" 
-                onClick={() => setActiveTab("active")}
-                data-testid="tab-active-users"
-              >
-                Active ({users?.length || 0})
-              </Button>
-              <Button 
-                variant={activeTab === "archived" ? "default" : "outline"} 
-                size="sm" 
-                onClick={() => setActiveTab("archived")}
-                data-testid="tab-archived-users"
-              >
-                Archived ({archivedUsers?.length || 0})
-              </Button>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex gap-2">
+                <Button 
+                  variant={activeTab === "active" ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setActiveTab("active")}
+                  data-testid="tab-active-users"
+                >
+                  Active ({users?.length || 0})
+                </Button>
+                <Button 
+                  variant={activeTab === "archived" ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setActiveTab("archived")}
+                  data-testid="tab-archived-users"
+                >
+                  Archived ({archivedUsers?.length || 0})
+                </Button>
+              </div>
+              {isSuperAdmin && activeTab === "active" && users && users.length > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    setShowBulkArchiveDialog(true);
+                    setBulkArchiveConfirmText("");
+                  }}
+                  data-testid="button-archive-all-users"
+                >
+                  <Archive className="w-4 h-4 mr-2" />
+                  Archive All
+                </Button>
+              )}
+              {isSuperAdmin && activeTab === "archived" && archivedUsers && archivedUsers.length > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    setShowBulkDeleteDialog(true);
+                    setBulkDeleteConfirmText("");
+                  }}
+                  data-testid="button-delete-all-archived"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete All Forever
+                </Button>
+              )}
             </div>
 
             {activeTab === "active" && (
@@ -850,6 +932,126 @@ export default function AdminUsers() {
                 </>
               ) : (
                 "Delete Forever"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Archive All Users Dialog */}
+      <Dialog open={showBulkArchiveDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowBulkArchiveDialog(false);
+          setBulkArchiveConfirmText("");
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Archive className="w-5 h-5" />
+              Archive All Users
+            </DialogTitle>
+            <DialogDescription>
+              This will archive all {users?.length || 0} active users. They can be restored individually later. No data will be permanently deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+              <p className="text-sm font-medium text-destructive">
+                Type "ARCHIVE ALL" to confirm
+              </p>
+            </div>
+            <Input
+              placeholder='Type ARCHIVE ALL to confirm'
+              value={bulkArchiveConfirmText}
+              onChange={(e) => setBulkArchiveConfirmText(e.target.value)}
+              data-testid="input-bulk-archive-confirm"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowBulkArchiveDialog(false);
+                setBulkArchiveConfirmText("");
+              }}
+              data-testid="button-cancel-bulk-archive"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={bulkArchiveConfirmText !== "ARCHIVE ALL" || bulkArchiveMutation.isPending}
+              onClick={() => bulkArchiveMutation.mutate()}
+              data-testid="button-confirm-bulk-archive"
+            >
+              {bulkArchiveMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Archiving...
+                </>
+              ) : (
+                "Archive All"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete All Archived Users Dialog */}
+      <Dialog open={showBulkDeleteDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowBulkDeleteDialog(false);
+          setBulkDeleteConfirmText("");
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Delete All Archived Users Forever
+            </DialogTitle>
+            <DialogDescription>
+              This action is irreversible. All {archivedUsers?.length || 0} archived users and their data (check-ins, contacts, alerts, documents, settings) will be permanently removed from the system.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+              <p className="text-sm font-medium text-destructive">
+                Type "DELETE ALL" to confirm permanent deletion
+              </p>
+            </div>
+            <Input
+              placeholder='Type DELETE ALL to confirm'
+              value={bulkDeleteConfirmText}
+              onChange={(e) => setBulkDeleteConfirmText(e.target.value)}
+              data-testid="input-bulk-delete-confirm"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowBulkDeleteDialog(false);
+                setBulkDeleteConfirmText("");
+              }}
+              data-testid="button-cancel-bulk-delete"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={bulkDeleteConfirmText !== "DELETE ALL" || bulkDeleteMutation.isPending}
+              onClick={() => bulkDeleteMutation.mutate()}
+              data-testid="button-confirm-bulk-delete"
+            >
+              {bulkDeleteMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete All Forever"
               )}
             </Button>
           </DialogFooter>
