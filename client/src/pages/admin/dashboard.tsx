@@ -21,6 +21,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import type { DashboardStats, AdminOrganizationView, AdminOrganizationClientView, OrgClientStatus } from "@shared/schema";
 import { allTierFeatureKeys, featureLabels } from "@shared/schema";
 import AdminTeam from "@/pages/admin/team";
+import Flowcharts from "@/pages/flowcharts";
 import { ActiveSOSPanel } from "@/components/active-sos-panel";
 
 const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
@@ -45,6 +46,10 @@ function getCheckInStatusBadge(status: "safe" | "pending" | "overdue") {
     case "overdue":
       return <Badge variant="destructive">Overdue</Badge>;
   }
+}
+
+function AlertFlowView() {
+  return <Flowcharts />;
 }
 
 export default function AdminDashboard() {
@@ -225,7 +230,7 @@ export default function AdminDashboard() {
   }, [orgClients, orgClientSearchRef, orgClientSearchPhone]);
   
   const isSuperAdmin = admin?.role === "super_admin";
-  const [activeView, setActiveView] = useState<"dashboard" | "team">("dashboard");
+  const [activeView, setActiveView] = useState<"dashboard" | "team" | "alertflow">("dashboard");
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/admin/dashboard/stats"],
@@ -736,6 +741,15 @@ export default function AdminDashboard() {
                   Team
                 </Button>
               )}
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setActiveView(activeView === "alertflow" ? "dashboard" : "alertflow")}
+                data-testid="nav-alert-flow"
+                className={activeView === "alertflow" ? "bg-accent" : ""}
+              >
+                Alert Flow
+              </Button>
               {isSuperAdmin && (
                 <Button 
                   variant="ghost" 
@@ -804,6 +818,8 @@ export default function AdminDashboard() {
       <main className="container mx-auto px-4 py-8">
         {activeView === "team" && isSuperAdmin ? (
           <AdminTeam />
+        ) : activeView === "alertflow" ? (
+          <AlertFlowView />
         ) : (
         <>
         <h2 className="text-2xl font-semibold mb-6">Overview</h2>
