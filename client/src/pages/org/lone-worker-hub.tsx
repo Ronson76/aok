@@ -1804,7 +1804,7 @@ export default function OrgLoneWorkerHub() {
               Cancel Emergency
             </DialogTitle>
             <DialogDescription>
-              Cancel the emergency for <strong>{cancelEmergencySession?.userName}</strong>. You must confirm you have spoken to the lone worker and verify their cancellation password.
+              Cancel the emergency for <strong>{cancelEmergencySession?.userName}</strong>. You must confirm you have spoken to the lone worker and enter your organisation password to proceed.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -1822,15 +1822,15 @@ export default function OrgLoneWorkerHub() {
               </label>
             </div>
             <div className="space-y-1.5">
-              <Label>Staff Member's Cancellation Password</Label>
+              <Label>Organisation Password</Label>
               <PasswordInput
-                placeholder="Enter the cancellation password"
+                placeholder="Enter your organisation password"
                 value={cancelPin}
                 onChange={(e) => { setCancelPin(e.target.value); setCancelPinError(""); }}
                 data-testid="input-cancel-pin"
               />
               <p className="text-xs text-muted-foreground">
-                This is the password the staff member created when they set up their account.
+                Enter the password you use to log into the organisation dashboard.
               </p>
             </div>
             {cancelPinError && (
@@ -1849,7 +1849,7 @@ export default function OrgLoneWorkerHub() {
                   return;
                 }
                 if (!cancelPin) {
-                  setCancelPinError("Please enter the cancellation password");
+                  setCancelPinError("Please enter your organisation password");
                   return;
                 }
                 supervisorCancelMutation.mutate({

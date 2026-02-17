@@ -2817,7 +2817,7 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(400).json({ error: "You must confirm you have spoken to the lone worker" });
       }
       if (!cancellationPin || typeof cancellationPin !== "string") {
-        return res.status(400).json({ error: "Cancellation password is required" });
+        return res.status(400).json({ error: "Organisation password is required" });
       }
 
       const session = await storage.getLoneWorkerSession(sessionId);
@@ -2829,18 +2829,14 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(400).json({ error: "Session is not in an emergency state" });
       }
 
-      const invite = await organizationStorage.getStaffInviteBySessionId(sessionId);
-      if (!invite) {
-        return res.status(404).json({ error: "Staff invite not found for this session" });
+      const orgUser = await storage.getUserById(orgId);
+      if (!orgUser) {
+        return res.status(404).json({ error: "Organisation account not found" });
       }
 
-      const pinHash = await organizationStorage.getCancellationPinHash(invite.id);
-      if (!pinHash) {
-        return res.status(400).json({ error: "No cancellation password has been set for this staff member" });
-      }
-
-      const pinValid = await bcrypt.compare(cancellationPin, pinHash);
-      if (!pinValid) {
+      const passwordValid = await bcrypt.compare(cancellationPin, orgUser.password);
+      if (!passwordValid) {
+        const invite = await organizationStorage.getStaffInviteBySessionId(sessionId);
         await storage.createAuditEntry(orgId, {
           userId: orgId,
           userEmail: req.user?.email || "unknown",
@@ -2848,13 +2844,15 @@ export function registerOrganizationRoutes(app: Express) {
           action: "supervisor_cancel_failed",
           entityType: "lone_worker_session",
           entityId: sessionId,
-          newData: { reason: "incorrect_cancellation_password", staffName: invite.staffName },
+          newData: { reason: "incorrect_password", staffName: invite?.staffName || "unknown" },
           ipAddress: req.ip || undefined,
         });
-        return res.status(403).json({ error: "Incorrect cancellation password" });
+        return res.status(403).json({ error: "Incorrect organisation password" });
       }
 
-      const resolved = await storage.resolveLoneWorkerSession(sessionId, orgId, "safe", "Supervisor confirmed worker is safe — emergency cancelled with cancellation password");
+      const invite = await organizationStorage.getStaffInviteBySessionId(sessionId);
+
+      const resolved = await storage.resolveLoneWorkerSession(sessionId, orgId, "safe", "Supervisor confirmed worker is safe — emergency cancelled with organisation password");
 
       await storage.createAuditEntry(orgId, {
         userId: orgId,
