@@ -84,7 +84,6 @@ import IPOwnership from "@/pages/ip-ownership";
 import NDA from "@/pages/nda";
 import AdminLicenceAgreements from "@/pages/admin/licence-agreements";
 import Guide from "@/pages/guide";
-import Flowcharts from "@/pages/flowcharts";
 import ConfirmContact from "@/pages/confirm-contact";
 import WellbeingAI from "@/pages/wellbeing-ai";
 import LoneWorker from "@/pages/lone-worker";
