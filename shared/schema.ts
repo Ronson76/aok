@@ -694,6 +694,7 @@ export const organizationClients = pgTable("organization_clients", {
   supervisorName: text("supervisor_name"),
   supervisorPhone: text("supervisor_phone"),
   supervisorEmail: text("supervisor_email"),
+  emergencyNotes: text("emergency_notes"),
   // Soft-delete / archive fields
   archivedAt: timestamp("archived_at"),
   archivedBy: text("archived_by"),
@@ -728,6 +729,7 @@ export const registerOrgClientSchema = z.object({
     relationship: z.string().optional(),
     isPrimary: z.boolean().optional(),
   })).optional(),
+  emergencyNotes: z.string().max(1000).optional(),
   features: z.object({
     featureWellbeingAi: z.boolean().default(true),
     featureShakeToAlert: z.boolean().default(true),

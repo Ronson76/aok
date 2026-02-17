@@ -2143,13 +2143,29 @@ export async function registerRoutes(
       );
       console.log('[EMERGENCY] Created active alert:', activeAlert.id, 'Continuous tracking:', continuousTrackingEnabled);
       
+      // Enrich additionalInfo with org client emergency notes if applicable
+      let enrichedAdditionalInfo = userSettings?.additionalInfo;
+      if (user.accountType === "organization" && user.referenceId) {
+        const orgClients = await organizationStorage.getOrganizationClientsForUser(req.userId!);
+        const orgClient = orgClients[0];
+        if (orgClient?.emergencyNotes) {
+          try {
+            const parsed = enrichedAdditionalInfo ? JSON.parse(enrichedAdditionalInfo) : {};
+            parsed.emergencyNotes = orgClient.emergencyNotes;
+            enrichedAdditionalInfo = JSON.stringify(parsed);
+          } catch {
+            enrichedAdditionalInfo = JSON.stringify({ emergencyNotes: orgClient.emergencyNotes });
+          }
+        }
+      }
+
       // Send email and SMS alerts
       const alertResult = await sendEmergencyAlert(
         contacts, 
         user, 
         location,
         false, // isLocationUpdate
-        userSettings?.additionalInfo
+        enrichedAdditionalInfo
       );
       
       // Send voice calls to landline contacts

@@ -210,6 +210,23 @@ export async function processOverdueEmergencyAlerts(): Promise<void> {
         // Get settings for additional info
         const settings = await storage.getSettings(alert.userId);
 
+        // Enrich additionalInfo with org client emergency notes if applicable
+        let enrichedAdditionalInfo = settings?.additionalInfo;
+        if (user.accountType === "organization" && user.referenceId) {
+          const { organizationStorage } = await import("./storage");
+          const orgClients = await organizationStorage.getOrganizationClientsForUser(alert.userId);
+          const orgClient = orgClients[0];
+          if (orgClient?.emergencyNotes) {
+            try {
+              const parsed = enrichedAdditionalInfo ? JSON.parse(enrichedAdditionalInfo) : {};
+              parsed.emergencyNotes = orgClient.emergencyNotes;
+              enrichedAdditionalInfo = JSON.stringify(parsed);
+            } catch {
+              enrichedAdditionalInfo = JSON.stringify({ emergencyNotes: orgClient.emergencyNotes });
+            }
+          }
+        }
+
         const location = alert.latitude && alert.longitude
           ? { latitude: parseFloat(alert.latitude), longitude: parseFloat(alert.longitude) }
           : undefined;
@@ -223,7 +240,7 @@ export async function processOverdueEmergencyAlerts(): Promise<void> {
           user, 
           location, 
           true,
-          settings?.additionalInfo
+          enrichedAdditionalInfo
         );
 
         await storage.updateEmergencyAlertDispatchTime(alert.id);
@@ -531,13 +548,30 @@ async function processOverdueErrandSessions(): Promise<void> {
 
         const settings = await storage.getSettings(session.userId);
 
+        // Enrich additionalInfo with org client emergency notes if applicable
+        let activityAdditionalInfo = settings?.additionalInfo;
+        if (user.accountType === "organization" && user.referenceId) {
+          const { organizationStorage: orgStore } = await import("./storage");
+          const orgClients = await orgStore.getOrganizationClientsForUser(session.userId);
+          const orgClient = orgClients[0];
+          if (orgClient?.emergencyNotes) {
+            try {
+              const parsed = activityAdditionalInfo ? JSON.parse(activityAdditionalInfo) : {};
+              parsed.emergencyNotes = orgClient.emergencyNotes;
+              activityAdditionalInfo = JSON.stringify(parsed);
+            } catch {
+              activityAdditionalInfo = JSON.stringify({ emergencyNotes: orgClient.emergencyNotes });
+            }
+          }
+        }
+
         const alertResult = await sendActivityOverdueAlert(
           contacts,
           user,
           activityLabel,
           session.expectedDurationMins,
           location,
-          settings?.additionalInfo
+          activityAdditionalInfo
         );
 
         const voiceResult = await sendActivityVoiceAlerts(contacts, user, activityLabel);
