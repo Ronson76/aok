@@ -149,7 +149,7 @@ export default function AdminWorkflows() {
           <StepBox icon={Bell} label="Push Notification" sublabel="Reminder sent when check-in is due" badge="Push" />
           <StepBox icon={MessageSquare} label="SMS Reminder" sublabel="Automatic SMS fallback with tokenised check-in link" badge="Twilio" />
           <StepBox icon={CheckCircle} label="User Checks In" sublabel="Manual check-in via dashboard or SMS link" />
-          <StepBox icon={Mail} label="Primary Contact Notified" sublabel="Email sent to primary contact on every check-in" badge="Resend" />
+          <StepBox icon={Mail} label="Primary Contact/Carer Notified" sublabel="Email sent to primary contact/carer on every check-in" badge="Resend" />
           <StepBox icon={RefreshCw} label="Timer Resets" sublabel="Next check-in window begins" />
         </WorkflowSection>
 
@@ -227,7 +227,7 @@ export default function AdminWorkflows() {
           <StepBox icon={Mail} label="Confirmation Email" sublabel="Contact must confirm within 10 minutes" badge="Resend" />
           <StepBox icon={CheckCircle} label="Contact Confirmed" sublabel="Contact is now active and receives alerts" />
           <StepBox icon={RefreshCw} label="Reminder System" sublabel="Auto-reminder for unconfirmed contacts every 24 hours" />
-          <StepBox icon={Shield} label="Primary Contact" sublabel="One contact designated to receive all check-in notifications" />
+          <StepBox icon={Shield} label="Primary Contact/Carer" sublabel="One contact designated to receive all check-in notifications" />
         </WorkflowSection>
 
         <FlowArrow />

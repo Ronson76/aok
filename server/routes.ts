@@ -1935,10 +1935,10 @@ export async function registerRoutes(
       }
       res.json(contact);
     } catch (error: any) {
-      if (error.message === "Maximum of 3 primary contacts allowed") {
+      if (error.message === "Maximum of 3 primary contacts/carers allowed") {
         return res.status(400).json({ error: error.message });
       }
-      res.status(500).json({ error: "Failed to set primary contact" });
+      res.status(500).json({ error: "Failed to set primary contact/carer" });
     }
   });
 

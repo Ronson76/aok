@@ -1312,7 +1312,7 @@ export default function Settings() {
                 Once you sign out, your emergency contacts will NOT be notified of any missed check-ins or emergencies.
               </span>
               <span className="block">
-                Your primary contact will be notified that you have signed out and will no longer receive safety alerts.
+                Your primary contact/carer will be notified that you have signed out and will no longer receive safety alerts.
               </span>
               <span className="block">
                 Enter your password to confirm sign out.

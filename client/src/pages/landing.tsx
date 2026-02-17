@@ -129,7 +129,7 @@ export default function Landing() {
         { text: "Emergency alert button", icon: AlertTriangle },
         { text: "GPS location with what3words", icon: MapPin },
         { text: "Push notifications", icon: Smartphone },
-        { text: "Primary contact updates", icon: Heart },
+        { text: "Primary contact/carer updates", icon: Heart },
         { text: "Offline SMS check-in backup", icon: MessageSquare },
       ],
       cta: "Get Started",
@@ -537,7 +537,7 @@ export default function Landing() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Multiple Contacts</h3>
                 <p className="text-muted-foreground text-sm">
-                  Add family, friends, neighbours, or anyone you trust. Set a primary contact for regular updates.
+                  Add family, friends, neighbours, or anyone you trust. Set a primary contact/carer for regular updates.
                 </p>
               </CardContent>
             </Card>
@@ -648,7 +648,7 @@ export default function Landing() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2" data-testid="text-feature-low-battery">Low Battery Alert</h3>
                 <p className="text-muted-foreground text-sm">
-                  If your phone battery drops below 20% during an active activity, your primary contacts are automatically emailed so they know to keep a closer eye. Only fires once per session.
+                  If your phone battery drops below 20% during an active activity, your primary contacts/carers are automatically emailed so they know to keep a closer eye. Only fires once per session.
                 </p>
               </CardContent>
             </Card>
@@ -695,9 +695,9 @@ export default function Landing() {
                 <div className="rounded-full bg-rose-500/10 p-3 w-fit mb-4">
                   <Heart className="h-6 w-6 text-rose-500" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Primary Contact</h3>
+                <h3 className="text-lg font-semibold mb-2">Primary Contact/Carer</h3>
                 <p className="text-muted-foreground text-sm">
-                  Designate a primary contact who receives a notification for every successful check-in — giving them ongoing peace of mind that you're safe.
+                  Designate a primary contact/carer who receives a notification for every successful check-in — giving them ongoing peace of mind that you're safe.
                 </p>
               </CardContent>
             </Card>
@@ -1114,7 +1114,7 @@ export default function Landing() {
                 What happens if I miss a check-in?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-2">
-                If you miss a check-in, your primary contact is alerted by email and your location is shared 
+                If you miss a check-in, your primary contact/carer is alerted by email and your location is shared 
                 through what3words - a simple three-word address that pinpoints your exact location to within 
                 3 metres. You'll also hear an alert sound on your phone to remind you to check in.
               </AccordionContent>
@@ -1179,7 +1179,7 @@ export default function Landing() {
                 Who is contacted in an emergency?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-8">
-                <p className="mb-4">You can designate up to 3 primary contacts who receive more frequent updates. Here's how notifications work:</p>
+                <p className="mb-4">You can designate up to 3 primary contacts/carers who receive more frequent updates. Here's how notifications work:</p>
                 
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm border-collapse mb-4">
@@ -1193,7 +1193,7 @@ export default function Landing() {
                     </thead>
                     <tbody>
                       <tr className="border-b border-border/50">
-                        <td colSpan={4} className="py-2 font-semibold text-foreground">Primary Contacts (up to 3)</td>
+                        <td colSpan={4} className="py-2 font-semibold text-foreground">Primary Contacts/Carers (up to 3)</td>
                       </tr>
                       <tr className="border-b border-border/50">
                         <td className="py-2 pr-4 pl-4">Successful Check-in</td>

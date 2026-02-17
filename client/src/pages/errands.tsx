@@ -379,7 +379,7 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
           .then(() => {
             toast({
               title: "Low Battery Alert Sent",
-              description: `Your primary contacts have been notified that your battery is at ${level}%.`,
+              description: `Your primary contacts/carers have been notified that your battery is at ${level}%.`,
             });
           })
           .catch(() => {});
@@ -605,7 +605,7 @@ function ActiveSessionView({ session, onEnded }: { session: ErrandSession; onEnd
               <BatteryLow className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
               <div>
                 <span className="text-sm font-semibold text-amber-700 dark:text-amber-300" data-testid="text-low-battery">Battery Low ({batteryLevel}%)</span>
-                <p className="text-xs text-muted-foreground">Your primary contacts have been alerted</p>
+                <p className="text-xs text-muted-foreground">Your primary contacts/carers have been alerted</p>
               </div>
             </div>
           </CardContent>

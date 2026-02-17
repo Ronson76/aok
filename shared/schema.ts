@@ -571,7 +571,7 @@ export const featureLabels: Record<string, string> = {
   featureEmergencyAlert: "Emergency Alert Button",
   featureGpsLocation: "GPS Location Sharing",
   featurePushNotifications: "Push Notifications",
-  featurePrimaryContact: "Primary Contact Updates",
+  featurePrimaryContact: "Primary Contact/Carer Updates",
   featureSmsBackup: "SMS Check-in Backup",
   featureEmergencyRecording: "Emergency Recording",
   featureMoodTracking: "Mood & Wellness Tracking",

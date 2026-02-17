@@ -742,7 +742,7 @@ ${userName} would like to add you as an emergency contact for a person they are 
 
 Reference ID: ${user.referenceId}
 
-aok is a personal safety check-in app. ${contact.isPrimary ? 'As the primary contact (supervisor), you will be notified if this person misses a check-in or triggers an emergency alert.' : 'You will be notified if this person triggers an emergency alert.'}
+aok is a personal safety check-in app. ${contact.isPrimary ? 'As the primary contact/carer (supervisor), you will be notified if this person misses a check-in or triggers an emergency alert.' : 'You will be notified if this person triggers an emergency alert.'}
 
 IMPORTANT: You must confirm within 24 hours to become an emergency contact.
 
@@ -760,7 +760,7 @@ Thank you,
 
 ${userName} would like to add you as their emergency contact on aok.
 
-aok is a personal safety check-in app. ${contact.isPrimary ? `As the primary contact, you will be notified if ${userName} misses a check-in or triggers an emergency alert.` : `You will be notified if ${userName} triggers an emergency alert.`}
+aok is a personal safety check-in app. ${contact.isPrimary ? `As the primary contact/carer, you will be notified if ${userName} misses a check-in or triggers an emergency alert.` : `You will be notified if ${userName} triggers an emergency alert.`}
 
 This means ${userName} trusts you to help ensure their safety.
 
@@ -797,7 +797,7 @@ Thank you,
   }
   
   <p><strong>aok</strong> is a personal safety check-in app. ${contact.isPrimary 
-    ? `As the primary contact${isOrganization ? ' (supervisor)' : ''}, you will be notified if ${isOrganization ? 'this person' : userName} misses a check-in or triggers an emergency alert.`
+    ? `As the primary contact/carer${isOrganization ? ' (supervisor)' : ''}, you will be notified if ${isOrganization ? 'this person' : userName} misses a check-in or triggers an emergency alert.`
     : `You will be notified if ${isOrganization ? 'this person' : userName} triggers an emergency alert.`}</p>
   
   <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 20px 0;">
@@ -879,7 +879,7 @@ export async function sendContactAddedNotification(
 
   const emailSubject = `You are now an emergency contact on aok`;
   const isPrimary = !!contact.isPrimary;
-  const roleLabel = isPrimary ? "primary emergency contact (supervisor)" : "emergency contact";
+  const roleLabel = isPrimary ? "primary emergency contact/carer (supervisor)" : "emergency contact";
   const notifyDesc = isPrimary 
     ? "you will be notified if they miss a scheduled check-in or trigger an emergency alert"
     : "you will be notified if they trigger an emergency alert";
@@ -941,7 +941,7 @@ You have been promoted to PRIMARY emergency contact for a person monitored by ${
 
 Reference ID: ${user.referenceId}
 
-As the primary contact, you will receive a notification for every successful check-in, as well as any alerts if a check-in is missed.
+As the primary contact/carer, you will receive a notification for every successful check-in, as well as any alerts if a check-in is missed.
 
 Thank you for your continued support.
 
@@ -950,7 +950,7 @@ Thank you for your continued support.
 
 You have been promoted to PRIMARY emergency contact for ${displayName} on aok.
 
-As the primary contact, you will receive a notification for every successful check-in, as well as any alerts if a check-in is missed.
+As the primary contact/carer, you will receive a notification for every successful check-in, as well as any alerts if a check-in is missed.
 
 Thank you for being there for ${displayName}.
 
@@ -1388,7 +1388,7 @@ Schedule Details:
 - Check-in starts at: ${formattedTime}
 - Check-in interval: Every ${intervalDisplay}
 
-As a primary contact, you will be notified:
+As a primary contact/carer, you will be notified:
 - When ${identifier} successfully checks in
 - If ${identifier} misses a scheduled check-in
 
@@ -2443,7 +2443,7 @@ This means their safety check-ins are currently paused and no notifications will
 If you are concerned about ${isOrganization ? "this user's" : `${displayName}'s`} wellbeing, please reach out to them directly.
 
 ---
-This notification was sent because you are listed as their primary emergency contact.
+This notification was sent because you are listed as their primary emergency contact/carer.
 aok - Personal Safety Check-In`;
 
   try {
@@ -2843,7 +2843,7 @@ The ${appName} Team`;
         const contactSubject = `${appName} - ${userName || 'Your contact'}'s payment requires attention`;
         const contactBody = `Hi ${primaryContact.name},
 
-You are the primary emergency contact for ${userName || 'a user'} on ${appName}.
+You are the primary emergency contact/carer for ${userName || 'a user'} on ${appName}.
 
 We wanted to let you know that their payment for ${appName} Complete Wellbeing was unsuccessful. Their account will be temporarily blocked until payment details are updated.
 
@@ -2858,7 +2858,7 @@ The ${appName} Team`;
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #f59e0b;">Payment Attention Required</h2>
             <p>Hi ${primaryContact.name},</p>
-            <p>You are the primary emergency contact for <strong>${userName || 'a user'}</strong> on ${appName}.</p>
+            <p>You are the primary emergency contact/carer for <strong>${userName || 'a user'}</strong> on ${appName}.</p>
             <p>We wanted to let you know that their payment for ${appName} Complete Wellbeing was unsuccessful. Their account will be temporarily blocked until payment details are updated.</p>
             <p style="background-color: #fffbeb; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;">
               <strong>This means they may not be able to check in or send emergency alerts during this time.</strong>
@@ -2900,7 +2900,7 @@ export async function sendWelcomeEmail(
         <ol style="margin: 0; padding-left: 20px; color: #15803d;">
           <li style="margin-bottom: 12px;"><strong>Set your check-in schedule</strong> - Choose how often you'd like to check in (1-48 hours)</li>
           <li style="margin-bottom: 12px;"><strong>Add your emergency contacts</strong> - They'll be notified if you miss a check-in or trigger an SOS</li>
-          <li style="margin-bottom: 12px;"><strong>Mark up to 3 as Primary</strong> - Primary contacts receive every successful check-in notification</li>
+          <li style="margin-bottom: 12px;"><strong>Mark up to 3 as Primary</strong> - Primary contacts/carers receive every successful check-in notification</li>
           <li style="margin-bottom: 0;"><strong>Complete your first check-in</strong> - Just tap the check-in button when prompted</li>
         </ol>
       </div>
@@ -2935,7 +2935,7 @@ HERE'S HOW TO GET STARTED:
 
 1. Set your check-in schedule - Choose how often you'd like to check in (1-48 hours)
 2. Add your emergency contacts - They'll be notified if you miss a check-in or trigger an SOS
-3. Mark up to 3 as Primary - Primary contacts receive every successful check-in notification
+3. Mark up to 3 as Primary - Primary contacts/carers receive every successful check-in notification
 4. Complete your first check-in - Just tap the check-in button when prompted
 
 DOWNLOAD THE AOK APP:
