@@ -351,6 +351,24 @@ export default function OrganizationDashboard() {
     enabled: showAuditTrail,
   });
 
+  const { data: expirationWarning } = useQuery<{
+    warning: boolean;
+    monthsRemaining?: number;
+    daysRemaining?: number;
+    expirationDate?: string;
+    oldestEntryDate?: string;
+    totalEntries?: number;
+    expired?: boolean;
+  }>({
+    queryKey: ["/api/org/audit-trail/expiration-warning"],
+    queryFn: async () => {
+      const res = await fetch("/api/org/audit-trail/expiration-warning", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to check audit expiration");
+      return res.json();
+    },
+    refetchInterval: 1000 * 60 * 60,
+  });
+
   const { data: legalDocsData, refetch: refetchLegalDocs } = useQuery<{
     assignedDocuments: Array<{ id: string; organisationId: string; organisationName: string; documentId: string; assignedAt: string; signedAt?: string; signatureId?: string }>;
     signatures: Array<{ id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: string }>;
@@ -2678,6 +2696,34 @@ export default function OrganizationDashboard() {
         </CardHeader>
         {showAuditTrail && (
           <CardContent className="space-y-4">
+            {expirationWarning?.warning && (
+              <div
+                className={`flex items-start gap-3 p-4 rounded-md border ${
+                  expirationWarning.expired
+                    ? "bg-destructive/10 border-destructive/30 text-destructive"
+                    : "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200"
+                }`}
+                role="alert"
+                data-testid="audit-expiration-warning"
+              >
+                <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 text-sm">
+                  {expirationWarning.expired ? (
+                    <p>
+                      <strong>Audit data has expired.</strong> Some records have exceeded the retention period and are due for deletion. Run a cleanup to remove expired entries.
+                    </p>
+                  ) : (
+                    <p>
+                      <strong>Audit data expiring soon.</strong>{" "}
+                      {expirationWarning.daysRemaining! <= 30
+                        ? `Your oldest audit records will expire in ${expirationWarning.daysRemaining} days.`
+                        : `Your oldest audit records will expire in approximately ${expirationWarning.monthsRemaining} month${expirationWarning.monthsRemaining! > 1 ? "s" : ""}.`}{" "}
+                      Please export any records you need to keep before they are automatically removed under your retention policy.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
             {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 relative">
