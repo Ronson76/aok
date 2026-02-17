@@ -175,6 +175,7 @@ export default function OrganizationDashboard() {
   const [supervisorSmsSending, setSupervisorSmsSending] = useState(false);
   const [supervisorSmsVerifying, setSupervisorSmsVerifying] = useState(false);
   const [supervisorSmsSent, setSupervisorSmsSent] = useState(false);
+  const [regEmergencyNotes, setRegEmergencyNotes] = useState("");
   const [regScheduleStart, setRegScheduleStart] = useState("");
   const [regIntervalHours, setRegIntervalHours] = useState(24);
   const [regEmergencyContacts, setRegEmergencyContacts] = useState<Array<{
@@ -588,6 +589,7 @@ export default function OrganizationDashboard() {
         supervisorPhone: regSupervisorPhone ? `${regSupervisorCountryCode}${regSupervisorPhone.replace(/\D/g, "")}` : undefined,
         supervisorEmail: regSupervisorEmail || undefined,
         emergencyContacts: regEmergencyContacts.length > 0 ? regEmergencyContacts : undefined,
+        emergencyNotes: regEmergencyNotes || undefined,
         features: regFeatures,
       });
       return response.json();
@@ -786,6 +788,7 @@ export default function OrganizationDashboard() {
     setSupervisorSmsVerified(false);
     setSupervisorSmsCode("");
     setSupervisorSmsSent(false);
+    setRegEmergencyNotes("");
     setRegScheduleStart("");
     setRegIntervalHours(24);
     setRegEmergencyContacts([]);
@@ -1960,6 +1963,23 @@ export default function OrganizationDashboard() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Emergency Notes Section */}
+            <div className="space-y-2">
+              <Label htmlFor="regEmergencyNotes" className="text-xs">Emergency Notes</Label>
+              <p className="text-xs text-muted-foreground">These notes will be included in all alert messages sent to contacts (e.g. medical conditions, access instructions, key safe codes).</p>
+              <Textarea
+                id="regEmergencyNotes"
+                data-testid="input-emergency-notes"
+                placeholder="e.g. Client has diabetes and uses insulin. Key safe code: 1234. Lives alone on the second floor."
+                value={regEmergencyNotes}
+                onChange={(e) => setRegEmergencyNotes(e.target.value)}
+                maxLength={1000}
+                className="text-sm resize-none"
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground text-right">{regEmergencyNotes.length}/1000</p>
             </div>
 
             {/* Emergency Contacts Section (Secondary) */}

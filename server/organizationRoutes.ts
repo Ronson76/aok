@@ -161,7 +161,7 @@ export function registerOrganizationRoutes(app: Express) {
         return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
       }
 
-      const { clientName, clientPhone, dateOfBirth, bundleId, scheduleStartTime, checkInIntervalHours, emergencyContacts, features, supervisorName, supervisorPhone, supervisorEmail } = parsed.data;
+      const { clientName, clientPhone, dateOfBirth, bundleId, scheduleStartTime, checkInIntervalHours, emergencyContacts, emergencyNotes, features, supervisorName, supervisorPhone, supervisorEmail } = parsed.data;
 
       // Get the organization details
       const org = await storage.getUserById(req.userId!);
@@ -193,6 +193,7 @@ export function registerOrganizationRoutes(app: Express) {
         supervisorName: supervisorName || null,
         supervisorPhone: supervisorPhone || null,
         supervisorEmail: supervisorEmail || null,
+        emergencyNotes: emergencyNotes || null,
         features: features || {
           featureWellbeingAi: true,
           featureShakeToAlert: true,

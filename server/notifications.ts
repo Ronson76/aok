@@ -1116,6 +1116,10 @@ function formatAdditionalInfo(additionalInfoJson: string | null): string {
         sections.push(`HEALTH CONDITIONS:\n  ${healthDetails.join('\n  ')}`);
       }
     }
+
+    if (info.emergencyNotes) {
+      sections.push(`EMERGENCY NOTES:\n  ${info.emergencyNotes}`);
+    }
     
     if (sections.length > 0) {
       return `\n\n--- ADDITIONAL INFORMATION ---\n${sections.join('\n\n')}`;
@@ -1221,7 +1225,10 @@ export async function sendMissedCheckInAlert(
         additionalHtml += `<p style="margin: 0 0 8px 0;"><strong>Allergies:</strong> ${parsed.allergies.join(', ')}</p>`;
       }
       if (parsed.notes) {
-        additionalHtml += `<p style="margin: 0;"><strong>Notes:</strong> ${parsed.notes}</p>`;
+        additionalHtml += `<p style="margin: 0 0 8px 0;"><strong>Notes:</strong> ${parsed.notes}</p>`;
+      }
+      if (parsed.emergencyNotes) {
+        additionalHtml += `<p style="margin: 0;"><strong>Emergency Notes:</strong> ${parsed.emergencyNotes}</p>`;
       }
     }
     

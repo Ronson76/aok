@@ -957,11 +957,27 @@ class DatabaseStorage implements IStorage {
       console.log(`[ALERT] ${alertType} missed check-in alert for user ${userId}! Sending to: ${contactNames.join(", ")}`);
       
       try {
+        // Enrich additionalInfo with org client emergency notes if applicable
+        let enrichedAdditionalInfo = row.additionalInfo;
+        if (user.accountType === "organization" && user.referenceId) {
+          const orgClients = await this.getOrganizationClientsForUser(userId);
+          const orgClient = orgClients[0];
+          if (orgClient?.emergencyNotes) {
+            try {
+              const parsed = enrichedAdditionalInfo ? JSON.parse(enrichedAdditionalInfo) : {};
+              parsed.emergencyNotes = orgClient.emergencyNotes;
+              enrichedAdditionalInfo = JSON.stringify(parsed);
+            } catch {
+              enrichedAdditionalInfo = JSON.stringify({ emergencyNotes: orgClient.emergencyNotes });
+            }
+          }
+        }
+
         // Send email and SMS alerts
         const { emailsSent, emailsFailed, smsSent, smsFailed } = await sendMissedCheckInAlert(
           contactsToAlert, 
           user,
-          row.additionalInfo
+          enrichedAdditionalInfo
         );
         
         // Send push notifications to user's devices
@@ -3513,6 +3529,7 @@ export interface IOrganizationStorage {
     supervisorName?: string | null;
     supervisorPhone?: string | null;
     supervisorEmail?: string | null;
+    emergencyNotes?: string | null;
     features?: {
       featureWellbeingAi: boolean;
       featureShakeToAlert: boolean;
@@ -4419,6 +4436,7 @@ class OrganizationStorage implements IOrganizationStorage {
     supervisorName?: string | null;
     supervisorPhone?: string | null;
     supervisorEmail?: string | null;
+    emergencyNotes?: string | null;
     features?: {
       featureWellbeingAi: boolean;
       featureShakeToAlert: boolean;
@@ -4444,6 +4462,7 @@ class OrganizationStorage implements IOrganizationStorage {
         checkInIntervalHours: data.checkInIntervalHours,
         supervisorName: data.supervisorName || null,
         supervisorPhone: data.supervisorPhone || null,
+        emergencyNotes: data.emergencyNotes || null,
         clientOrdinal: nextOrdinal,
         status: "active",
         registrationStatus: "pending_sms",
