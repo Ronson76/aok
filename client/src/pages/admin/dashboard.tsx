@@ -173,6 +173,11 @@ export default function AdminDashboard() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   
+  // State for purging all data
+  const [showPurgeDialog, setShowPurgeDialog] = useState(false);
+  const [purgePassword, setPurgePassword] = useState("");
+  const [purgeConfirmText, setPurgeConfirmText] = useState("");
+  
   // State for resetting organization password
   const [showResetOrgPasswordDialog, setShowResetOrgPasswordDialog] = useState(false);
   const [resetOrgPasswordTarget, setResetOrgPasswordTarget] = useState<AdminOrganizationView | null>(null);
@@ -641,6 +646,33 @@ export default function AdminDashboard() {
     fetchOrgClients(org.id);
   };
 
+  const purgeAllDataMutation = useMutation({
+    mutationFn: async (password: string) => {
+      const response = await apiRequest("POST", "/api/admin/purge-all-data", { password });
+      return response.json();
+    },
+    onSuccess: () => {
+      setShowPurgeDialog(false);
+      setPurgePassword("");
+      setPurgeConfirmText("");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/alerts/active-sos"] });
+      toast({
+        title: "Data purged",
+        description: "All user and organisation data has been removed. Admin accounts preserved.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to purge data",
+        description: error.message || "Please check your password and try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLogout = async () => {
     await logout();
     setLocation("/admin/login");
@@ -701,6 +733,12 @@ export default function AdminDashboard() {
               <KeyRound className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Change </span>Password
             </Button>
+            {isSuperAdmin && (
+              <Button variant="destructive" size="sm" onClick={() => setShowPurgeDialog(true)} data-testid="button-purge-all-data">
+                <Trash2 className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Purge All </span>Data
+              </Button>
+            )}
           </div>
         </div>
         <div className="border-t">
@@ -2155,6 +2193,72 @@ export default function AdminDashboard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        <Dialog open={showPurgeDialog} onOpenChange={(open) => {
+          if (!open) {
+            setShowPurgeDialog(false);
+            setPurgePassword("");
+            setPurgeConfirmText("");
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="w-5 h-5" />
+                Purge All Data
+              </DialogTitle>
+              <DialogDescription>
+                This will permanently delete ALL users, organisations, check-ins, alerts, and related data. Admin accounts will be preserved. This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="purge-confirm-text">Type DELETE to confirm</Label>
+                <Input
+                  id="purge-confirm-text"
+                  data-testid="input-purge-confirm-text"
+                  placeholder="Type DELETE"
+                  value={purgeConfirmText}
+                  onChange={(e) => setPurgeConfirmText(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="purge-password">Enter your admin password</Label>
+                <Input
+                  id="purge-password"
+                  data-testid="input-purge-password"
+                  type="password"
+                  placeholder="Your admin password"
+                  value={purgePassword}
+                  onChange={(e) => setPurgePassword(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => { setShowPurgeDialog(false); setPurgePassword(""); setPurgeConfirmText(""); }} data-testid="button-cancel-purge">
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={purgeConfirmText !== "DELETE" || !purgePassword.trim() || purgeAllDataMutation.isPending}
+                onClick={() => purgeAllDataMutation.mutate(purgePassword)}
+                data-testid="button-confirm-purge"
+              >
+                {purgeAllDataMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Purging...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Purge All Data
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         </>
         )}
       </main>

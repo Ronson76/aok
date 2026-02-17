@@ -1659,4 +1659,83 @@ export function registerAdminRoutes(app: Express) {
       res.status(500).json({ error: "Failed to get active SOS alerts" });
     }
   });
+
+  app.post("/api/admin/purge-all-data", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { password } = req.body;
+      if (!password) {
+        return res.status(400).json({ error: "Password confirmation required" });
+      }
+
+      const admin = await adminStorage.getAdminByEmail(req.admin!.email);
+      if (!admin) {
+        return res.status(404).json({ error: "Admin not found" });
+      }
+
+      const validPassword = await bcrypt.compare(password, admin.passwordHash);
+      if (!validPassword) {
+        return res.status(401).json({ error: "Incorrect password" });
+      }
+
+      const db = ensureDb();
+      const tables = [
+        'active_emergency_alerts',
+        'activity_comments',
+        'activity_likes',
+        'activity_memories',
+        'alert_logs',
+        'audit_trail',
+        'bundle_usage',
+        'case_files',
+        'case_notes',
+        'check_ins',
+        'contacts',
+        'conversations',
+        'deactivation_confirmations',
+        'digital_documents',
+        'emergency_recordings',
+        'errand_sessions',
+        'escalation_rules',
+        'fitness_activities',
+        'follows',
+        'incidents',
+        'lone_worker_check_ins',
+        'lone_worker_escalations',
+        'lone_worker_sessions',
+        'messages',
+        'missed_checkin_escalations',
+        'mood_entries',
+        'org_member_client_assignments',
+        'org_member_sessions',
+        'organization_bundles',
+        'organization_client_profiles',
+        'organization_clients',
+        'organization_member_invites',
+        'organization_members',
+        'organization_staff_invites',
+        'password_reset_tokens',
+        'pending_client_contacts',
+        'pets',
+        'planned_routes',
+        'push_subscriptions',
+        'risk_reports',
+        'sessions',
+        'settings',
+        'sms_checkin_tokens',
+        'strava_connections',
+        'users',
+        'welfare_concerns',
+      ];
+
+      for (const table of tables) {
+        await db.execute(sql.raw(`TRUNCATE TABLE "${table}" RESTART IDENTITY CASCADE`));
+      }
+
+      console.log(`[ADMIN] All user/org data purged by super_admin ${req.admin!.email}`);
+      res.json({ success: true, message: "All user and organisation data has been purged. Admin accounts preserved." });
+    } catch (error: any) {
+      console.error("[ADMIN] Failed to purge data:", error);
+      res.status(500).json({ error: "Failed to purge data: " + (error.message || "Unknown error") });
+    }
+  });
 }
