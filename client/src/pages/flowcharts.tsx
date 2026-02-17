@@ -82,9 +82,11 @@ function IndividualFlowchart() {
         <FlowArrow label="After 5 minutes" />
         <FlowStep icon={MessageSquare} title="SMS check-in link sent" description="A text message with a one-tap check-in link is sent to the user's mobile number. No login needed." variant="action" />
         <FlowArrow label="After 5 minutes overdue" />
-        <FlowStep icon={Mail} title="First alert to contacts" description="Email and SMS alerts are sent to all confirmed emergency contacts with the user's name and overdue status." variant="alert" />
+        <FlowStep icon={Mail} title="First alert to contacts" description="Email, SMS, and voice call alerts are sent to all confirmed emergency contacts with the user's name and overdue status." variant="alert" />
+        <FlowArrow label="Simultaneously" />
+        <FlowStep icon={Phone} title="Voice calls to contacts" description="Automated voice calls are made to all emergency contacts, reading out the missed check-in details." variant="alert" />
         <FlowArrow label="Every 15 minutes" />
-        <FlowStep icon={Phone} title="Repeat alerts + voice calls" description="Alerts repeat every 15 minutes. Voice calls are made to contacts with landline numbers." variant="alert" />
+        <FlowStep icon={Bell} title="Repeat alerts" description="Email, SMS, and voice call alerts repeat every 15 minutes until the user checks in." variant="alert" />
         <FlowArrow label="User checks in" />
         <FlowStep icon={CheckCircle} title="Check-in received — alerts stop" description="The user checks in via the app, SMS link, or push notification. All alerts cease and contacts are notified." variant="success" />
       </div>
@@ -135,9 +137,11 @@ function OrganisationFlowchart() {
         <FlowArrow label="After 5 minutes" />
         <FlowStep icon={MessageSquare} title="SMS check-in link sent" description="A text message with a one-tap check-in link is sent to the client's mobile." variant="action" />
         <FlowArrow label="After 5 minutes overdue" />
-        <FlowStep icon={Mail} title="Alert to client's emergency contacts" description="Email and SMS alerts sent to the client's confirmed emergency contacts (set by the client or org)." variant="alert" />
+        <FlowStep icon={Mail} title="Alert to client's emergency contacts" description="Email, SMS, and voice call alerts sent to the client's confirmed emergency contacts (set by the client or org)." variant="alert" />
+        <FlowArrow label="Simultaneously" />
+        <FlowStep icon={Phone} title="Voice calls to contacts" description="Automated voice calls are made to all emergency contacts, reading out the missed check-in details and client information." variant="alert" />
         <FlowArrow label="Every 15 minutes" />
-        <FlowStep icon={Phone} title="Repeat alerts + voice calls" description="Alerts continue every 15 minutes with voice calls to landline contacts." variant="alert" />
+        <FlowStep icon={Bell} title="Repeat alerts" description="Email, SMS, and voice call alerts continue every 15 minutes until the client checks in." variant="alert" />
         <FlowArrow />
         <FlowStep icon={Building2} title="Org dashboard updates" description="The organisation's dashboard shows the client as 'overdue' in real-time. Staff can view status from the client management screen." variant="action" />
         <FlowArrow label="Client checks in" />
