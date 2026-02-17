@@ -6,6 +6,8 @@ aok is a personal safety check-in application designed to provide peace of mind 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 Update policy: Always update the public How-to Guide (`/guide`) and Organisation Help Centre with every feature change or update.
+Primary environment: The user ONLY uses the published/production site. All changes, database operations, and verifications MUST target the production environment. Development-only changes are insufficient — always verify on the published site. The development and production databases are SEPARATE instances.
+Database rule: When clearing or modifying data, it must be done via the application's own API endpoints (which work on both dev and production) rather than via direct SQL (which only affects development). Any data cleanup features must be built into the app itself so they work on the published site.
 
 ## System Architecture
 
