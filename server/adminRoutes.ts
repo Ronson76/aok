@@ -396,6 +396,41 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  // Archive all active users (super admin only)
+  app.post("/api/admin/users/archive-all", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const allUsers = await adminStorage.getAllUsers();
+      const activeUsers = allUsers.filter((u: any) => !u.archivedAt);
+      let archived = 0;
+      for (const user of activeUsers) {
+        const success = await adminStorage.archiveUser(user.id, req.admin!.id);
+        if (success) archived++;
+      }
+      await adminStorage.createAuditLog(req.admin!.id, "bulk_archive", "user", "all", `Bulk archived ${archived} users`);
+      res.json({ success: true, count: archived });
+    } catch (error) {
+      console.error("Error bulk archiving users:", error);
+      res.status(500).json({ error: "Failed to bulk archive users" });
+    }
+  });
+
+  // Permanently delete all archived users (super admin only)
+  app.delete("/api/admin/users/archived/permanent-all", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const archivedUsers = await adminStorage.listArchivedUsers();
+      let deleted = 0;
+      for (const user of archivedUsers) {
+        const success = await adminStorage.permanentlyDeleteUser(user.id);
+        if (success) deleted++;
+      }
+      await adminStorage.createAuditLog(req.admin!.id, "bulk_permanent_delete", "user", "all", `Permanently deleted ${deleted} archived users`);
+      res.json({ success: true, count: deleted });
+    } catch (error) {
+      console.error("Error bulk deleting archived users:", error);
+      res.status(500).json({ error: "Failed to bulk delete archived users" });
+    }
+  });
+
   // Permanently delete an archived user (super admin only)
   app.delete("/api/admin/users/:id/permanent", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
     try {
