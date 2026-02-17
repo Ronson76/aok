@@ -154,6 +154,33 @@ export default function AdminUsers() {
     },
   });
 
+  const [permanentDeleteUserId, setPermanentDeleteUserId] = useState<string | null>(null);
+  const [permanentDeleteConfirmText, setPermanentDeleteConfirmText] = useState("");
+
+  const permanentDeleteMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      await apiRequest("DELETE", `/api/admin/users/${userId}/permanent`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/archived"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard/stats"] });
+      setPermanentDeleteUserId(null);
+      setPermanentDeleteConfirmText("");
+      toast({
+        title: "User permanently deleted",
+        description: "The user and all their data have been permanently removed.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Permanent delete failed",
+        description: error.message || "Could not permanently delete user",
+      });
+    },
+  });
+
   const toggleDisabledMutation = useMutation({
     mutationFn: async ({ userId, disabled }: { userId: string; disabled: boolean }) => {
       await apiRequest("PATCH", `/api/admin/users/${userId}/disabled`, { disabled });
@@ -561,6 +588,20 @@ export default function AdminUsers() {
                             <RotateCcw className="w-4 h-4 mr-2" />
                             Restore
                           </Button>
+                          {admin?.role === "super_admin" && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                setPermanentDeleteUserId(user.id);
+                                setPermanentDeleteConfirmText("");
+                              }}
+                              data-testid={`button-permanent-delete-user-${user.id}`}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Forever
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -746,6 +787,70 @@ export default function AdminUsers() {
           <DialogFooter>
             <Button onClick={() => setShowFeaturesDialog(false)} data-testid="button-close-features">
               Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Permanent Delete Confirmation Dialog */}
+      <Dialog open={!!permanentDeleteUserId} onOpenChange={(open) => {
+        if (!open) {
+          setPermanentDeleteUserId(null);
+          setPermanentDeleteConfirmText("");
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Permanently Delete User
+            </DialogTitle>
+            <DialogDescription>
+              This action is irreversible. The user account and all associated data (check-ins, contacts, emergency alerts, mood entries, documents, and settings) will be permanently removed from the system.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+              <p className="text-sm font-medium text-destructive">
+                Type "DELETE" to confirm permanent deletion
+              </p>
+            </div>
+            <Input
+              placeholder="Type DELETE to confirm"
+              value={permanentDeleteConfirmText}
+              onChange={(e) => setPermanentDeleteConfirmText(e.target.value)}
+              data-testid="input-permanent-delete-confirm"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPermanentDeleteUserId(null);
+                setPermanentDeleteConfirmText("");
+              }}
+              data-testid="button-cancel-permanent-delete"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={permanentDeleteConfirmText !== "DELETE" || permanentDeleteMutation.isPending}
+              onClick={() => {
+                if (permanentDeleteUserId) {
+                  permanentDeleteMutation.mutate(permanentDeleteUserId);
+                }
+              }}
+              data-testid="button-confirm-permanent-delete"
+            >
+              {permanentDeleteMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Forever"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

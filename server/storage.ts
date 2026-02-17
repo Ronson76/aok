@@ -2733,6 +2733,7 @@ export interface IAdminStorage {
   getAllRegistrations(): Promise<{ date: string; count: number; users: any[] }[]>;
   deleteUser(userId: string): Promise<boolean>;
   archiveUser(userId: string, archivedBy: string): Promise<boolean>;
+  permanentlyDeleteUser(userId: string): Promise<boolean>;
   listArchivedUsers(): Promise<any[]>;
   restoreUser(userId: string): Promise<boolean>;
   setUserDisabled(userId: string, disabled: boolean): Promise<UserProfile | undefined>;
@@ -3247,6 +3248,15 @@ class AdminStorage implements IAdminStorage {
 
   async deleteUser(userId: string): Promise<boolean> {
     return this.archiveUser(userId, "system");
+  }
+
+  async permanentlyDeleteUser(userId: string): Promise<boolean> {
+    const user = await getDb().select().from(users).where(eq(users.id, userId));
+    if (user.length === 0) return false;
+    if (!user[0].archivedAt) return false;
+
+    const result = await getDb().delete(users).where(eq(users.id, userId)).returning({ id: users.id });
+    return result.length > 0;
   }
 
   async listArchivedUsers(): Promise<any[]> {
