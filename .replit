@@ -52,3 +52,7 @@ SENDGRID_FROM_EMAIL = "noreply@aok.care"
 
 [userenv.production]
 APP_URL = "https://check-mate--ronnieghuman.replit.app"
+
+[userenv.development]
+TEST_ADMIN_EMAIL = "agent-test@aok.care"
+TEST_ADMIN_PASSWORD = "TestAdmin123!"

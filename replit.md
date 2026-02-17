@@ -126,3 +126,12 @@ Update policy: Always update the public How-to Guide (`/guide`) and Organisation
 - **Accessibility**: Skip links, ARIA roles, keyboard navigation, 44px touch targets.
 - **Capacitor Polish**: Dark theme backgrounds, geolocation/haptics/status bar/keyboard plugins configured.
 - **Notification Health**: Admin endpoint for monitoring external notification service status.
+- **Emergency Notes**: Organisation clients can have emergency notes (medical conditions, allergies, etc.) that are automatically included in alert messages.
+- **Audit Expiration Warnings**: Yellow/red banners warn organisations when audit trail data is approaching or past retention limits.
+- **Admin Permanent Delete**: Super admins can permanently delete archived users via DELETE `/api/admin/users/:id/permanent` with audit logging.
+
+## Test Admin Credentials
+- **Email**: `agent-test@aok.care` (env var: `TEST_ADMIN_EMAIL`)
+- **Password**: `TestAdmin123!` (env var: `TEST_ADMIN_PASSWORD`)
+- **Role**: super_admin
+- These are stored in development environment variables for automated testing.
