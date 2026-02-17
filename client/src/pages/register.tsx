@@ -25,9 +25,6 @@ export default function Register() {
   const [onboardingData, setOnboardingData] = useState<any>(null);
   const [staffInviteCode, setStaffInviteCode] = useState<string | null>(null);
   const [staffInviteInfo, setStaffInviteInfo] = useState<{ organizationName: string; staffName: string; staffPhone: string; staffEmail: string } | null>(null);
-  const [cancellationPin, setCancellationPin] = useState("");
-  const [cancellationPinConfirm, setCancellationPinConfirm] = useState("");
-  const [cancellationPinError, setCancellationPinError] = useState("");
 
   // Check if coming from onboarding and load data
   useEffect(() => {
@@ -215,7 +212,7 @@ export default function Register() {
       const res = await apiRequest("POST", "/api/auth/register", {
         ...data,
         termsAcceptedAt,
-        ...(staffInviteCode ? { staffInviteCode, cancellationPin: cancellationPin || undefined } : {}),
+        ...(staffInviteCode ? { staffInviteCode } : {}),
       });
       if (!res.ok) {
         const error = await res.json();
@@ -474,17 +471,6 @@ export default function Register() {
   });
 
   const onSubmit = (data: InsertUser) => {
-    if (staffInviteCode) {
-      setCancellationPinError("");
-      if (!cancellationPin || cancellationPin.length < 4) {
-        setCancellationPinError("Please set a cancellation password (at least 4 characters)");
-        return;
-      }
-      if (cancellationPin !== cancellationPinConfirm) {
-        setCancellationPinError("Cancellation passwords do not match");
-        return;
-      }
-    }
     registerMutation.mutate(data);
   };
 
@@ -925,40 +911,6 @@ export default function Register() {
                 </div>
               )}
 
-              {staffInviteCode && (
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <ShieldCheck className="h-4 w-4" />
-                    Emergency Cancellation Password
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Set a password that your supervisor can use to cancel an emergency if they've confirmed you're safe. This adds an extra layer of security.
-                  </p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium">Cancellation Password</label>
-                      <PasswordInput
-                        placeholder="At least 4 characters"
-                        value={cancellationPin}
-                        onChange={(e) => { setCancellationPin(e.target.value); setCancellationPinError(""); }}
-                        data-testid="input-cancellation-pin"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium">Confirm Cancellation Password</label>
-                      <PasswordInput
-                        placeholder="Re-enter cancellation password"
-                        value={cancellationPinConfirm}
-                        onChange={(e) => { setCancellationPinConfirm(e.target.value); setCancellationPinError(""); }}
-                        data-testid="input-cancellation-pin-confirm"
-                      />
-                    </div>
-                  </div>
-                  {cancellationPinError && (
-                    <p className="text-sm text-destructive" role="alert" data-testid="text-cancellation-pin-error">{cancellationPinError}</p>
-                  )}
-                </div>
-              )}
 
               {/* Location Permission Section - only for individual accounts, not from onboarding */}
               {accountType !== "organization" && !fromOnboarding && (
