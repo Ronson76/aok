@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowDown, ArrowLeft, Shield, User, Building2, HardHat, AlertTriangle, Phone, Mail, Bell, MapPin, Clock, CheckCircle, XCircle, Siren, MessageSquare, Activity, Play, Timer, Battery, ShieldCheck } from "lucide-react";
+import { ArrowDown, ArrowLeft, Shield, User, Building2, HardHat, AlertTriangle, Phone, Mail, Bell, MapPin, Clock, CheckCircle, XCircle, Siren, MessageSquare, Activity, Play, Timer, Battery, ShieldCheck, Table2, Check, X } from "lucide-react";
 
-type FlowTab = "individual" | "organisation" | "loneworker" | "activity";
+type FlowTab = "individual" | "organisation" | "loneworker" | "activity" | "matrix";
 
 function FlowStep({ icon: Icon, title, description, variant = "default" }: {
   icon: typeof User;
@@ -82,11 +82,9 @@ function IndividualFlowchart() {
         <FlowArrow label="After 5 minutes" />
         <FlowStep icon={MessageSquare} title="SMS check-in link sent" description="A text message with a one-tap check-in link is sent to the user's mobile number. No login needed." variant="action" />
         <FlowArrow label="After 5 minutes overdue" />
-        <FlowStep icon={Mail} title="First alert to contacts" description="Email, SMS, and voice call alerts are sent to all confirmed emergency contacts with the user's name and overdue status." variant="alert" />
-        <FlowArrow label="Simultaneously" />
-        <FlowStep icon={Phone} title="Voice calls to contacts" description="Automated voice calls are made to all emergency contacts, reading out the missed check-in details." variant="alert" />
+        <FlowStep icon={Mail} title="Email + SMS to primary contacts" description="Email and SMS alerts are sent to the user's primary contacts (up to 3) with the user's name and overdue status. Non-primary contacts are not notified for missed check-ins." variant="alert" />
         <FlowArrow label="Every 15 minutes" />
-        <FlowStep icon={Bell} title="Repeat alerts" description="Email, SMS, and voice call alerts repeat every 15 minutes until the user checks in." variant="alert" />
+        <FlowStep icon={Bell} title="Repeat alerts (Email + SMS)" description="Email and SMS alerts repeat to primary contacts every 15 minutes until the user checks in. No voice calls for missed check-ins." variant="alert" />
         <FlowArrow label="User checks in" />
         <FlowStep icon={CheckCircle} title="Check-in received — alerts stop" description="The user checks in via the app, SMS link, or push notification. All alerts cease and contacts are notified." variant="success" />
       </div>
@@ -99,9 +97,7 @@ function IndividualFlowchart() {
         <FlowArrow label="Immediately" />
         <FlowStep icon={MapPin} title="GPS location captured" description="The user's current GPS location is recorded. A what3words address is generated for precise location sharing." variant="action" />
         <FlowArrow label="Immediately" />
-        <FlowStep icon={Mail} title="Email + SMS alerts to contacts" description="All confirmed emergency contacts receive an email and SMS with the user's name, location, and what3words address." variant="alert" />
-        <FlowArrow label="Simultaneously" />
-        <FlowStep icon={Phone} title="Voice calls to contacts" description="Automated voice calls are made to all contacts, reading out the emergency message with location details." variant="alert" />
+        <FlowStep icon={Mail} title="Email + SMS + Voice Call to ALL contacts" description="All emergency contacts (primary and non-primary) receive an email, SMS, and automated voice call with the user's name, location, and what3words address." variant="alert" />
         <FlowArrow />
         <FlowBranch
           leftLabel="Continuous tracking ON"
@@ -137,11 +133,9 @@ function OrganisationFlowchart() {
         <FlowArrow label="After 5 minutes" />
         <FlowStep icon={MessageSquare} title="SMS check-in link sent" description="A text message with a one-tap check-in link is sent to the client's mobile." variant="action" />
         <FlowArrow label="After 5 minutes overdue" />
-        <FlowStep icon={Mail} title="Alert to client's emergency contacts" description="Email, SMS, and voice call alerts sent to the client's confirmed emergency contacts (set by the client or org)." variant="alert" />
-        <FlowArrow label="Simultaneously" />
-        <FlowStep icon={Phone} title="Voice calls to contacts" description="Automated voice calls are made to all emergency contacts, reading out the missed check-in details and client information." variant="alert" />
+        <FlowStep icon={Mail} title="Email + SMS to primary contacts" description="Email and SMS alerts sent to the client's primary contacts (up to 3). Non-primary contacts are not notified for missed check-ins. No voice calls." variant="alert" />
         <FlowArrow label="Every 15 minutes" />
-        <FlowStep icon={Bell} title="Repeat alerts" description="Email, SMS, and voice call alerts continue every 15 minutes until the client checks in." variant="alert" />
+        <FlowStep icon={Bell} title="Repeat alerts (Email + SMS)" description="Email and SMS alerts repeat to primary contacts every 15 minutes until the client checks in." variant="alert" />
         <FlowArrow />
         <FlowStep icon={Building2} title="Org dashboard updates" description="The organisation's dashboard shows the client as 'overdue' in real-time. Staff can view status from the client management screen." variant="action" />
         <FlowArrow label="Client checks in" />
@@ -156,9 +150,7 @@ function OrganisationFlowchart() {
         <FlowArrow label="Immediately" />
         <FlowStep icon={MapPin} title="GPS + what3words captured" description="GPS coordinates and a what3words address are recorded for the client's location." variant="action" />
         <FlowArrow label="Simultaneously" />
-        <FlowStep icon={Mail} title="Email + SMS to emergency contacts" description="All confirmed emergency contacts receive alerts with the client's name, location, and what3words." variant="alert" />
-        <FlowArrow label="Simultaneously" />
-        <FlowStep icon={Phone} title="Voice calls to contacts" description="Automated voice calls made to all emergency contacts with the emergency details." variant="alert" />
+        <FlowStep icon={Mail} title="Email + SMS + Voice Call to ALL contacts" description="All emergency contacts (primary and non-primary) receive an email, SMS, and automated voice call with the client's name, location, and what3words." variant="alert" />
         <FlowArrow label="Simultaneously" />
         <FlowStep icon={Building2} title="Safeguarding incident created" description="An incident is automatically logged in the organisation's safeguarding system with severity 'Immediate Danger'." variant="danger" />
         <FlowArrow />
@@ -322,6 +314,86 @@ function ActivityFlowchart() {
   );
 }
 
+function NotificationMatrix() {
+  const rows = [
+    { section: "Primary Contacts (up to 3)", items: [
+      { type: "Successful Check-in", email: true, sms: false, voice: false },
+      { type: "Missed Check-in", email: true, sms: true, voice: false },
+      { type: "Emergency SOS", email: true, sms: true, voice: true },
+    ]},
+    { section: "Non-Primary Contacts", items: [
+      { type: "Successful Check-in", email: false, sms: false, voice: false },
+      { type: "Missed Check-in", email: false, sms: false, voice: false },
+      { type: "Emergency SOS", email: true, sms: true, voice: true },
+    ]},
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-base font-semibold mb-2 text-center">Who is contacted in an emergency?</h3>
+        <p className="text-sm text-muted-foreground text-center mb-6">
+          You can designate up to 3 primary contacts who receive more frequent updates. Here's how notifications work:
+        </p>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm" data-testid="notification-matrix-table">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left py-3 pr-4 font-semibold">Alert Type</th>
+              <th className="text-center py-3 px-4 font-semibold">Email</th>
+              <th className="text-center py-3 px-4 font-semibold">SMS</th>
+              <th className="text-center py-3 px-4 font-semibold">Voice Call</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((section) => (
+              <>
+                <tr key={section.section}>
+                  <td colSpan={4} className="pt-5 pb-2 font-semibold text-sm">
+                    {section.section}
+                  </td>
+                </tr>
+                {section.items.map((item) => (
+                  <tr key={`${section.section}-${item.type}`} className="border-b border-border/50">
+                    <td className="py-3 pr-4 pl-4 text-muted-foreground">{item.type}</td>
+                    <td className="py-3 px-4 text-center">
+                      {item.email ? (
+                        <span className="text-green-600 dark:text-green-400 font-medium">Yes</span>
+                      ) : (
+                        <span className="text-muted-foreground">No</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      {item.sms ? (
+                        <span className="text-green-600 dark:text-green-400 font-medium">Yes</span>
+                      ) : (
+                        <span className="text-muted-foreground">No</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      {item.voice ? (
+                        <span className="text-green-600 dark:text-green-400 font-medium">Yes</span>
+                      ) : (
+                        <span className="text-muted-foreground">No</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="text-sm text-muted-foreground mt-6 leading-relaxed">
+        Non-primary contacts are only alerted in genuine emergencies, reducing notification fatigue while ensuring critical alerts always get through.
+      </p>
+    </div>
+  );
+}
+
 export default function Flowcharts() {
   const [activeTab, setActiveTab] = useState<FlowTab>("individual");
 
@@ -330,6 +402,7 @@ export default function Flowcharts() {
     { id: "organisation", label: "Organisation Client", icon: Building2 },
     { id: "loneworker", label: "Lone Worker", icon: HardHat },
     { id: "activity", label: "Activity Flow", icon: Activity },
+    { id: "matrix", label: "Notification Matrix", icon: Table2 },
   ];
 
   return (
@@ -366,6 +439,7 @@ export default function Flowcharts() {
             {activeTab === "organisation" && <OrganisationFlowchart />}
             {activeTab === "loneworker" && <LoneWorkerFlowchart />}
             {activeTab === "activity" && <ActivityFlowchart />}
+            {activeTab === "matrix" && <NotificationMatrix />}
           </CardContent>
         </Card>
 
