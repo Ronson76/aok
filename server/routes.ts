@@ -1,6 +1,8 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, organizationStorage, adminStorage } from "./storage";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, insertMoodEntrySchema, insertPetSchema, updatePetSchema, insertDigitalDocumentSchema, updateDigitalDocumentSchema, insertErrandSessionSchema, errandActivityTypes, insertPlannedRouteSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
 import bcrypt from "bcrypt";
@@ -4498,6 +4500,35 @@ export async function registerRoutes(
       res.download(backupPath, "aok-code-backup.tar.gz");
     } else {
       res.status(404).json({ error: "Backup file not found" });
+    }
+  });
+
+  // Temporary admin endpoint to clear all data (remove after use)
+  app.post("/api/admin/clear-all-data", async (req, res) => {
+    try {
+      const adminEmail = process.env.ADMIN_EMAIL;
+      const adminPassword = process.env.ADMIN_PASSWORD;
+      const { email, password } = req.body;
+      if (!email || !password || email !== adminEmail || password !== adminPassword) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      await db.execute(sql`TRUNCATE TABLE 
+        lone_worker_check_ins, lone_worker_escalations, lone_worker_sessions,
+        active_emergency_alerts, emergency_recordings, alert_logs,
+        missed_checkin_escalations, escalation_rules, check_ins, sms_checkin_tokens,
+        mood_entries, contacts, pending_client_contacts, digital_documents, pets,
+        fitness_activities, planned_routes, activity_memories, activity_comments,
+        activity_likes, follows, strava_connections, conversations, messages,
+        push_subscriptions, settings, errand_sessions, deactivation_confirmations,
+        password_reset_tokens, audit_trail, case_notes, case_files, incidents,
+        risk_reports, welfare_concerns, org_member_client_assignments, org_member_sessions,
+        organization_client_profiles, organization_clients, organization_staff_invites,
+        organization_member_invites, organization_members, organization_bundles,
+        bundle_usage, tier_permissions, admin_audit_logs, admin_invites, sessions, users
+      CASCADE`);
+      res.json({ success: true, message: "All data cleared" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 
