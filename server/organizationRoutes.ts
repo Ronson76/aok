@@ -467,6 +467,50 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
+  // Permanently delete an archived client (senior team members only: owner/manager)
+  app.delete("/api/org/clients/:clientId/permanent", requireOrganization, async (req, res) => {
+    try {
+      const role = req.orgRole;
+      if (role !== "owner" && role !== "manager") {
+        return res.status(403).json({ error: "Only senior team members (owner or manager) can permanently delete clients." });
+      }
+
+      const { clientId } = req.params;
+      const orgId = req.orgId || req.userId!;
+
+      const archivedClients = await organizationStorage.listArchivedClients(orgId);
+      const client = archivedClients.find((c: any) => c.id === clientId);
+      if (!client) {
+        return res.status(404).json({ error: "Archived client not found" });
+      }
+
+      const success = await organizationStorage.permanentlyDeleteClient(orgId, clientId);
+      if (!success) {
+        return res.status(400).json({ error: "Failed to permanently delete client. Only archived clients can be permanently deleted." });
+      }
+
+      await storage.createAuditEntry(orgId, {
+        userEmail: req.orgMember?.email || (req.user as any)?.email,
+        userRole: role,
+        action: "delete",
+        entityType: "client",
+        entityId: clientId,
+        eventType: "permanent_delete",
+        newData: { clientName: client.clientName, clientEmail: client.clientEmail, permanent: true },
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[ORG] Failed to permanently delete client:", error);
+      res.status(500).json({ error: "Failed to permanently delete client" });
+    }
+  });
+
+  // Get current user's organisation role
+  app.get("/api/org/my-role", requireOrganization, async (req, res) => {
+    res.json({ role: req.orgRole || "owner" });
+  });
+
   // Update client basic details (nickname, name, phone, supervisor)
   const updateClientDetailsSchema = z.object({
     nickname: z.string().optional(),

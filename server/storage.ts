@@ -3528,6 +3528,7 @@ export interface IOrganizationStorage {
   addClient(organizationId: string, clientId: string, bundleId?: string, nickname?: string): Promise<OrganizationClient>;
   removeClient(organizationId: string, clientId: string): Promise<boolean>;
   archiveClient(organizationId: string, clientId: string, archivedBy: string): Promise<boolean>;
+  permanentlyDeleteClient(organizationId: string, clientRecordId: string): Promise<boolean>;
   listArchivedClients(organizationId: string): Promise<any[]>;
   restoreClient(organizationId: string, clientRecordId: string): Promise<boolean>;
   isClientOfOrganization(organizationId: string, clientId: string): Promise<boolean>;
@@ -3916,6 +3917,29 @@ class OrganizationStorage implements IOrganizationStorage {
   // Remove a client (backwards compat - calls archiveClient)
   async removeClient(organizationId: string, clientId: string): Promise<boolean> {
     return this.archiveClient(organizationId, clientId, "system");
+  }
+
+  async permanentlyDeleteClient(organizationId: string, clientRecordId: string): Promise<boolean> {
+    const record = await getDb().select().from(organizationClients)
+      .where(and(eq(organizationClients.id, clientRecordId), eq(organizationClients.organizationId, organizationId)));
+    if (record.length === 0) return false;
+
+    if (record[0].archivedAt === null) return false;
+
+    if (record[0].bundleId) {
+      const bundle = await getDb().select().from(organizationBundles)
+        .where(eq(organizationBundles.id, record[0].bundleId));
+      if (bundle.length > 0 && bundle[0].seatsUsed > 0) {
+        await getDb().update(organizationBundles)
+          .set({ seatsUsed: bundle[0].seatsUsed - 1 })
+          .where(eq(organizationBundles.id, record[0].bundleId));
+      }
+    }
+
+    await getDb().delete(organizationClients)
+      .where(eq(organizationClients.id, clientRecordId));
+
+    return true;
   }
 
   async listArchivedClients(organizationId: string): Promise<any[]> {

@@ -77,6 +77,9 @@ export default function OrganizationDashboard() {
   const [editClientPhone, setEditClientPhone] = useState("");
   const [editCountryCode, setEditCountryCode] = useState("+44");
   
+  // Permanent delete confirmation state
+  const [permanentDeleteClient, setPermanentDeleteClient] = useState<any>(null);
+  
   // Emergency contacts state
   const [showEmergencyContactsDialog, setShowEmergencyContactsDialog] = useState(false);
   const [emergencyContactsClient, setEmergencyContactsClient] = useState<OrganizationClientWithDetails | null>(null);
@@ -306,6 +309,11 @@ export default function OrganizationDashboard() {
   const { data: archivedClients } = useQuery<any[]>({
     queryKey: ["/api/org/clients/archived"],
   });
+
+  const { data: myRoleData } = useQuery<{ role: string }>({
+    queryKey: ["/api/org/my-role"],
+  });
+  const isSenior = myRoleData?.role === "owner" || myRoleData?.role === "manager";
 
   // Audit trail state
   const [auditEntityFilter, setAuditEntityFilter] = useState<string>("all");
@@ -541,6 +549,21 @@ export default function OrganizationDashboard() {
     },
     onError: (error: any) => {
       toast({ variant: "destructive", title: "Restore failed", description: error.message || "Could not restore client" });
+    },
+  });
+
+  const permanentDeleteMutation = useMutation({
+    mutationFn: async (clientId: string) => {
+      await apiRequest("DELETE", `/api/org/clients/${clientId}/permanent`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients/archived"] });
+      setPermanentDeleteClient(null);
+      toast({ title: "Client permanently deleted", description: "The client record has been permanently removed." });
+    },
+    onError: (error: any) => {
+      toast({ variant: "destructive", title: "Delete failed", description: error.message || "Could not permanently delete client" });
     },
   });
 
@@ -1417,6 +1440,7 @@ export default function OrganizationDashboard() {
         else if (entry.action === "pause") text = `Paused client${clientRef ? ` "${clientRef}"` : ""}`;
         else if (entry.action === "resume") text = `Resumed client${clientRef ? ` "${clientRef}"` : ""}`;
         else if (entry.action === "reset_scheduler") text = `Reset check-in scheduler${clientRef ? ` for "${clientRef}"` : ""}`;
+        else if (entry.action === "delete") text = `Permanently deleted client${clientRef ? ` "${clientRef}"` : ""}`;
         else text = `${entry.action} ${entityLabel}${clientRef ? ` "${clientRef}"` : ""}`;
         break;
       case "client_emergency_contacts":
@@ -3474,7 +3498,7 @@ export default function OrganizationDashboard() {
                       Archived: {client.archivedAt ? new Date(client.archivedAt).toLocaleDateString("en-GB") : ""}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="secondary">Archived</Badge>
                     <Button
                       variant="outline"
@@ -3486,6 +3510,18 @@ export default function OrganizationDashboard() {
                       <RotateCcw className="w-4 h-4 mr-2" />
                       Restore
                     </Button>
+                    {isSenior && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setPermanentDeleteClient(client)}
+                        disabled={permanentDeleteMutation.isPending}
+                        data-testid={`button-permanent-delete-client-${client.id}`}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -4921,6 +4957,43 @@ export default function OrganizationDashboard() {
             >
               <PenLine className="w-4 h-4 mr-1" />
               {legalSignMutation.isPending ? "Signing..." : "Sign Document"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!permanentDeleteClient} onOpenChange={(open) => { if (!open) setPermanentDeleteClient(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Permanently Delete Client
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete{" "}
+              <strong>{permanentDeleteClient?.clientName || permanentDeleteClient?.nickname || "this client"}</strong>?
+              This action cannot be undone and all associated data will be removed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setPermanentDeleteClient(null)}
+              data-testid="button-cancel-permanent-delete"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => permanentDeleteMutation.mutate(permanentDeleteClient?.id)}
+              disabled={permanentDeleteMutation.isPending}
+              data-testid="button-confirm-permanent-delete"
+            >
+              {permanentDeleteMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Deleting...</>
+              ) : (
+                <><Trash2 className="w-4 h-4 mr-2" />Yes, Delete Permanently</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
