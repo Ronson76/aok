@@ -28,11 +28,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
-  Users, LogOut, Shield, ShieldCheck, Trash2, ArrowLeft, Building2, User, Ban, CheckCircle, Plus, Loader2, Eye, EyeOff, Settings2, Search, RotateCcw, Archive
+  Users, LogOut, Shield, ShieldCheck, Trash2, ArrowLeft, Building2, User, Ban, CheckCircle, Plus, Loader2, Eye, EyeOff, Settings2, Search, RotateCcw, Archive, ChevronDown, ChevronRight, AlertTriangle, Siren
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest } from "@/lib/queryClient";
-import type { UserProfile, UserFeatureSettings } from "@shared/schema";
+import type { UserProfile, UserFeatureSettings, AdminOrganizationView, AdminOrganizationClientView } from "@shared/schema";
 import { useState, useMemo } from "react";
 
 export default function AdminUsers() {
@@ -41,7 +41,7 @@ export default function AdminUsers() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
+  const [activeTab, setActiveTab] = useState<"active" | "organisations" | "archived">("active");
   
   // Search state
   const [searchName, setSearchName] = useState("");
@@ -73,11 +73,28 @@ export default function AdminUsers() {
     enabled: activeTab === "archived",
   });
 
-  // Filter and sort users based on search terms
+  const { data: organizations, isLoading: isOrgsLoading } = useQuery<AdminOrganizationView[]>({
+    queryKey: ["/api/admin/organizations"],
+    enabled: activeTab === "organisations",
+  });
+
+  const [expandedOrgId, setExpandedOrgId] = useState<string | null>(null);
+
+  const { data: expandedOrgClients, isLoading: isOrgClientsLoading } = useQuery<AdminOrganizationClientView[]>({
+    queryKey: ["/api/admin/organizations", expandedOrgId, "clients"],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/organizations/${expandedOrgId}/clients`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch clients");
+      return res.json();
+    },
+    enabled: !!expandedOrgId,
+  });
+
+  // Filter and sort users based on search terms (individual users only - orgs have their own tab)
   const filteredUsers = useMemo(() => {
     if (!users) return [];
     
-    let result = [...users];
+    let result = users.filter(u => u.accountType !== "organization");
     
     // Default sort: alphabetically by name
     result.sort((a, b) => {
@@ -397,14 +414,19 @@ export default function AdminUsers() {
             <div className="flex flex-row items-center justify-between gap-4">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  All Users
+                  {activeTab === "organisations" ? <Building2 className="w-5 h-5" /> : <Users className="w-5 h-5" />}
+                  {activeTab === "organisations" ? "Organisations" : "Users"}
                 </CardTitle>
                 <CardDescription>
-                  {filteredUsers.length} of {users?.length || 0} registered users
+                  {activeTab === "organisations" 
+                    ? `${organizations?.length || 0} registered organisations`
+                    : activeTab === "archived"
+                      ? `${archivedUsers?.length || 0} archived accounts`
+                      : `${filteredUsers.length} individual users`
+                  }
                 </CardDescription>
               </div>
-              {isSuperAdmin && (
+              {isSuperAdmin && activeTab === "organisations" && (
                 <Button onClick={() => setShowCreateOrgDialog(true)} data-testid="button-create-org">
                   <Plus className="w-4 h-4 mr-2" />
                   Create Organisation
@@ -420,7 +442,16 @@ export default function AdminUsers() {
                   onClick={() => setActiveTab("active")}
                   data-testid="tab-active-users"
                 >
-                  Active ({users?.length || 0})
+                  Users ({users?.filter(u => u.accountType !== "organization").length || 0})
+                </Button>
+                <Button 
+                  variant={activeTab === "organisations" ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setActiveTab("organisations")}
+                  data-testid="tab-organisations"
+                >
+                  <Building2 className="w-4 h-4 mr-2" />
+                  Organisations
                 </Button>
                 <Button 
                   variant={activeTab === "archived" ? "default" : "outline"} 
@@ -431,7 +462,7 @@ export default function AdminUsers() {
                   Archived ({archivedUsers?.length || 0})
                 </Button>
               </div>
-              {isSuperAdmin && activeTab === "active" && users && users.length > 0 && (
+              {isSuperAdmin && activeTab === "active" && filteredUsers.length > 0 && (
                 <Button
                   variant="destructive"
                   size="sm"
@@ -511,11 +542,7 @@ export default function AdminUsers() {
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                            {user.accountType === "organization" ? (
-                              <Building2 className="w-5 h-5 text-muted-foreground" />
-                            ) : (
-                              <User className="w-5 h-5 text-muted-foreground" />
-                            )}
+                            <User className="w-5 h-5 text-muted-foreground" />
                           </div>
                           <div>
                             <p className="font-medium">{user.name}</p>
@@ -526,9 +553,6 @@ export default function AdminUsers() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <Badge variant={user.accountType === "organization" ? "default" : "secondary"}>
-                            {user.accountType}
-                          </Badge>
                           {user.disabled && (
                             <Badge variant="destructive">Disabled</Badge>
                           )}
@@ -615,6 +639,150 @@ export default function AdminUsers() {
                   </div>
                 ) : (
                   <p className="text-muted-foreground text-center py-8">No users found</p>
+                )}
+              </>
+            ) : activeTab === "organisations" ? (
+              <>
+                {isOrgsLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="p-4 border rounded-lg">
+                        <div className="space-y-2">
+                          <Skeleton className="h-5 w-48" />
+                          <Skeleton className="h-3 w-64" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : organizations && organizations.length > 0 ? (
+                  <div className="space-y-3">
+                    {organizations.map((org) => (
+                      <div key={org.id} className="border rounded-lg" data-testid={`org-row-${org.id}`}>
+                        <div 
+                          className="flex items-center justify-between p-4 cursor-pointer hover-elevate rounded-lg"
+                          onClick={() => setExpandedOrgId(expandedOrgId === org.id ? null : org.id)}
+                          data-testid={`button-expand-org-${org.id}`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                              <Building2 className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{org.name}</p>
+                              <p className="text-sm text-muted-foreground">{org.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge variant="secondary">{org.totalClients} clients</Badge>
+                            <Badge variant="default">{org.activeClients} active</Badge>
+                            {org.pausedClients > 0 && (
+                              <Badge variant="outline">{org.pausedClients} paused</Badge>
+                            )}
+                            {org.disabled && (
+                              <Badge variant="destructive">Disabled</Badge>
+                            )}
+                            {expandedOrgId === org.id ? (
+                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                            )}
+                          </div>
+                        </div>
+
+                        {expandedOrgId === org.id && (
+                          <div className="border-t px-4 py-4 space-y-4" data-testid={`org-details-${org.id}`}>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Created</p>
+                                <p className="text-sm">{formatDate(org.createdAt?.toString() || "")}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Total Alerts</p>
+                                <p className="text-sm">{org.totalAlerts}</p>
+                              </div>
+                            </div>
+
+                            {org.bundles.length > 0 && (
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-2">Bundles</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {org.bundles.map((bundle) => (
+                                    <div key={bundle.id} className="text-xs border rounded-md px-3 py-1.5">
+                                      <span className="font-medium">{bundle.name}</span>
+                                      <span className="text-muted-foreground ml-2">
+                                        {bundle.seatsUsed}/{bundle.seatLimit} seats
+                                      </span>
+                                      {bundle.status !== "active" && (
+                                        <Badge variant="outline" className="ml-2">{bundle.status}</Badge>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-2">
+                                Client Reference Numbers
+                              </p>
+                              {isOrgClientsLoading ? (
+                                <div className="space-y-2">
+                                  {[...Array(3)].map((_, i) => (
+                                    <Skeleton key={i} className="h-8 w-full" />
+                                  ))}
+                                </div>
+                              ) : expandedOrgClients && expandedOrgClients.length > 0 ? (
+                                <div className="space-y-1.5">
+                                  {expandedOrgClients.map((client) => (
+                                    <div 
+                                      key={client.id} 
+                                      className="flex items-center justify-between p-2.5 bg-muted/50 rounded-md text-sm"
+                                      data-testid={`org-client-ref-${client.id}`}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <span className="font-mono font-medium">{client.referenceCode}</span>
+                                        <Badge variant={
+                                          client.clientStatus === "active" ? "default" : 
+                                          client.clientStatus === "paused" ? "outline" : "secondary"
+                                        }>
+                                          {client.clientStatus}
+                                        </Badge>
+                                        {!client.isActivated && (
+                                          <Badge variant="outline">Not activated</Badge>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        {client.hasActiveAlert && (
+                                          <Badge variant="destructive" className="flex items-center gap-1">
+                                            <Siren className="w-3 h-3" />
+                                            Active Alert
+                                          </Badge>
+                                        )}
+                                        <div className="flex gap-1">
+                                          {client.featureWellbeingAi && <Badge variant="secondary">AI</Badge>}
+                                          {client.featureShakeToAlert && <Badge variant="secondary">Shake</Badge>}
+                                          {client.featureMoodTracking && <Badge variant="secondary">Mood</Badge>}
+                                          {client.featurePetProtection && <Badge variant="secondary">Pet</Badge>}
+                                          {client.featureDigitalWill && <Badge variant="secondary">Docs</Badge>}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">No clients registered</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Building2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">No organisations found</p>
+                  </div>
                 )}
               </>
             ) : (
