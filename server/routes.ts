@@ -4504,7 +4504,7 @@ export async function registerRoutes(
   });
 
   // Temporary admin endpoint to clear all data (remove after use)
-  app.post("/api/admin/clear-all-data", async (req, res) => {
+  app.post("/api/admin/clear-archived-users", async (req, res) => {
     try {
       const adminEmail = process.env.ADMIN_EMAIL;
       const adminPassword = process.env.ADMIN_PASSWORD;
@@ -4512,21 +4512,42 @@ export async function registerRoutes(
       if (!email || !password || email !== adminEmail || password !== adminPassword) {
         return res.status(403).json({ error: "Forbidden" });
       }
-      await db.execute(sql`TRUNCATE TABLE 
-        lone_worker_check_ins, lone_worker_escalations, lone_worker_sessions,
-        active_emergency_alerts, emergency_recordings, alert_logs,
-        missed_checkin_escalations, escalation_rules, check_ins, sms_checkin_tokens,
-        mood_entries, contacts, pending_client_contacts, digital_documents, pets,
-        fitness_activities, planned_routes, activity_memories, activity_comments,
-        activity_likes, follows, strava_connections, conversations, messages,
-        push_subscriptions, settings, errand_sessions, deactivation_confirmations,
-        password_reset_tokens, audit_trail, case_notes, case_files, incidents,
-        risk_reports, welfare_concerns, org_member_client_assignments, org_member_sessions,
-        organization_client_profiles, organization_clients, organization_staff_invites,
-        organization_member_invites, organization_members, organization_bundles,
-        bundle_usage, tier_permissions, admin_audit_logs, admin_invites, sessions, users
-      CASCADE`);
-      res.json({ success: true, message: "All data cleared" });
+      const archivedUsers = await db.execute(sql`SELECT id FROM users WHERE archived_at IS NOT NULL`);
+      const archivedIds = archivedUsers.rows.map((r: any) => r.id);
+      if (archivedIds.length === 0) {
+        return res.json({ success: true, message: "No archived users to clear", deleted: 0 });
+      }
+      for (const userId of archivedIds) {
+        await db.execute(sql`DELETE FROM lone_worker_check_ins WHERE session_id IN (SELECT id FROM lone_worker_sessions WHERE user_id = ${userId})`);
+        await db.execute(sql`DELETE FROM lone_worker_escalations WHERE session_id IN (SELECT id FROM lone_worker_sessions WHERE user_id = ${userId})`);
+        await db.execute(sql`DELETE FROM lone_worker_sessions WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM active_emergency_alerts WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM emergency_recordings WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM alert_logs WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM check_ins WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM sms_checkin_tokens WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM mood_entries WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM contacts WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM digital_documents WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM pets WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM fitness_activities WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM planned_routes WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM activity_memories WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM activity_comments WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM activity_likes WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM push_subscriptions WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM settings WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM errand_sessions WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM deactivation_confirmations WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM password_reset_tokens WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM strava_connections WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM sessions WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM users WHERE id = ${userId}`);
+      }
+      const resolvedSessions = await db.execute(sql`DELETE FROM lone_worker_check_ins WHERE session_id IN (SELECT id FROM lone_worker_sessions WHERE status IN ('resolved', 'unresponsive'))`);
+      await db.execute(sql`DELETE FROM lone_worker_escalations WHERE session_id IN (SELECT id FROM lone_worker_sessions WHERE status IN ('resolved', 'unresponsive'))`);
+      const clearedSessions = await db.execute(sql`DELETE FROM lone_worker_sessions WHERE status IN ('resolved', 'unresponsive')`);
+      res.json({ success: true, message: `Cleared ${archivedIds.length} archived users and ${clearedSessions.rowCount || 0} old lone worker sessions` });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
