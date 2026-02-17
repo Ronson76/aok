@@ -58,6 +58,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "Your organisation can export audit data as **CSV** spreadsheets or **Summary PDF** reports for compliance reviews and board meetings.",
       "They can also verify the integrity of the audit trail at any time, proving records haven't been tampered with.",
       "Retention policies control how long records are kept — typically 6 years, in line with the Limitation Act 1980.",
+      "Your organisation will see **expiration warnings** when audit records are approaching the retention limit — yellow banners for data expiring within 6 months, and red banners for already-expired data.",
     ],
   },
   {
@@ -224,6 +225,17 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "To find your saved recordings, go to **Settings** and scroll to the **Saved Recordings** section. From there you can **play**, **download to your phone**, or **delete** each recording.",
       "You can disable emergency recording at any time by returning to **Settings** and toggling it off.",
       "If you're managed by an organisation, your organisation admin may also enable or disable this feature on your behalf.",
+    ],
+  },
+  {
+    id: "emergency-notes",
+    title: "Emergency notes (organisations)",
+    content: [
+      "If you're managed by an organisation, your organisation can add **emergency notes** to your profile.",
+      "Emergency notes contain important safety information such as medical conditions, allergies, mobility issues, or medication requirements.",
+      "When an emergency alert is triggered, these notes are automatically included in the alert messages sent to your contacts.",
+      "This ensures anyone responding to your emergency has immediate access to vital safety information.",
+      "Only your organisation can add or edit emergency notes — they are set during registration or updated by your organisation team.",
     ],
   },
   {

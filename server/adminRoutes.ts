@@ -396,6 +396,24 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  // Permanently delete an archived user (super admin only)
+  app.delete("/api/admin/users/:id/permanent", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await adminStorage.permanentlyDeleteUser(id);
+      
+      if (!success) {
+        return res.status(400).json({ error: "User not found or not archived. Only archived users can be permanently deleted." });
+      }
+
+      await adminStorage.createAuditLog(req.admin!.id, "permanent_delete", "user", id, `Permanently deleted user ${id}`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error permanently deleting user:", error);
+      res.status(500).json({ error: "Failed to permanently delete user" });
+    }
+  });
+
   // Toggle user disabled status (super admin only)
   app.patch("/api/admin/users/:id/disabled", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
     try {
