@@ -1832,13 +1832,13 @@ export default function OrganizationDashboard() {
               )}
             </div>
 
-            {/* Supervisor Details (Primary Contact) */}
+            {/* Supervisor Details (Primary Contact/Carer) */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
-                Supervisor (Primary Contact) <span className="text-destructive">*</span>
+                Supervisor (Primary Contact/Carer) <span className="text-destructive">*</span>
               </Label>
-              <p className="text-xs text-muted-foreground">The supervisor is the primary contact and will be notified of missed check-ins. They can also be called directly from the client's dashboard.</p>
+              <p className="text-xs text-muted-foreground">The supervisor is the primary contact/carer and will be notified of missed check-ins. They can also be called directly from the client's dashboard.</p>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label htmlFor="regSupervisorName" className="text-xs">Name <span className="text-destructive">*</span></Label>
@@ -4570,7 +4570,7 @@ export default function OrganizationDashboard() {
                 data-testid="checkbox-contact-primary"
               />
               <Label htmlFor="contact-primary" className="font-normal cursor-pointer">
-                Primary contact (notified on every check-in)
+                Primary contact/carer (notified on every check-in)
               </Label>
             </div>
           </div>

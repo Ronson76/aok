@@ -82,9 +82,9 @@ function IndividualFlowchart() {
         <FlowArrow label="After 5 minutes" />
         <FlowStep icon={MessageSquare} title="SMS check-in link sent" description="A text message with a one-tap check-in link is sent to the user's mobile number. No login needed." variant="action" />
         <FlowArrow label="After 5 minutes overdue" />
-        <FlowStep icon={Mail} title="Email + SMS to primary contacts" description="Email and SMS alerts are sent to the user's primary contacts (up to 3) with the user's name and overdue status. Non-primary contacts are not notified for missed check-ins." variant="alert" />
+        <FlowStep icon={Mail} title="Email + SMS to primary contacts/carers" description="Email and SMS alerts are sent to the user's primary contacts/carers (up to 3) with the user's name and overdue status. Non-primary contacts are not notified for missed check-ins." variant="alert" />
         <FlowArrow label="Every 15 minutes" />
-        <FlowStep icon={Bell} title="Repeat alerts (Email + SMS)" description="Email and SMS alerts repeat to primary contacts every 15 minutes until the user checks in. No voice calls for missed check-ins." variant="alert" />
+        <FlowStep icon={Bell} title="Repeat alerts (Email + SMS)" description="Email and SMS alerts repeat to primary contacts/carers every 15 minutes until the user checks in. No voice calls for missed check-ins." variant="alert" />
         <FlowArrow label="User checks in" />
         <FlowStep icon={CheckCircle} title="Check-in received — alerts stop" description="The user checks in via the app, SMS link, or push notification. All alerts cease and contacts are notified." variant="success" />
       </div>
@@ -133,9 +133,9 @@ function OrganisationFlowchart() {
         <FlowArrow label="After 5 minutes" />
         <FlowStep icon={MessageSquare} title="SMS check-in link sent" description="A text message with a one-tap check-in link is sent to the client's mobile." variant="action" />
         <FlowArrow label="After 5 minutes overdue" />
-        <FlowStep icon={Mail} title="Email + SMS to primary contacts" description="Email and SMS alerts sent to the client's primary contacts (up to 3). Non-primary contacts are not notified for missed check-ins. No voice calls." variant="alert" />
+        <FlowStep icon={Mail} title="Email + SMS to primary contacts/carers" description="Email and SMS alerts sent to the client's primary contacts/carers (up to 3). Non-primary contacts are not notified for missed check-ins. No voice calls." variant="alert" />
         <FlowArrow label="Every 15 minutes" />
-        <FlowStep icon={Bell} title="Repeat alerts (Email + SMS)" description="Email and SMS alerts repeat to primary contacts every 15 minutes until the client checks in." variant="alert" />
+        <FlowStep icon={Bell} title="Repeat alerts (Email + SMS)" description="Email and SMS alerts repeat to primary contacts/carers every 15 minutes until the client checks in." variant="alert" />
         <FlowArrow />
         <FlowStep icon={Building2} title="Org dashboard updates" description="The organisation's dashboard shows the client as 'overdue' in real-time. Staff can view status from the client management screen." variant="action" />
         <FlowArrow label="Client checks in" />
@@ -254,7 +254,7 @@ function ActivityFlowchart() {
         <FlowArrow label="Tap 'Start Activity'" />
         <FlowStep icon={Play} title="Activity session begins" description="A countdown timer starts. GPS tracking begins recording the user's location throughout the session." variant="action" />
         <FlowArrow label="GPS active" />
-        <FlowStep icon={MapPin} title="Location tracked continuously" description="The user's GPS position is recorded throughout the activity. Primary contact and 999 quick-dial buttons are available on screen." variant="action" />
+        <FlowStep icon={MapPin} title="Location tracked continuously" description="The user's GPS position is recorded throughout the activity. Primary contact/carer and 999 quick-dial buttons are available on screen." variant="action" />
         <FlowArrow />
         <FlowBranch
           leftLabel="Completes on time"
@@ -295,7 +295,7 @@ function ActivityFlowchart() {
         <FlowArrow label="Battery drops below 20%" />
         <FlowStep icon={Battery} title="Low battery detected" description="The device battery level falls below 20% during an active activity session." variant="trigger" />
         <FlowArrow label="Immediately (once per session)" />
-        <FlowStep icon={Mail} title="Primary contacts emailed" description="An automatic email is sent to the user's primary emergency contacts warning that the user's battery is low during an active activity." variant="alert" />
+        <FlowStep icon={Mail} title="Primary contacts/carers emailed" description="An automatic email is sent to the user's primary emergency contacts/carers warning that the user's battery is low during an active activity." variant="alert" />
         <FlowArrow />
         <FlowStep icon={AlertTriangle} title="On-screen warning displayed" description="A visual low-battery warning appears on the user's activity screen. This alert only triggers once per session." variant="trigger" />
       </div>
@@ -316,7 +316,7 @@ function ActivityFlowchart() {
 
 function NotificationMatrix() {
   const rows = [
-    { section: "Primary Contacts (up to 3)", items: [
+    { section: "Primary Contacts/Carers (up to 3)", items: [
       { type: "Successful Check-in", email: true, sms: false, voice: false },
       { type: "Missed Check-in", email: true, sms: true, voice: false },
       { type: "Emergency SOS", email: true, sms: true, voice: true },
@@ -333,7 +333,7 @@ function NotificationMatrix() {
       <div>
         <h3 className="text-base font-semibold mb-2 text-center">Who is contacted in an emergency?</h3>
         <p className="text-sm text-muted-foreground text-center mb-6">
-          You can designate up to 3 primary contacts who receive more frequent updates. Here's how notifications work:
+          You can designate up to 3 primary contacts/carers who receive more frequent updates. Here's how notifications work:
         </p>
       </div>
 

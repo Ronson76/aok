@@ -552,7 +552,7 @@ class DatabaseStorage implements IStorage {
     // If turning ON primary, ensure max 3 primary contacts
     if (newPrimaryStatus) {
       if (primaryContacts.length >= 3) {
-        throw new Error("Maximum of 3 primary contacts allowed");
+        throw new Error("Maximum of 3 primary contacts/carers allowed");
       }
     }
     

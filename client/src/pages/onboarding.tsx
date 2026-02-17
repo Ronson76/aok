@@ -953,7 +953,7 @@ function Step6ContactName({ data, setData }: { data: OnboardingData; setData: (d
               <div key={index} className="flex gap-2 items-center">
                 <div className="flex-1">
                   <label className="text-sm text-muted-foreground mb-1 block">
-                    {index === 0 ? "Primary contact" : `Contact ${index + 1}`}
+                    {index === 0 ? "Primary contact/carer" : `Contact ${index + 1}`}
                   </label>
                   <Input
                     value={contact.name}
@@ -2001,7 +2001,7 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
         </h1>
         <p className="text-muted-foreground mb-6">
           We'll use these details to alert them in an emergency.
-          {currentContactIndex === 0 && " This is your primary contact."}
+          {currentContactIndex === 0 && " This is your primary contact/carer."}
         </p>
         
         <div className="space-y-4">
@@ -2090,7 +2090,7 @@ function Step14ContactDetails({ data, setData }: { data: OnboardingData; setData
           <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <p className="text-sm text-muted-foreground">
             {currentContactIndex === 0 
-              ? "This is your primary contact who will receive all check-in notifications."
+              ? "This is your primary contact/carer who will receive all check-in notifications."
               : "Additional contacts will be alerted in emergencies."
             }
           </p>

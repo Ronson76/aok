@@ -1462,7 +1462,7 @@ export default function OrgLoneWorkerHub() {
               </div>
             )}
             <div className="border-t pt-4 mt-2">
-              <p className="text-sm font-medium mb-3">Supervisor (Primary Contact)</p>
+              <p className="text-sm font-medium mb-3">Supervisor (Primary Contact/Carer)</p>
               <p className="text-xs text-muted-foreground mb-3">The supervisor is notified first for missed check-ins and emergencies. Leave blank if not applicable.</p>
               <div className="space-y-3">
                 <div className="space-y-1">
@@ -1638,7 +1638,7 @@ export default function OrgLoneWorkerHub() {
               </div>
             </div>
             <div className="border-t pt-4">
-              <p className="text-sm font-medium mb-3">Supervisor (Primary Contact)</p>
+              <p className="text-sm font-medium mb-3">Supervisor (Primary Contact/Carer)</p>
               <div className="space-y-3">
                 <div className="space-y-1">
                   <Label htmlFor="editSupName">Supervisor Name</Label>

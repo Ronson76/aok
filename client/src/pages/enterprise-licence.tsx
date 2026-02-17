@@ -59,7 +59,7 @@ export default function EnterpriseLicence() {
             <section>
               <h2 className="text-xl font-semibold mb-3">3. Feature Permissions and Tier Control</h2>
               <p className="text-muted-foreground leading-relaxed">
-                Feature availability is governed by subscription tier (Tier 1: Essential or Tier 2: Complete Wellbeing) as determined by Naiyatech Ltd. Organisations may further customise which features are enabled or disabled for their clients through the organisation dashboard. Features subject to tier and organisation control include: Check-in System, Shake to Alert, Emergency Alert, GPS Location, Push Notifications, Primary Contact, SMS Backup, Emergency Recording, Mood and Wellness Tracking, Pet Protection, Important Documents, AI Wellbeing Chat, Fitness Tracking, and Activity/Errands Tracker. Naiyatech Ltd reserves the right to modify tier structures and feature assignments with reasonable notice.
+                Feature availability is governed by subscription tier (Tier 1: Essential or Tier 2: Complete Wellbeing) as determined by Naiyatech Ltd. Organisations may further customise which features are enabled or disabled for their clients through the organisation dashboard. Features subject to tier and organisation control include: Check-in System, Shake to Alert, Emergency Alert, GPS Location, Push Notifications, Primary Contact/Carer, SMS Backup, Emergency Recording, Mood and Wellness Tracking, Pet Protection, Important Documents, AI Wellbeing Chat, Fitness Tracking, and Activity/Errands Tracker. Naiyatech Ltd reserves the right to modify tier structures and feature assignments with reasonable notice.
               </p>
             </section>
 

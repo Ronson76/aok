@@ -241,7 +241,7 @@ export default function Contacts() {
       const contact = contacts.find(c => c.id === contactId);
       const wasToggled = contact?.isPrimary;
       toast({
-        title: wasToggled ? "Primary status removed" : "Primary contact set",
+        title: wasToggled ? "Primary status removed" : "Primary contact/carer set",
         description: wasToggled 
           ? "This contact will only receive emergency alerts."
           : "This contact will now receive notifications for every check-in.",
@@ -251,8 +251,8 @@ export default function Contacts() {
       const message = error?.message || "";
       if (message.includes("Maximum of 3")) {
         toast({
-          title: "Maximum primary contacts reached",
-          description: "You can have up to 3 primary contacts. Remove one to add another.",
+          title: "Maximum primary contacts/carers reached",
+          description: "You can have up to 3 primary contacts/carers. Remove one to add another.",
           variant: "destructive",
         });
       } else {
@@ -512,7 +512,7 @@ export default function Contacts() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Primary contacts (up to 3) receive notifications for successful check-ins and missed check-in alerts. 
+        Primary contacts/carers (up to 3) receive notifications for successful check-ins and missed check-in alerts. 
         Non-primary contacts only receive emergency SOS alerts. New contacts must confirm via email 
         before they become active.
       </p>
@@ -520,7 +520,7 @@ export default function Contacts() {
       {contacts.length > 0 && (
         <div className="flex items-center gap-2 text-sm">
           <span className={`font-medium ${maxPrimariesReached ? "text-amber-600" : "text-muted-foreground"}`}>
-            Primary contacts: {primaryContactCount}/3
+            Primary contacts/carers: {primaryContactCount}/3
           </span>
           {maxPrimariesReached && (
             <span className="text-xs text-amber-600">(maximum reached)</span>
@@ -635,8 +635,8 @@ export default function Contacts() {
                         data-testid={`checkbox-primary-${contact.id}`}
                         title={
                           (!contact.isPrimary && maxPrimariesReached)
-                            ? "Maximum 3 primary contacts"
-                            : (contact.isPrimary ? "Remove primary status" : "Set as primary contact")
+                            ? "Maximum 3 primary contacts/carers"
+                            : (contact.isPrimary ? "Remove primary status" : "Set as primary contact/carer")
                         }
                       />
                       <label 
