@@ -738,7 +738,6 @@ export async function registerRoutes(
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(email.toLowerCase());
       const staffInviteCode = req.body.staffInviteCode;
-      const cancellationPin = req.body.cancellationPin;
 
       if (existingUser) {
         // Allow staff invite registrations where the email matches the invite
@@ -764,11 +763,6 @@ export async function registerRoutes(
           if (acceptedInvite) {
             await organizationStorage.incrementBundleSeatsUsed(acceptedInvite.bundleId);
             console.log(`[STAFF INVITE] Existing user ${existingUser.id} accepted staff invite ${staffInviteCode}, bundle ${acceptedInvite.bundleId} seat consumed`);
-            if (cancellationPin && typeof cancellationPin === "string" && cancellationPin.length >= 4) {
-              const pinHash = await bcrypt.hash(cancellationPin, 10);
-              await organizationStorage.setCancellationPinHash(acceptedInvite.id, pinHash);
-              console.log(`[STAFF INVITE] Cancellation PIN set for invite ${acceptedInvite.id}`);
-            }
           }
           if (invite?.emergencyRecordingEnabled) {
             try {
@@ -871,11 +865,6 @@ export async function registerRoutes(
           if (acceptedInvite) {
             await organizationStorage.incrementBundleSeatsUsed(acceptedInvite.bundleId);
             console.log(`[STAFF INVITE] User ${user.id} accepted staff invite ${staffInviteCode}, bundle ${acceptedInvite.bundleId} seat consumed`);
-            if (cancellationPin && typeof cancellationPin === "string" && cancellationPin.length >= 4) {
-              const pinHash = await bcrypt.hash(cancellationPin, 10);
-              await organizationStorage.setCancellationPinHash(acceptedInvite.id, pinHash);
-              console.log(`[STAFF INVITE] Cancellation PIN set for invite ${acceptedInvite.id}`);
-            }
           }
           if (invite?.emergencyRecordingEnabled) {
             try {
@@ -4503,8 +4492,7 @@ export async function registerRoutes(
     }
   });
 
-  // Temporary admin endpoint to clear all data (remove after use)
-  app.post("/api/admin/clear-archived-users", async (req, res) => {
+  app.post("/api/admin/clear-test-data", async (req, res) => {
     try {
       const adminEmail = process.env.ADMIN_EMAIL;
       const adminPassword = process.env.ADMIN_PASSWORD;
@@ -4512,12 +4500,9 @@ export async function registerRoutes(
       if (!email || !password || email !== adminEmail || password !== adminPassword) {
         return res.status(403).json({ error: "Forbidden" });
       }
-      const archivedUsers = await db.execute(sql`SELECT id FROM users WHERE archived_at IS NOT NULL`);
-      const archivedIds = archivedUsers.rows.map((r: any) => r.id);
-      if (archivedIds.length === 0) {
-        return res.json({ success: true, message: "No archived users to clear", deleted: 0 });
-      }
-      for (const userId of archivedIds) {
+      const testUsers = await db.execute(sql`SELECT id FROM users WHERE archived_at IS NOT NULL OR email LIKE '%@demo.aok.care' OR email = 'demo-ymca@aok.care'`);
+      const testIds = testUsers.rows.map((r: any) => r.id);
+      const deleteUserData = async (userId: string) => {
         await db.execute(sql`DELETE FROM lone_worker_check_ins WHERE session_id IN (SELECT id FROM lone_worker_sessions WHERE user_id = ${userId})`);
         await db.execute(sql`DELETE FROM lone_worker_escalations WHERE session_id IN (SELECT id FROM lone_worker_sessions WHERE user_id = ${userId})`);
         await db.execute(sql`DELETE FROM lone_worker_sessions WHERE user_id = ${userId}`);
@@ -4541,13 +4526,32 @@ export async function registerRoutes(
         await db.execute(sql`DELETE FROM deactivation_confirmations WHERE user_id = ${userId}`);
         await db.execute(sql`DELETE FROM password_reset_tokens WHERE user_id = ${userId}`);
         await db.execute(sql`DELETE FROM strava_connections WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM audit_trail WHERE organization_id = ${userId}`);
+        await db.execute(sql`DELETE FROM organization_staff_invites WHERE organization_id = ${userId}`);
+        await db.execute(sql`DELETE FROM organization_member_invites WHERE organization_id = ${userId}`);
+        await db.execute(sql`DELETE FROM org_member_client_assignments WHERE organization_id = ${userId}`);
+        await db.execute(sql`DELETE FROM org_member_sessions WHERE organization_id = ${userId}`);
+        await db.execute(sql`DELETE FROM organization_client_profiles WHERE organization_id = ${userId}`);
+        await db.execute(sql`DELETE FROM organization_clients WHERE organization_id = ${userId}`);
+        await db.execute(sql`DELETE FROM organization_members WHERE organization_id = ${userId}`);
+        await db.execute(sql`DELETE FROM bundle_usage WHERE organization_id = ${userId}`);
+        await db.execute(sql`DELETE FROM organization_bundles WHERE user_id = ${userId}`);
+        await db.execute(sql`DELETE FROM tier_permissions WHERE organization_id = ${userId}`);
+        await db.execute(sql`DELETE FROM case_notes WHERE organization_id = ${userId}`);
+        await db.execute(sql`DELETE FROM case_files WHERE organization_id = ${userId}`);
+        await db.execute(sql`DELETE FROM incidents WHERE organization_id = ${userId}`);
+        await db.execute(sql`DELETE FROM risk_reports WHERE organization_id = ${userId}`);
+        await db.execute(sql`DELETE FROM welfare_concerns WHERE organization_id = ${userId}`);
         await db.execute(sql`DELETE FROM sessions WHERE user_id = ${userId}`);
         await db.execute(sql`DELETE FROM users WHERE id = ${userId}`);
+      };
+      for (const userId of testIds) {
+        await deleteUserData(userId);
       }
-      const resolvedSessions = await db.execute(sql`DELETE FROM lone_worker_check_ins WHERE session_id IN (SELECT id FROM lone_worker_sessions WHERE status IN ('resolved', 'unresponsive'))`);
+      await db.execute(sql`DELETE FROM lone_worker_check_ins WHERE session_id IN (SELECT id FROM lone_worker_sessions WHERE status IN ('resolved', 'unresponsive'))`);
       await db.execute(sql`DELETE FROM lone_worker_escalations WHERE session_id IN (SELECT id FROM lone_worker_sessions WHERE status IN ('resolved', 'unresponsive'))`);
-      const clearedSessions = await db.execute(sql`DELETE FROM lone_worker_sessions WHERE status IN ('resolved', 'unresponsive')`);
-      res.json({ success: true, message: `Cleared ${archivedIds.length} archived users and ${clearedSessions.rowCount || 0} old lone worker sessions` });
+      await db.execute(sql`DELETE FROM lone_worker_sessions WHERE status IN ('resolved', 'unresponsive')`);
+      res.json({ success: true, message: `Cleared ${testIds.length} test/archived users and all associated data` });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

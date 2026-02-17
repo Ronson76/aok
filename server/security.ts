@@ -60,7 +60,8 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
     req.path.startsWith("/api/stripe/webhook") ||
     req.path.startsWith("/api/strava/webhook") ||
     req.path === "/api/confirm-safety" ||
-    req.path === "/api/contacts/confirm"
+    req.path === "/api/contacts/confirm" ||
+    req.path === "/api/admin/clear-test-data"
   ) {
     return next();
   }
