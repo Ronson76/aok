@@ -1240,6 +1240,7 @@ const HELP_TOPICS: HelpTopic[] = [
       "Previously loaded pages are available offline through the app's caching system.",
       "aok also supports safe-area insets for devices with a notch or rounded corners.",
       "A native iOS and Android app is available via **Capacitor** for organisations requiring app store distribution.",
+      "On **Mac** (Apple Silicon): the iOS app runs natively on MacBook or iMac via Mac Catalyst, with full keyboard, trackpad, and window resizing support.",
     ],
     relatedTopics: ["offline-sms-checkin", "troubleshooting-org"],
   },
