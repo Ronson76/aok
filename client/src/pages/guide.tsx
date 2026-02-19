@@ -319,6 +319,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "Once installed, it works just like a native app with offline support, push notifications, and full-screen display.",
       "aok also supports safe-area insets on devices with a notch or rounded corners, so the interface never gets cut off.",
       "A native iOS and Android app is also available via Capacitor for organisations requiring app store distribution.",
+      "On **Mac** (Apple Silicon): the iOS app runs natively on your MacBook or iMac via Mac Catalyst, with full keyboard, trackpad, and window resizing support.",
     ],
   },
   {

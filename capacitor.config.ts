@@ -11,7 +11,7 @@ const config: CapacitorConfig = {
   },
   ios: {
     contentInset: 'automatic',
-    preferredContentMode: 'mobile',
+    preferredContentMode: 'desktop',
     scheme: 'aok',
     backgroundColor: '#0f172a',
     allowsLinkPreview: false

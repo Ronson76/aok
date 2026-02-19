@@ -8,59 +8,63 @@ import { Geolocation } from '@capacitor/geolocation';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
 
-/**
- * Check if the app is running as a native mobile app
- */
 export const isNative = () => Capacitor.isNativePlatform();
 
-/**
- * Check if the app is running on iOS
- */
 export const isIOS = () => Capacitor.getPlatform() === 'ios';
 
-/**
- * Check if the app is running on Android
- */
 export const isAndroid = () => Capacitor.getPlatform() === 'android';
 
-/**
- * Check if the app is running in a web browser
- */
 export const isWeb = () => Capacitor.getPlatform() === 'web';
 
-/**
- * Haptic feedback utilities
- */
+export const isMacCatalyst = () => {
+  if (!isNative()) return false;
+  return isIOS() && typeof navigator !== 'undefined' && /Macintosh/.test(navigator.userAgent);
+};
+
+export const isMacWeb = () => {
+  if (isNative()) return false;
+  return typeof navigator !== 'undefined' && /Macintosh/.test(navigator.userAgent);
+};
+
 export const haptics = {
   impact: async (style: 'light' | 'medium' | 'heavy' = 'medium') => {
-    if (!isNative()) return;
-    const styleMap = {
-      light: ImpactStyle.Light,
-      medium: ImpactStyle.Medium,
-      heavy: ImpactStyle.Heavy
-    };
-    await Haptics.impact({ style: styleMap[style] });
+    if (!isNative() || isMacCatalyst()) return;
+    try {
+      const styleMap = {
+        light: ImpactStyle.Light,
+        medium: ImpactStyle.Medium,
+        heavy: ImpactStyle.Heavy
+      };
+      await Haptics.impact({ style: styleMap[style] });
+    } catch {
+      // Haptics not available on this device
+    }
   },
   
   notification: async (type: 'success' | 'warning' | 'error' = 'success') => {
-    if (!isNative()) return;
-    const typeMap = {
-      success: NotificationType.Success,
-      warning: NotificationType.Warning,
-      error: NotificationType.Error
-    };
-    await Haptics.notification({ type: typeMap[type] });
+    if (!isNative() || isMacCatalyst()) return;
+    try {
+      const typeMap = {
+        success: NotificationType.Success,
+        warning: NotificationType.Warning,
+        error: NotificationType.Error
+      };
+      await Haptics.notification({ type: typeMap[type] });
+    } catch {
+      // Haptics not available on this device
+    }
   },
   
   vibrate: async (duration = 300) => {
-    if (!isNative()) return;
-    await Haptics.vibrate({ duration });
+    if (!isNative() || isMacCatalyst()) return;
+    try {
+      await Haptics.vibrate({ duration });
+    } catch {
+      // Vibration not available on this device
+    }
   }
 };
 
-/**
- * Push notification utilities
- */
 export const pushNotifications = {
   register: async () => {
     if (!isNative()) {
@@ -68,33 +72,46 @@ export const pushNotifications = {
       return null;
     }
     
-    const permission = await PushNotifications.requestPermissions();
-    if (permission.receive === 'granted') {
-      await PushNotifications.register();
-      return true;
+    try {
+      const permission = await PushNotifications.requestPermissions();
+      if (permission.receive === 'granted') {
+        await PushNotifications.register();
+        return true;
+      }
+    } catch {
+      console.log('[Native] Push notifications not supported on this platform');
     }
     return false;
   },
   
   addListener: (event: 'registration' | 'registrationError' | 'pushNotificationReceived' | 'pushNotificationActionPerformed', callback: (data: any) => void) => {
     if (!isNative()) return { remove: () => {} };
-    return PushNotifications.addListener(event as any, callback);
+    try {
+      return PushNotifications.addListener(event as any, callback);
+    } catch {
+      return { remove: () => {} };
+    }
   },
   
   getDeliveredNotifications: async () => {
     if (!isNative()) return { notifications: [] };
-    return await PushNotifications.getDeliveredNotifications();
+    try {
+      return await PushNotifications.getDeliveredNotifications();
+    } catch {
+      return { notifications: [] };
+    }
   },
   
   removeAllDeliveredNotifications: async () => {
     if (!isNative()) return;
-    await PushNotifications.removeAllDeliveredNotifications();
+    try {
+      await PushNotifications.removeAllDeliveredNotifications();
+    } catch {
+      // Not available
+    }
   }
 };
 
-/**
- * Local notification utilities (for alarms, check-in reminders)
- */
 export const localNotifications = {
   schedule: async (options: {
     id: number;
@@ -109,82 +126,97 @@ export const localNotifications = {
       return;
     }
     
-    const permission = await LocalNotifications.requestPermissions();
-    if (permission.display !== 'granted') return;
-    
-    await LocalNotifications.schedule({
-      notifications: [{
-        id: options.id,
-        title: options.title,
-        body: options.body,
-        schedule: options.scheduleAt ? { at: options.scheduleAt } : undefined,
-        sound: options.sound || 'default',
-        ongoing: options.ongoing
-      }]
-    });
+    try {
+      const permission = await LocalNotifications.requestPermissions();
+      if (permission.display !== 'granted') return;
+      
+      await LocalNotifications.schedule({
+        notifications: [{
+          id: options.id,
+          title: options.title,
+          body: options.body,
+          schedule: options.scheduleAt ? { at: options.scheduleAt } : undefined,
+          sound: options.sound || 'default',
+          ongoing: options.ongoing
+        }]
+      });
+    } catch {
+      console.log('[Native] Failed to schedule notification');
+    }
   },
   
   cancel: async (ids: number[]) => {
     if (!isNative()) return;
-    await LocalNotifications.cancel({ notifications: ids.map(id => ({ id })) });
+    try {
+      await LocalNotifications.cancel({ notifications: ids.map(id => ({ id })) });
+    } catch {
+      // Not available
+    }
   },
   
   cancelAll: async () => {
     if (!isNative()) return;
-    const pending = await LocalNotifications.getPending();
-    if (pending.notifications.length > 0) {
-      await LocalNotifications.cancel({ notifications: pending.notifications });
+    try {
+      const pending = await LocalNotifications.getPending();
+      if (pending.notifications.length > 0) {
+        await LocalNotifications.cancel({ notifications: pending.notifications });
+      }
+    } catch {
+      // Not available
     }
   },
   
   addListener: (event: 'localNotificationReceived' | 'localNotificationActionPerformed', callback: (data: any) => void) => {
     if (!isNative()) return { remove: () => {} };
-    return LocalNotifications.addListener(event as any, callback);
+    try {
+      return LocalNotifications.addListener(event as any, callback);
+    } catch {
+      return { remove: () => {} };
+    }
   }
 };
 
-/**
- * Motion/shake detection utilities
- */
 export const motion = {
   startShakeDetection: async (onShake: () => void, sensitivity = 25) => {
-    if (!isNative()) {
-      console.log('[Native] Shake detection not available on web');
+    if (!isNative() || isMacCatalyst()) {
+      console.log('[Native] Shake detection not available on this platform');
       return { stop: () => {} };
     }
     
     let lastX = 0, lastY = 0, lastZ = 0;
     let lastUpdate = 0;
     
-    const listener = await Motion.addListener('accel', (event) => {
-      const { x, y, z } = event.acceleration || { x: 0, y: 0, z: 0 };
-      const currentTime = Date.now();
-      const timeDiff = currentTime - lastUpdate;
-      
-      if (timeDiff > 100) {
-        lastUpdate = currentTime;
-        const speed = Math.abs(x + y + z - lastX - lastY - lastZ) / timeDiff * 10000;
+    try {
+      const listener = await Motion.addListener('accel', (event) => {
+        const { x, y, z } = event.acceleration || { x: 0, y: 0, z: 0 };
+        const currentTime = Date.now();
+        const timeDiff = currentTime - lastUpdate;
         
-        if (speed > sensitivity) {
-          onShake();
-          haptics.notification('warning');
+        if (timeDiff > 100) {
+          lastUpdate = currentTime;
+          const speed = Math.abs(x + y + z - lastX - lastY - lastZ) / timeDiff * 10000;
+          
+          if (speed > sensitivity) {
+            onShake();
+            haptics.notification('warning');
+          }
+          
+          lastX = x;
+          lastY = y;
+          lastZ = z;
         }
-        
-        lastX = x;
-        lastY = y;
-        lastZ = z;
-      }
-    });
-    
-    return {
-      stop: () => listener.remove()
-    };
+      });
+      
+      return {
+        stop: () => listener.remove()
+      };
+    } catch {
+      console.log('[Native] Motion API not available');
+      return { stop: () => {} };
+    }
   }
 };
 
-/**
- * Geolocation utilities
- */
 export const geolocation = {
   getCurrentPosition: async () => {
     if (!isNative()) {
@@ -209,88 +241,124 @@ export const geolocation = {
         longitude: position.coords.longitude
       };
     } catch {
+      if ('geolocation' in navigator) {
+        return new Promise<{ latitude: number; longitude: number } | null>((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+            () => resolve(null)
+          );
+        });
+      }
       return null;
     }
   }
 };
 
-/**
- * Status bar utilities (iOS/Android)
- */
 export const statusBar = {
   setStyle: async (style: 'dark' | 'light') => {
-    if (!isNative()) return;
-    await StatusBar.setStyle({ style: style === 'dark' ? Style.Dark : Style.Light });
+    if (!isNative() || isMacCatalyst()) return;
+    try {
+      await StatusBar.setStyle({ style: style === 'dark' ? Style.Dark : Style.Light });
+    } catch {
+      // StatusBar not available
+    }
   },
   
   setBackgroundColor: async (color: string) => {
     if (!isNative() || isIOS()) return;
-    await StatusBar.setBackgroundColor({ color });
+    try {
+      await StatusBar.setBackgroundColor({ color });
+    } catch {
+      // StatusBar not available
+    }
   },
   
   hide: async () => {
-    if (!isNative()) return;
-    await StatusBar.hide();
+    if (!isNative() || isMacCatalyst()) return;
+    try {
+      await StatusBar.hide();
+    } catch {
+      // StatusBar not available
+    }
   },
   
   show: async () => {
-    if (!isNative()) return;
-    await StatusBar.show();
+    if (!isNative() || isMacCatalyst()) return;
+    try {
+      await StatusBar.show();
+    } catch {
+      // StatusBar not available
+    }
   }
 };
 
-/**
- * Splash screen utilities
- */
 export const splashScreen = {
   hide: async () => {
     if (!isNative()) return;
-    await SplashScreen.hide();
+    try {
+      await SplashScreen.hide();
+    } catch {
+      // SplashScreen not available
+    }
   },
   
   show: async () => {
     if (!isNative()) return;
-    await SplashScreen.show();
+    try {
+      await SplashScreen.show();
+    } catch {
+      // SplashScreen not available
+    }
   }
 };
 
-/**
- * App lifecycle utilities
- */
 export const appLifecycle = {
   addStateChangeListener: (callback: (state: { isActive: boolean }) => void) => {
     if (!isNative()) return { remove: () => {} };
-    return App.addListener('appStateChange', callback);
+    try {
+      return App.addListener('appStateChange', callback);
+    } catch {
+      return { remove: () => {} };
+    }
   },
   
   addBackButtonListener: (callback: () => void) => {
     if (!isNative() || isIOS()) return { remove: () => {} };
-    return App.addListener('backButton', callback);
+    try {
+      return App.addListener('backButton', callback);
+    } catch {
+      return { remove: () => {} };
+    }
   },
   
   exitApp: () => {
-    if (!isNative()) return;
-    App.exitApp();
+    if (!isNative() || isMacCatalyst()) return;
+    try {
+      App.exitApp();
+    } catch {
+      // Not available
+    }
   }
 };
 
-/**
- * Initialize native app features
- */
 export const initializeNativeApp = async () => {
   if (!isNative()) {
     console.log('[Native] Running in web mode');
     return;
   }
   
-  console.log('[Native] Initializing native app on', Capacitor.getPlatform());
+  const platform = Capacitor.getPlatform();
+  const isMac = isMacCatalyst();
+  console.log(`[Native] Initializing native app on ${platform}${isMac ? ' (Mac Catalyst)' : ''}`);
   
   await splashScreen.hide();
   
-  if (isAndroid()) {
-    await statusBar.setBackgroundColor('#16a34a');
+  if (!isMac) {
+    if (isAndroid()) {
+      await statusBar.setBackgroundColor('#16a34a');
+    }
+    await statusBar.setStyle('light');
   }
-  await statusBar.setStyle('light');
   
   await pushNotifications.register();
   

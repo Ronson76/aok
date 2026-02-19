@@ -19,7 +19,7 @@ Database rule: When clearing or modifying data, it must be done via the applicat
 - **UI Components**: shadcn/ui built on Radix UI
 - **Build Tool**: Vite
 - **Design Principles**: Mobile-first, card-based layout, consistent spacing, bottom navigation.
-- **Native App Support**: Capacitor 8 for iOS and Android app build capability with native plugins.
+- **Native App Support**: Capacitor 8 for iOS, Android, and Mac Catalyst app build capability with native plugins.
 - **Internationalisation (i18n)**: i18next with English, Welsh (Cymraeg), and Spanish (Español) translations; browser language detection; inline resources from `client/src/locales/`.
 - **Accessibility**: Skip-to-content links, ARIA navigation roles, `aria-current="page"` on active nav items, `role="alert"` on form errors, `aria-labels` on icon-only buttons, 44px touch targets.
 
@@ -49,6 +49,7 @@ Database rule: When clearing or modifying data, it must be done via the applicat
 - **Plugins**: Geolocation (background/foreground), Haptics, Status Bar, Keyboard.
 - **Theme**: Dark theme backgrounds (`#0f172a`), status bar overlay.
 - **Permissions**: Location (always/when-in-use), camera, microphone.
+- **Mac Catalyst**: `SUPPORTS_MACCATALYST = YES`, `TARGETED_DEVICE_FAMILY = "1,2,6"`. Mac-safe plugin fallbacks in `client/src/lib/native.ts` (Haptics, Motion, StatusBar gracefully disabled on Mac). Window sizing constraints (375x667 min, 1400x1000 max). `preferredContentMode: 'desktop'` for proper layout.
 
 ### Data Layer
 - **ORM**: Drizzle ORM for PostgreSQL

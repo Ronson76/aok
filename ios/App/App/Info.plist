@@ -22,15 +22,13 @@
         <string>$(MARKETING_VERSION)</string>
         <key>CFBundleVersion</key>
         <string>$(CURRENT_PROJECT_VERSION)</string>
-        <key>LSRequiresIPhoneOS</key>
-        <true/>
         <key>UILaunchStoryboardName</key>
         <string>LaunchScreen</string>
         <key>UIMainStoryboardFile</key>
         <string>Main</string>
         <key>UIRequiredDeviceCapabilities</key>
         <array>
-                <string>armv7</string>
+                <string>arm64</string>
         </array>
         <key>UISupportedInterfaceOrientations</key>
         <array>
@@ -67,5 +65,12 @@
                 <string>audio</string>
                 <string>processing</string>
         </array>
+        <key>UIApplicationSupportsIndirectInputEvents</key>
+        <true/>
+        <key>UIApplicationSceneManifest</key>
+        <dict>
+                <key>UIApplicationSupportsMultipleScenes</key>
+                <false/>
+        </dict>
 </dict>
 </plist>
