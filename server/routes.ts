@@ -694,7 +694,7 @@ export async function registerRoutes(
   registerAdminRoutes(app);
 
   app.use("/api/org", (req, res, next) => {
-    if (req.path.startsWith("/auth/forgot-password") || req.path.startsWith("/auth/reset-password")) {
+    if (req.path.startsWith("/auth/forgot-password") || req.path.startsWith("/auth/reset-password") || req.path.startsWith("/auth/setup-password")) {
       return next();
     }
     if (req.cookies?.org_member_session) {
