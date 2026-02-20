@@ -1246,14 +1246,18 @@ export async function registerRoutes(
         // Copy pending contacts to user's contacts (supervisor first as primary)
         const pendingContacts = await organizationStorage.getPendingClientContacts(orgClient.id);
         const sortedContacts = [...pendingContacts].sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
+        const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
         for (const contact of sortedContacts) {
           if (contact.email && contact.name) {
-            await storage.createContact(user.id, {
+            const { contact: createdContact, confirmationToken } = await storage.createContact(user.id, {
               name: contact.name,
               email: contact.email,
               phone: contact.phone || "",
               phoneType: (contact.phoneType ?? "mobile") as "mobile" | "landline",
               relationship: contact.relationship ?? "Emergency Contact",
+            });
+            sendContactConfirmationEmail(createdContact, user, confirmationToken, baseUrl).catch(err => {
+              console.error("[ACTIVATE] Failed to send confirmation email to contact:", contact.email, err);
             });
           }
         }
