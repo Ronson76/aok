@@ -813,6 +813,7 @@ function Step4LivingSituation({ data, setData }: { data: OnboardingData; setData
   const options = [
     { value: "alone", label: "I live alone", icon: <Home className="h-6 w-6" /> },
     { value: "alone-pets", label: "I live alone with pets", icon: <Heart className="h-6 w-6" /> },
+    { value: "with-parents", label: "I live with parents/family", icon: <Users className="h-6 w-6" /> },
     { value: "single-parent", label: "Single parent with children", icon: <Baby className="h-6 w-6" /> },
     { value: "partner-travels", label: "My partner travels often", icon: <Plane className="h-6 w-6" /> },
     { value: "rural", label: "I live in a rural area", icon: <TreePine className="h-6 w-6" /> },
@@ -1409,6 +1410,11 @@ function Step8Summary({ data }: { data: OnboardingData }) {
           return {
             stat: "Pet owners who live alone often have no one checking on them daily",
             scenario: "It's Wednesday morning. You're home with your pet when you have a fall and hurt yourself. Your phone is out of reach and your pet can't call for help.",
+          };
+        case "with-parents":
+          return {
+            stat: "Even when living with family, emergencies can happen when no one else is home",
+            scenario: "Your parents are out for the day and you're home alone. You have a fall down the stairs and can't reach your phone to call for help.",
           };
         case "single-parent":
           return {
