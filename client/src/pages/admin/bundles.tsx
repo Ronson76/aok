@@ -61,11 +61,11 @@ export default function AdminBundles() {
     queryKey: ["/api/admin/bundles"],
   });
 
-  const { data: users } = useQuery<UserProfile[]>({
-    queryKey: ["/api/admin/users"],
+  const { data: organizations } = useQuery<any[]>({
+    queryKey: ["/api/admin/organizations"],
   });
 
-  const organizationUsers = users?.filter(u => u.accountType === "organization") || [];
+  const organizationUsers = organizations?.map(org => ({ id: org.id, name: org.name, email: org.email })) || [];
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof newBundle) => {
