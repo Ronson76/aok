@@ -369,6 +369,10 @@ export default function Settings() {
   
   const [showRedAlertConfirmDialog, setShowRedAlertConfirmDialog] = useState(false);
   const [showRedAlertDisableDialog, setShowRedAlertDisableDialog] = useState(false);
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deletePasswordVisible, setDeletePasswordVisible] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [show2FADialog, setShow2FADialog] = useState(false);
   
   
@@ -549,6 +553,43 @@ export default function Settings() {
       setShowRedAlertDisableDialog(true);
     }
   }, []);
+
+  const handleDataExport = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch("/api/gdpr/export", { credentials: "include" });
+      if (!response.ok) throw new Error("Export failed");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `aok-data-export-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "Data exported", description: "Your data has been downloaded." });
+    } catch (error) {
+      toast({ title: "Export failed", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [toast]);
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: (data: { password: string }) =>
+      apiRequest("POST", "/api/gdpr/delete-account", data),
+    onSuccess: () => {
+      setShowDeleteAccountDialog(false);
+      setDeletePassword("");
+      toast({ title: "Account deleted", description: "Your account has been deleted. You will be logged out." });
+      setTimeout(() => { window.location.href = "/"; }, 2000);
+    },
+    onError: (error: any) => {
+      const message = error?.message || "Please try again.";
+      toast({ title: "Deletion failed", description: message, variant: "destructive" });
+    },
+  });
 
   const updateMutation = useMutation({
     mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean; scheduleStartTime?: string; password?: string; redAlertEnabled?: boolean; shakeToSOSEnabled?: boolean; emergencyRecordingEnabled?: boolean; lowBatteryAlertEnabled?: boolean }) =>
@@ -1463,6 +1504,69 @@ export default function Settings() {
         </DialogContent>
       </Dialog>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Shield className="h-4 w-4 text-muted-foreground" />
+            Your Data &amp; Privacy
+          </CardTitle>
+          <CardDescription>
+            Manage your personal data under UK GDPR. You have the right to access, export, and delete your data at any time.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-0.5">
+              <Label className="font-medium">Download Your Data</Label>
+              <p className="text-sm text-muted-foreground">
+                Export all your personal data in a portable format (JSON file)
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDataExport}
+              disabled={isExporting}
+              data-testid="button-export-data"
+            >
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              Export
+            </Button>
+          </div>
+
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <Label className="font-medium text-red-600 dark:text-red-400">Delete Account</Label>
+                <p className="text-sm text-muted-foreground">
+                  Permanently delete your account and all associated data. This cannot be undone.
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDeleteAccountDialog(true)}
+                data-testid="button-delete-account"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2 p-3 rounded-md bg-blue-50 dark:bg-blue-950/30">
+            <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p>Under UK GDPR you have the right to access, correct, export, and delete your personal data. For any data requests, you can also contact us at <strong>privacy@aok.care</strong>.</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="p-3 rounded-lg bg-muted/50 text-center" data-testid="text-service-limitation">
         <p className="text-xs text-muted-foreground">
           aok may not function in all circumstances. Network coverage, device settings, battery life, or software issues may prevent features from working. aok does not provide medical advice and is not a substitute for emergency services.
@@ -1500,6 +1604,74 @@ export default function Settings() {
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
               Disable Tracking
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteAccountDialog} onOpenChange={(open) => {
+        setShowDeleteAccountDialog(open);
+        if (!open) { setDeletePassword(""); setDeletePasswordVisible(false); }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Delete Your Account
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently delete your account and all your data including check-in history, emergency contacts, mood entries, pet profiles, documents, and fitness data. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex items-start gap-2 p-3 rounded-md bg-red-50 dark:bg-red-950/30">
+              <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-red-700 dark:text-red-300">
+                Your data will be permanently removed within 30 days. Your emergency contacts will no longer be notified if you miss a check-in.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="delete-password">Enter your password to confirm</Label>
+              <div className="relative">
+                <Input
+                  id="delete-password"
+                  type={deletePasswordVisible ? "text" : "password"}
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Your account password"
+                  data-testid="input-delete-password"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  onClick={() => setDeletePasswordVisible(!deletePasswordVisible)}
+                  aria-label={deletePasswordVisible ? "Hide password" : "Show password"}
+                >
+                  {deletePasswordVisible ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                </button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => { setShowDeleteAccountDialog(false); setDeletePassword(""); }}
+              data-testid="button-cancel-delete-account"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteAccountMutation.mutate({ password: deletePassword })}
+              disabled={!deletePassword || deleteAccountMutation.isPending}
+              data-testid="button-confirm-delete-account"
+            >
+              {deleteAccountMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-2" />
+              )}
+              Delete My Account
             </Button>
           </DialogFooter>
         </DialogContent>
