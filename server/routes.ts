@@ -2850,6 +2850,97 @@ export async function registerRoutes(
     }
   });
 
+  // ===== GDPR DATA PORTABILITY & ACCOUNT DELETION =====
+
+  app.get("/api/gdpr/export", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const userId = req.userId!;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const userSettings = await storage.getSettings(userId);
+      const contacts = await storage.getContacts(userId);
+      const checkInHistory = await storage.getCheckInHistory(userId);
+      const alertHistory = await storage.getAlertLogs(userId);
+
+      let moodData: any[] = [];
+      let petData: any[] = [];
+      try {
+        moodData = await storage.getMoodEntries(userId);
+      } catch (e) {}
+      try {
+        petData = await storage.getPets(userId);
+      } catch (e) {}
+
+      const { passwordHash, twoFactorSecret, archivedEmail, archivedBy, ...safeUser } = user;
+
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        exportType: "GDPR Subject Access Request - Full Data Export",
+        account: safeUser,
+        settings: userSettings,
+        emergencyContacts: contacts.map(c => ({
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          phoneType: c.phoneType,
+          relationship: c.relationship,
+          isPrimary: c.isPrimary,
+          confirmedAt: c.confirmedAt,
+          createdAt: c.createdAt,
+        })),
+        checkInHistory: checkInHistory,
+        alertHistory: alertHistory,
+        moodEntries: moodData,
+        pets: petData,
+      };
+
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader("Content-Disposition", `attachment; filename="aok-data-export-${new Date().toISOString().split('T')[0]}.json"`);
+      res.json(exportData);
+    } catch (error) {
+      console.error("[GDPR] Data export error:", error);
+      res.status(500).json({ error: "Failed to export data" });
+    }
+  });
+
+  app.post("/api/gdpr/delete-account", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const userId = req.userId!;
+      const { password } = req.body;
+
+      if (!password) {
+        return res.status(400).json({ error: "Password is required to delete your account" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const bcrypt = await import("bcryptjs");
+      const isValid = await bcrypt.compare(password, user.passwordHash);
+      if (!isValid) {
+        return res.status(401).json({ error: "Incorrect password" });
+      }
+
+      const success = await storage.archiveUser(userId, "self-deletion");
+      if (!success) {
+        return res.status(500).json({ error: "Failed to delete account" });
+      }
+
+      if (req.session) {
+        req.session.destroy((err: any) => {
+          if (err) console.error("[GDPR] Session destroy error:", err);
+        });
+      }
+
+      console.log(`[GDPR] User ${userId} self-deleted their account`);
+      res.json({ success: true, message: "Your account has been deleted. Your data will be permanently removed within 30 days." });
+    } catch (error) {
+      console.error("[GDPR] Account deletion error:", error);
+      res.status(500).json({ error: "Failed to delete account" });
+    }
+  });
+
   // Push subscription endpoints
   app.get("/api/push/vapid-public-key", async (req, res) => {
     const publicKey = process.env.VAPID_PUBLIC_KEY;

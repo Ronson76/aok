@@ -133,14 +133,14 @@ export default function Privacy() {
               </p>
               <ul className="list-disc pl-6 text-muted-foreground space-y-2 mt-2">
                 <li><strong>Access:</strong> Request a copy of your personal data</li>
-                <li><strong>Rectification:</strong> Correct inaccurate personal data</li>
-                <li><strong>Erasure:</strong> Request deletion of your personal data</li>
-                <li><strong>Portability:</strong> Receive your data in a portable format</li>
+                <li><strong>Rectification:</strong> Correct inaccurate personal data via your Settings page</li>
+                <li><strong>Erasure:</strong> Delete your account and all associated data directly from Settings &gt; Your Data &amp; Privacy &gt; Delete Account. Data is permanently removed within 30 days.</li>
+                <li><strong>Portability:</strong> Download all your personal data in a portable JSON format from Settings &gt; Your Data &amp; Privacy &gt; Export</li>
                 <li><strong>Objection:</strong> Object to certain types of processing</li>
                 <li><strong>Restriction:</strong> Request limited processing of your data</li>
               </ul>
               <p className="text-muted-foreground leading-relaxed mt-2">
-                To exercise any of these rights, please contact us at privacy@aok.care.
+                You can exercise your rights to data export and account deletion directly from your Settings page. For all other requests, please contact us at privacy@aok.care.
               </p>
             </section>
 

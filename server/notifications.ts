@@ -754,6 +754,8 @@ ${declineUrl}
 
 If you do nothing, this request will expire automatically.
 
+Your Data & Privacy: By accepting, your name, email, and phone number will be stored by aok to send you safety alerts. Under UK GDPR, you have the right to request access to, correction of, or deletion of your data at any time. To decline or request removal, use the Decline link above or contact privacy@aok.care.
+
 Thank you,
 - The aok Team`
     : `Hi ${contact.name},
@@ -773,6 +775,8 @@ To DECLINE and remove yourself, click this link:
 ${declineUrl}
 
 If you do nothing, this request will expire automatically.
+
+Your Data & Privacy: By accepting, your name, email, and phone number will be stored by aok to send you safety alerts. Under UK GDPR, you have the right to request access to, correction of, or deletion of your data at any time. To decline or request removal, use the Decline link above or contact privacy@aok.care.
 
 Thank you,
 - The aok Team`;
@@ -820,7 +824,12 @@ Thank you,
   <p style="color: #6b7280; font-size: 14px;">If you do nothing, this request will expire automatically.</p>
   
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-  
+
+  <div style="background-color: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 12px 16px; margin-bottom: 20px;">
+    <p style="color: #1e40af; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Your Data &amp; Privacy</p>
+    <p style="color: #6b7280; font-size: 12px; margin: 0;">By accepting, your name, email, and phone number will be stored by aok to send you safety alerts. Under UK GDPR, you have the right to request access to, correction of, or deletion of your data at any time. To decline or request data removal, use the Decline button above or contact us at <a href="mailto:privacy@aok.care" style="color: #2563eb;">privacy@aok.care</a>.</p>
+  </div>
+
   <p style="color: #6b7280; font-size: 14px;">Thank you,<br>- The aok Team</p>
 </body>
 </html>`;
