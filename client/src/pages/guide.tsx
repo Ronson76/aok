@@ -236,6 +236,19 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "low-battery-alert",
+    title: "Low battery alert",
+    content: [
+      "aok can automatically alert your primary contact/carer when your device battery drops to **20% or below**.",
+      "This feature is **enabled by default** — you can turn it off in **Settings** under **Low Battery Alert**.",
+      "When triggered, your confirmed primary contact/carer receives an email warning that your device battery is low and that aok may stop monitoring your safety if the device runs out of power.",
+      "The alert includes your **last known GPS location** (if available) so your contact/carer knows where you were.",
+      "To avoid repeated notifications, the alert is sent **at most once every 4 hours**.",
+      "This works alongside the separate activity-specific low battery alert (which triggers during active activities like walks or runs).",
+      "Your device must support the Battery API for this feature to work. Most modern mobile browsers and the aok native app support it.",
+    ],
+  },
+  {
     id: "emergency-notes",
     title: "Emergency notes (organisations)",
     content: [

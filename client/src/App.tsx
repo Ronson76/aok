@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { QRCodeSVG } from "qrcode.react";
 import type { StatusData, Settings as SettingsType } from "@shared/schema";
 import { useShakeDetector } from "@/hooks/use-shake-detector";
+import { useBatteryMonitor } from "@/hooks/use-battery-monitor";
 import { EmergencyConfirmOverlay } from "@/components/emergency-confirm-overlay";
 import { shakeDetector } from "@/lib/shake-detector";
 import Landing from "@/pages/landing";
@@ -371,6 +372,8 @@ function AppLayout() {
     enabled: isAuthenticated && (settings?.shakeToSOSEnabled ?? false),
     onShakeDetected: handleShakeDetected,
   });
+
+  useBatteryMonitor(isAuthenticated && (settings?.lowBatteryAlertEnabled ?? true));
 
   const handleShakeConfirm = useCallback(() => {
     shakeDetector.recordConfirmed();

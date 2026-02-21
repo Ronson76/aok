@@ -318,6 +318,7 @@ const HELP_TOPICS: HelpTopic[] = [
       "**Fitness Tracking** — record runs, walks, and rides with GPS tracking, route maps, and social features. For personal wellbeing only — does not provide medical advice or health monitoring.",
       "**Route Planning** — plan walks, runs, and cycle routes with weather forecasts, safety cues, and sharing with contacts. Part of Fitness Tracking.",
       "**Activities Tracker** — log everyday activities (walking, shopping, errands, appointments, visiting, commuting, dog walking, exercise, first dates) with GPS tracking and automatic contact notification if the expected duration plus 10-minute grace period expires. A **low battery alert** is automatically sent to primary contacts/carers if the client's device drops below 20% during an active activity.",
+      "**Low Battery Alert** — automatically emails the primary contact/carer when the client's device battery drops to 20% or below. Enabled by default, sent at most once every 4 hours. Clients can toggle this in their Settings. This is separate from the activity-specific low battery alert above.",
       "**Emergency Recording** — activate camera and microphone during emergency alerts (opt-in, off by default).",
       "Toggle these on or off from the client's detail view on your dashboard.",
       "Changes take effect immediately — the client will see features appear or disappear on their next visit.",

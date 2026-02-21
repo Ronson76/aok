@@ -735,6 +735,7 @@ class DatabaseStorage implements IStorage {
         livingSituation: null,
         shakeToSOSEnabled: true,
         emergencyRecordingEnabled: false,
+        lowBatteryAlertEnabled: true,
       };
     }
 
@@ -753,6 +754,7 @@ class DatabaseStorage implements IStorage {
       livingSituation: row.livingSituation || null,
       shakeToSOSEnabled: row.shakeToSOSEnabled ?? true,
       emergencyRecordingEnabled: row.emergencyRecordingEnabled ?? false,
+      lowBatteryAlertEnabled: row.lowBatteryAlertEnabled ?? true,
     };
   }
 
@@ -766,6 +768,7 @@ class DatabaseStorage implements IStorage {
     if (updates.trackingEnabled !== undefined) dbUpdates.trackingEnabled = updates.trackingEnabled;
     if (updates.shakeToSOSEnabled !== undefined) dbUpdates.shakeToSOSEnabled = updates.shakeToSOSEnabled;
     if (updates.emergencyRecordingEnabled !== undefined) dbUpdates.emergencyRecordingEnabled = updates.emergencyRecordingEnabled;
+    if (updates.lowBatteryAlertEnabled !== undefined) dbUpdates.lowBatteryAlertEnabled = updates.lowBatteryAlertEnabled;
     if (updates.additionalInfo !== undefined) dbUpdates.additionalInfo = updates.additionalInfo;
     if (updates.livingSituation !== undefined) dbUpdates.livingSituation = updates.livingSituation;
     
@@ -832,6 +835,20 @@ class DatabaseStorage implements IStorage {
       .set(dbUpdates)
       .where(eq(settings.userId, userId));
     return this.getSettings(userId);
+  }
+
+  async getLastLowBatteryAlertTime(userId: string): Promise<Date | null> {
+    const result = await getDb().select({ lastLowBatteryAlertAt: settings.lastLowBatteryAlertAt })
+      .from(settings)
+      .where(eq(settings.userId, userId));
+    if (!result.length) return null;
+    return result[0].lastLowBatteryAlertAt || null;
+  }
+
+  async updateLastLowBatteryAlertTime(userId: string, time: Date): Promise<void> {
+    await getDb().update(settings)
+      .set({ lastLowBatteryAlertAt: time })
+      .where(eq(settings.userId, userId));
   }
 
   // Alerts
