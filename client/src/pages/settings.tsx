@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, AlertTriangle, Smartphone, Eye, EyeOff, ExternalLink, CreditCard, AlertCircle, MapPin, Vibrate, Video, Trash2, Download, Play, FileVideo, Shield, ShieldCheck } from "lucide-react";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, AlertTriangle, Smartphone, Eye, EyeOff, ExternalLink, CreditCard, AlertCircle, MapPin, Vibrate, Video, Trash2, Download, Play, FileVideo, Shield, ShieldCheck, BatteryLow } from "lucide-react";
 import ShakeDetector from "@/lib/shake-detector";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -551,7 +551,7 @@ export default function Settings() {
   }, []);
 
   const updateMutation = useMutation({
-    mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean; scheduleStartTime?: string; password?: string; redAlertEnabled?: boolean; shakeToSOSEnabled?: boolean; emergencyRecordingEnabled?: boolean }) =>
+    mutationFn: (data: { intervalHours?: number; alertsEnabled?: boolean; scheduleStartTime?: string; password?: string; redAlertEnabled?: boolean; shakeToSOSEnabled?: boolean; emergencyRecordingEnabled?: boolean; lowBatteryAlertEnabled?: boolean }) =>
       apiRequest("PATCH", "/api/settings", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
@@ -911,6 +911,47 @@ export default function Settings() {
                 <li>This is not monitored in real time</li>
                 <li>You maintain full control and can disable at any time</li>
               </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className={settings?.lowBatteryAlertEnabled ? "border-amber-500 dark:border-amber-600" : ""}>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <BatteryLow className={`h-4 w-4 ${settings?.lowBatteryAlertEnabled ? "text-amber-500" : "text-muted-foreground"}`} />
+            Low Battery Alert
+          </CardTitle>
+          <CardDescription>
+            Notify your primary contact/carer when your device battery drops below 20%.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="low-battery-alert-enabled" className="font-medium">
+                Enable Low Battery Alerts
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Your primary contact/carer will be emailed if your battery falls to 20% or below
+              </p>
+            </div>
+            <Switch
+              id="low-battery-alert-enabled"
+              checked={settings?.lowBatteryAlertEnabled ?? true}
+              onCheckedChange={(checked) => {
+                updateMutation.mutate({ lowBatteryAlertEnabled: checked });
+              }}
+              disabled={updateMutation.isPending}
+              data-testid="switch-low-battery-alert-enabled"
+            />
+          </div>
+
+          <div className="flex items-start gap-2 p-3 rounded-md bg-amber-50 dark:bg-amber-950/30">
+            <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p>When your device battery reaches 20% or below, aok will automatically email your confirmed primary contact/carer to let them know.</p>
+              <p>This alert is sent at most once every 4 hours to avoid repeated notifications.</p>
             </div>
           </div>
         </CardContent>

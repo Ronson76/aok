@@ -132,6 +132,7 @@ Database rule: When clearing or modifying data, it must be done via the applicat
 - **Emergency Notes**: Organisation clients can have emergency notes (medical conditions, allergies, etc.) that are automatically included in alert messages.
 - **Audit Expiration Warnings**: Yellow/red banners warn organisations when audit trail data is approaching or past retention limits.
 - **Admin Permanent Delete**: Super admins can permanently delete archived users via DELETE `/api/admin/users/:id/permanent` with audit logging.
+- **Low Battery Alert**: Automatically emails primary contact/carer when device battery drops to 20% or below. Enabled by default, 4-hour cooldown between alerts. Toggle in Settings. API: `POST /api/battery-alert`. Separate from activity-specific low battery alerts. Uses Browser Battery API with `useBatteryMonitor` hook.
 
 ## Test Admin Credentials
 - **Email**: `agent-test@aok.care` (env var: `TEST_ADMIN_EMAIL`)

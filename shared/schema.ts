@@ -238,6 +238,9 @@ export const settings = pgTable("settings", {
   shakeToSOSEnabled: boolean("shake_to_sos_enabled").notNull().default(true),
   // Emergency recording consent (off by default, user must opt in)
   emergencyRecordingEnabled: boolean("emergency_recording_enabled").notNull().default(false),
+  // Low battery alert (enabled by default, alerts contacts when battery <= 20%)
+  lowBatteryAlertEnabled: boolean("low_battery_alert_enabled").notNull().default(true),
+  lastLowBatteryAlertAt: timestamp("last_low_battery_alert_at"),
 });
 
 export type Settings = {
@@ -254,6 +257,7 @@ export type Settings = {
   livingSituation: string | null;
   shakeToSOSEnabled: boolean;
   emergencyRecordingEnabled: boolean;
+  lowBatteryAlertEnabled: boolean;
 };
 
 export const updateSettingsSchema = z.object({
@@ -268,6 +272,7 @@ export const updateSettingsSchema = z.object({
   trackingEnabled: z.boolean().optional(),
   shakeToSOSEnabled: z.boolean().optional(),
   emergencyRecordingEnabled: z.boolean().optional(),
+  lowBatteryAlertEnabled: z.boolean().optional(),
   password: z.string().optional(),
   additionalInfo: z.string().optional(),
   livingSituation: z.string().optional(),

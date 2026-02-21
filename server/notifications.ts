@@ -3123,7 +3123,7 @@ export async function sendLowBatteryAlert(
   contacts: Contact[],
   user: User,
   batteryLevel: number,
-  activityType: string
+  activityType?: string
 ): Promise<{ emailsSent: number; emailsFailed: number }> {
   const displayName = getUserDisplayName(user);
   const isOrganization = user.accountType === "organization" && !!user.referenceId;
@@ -3154,9 +3154,12 @@ export async function sendLowBatteryAlert(
   }
 
   const batteryPct = Math.round(batteryLevel);
+  const contextStr = activityType ? ` during ${activityType}` : "";
+  const contextDetail = activityType ? ` during an active <strong>${activityType}</strong> activity` : "";
+  const contextText = activityType ? ` during an active ${activityType} activity` : "";
 
   for (const contact of primaryContacts) {
-    const emailSubject = `LOW BATTERY: ${subjectIdentifier}'s device is at ${batteryPct}% during ${activityType}`;
+    const emailSubject = `LOW BATTERY: ${subjectIdentifier}'s device is at ${batteryPct}%${contextStr}`;
     const htmlBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; margin-bottom: 24px;">
@@ -3165,7 +3168,7 @@ export async function sendLowBatteryAlert(
         <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
           <h2 style="color: #92400E; margin: 0 0 8px 0; font-size: 18px;">Low Battery Warning</h2>
           <p style="color: #92400E; margin: 0; font-size: 14px;">
-            <strong>${identifier}</strong>'s device battery is at <strong>${batteryPct}%</strong> during an active <strong>${activityType}</strong> activity.
+            <strong>${identifier}</strong>'s device battery is at <strong>${batteryPct}%</strong>${contextDetail}.
           </p>
         </div>
         <div style="background: #F9FAFB; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
@@ -3176,7 +3179,7 @@ export async function sendLowBatteryAlert(
         <p style="color: #6B7280; font-size: 12px; text-align: center; margin-top: 24px;">This is an automated alert from aok. Do not reply to this email.</p>
       </div>`;
 
-    const textBody = `LOW BATTERY WARNING: ${identifier}'s device is at ${batteryPct}% during an active ${activityType} activity. If the device runs out of battery, aok will no longer be able to monitor their safety. Please consider reaching out to ${displayName}.`;
+    const textBody = `LOW BATTERY WARNING: ${identifier}'s device is at ${batteryPct}%${contextText}. If the device runs out of battery, aok will no longer be able to monitor their safety. Please consider reaching out to ${displayName}.`;
 
     try {
       await sendEmail(contact.email, emailSubject, textBody, htmlBody);
