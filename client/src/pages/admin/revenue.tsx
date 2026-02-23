@@ -106,6 +106,7 @@ interface ProjectionResult {
     resend: number;
     openai: number;
     stripe: number;
+    emailHosting: number;
     total: number;
   };
   ecologiOneOff: number;
@@ -172,8 +173,9 @@ function calculateProjection(
     totalUsers * costModel.stripe_fee_fixed;
 
   const hosting = getHostingCost(totalUsers);
+  const emailHostingMonthly = 11.99;
 
-  const totalMonthlyCosts = hosting.cost + twilioMonthly + resendMonthly + openaiMonthly + stripeMonthly;
+  const totalMonthlyCosts = hosting.cost + twilioMonthly + resendMonthly + openaiMonthly + stripeMonthly + emailHostingMonthly;
   const ecologiOneOff = totalUsers * costModel.ecologi_per_signup;
   const annualCosts = totalMonthlyCosts * 12;
   const annualProfit = annualRevenue - annualCosts;
@@ -192,6 +194,7 @@ function calculateProjection(
       resend: resendMonthly,
       openai: openaiMonthly,
       stripe: stripeMonthly,
+      emailHosting: emailHostingMonthly,
       total: totalMonthlyCosts,
     },
     ecologiOneOff,
@@ -766,7 +769,7 @@ export default function AdminRevenue() {
         {stats && liveOverview && (
           <section>
             <h2 className="text-lg font-semibold mb-4" data-testid="text-current-costs">Current Monthly Cost Breakdown</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Card>
                 <CardContent className="pt-4">
                   <div className="flex items-center gap-2 mb-2">
@@ -815,6 +818,16 @@ export default function AdminRevenue() {
                   </div>
                   <div className="text-xl font-bold">{formatCurrency(liveOverview.monthlyCosts.stripe)}</div>
                   <p className="text-xs text-muted-foreground mt-1">{costModel.stripe_fee_percent}% + {formatCurrency(costModel.stripe_fee_fixed)} per transaction</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Mail className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Email Hosting</span>
+                  </div>
+                  <div className="text-xl font-bold">{formatCurrency(liveOverview.monthlyCosts.emailHosting)}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Business mailboxes (aok.care)</p>
                 </CardContent>
               </Card>
             </div>
