@@ -1,23 +1,16 @@
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, ShieldCheck, ArrowLeft } from "lucide-react";
+import { ShieldCheck, ArrowLeft } from "lucide-react";
 
 export default function EnterpriseLicence() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <ArrowLeft className="h-5 w-5 text-green-600" />
             <ShieldCheck className="h-9 w-9 text-green-600" />
             <span className="text-2xl font-bold text-green-600">aok</span>
-          </Link>
-          <Link href="/">
-            <Button variant="ghost" size="sm" data-testid="button-back-home">
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Back to Home
-            </Button>
           </Link>
         </div>
       </header>
