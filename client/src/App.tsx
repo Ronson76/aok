@@ -644,6 +644,10 @@ function Router() {
   const isOrganization = user?.accountType === "organization";
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location]);
+
+  useEffect(() => {
     if (location === "/" && !isLoading && isAuthenticated) {
       setLocation("/app");
     }
