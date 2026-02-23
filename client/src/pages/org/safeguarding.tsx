@@ -267,6 +267,32 @@ export default function OrgSafeguardingPage() {
     enabled: !!selectedCaseFile,
   });
 
+  const { data: policyLeads, isLoading: leadsLoading } = useQuery<any[]>({
+    queryKey: ["/api/org/safeguarding/leads"],
+  });
+
+  const { data: policyDbsChecks, isLoading: dbsLoading } = useQuery<any[]>({
+    queryKey: ["/api/org/safeguarding/dbs-checks"],
+  });
+
+  const { data: policyTraining, isLoading: trainingLoading } = useQuery<any[]>({
+    queryKey: ["/api/org/safeguarding/training-records"],
+  });
+
+  const { data: policySummary } = useQuery<any>({
+    queryKey: ["/api/org/safeguarding/policy-summary"],
+  });
+
+  const [showLeadDialog, setShowLeadDialog] = useState(false);
+  const [showDbsDialog, setShowDbsDialog] = useState(false);
+  const [showTrainingDialog, setShowTrainingDialog] = useState(false);
+  const [editingLead, setEditingLead] = useState<any>(null);
+  const [editingDbs, setEditingDbs] = useState<any>(null);
+  const [editingTraining, setEditingTraining] = useState<any>(null);
+  const [leadForm, setLeadForm] = useState({ name: "", role: "", email: "", phone: "", isPrimary: false });
+  const [dbsForm, setDbsForm] = useState({ staffName: "", staffEmail: "", dbsType: "basic", certificateNumber: "", issueDate: "", expiryDate: "", status: "pending", notes: "" });
+  const [trainingForm, setTrainingForm] = useState({ staffName: "", staffEmail: "", courseName: "", provider: "", completionDate: "", expiryDate: "", certificateRef: "", status: "pending", notes: "" });
+
   const createIncidentMutation = useMutation({
     mutationFn: async (data: typeof incidentForm) => {
       const response = await apiRequest("POST", "/api/org/safeguarding/incidents", {
@@ -413,6 +439,96 @@ export default function OrgSafeguardingPage() {
       setShowNoteDialog(false);
       setNoteForm({ noteType: "observation", content: "", isConfidential: false });
       toast({ title: "Note added" });
+    },
+  });
+
+  const saveLeadMutation = useMutation({
+    mutationFn: async (data: typeof leadForm) => {
+      if (editingLead) {
+        const response = await apiRequest("PATCH", `/api/org/safeguarding/leads/${editingLead.id}`, data);
+        return response.json();
+      }
+      const response = await apiRequest("POST", "/api/org/safeguarding/leads", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/leads"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/policy-summary"] });
+      setShowLeadDialog(false);
+      setEditingLead(null);
+      setLeadForm({ name: "", role: "", email: "", phone: "", isPrimary: false });
+      toast({ title: editingLead ? "Lead updated" : "Lead added" });
+    },
+  });
+
+  const deleteLeadMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/org/safeguarding/leads/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/leads"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/policy-summary"] });
+      toast({ title: "Lead removed" });
+    },
+  });
+
+  const saveDbsMutation = useMutation({
+    mutationFn: async (data: typeof dbsForm) => {
+      if (editingDbs) {
+        const response = await apiRequest("PATCH", `/api/org/safeguarding/dbs-checks/${editingDbs.id}`, data);
+        return response.json();
+      }
+      const response = await apiRequest("POST", "/api/org/safeguarding/dbs-checks", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/dbs-checks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/policy-summary"] });
+      setShowDbsDialog(false);
+      setEditingDbs(null);
+      setDbsForm({ staffName: "", staffEmail: "", dbsType: "basic", certificateNumber: "", issueDate: "", expiryDate: "", status: "pending", notes: "" });
+      toast({ title: editingDbs ? "DBS check updated" : "DBS check added" });
+    },
+  });
+
+  const deleteDbsMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/org/safeguarding/dbs-checks/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/dbs-checks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/policy-summary"] });
+      toast({ title: "DBS check removed" });
+    },
+  });
+
+  const saveTrainingMutation = useMutation({
+    mutationFn: async (data: typeof trainingForm) => {
+      if (editingTraining) {
+        const response = await apiRequest("PATCH", `/api/org/safeguarding/training-records/${editingTraining.id}`, data);
+        return response.json();
+      }
+      const response = await apiRequest("POST", "/api/org/safeguarding/training-records", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/training-records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/policy-summary"] });
+      setShowTrainingDialog(false);
+      setEditingTraining(null);
+      setTrainingForm({ staffName: "", staffEmail: "", courseName: "", provider: "", completionDate: "", expiryDate: "", certificateRef: "", status: "pending", notes: "" });
+      toast({ title: editingTraining ? "Training record updated" : "Training record added" });
+    },
+  });
+
+  const deleteTrainingMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/org/safeguarding/training-records/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/training-records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/policy-summary"] });
+      toast({ title: "Training record removed" });
     },
   });
 
@@ -832,15 +948,18 @@ export default function OrgSafeguardingPage() {
 
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
-            <TabsTrigger value="incidents" data-testid="tab-incidents">Incidents</TabsTrigger>
-            <TabsTrigger value="concerns" data-testid="tab-concerns">Concerns</TabsTrigger>
-            <TabsTrigger value="cases" data-testid="tab-cases">Case Files</TabsTrigger>
-            <TabsTrigger value="rules" data-testid="tab-rules">Rules</TabsTrigger>
-            <TabsTrigger value="confirmations" data-testid="tab-confirmations">Confirmations</TabsTrigger>
-            <TabsTrigger value="audit" data-testid="tab-audit">Audit</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4">
+            <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-8">
+              <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+              <TabsTrigger value="incidents" data-testid="tab-incidents">Incidents</TabsTrigger>
+              <TabsTrigger value="concerns" data-testid="tab-concerns">Concerns</TabsTrigger>
+              <TabsTrigger value="cases" data-testid="tab-cases">Cases</TabsTrigger>
+              <TabsTrigger value="rules" data-testid="tab-rules">Rules</TabsTrigger>
+              <TabsTrigger value="confirmations" data-testid="tab-confirmations">Confirms</TabsTrigger>
+              <TabsTrigger value="audit" data-testid="tab-audit">Audit</TabsTrigger>
+              <TabsTrigger value="policy" data-testid="tab-policy">Policy</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="overview" className="space-y-6">
             {summaryLoading ? (
@@ -1732,8 +1851,391 @@ export default function OrgSafeguardingPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="policy" className="space-y-6">
+            {policySummary && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Overall Status</p>
+                        <Badge className={policySummary.overallStatus === "green" ? "bg-green-500 text-white" : policySummary.overallStatus === "amber" ? "bg-amber-500 text-black" : "bg-red-500 text-white"} data-testid="badge-policy-status">
+                          {policySummary.overallStatus === "green" ? "Compliant" : policySummary.overallStatus === "amber" ? "Needs Attention" : "Action Required"}
+                        </Badge>
+                      </div>
+                      <Shield className={`h-8 w-8 ${policySummary.overallStatus === "green" ? "text-green-500" : policySummary.overallStatus === "amber" ? "text-amber-500" : "text-red-500"}`} />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-sm font-medium text-muted-foreground">Designated Leads</p>
+                    <p className="text-2xl font-bold" data-testid="text-leads-count">{policySummary.leads?.total || 0}</p>
+                    {!policySummary.leads?.hasDesignatedLead && <p className="text-xs text-red-500">No primary lead assigned</p>}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-sm font-medium text-muted-foreground">DBS Checks</p>
+                    <p className="text-2xl font-bold" data-testid="text-dbs-count">{policySummary.dbs?.valid || 0}/{policySummary.dbs?.total || 0} Valid</p>
+                    {policySummary.dbs?.expired > 0 && <p className="text-xs text-red-500">{policySummary.dbs.expired} expired</p>}
+                    {policySummary.dbs?.renewalDue > 0 && <p className="text-xs text-amber-500">{policySummary.dbs.renewalDue} renewal due</p>}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-sm font-medium text-muted-foreground">Training</p>
+                    <p className="text-2xl font-bold" data-testid="text-training-count">{policySummary.training?.completed || 0}/{policySummary.training?.total || 0} Completed</p>
+                    {policySummary.training?.expired > 0 && <p className="text-xs text-red-500">{policySummary.training.expired} expired</p>}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" /> Designated Safeguarding Leads</CardTitle>
+                    <CardDescription>Staff responsible for safeguarding policy and escalation</CardDescription>
+                  </div>
+                  <Button onClick={() => { setEditingLead(null); setLeadForm({ name: "", role: "", email: "", phone: "", isPrimary: false }); setShowLeadDialog(true); }} data-testid="button-add-lead">
+                    <Plus className="h-4 w-4 mr-2" /> Add Lead
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {leadsLoading ? (
+                  <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+                ) : policyLeads && policyLeads.length > 0 ? (
+                  <div className="space-y-3">
+                    {policyLeads.map((lead: any) => (
+                      <div key={lead.id} className="flex items-center justify-between p-3 border rounded-lg" data-testid={`row-lead-${lead.id}`}>
+                        <div className="flex items-center gap-3">
+                          <User className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium">{lead.name} {lead.isPrimary && <Badge className="bg-green-500 text-white ml-2">Primary</Badge>}</p>
+                            <p className="text-sm text-muted-foreground">{lead.role}</p>
+                            {lead.email && <p className="text-xs text-muted-foreground">{lead.email}</p>}
+                            {lead.phone && <p className="text-xs text-muted-foreground">{lead.phone}</p>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => { setEditingLead(lead); setLeadForm({ name: lead.name, role: lead.role, email: lead.email || "", phone: lead.phone || "", isPrimary: lead.isPrimary }); setShowLeadDialog(true); }} data-testid={`button-edit-lead-${lead.id}`}>
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700" onClick={() => deleteLeadMutation.mutate(lead.id)} data-testid={`button-delete-lead-${lead.id}`}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No safeguarding leads added yet</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5" /> DBS Checks</CardTitle>
+                    <CardDescription>Track Disclosure and Barring Service checks for staff</CardDescription>
+                  </div>
+                  <Button onClick={() => { setEditingDbs(null); setDbsForm({ staffName: "", staffEmail: "", dbsType: "basic", certificateNumber: "", issueDate: "", expiryDate: "", status: "pending", notes: "" }); setShowDbsDialog(true); }} data-testid="button-add-dbs">
+                    <Plus className="h-4 w-4 mr-2" /> Add DBS Check
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {dbsLoading ? (
+                  <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+                ) : policyDbsChecks && policyDbsChecks.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 px-2">Staff</th>
+                          <th className="text-left py-2 px-2">Type</th>
+                          <th className="text-left py-2 px-2">Certificate</th>
+                          <th className="text-left py-2 px-2">Issue Date</th>
+                          <th className="text-left py-2 px-2">Expiry</th>
+                          <th className="text-left py-2 px-2">Status</th>
+                          <th className="text-right py-2 px-2">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {policyDbsChecks.map((check: any) => (
+                          <tr key={check.id} className="border-b" data-testid={`row-dbs-${check.id}`}>
+                            <td className="py-2 px-2">
+                              <p className="font-medium">{check.staffName}</p>
+                              {check.staffEmail && <p className="text-xs text-muted-foreground">{check.staffEmail}</p>}
+                            </td>
+                            <td className="py-2 px-2">
+                              <Badge variant="outline">{check.dbsType === "basic" ? "Basic" : check.dbsType === "standard" ? "Standard" : check.dbsType === "enhanced" ? "Enhanced" : "Enhanced+"}</Badge>
+                            </td>
+                            <td className="py-2 px-2 font-mono text-xs">{check.certificateNumber || "—"}</td>
+                            <td className="py-2 px-2">{check.issueDate ? format(new Date(check.issueDate), "dd/MM/yyyy") : "—"}</td>
+                            <td className="py-2 px-2">{check.expiryDate ? format(new Date(check.expiryDate), "dd/MM/yyyy") : "—"}</td>
+                            <td className="py-2 px-2">
+                              <Badge className={check.status === "valid" ? "bg-green-500 text-white" : check.status === "expired" ? "bg-red-500 text-white" : check.status === "renewal_due" ? "bg-amber-500 text-black" : "bg-gray-500 text-white"}>
+                                {check.status === "valid" ? "Valid" : check.status === "expired" ? "Expired" : check.status === "renewal_due" ? "Renewal Due" : "Pending"}
+                              </Badge>
+                            </td>
+                            <td className="py-2 px-2 text-right">
+                              <Button variant="ghost" size="sm" onClick={() => { setEditingDbs(check); setDbsForm({ staffName: check.staffName, staffEmail: check.staffEmail || "", dbsType: check.dbsType, certificateNumber: check.certificateNumber || "", issueDate: check.issueDate ? check.issueDate.split("T")[0] : "", expiryDate: check.expiryDate ? check.expiryDate.split("T")[0] : "", status: check.status, notes: check.notes || "" }); setShowDbsDialog(true); }} data-testid={`button-edit-dbs-${check.id}`}>
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="text-red-500" onClick={() => deleteDbsMutation.mutate(check.id)} data-testid={`button-delete-dbs-${check.id}`}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No DBS checks recorded yet</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2"><Activity className="h-5 w-5" /> Training Records</CardTitle>
+                    <CardDescription>Track safeguarding training completion and renewal</CardDescription>
+                  </div>
+                  <Button onClick={() => { setEditingTraining(null); setTrainingForm({ staffName: "", staffEmail: "", courseName: "", provider: "", completionDate: "", expiryDate: "", certificateRef: "", status: "pending", notes: "" }); setShowTrainingDialog(true); }} data-testid="button-add-training">
+                    <Plus className="h-4 w-4 mr-2" /> Add Training Record
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {trainingLoading ? (
+                  <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+                ) : policyTraining && policyTraining.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 px-2">Staff</th>
+                          <th className="text-left py-2 px-2">Course</th>
+                          <th className="text-left py-2 px-2">Provider</th>
+                          <th className="text-left py-2 px-2">Completed</th>
+                          <th className="text-left py-2 px-2">Expires</th>
+                          <th className="text-left py-2 px-2">Status</th>
+                          <th className="text-right py-2 px-2">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {policyTraining.map((record: any) => (
+                          <tr key={record.id} className="border-b" data-testid={`row-training-${record.id}`}>
+                            <td className="py-2 px-2">
+                              <p className="font-medium">{record.staffName}</p>
+                              {record.staffEmail && <p className="text-xs text-muted-foreground">{record.staffEmail}</p>}
+                            </td>
+                            <td className="py-2 px-2">{record.courseName}</td>
+                            <td className="py-2 px-2">{record.provider || "—"}</td>
+                            <td className="py-2 px-2">{record.completionDate ? format(new Date(record.completionDate), "dd/MM/yyyy") : "—"}</td>
+                            <td className="py-2 px-2">{record.expiryDate ? format(new Date(record.expiryDate), "dd/MM/yyyy") : "—"}</td>
+                            <td className="py-2 px-2">
+                              <Badge className={record.status === "completed" ? "bg-green-500 text-white" : record.status === "expired" ? "bg-red-500 text-white" : record.status === "in_progress" ? "bg-blue-500 text-white" : "bg-gray-500 text-white"}>
+                                {record.status === "completed" ? "Completed" : record.status === "expired" ? "Expired" : record.status === "in_progress" ? "In Progress" : "Pending"}
+                              </Badge>
+                            </td>
+                            <td className="py-2 px-2 text-right">
+                              <Button variant="ghost" size="sm" onClick={() => { setEditingTraining(record); setTrainingForm({ staffName: record.staffName, staffEmail: record.staffEmail || "", courseName: record.courseName, provider: record.provider || "", completionDate: record.completionDate ? record.completionDate.split("T")[0] : "", expiryDate: record.expiryDate ? record.expiryDate.split("T")[0] : "", certificateRef: record.certificateRef || "", status: record.status, notes: record.notes || "" }); setShowTrainingDialog(true); }} data-testid={`button-edit-training-${record.id}`}>
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="text-red-500" onClick={() => deleteTrainingMutation.mutate(record.id)} data-testid={`button-delete-training-${record.id}`}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No training records added yet</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
+
+      <Dialog open={showLeadDialog} onOpenChange={setShowLeadDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingLead ? "Edit" : "Add"} Safeguarding Lead</DialogTitle>
+            <DialogDescription>Designate a staff member responsible for safeguarding</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Name *</Label>
+              <Input value={leadForm.name} onChange={(e) => setLeadForm({ ...leadForm, name: e.target.value })} placeholder="Full name" data-testid="input-lead-name" />
+            </div>
+            <div className="space-y-2">
+              <Label>Role *</Label>
+              <Input value={leadForm.role} onChange={(e) => setLeadForm({ ...leadForm, role: e.target.value })} placeholder="e.g. Designated Safeguarding Lead" data-testid="input-lead-role" />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" value={leadForm.email} onChange={(e) => setLeadForm({ ...leadForm, email: e.target.value })} placeholder="Email address" data-testid="input-lead-email" />
+            </div>
+            <div className="space-y-2">
+              <Label>Phone</Label>
+              <Input value={leadForm.phone} onChange={(e) => setLeadForm({ ...leadForm, phone: e.target.value })} placeholder="Phone number" data-testid="input-lead-phone" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={leadForm.isPrimary} onCheckedChange={(checked) => setLeadForm({ ...leadForm, isPrimary: checked })} data-testid="switch-lead-primary" />
+              <Label>Primary Safeguarding Lead</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLeadDialog(false)}>Cancel</Button>
+            <Button onClick={() => saveLeadMutation.mutate(leadForm)} disabled={!leadForm.name || !leadForm.role || saveLeadMutation.isPending} data-testid="button-save-lead">
+              {saveLeadMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {editingLead ? "Update" : "Add"} Lead
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDbsDialog} onOpenChange={setShowDbsDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingDbs ? "Edit" : "Add"} DBS Check</DialogTitle>
+            <DialogDescription>Record a Disclosure and Barring Service check</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Staff Name *</Label>
+              <Input value={dbsForm.staffName} onChange={(e) => setDbsForm({ ...dbsForm, staffName: e.target.value })} placeholder="Full name" data-testid="input-dbs-staff-name" />
+            </div>
+            <div className="space-y-2">
+              <Label>Staff Email</Label>
+              <Input type="email" value={dbsForm.staffEmail} onChange={(e) => setDbsForm({ ...dbsForm, staffEmail: e.target.value })} placeholder="Email" data-testid="input-dbs-staff-email" />
+            </div>
+            <div className="space-y-2">
+              <Label>DBS Type *</Label>
+              <Select value={dbsForm.dbsType} onValueChange={(v) => setDbsForm({ ...dbsForm, dbsType: v })}>
+                <SelectTrigger data-testid="select-dbs-type"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="basic">Basic</SelectItem>
+                  <SelectItem value="standard">Standard</SelectItem>
+                  <SelectItem value="enhanced">Enhanced</SelectItem>
+                  <SelectItem value="enhanced_barred">Enhanced with Barred List</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Certificate Number</Label>
+              <Input value={dbsForm.certificateNumber} onChange={(e) => setDbsForm({ ...dbsForm, certificateNumber: e.target.value })} placeholder="Certificate number" data-testid="input-dbs-certificate" />
+            </div>
+            <div className="space-y-2">
+              <Label>Issue Date</Label>
+              <Input type="date" value={dbsForm.issueDate} onChange={(e) => setDbsForm({ ...dbsForm, issueDate: e.target.value })} data-testid="input-dbs-issue-date" />
+            </div>
+            <div className="space-y-2">
+              <Label>Expiry Date</Label>
+              <Input type="date" value={dbsForm.expiryDate} onChange={(e) => setDbsForm({ ...dbsForm, expiryDate: e.target.value })} data-testid="input-dbs-expiry-date" />
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select value={dbsForm.status} onValueChange={(v) => setDbsForm({ ...dbsForm, status: v })}>
+                <SelectTrigger data-testid="select-dbs-status"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="valid">Valid</SelectItem>
+                  <SelectItem value="expired">Expired</SelectItem>
+                  <SelectItem value="renewal_due">Renewal Due</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 space-y-2">
+              <Label>Notes</Label>
+              <Textarea value={dbsForm.notes} onChange={(e) => setDbsForm({ ...dbsForm, notes: e.target.value })} placeholder="Additional notes" data-testid="input-dbs-notes" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDbsDialog(false)}>Cancel</Button>
+            <Button onClick={() => saveDbsMutation.mutate(dbsForm)} disabled={!dbsForm.staffName || !dbsForm.dbsType || saveDbsMutation.isPending} data-testid="button-save-dbs">
+              {saveDbsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {editingDbs ? "Update" : "Add"} DBS Check
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showTrainingDialog} onOpenChange={setShowTrainingDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingTraining ? "Edit" : "Add"} Training Record</DialogTitle>
+            <DialogDescription>Record safeguarding training completion</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Staff Name *</Label>
+              <Input value={trainingForm.staffName} onChange={(e) => setTrainingForm({ ...trainingForm, staffName: e.target.value })} placeholder="Full name" data-testid="input-training-staff-name" />
+            </div>
+            <div className="space-y-2">
+              <Label>Staff Email</Label>
+              <Input type="email" value={trainingForm.staffEmail} onChange={(e) => setTrainingForm({ ...trainingForm, staffEmail: e.target.value })} placeholder="Email" data-testid="input-training-staff-email" />
+            </div>
+            <div className="space-y-2">
+              <Label>Course Name *</Label>
+              <Input value={trainingForm.courseName} onChange={(e) => setTrainingForm({ ...trainingForm, courseName: e.target.value })} placeholder="Course name" data-testid="input-training-course" />
+            </div>
+            <div className="space-y-2">
+              <Label>Provider</Label>
+              <Input value={trainingForm.provider} onChange={(e) => setTrainingForm({ ...trainingForm, provider: e.target.value })} placeholder="Training provider" data-testid="input-training-provider" />
+            </div>
+            <div className="space-y-2">
+              <Label>Completion Date</Label>
+              <Input type="date" value={trainingForm.completionDate} onChange={(e) => setTrainingForm({ ...trainingForm, completionDate: e.target.value })} data-testid="input-training-completion-date" />
+            </div>
+            <div className="space-y-2">
+              <Label>Expiry Date</Label>
+              <Input type="date" value={trainingForm.expiryDate} onChange={(e) => setTrainingForm({ ...trainingForm, expiryDate: e.target.value })} data-testid="input-training-expiry-date" />
+            </div>
+            <div className="space-y-2">
+              <Label>Certificate Reference</Label>
+              <Input value={trainingForm.certificateRef} onChange={(e) => setTrainingForm({ ...trainingForm, certificateRef: e.target.value })} placeholder="Cert reference" data-testid="input-training-cert-ref" />
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select value={trainingForm.status} onValueChange={(v) => setTrainingForm({ ...trainingForm, status: v })}>
+                <SelectTrigger data-testid="select-training-status"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="expired">Expired</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 space-y-2">
+              <Label>Notes</Label>
+              <Textarea value={trainingForm.notes} onChange={(e) => setTrainingForm({ ...trainingForm, notes: e.target.value })} placeholder="Additional notes" data-testid="input-training-notes" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTrainingDialog(false)}>Cancel</Button>
+            <Button onClick={() => saveTrainingMutation.mutate(trainingForm)} disabled={!trainingForm.staffName || !trainingForm.courseName || saveTrainingMutation.isPending} data-testid="button-save-training">
+              {saveTrainingMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {editingTraining ? "Update" : "Add"} Training Record
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showIncidentDialog} onOpenChange={setShowIncidentDialog}>
         <DialogContent className="max-w-lg">
