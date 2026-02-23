@@ -858,6 +858,7 @@ export default function AdminRevenue() {
                       { feature: "AI Voice Chat", driver: "OpenAI Whisper + TTS", cost: `${formatCurrency(costModel.ai_voice_per_session * 0.5)} to ${formatCurrency(costModel.ai_voice_per_session * 1.5)}` },
                       { feature: "GPS fitness tracking", driver: "Built-in (Leaflet/OSM)", cost: "£0.00" },
                       { feature: "Ecologi tree planting", driver: "Ecologi", cost: `${formatCurrency(costModel.ecologi_per_signup)} (one-off)` },
+                      { feature: "Email hosting", driver: "Business mailboxes", cost: "£11.99/month (fixed)" },
                       { feature: "Payment processing", driver: "Stripe", cost: `${costModel.stripe_fee_percent}% + ${formatCurrency(costModel.stripe_fee_fixed)}` },
                     ].map((row, i) => (
                       <tr key={i} className={i % 2 === 0 ? "bg-muted/30" : ""}>
