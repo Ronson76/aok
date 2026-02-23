@@ -1292,6 +1292,93 @@ export const missedCheckInEscalations = pgTable("missed_checkin_escalations", {
 
 export type MissedCheckInEscalation = typeof missedCheckInEscalations.$inferSelect;
 
+// ==================== SAFEGUARDING POLICY ====================
+
+// Safeguarding leads - named safeguarding lead for the organisation
+export const safeguardingLeads = pgTable("safeguarding_leads", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  role: text("role").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  isPrimary: boolean("is_primary").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertSafeguardingLeadSchema = createInsertSchema(safeguardingLeads).omit({
+  id: true,
+  organizationId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1, "Name is required"),
+  role: z.string().min(1, "Role is required"),
+});
+
+export type InsertSafeguardingLead = z.infer<typeof insertSafeguardingLeadSchema>;
+export type SafeguardingLead = typeof safeguardingLeads.$inferSelect;
+
+// DBS checks - track DBS status for staff
+export const dbsChecks = pgTable("dbs_checks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  staffName: text("staff_name").notNull(),
+  staffEmail: text("staff_email"),
+  dbsType: text("dbs_type").notNull(), // "basic", "standard", "enhanced", "enhanced_barred"
+  certificateNumber: text("certificate_number"),
+  issueDate: timestamp("issue_date"),
+  expiryDate: timestamp("expiry_date"),
+  status: text("status").notNull().default("pending"), // "pending", "valid", "expired", "renewal_due"
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertDbsCheckSchema = createInsertSchema(dbsChecks).omit({
+  id: true,
+  organizationId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  staffName: z.string().min(1, "Staff name is required"),
+  dbsType: z.enum(["basic", "standard", "enhanced", "enhanced_barred"]),
+});
+
+export type InsertDbsCheck = z.infer<typeof insertDbsCheckSchema>;
+export type DbsCheck = typeof dbsChecks.$inferSelect;
+
+// Training records - track training evidence for staff
+export const trainingRecords = pgTable("training_records", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  staffName: text("staff_name").notNull(),
+  staffEmail: text("staff_email"),
+  courseName: text("course_name").notNull(),
+  provider: text("provider"),
+  completionDate: timestamp("completion_date"),
+  expiryDate: timestamp("expiry_date"),
+  certificateRef: text("certificate_ref"),
+  status: text("status").notNull().default("pending"), // "pending", "completed", "expired", "renewal_due"
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertTrainingRecordSchema = createInsertSchema(trainingRecords).omit({
+  id: true,
+  organizationId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  staffName: z.string().min(1, "Staff name is required"),
+  courseName: z.string().min(1, "Course name is required"),
+});
+
+export type InsertTrainingRecord = z.infer<typeof insertTrainingRecordSchema>;
+export type TrainingRecord = typeof trainingRecords.$inferSelect;
+
 // Audit trail table - immutable, tamper-evident log of all actions
 export const auditTrail = pgTable("audit_trail", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

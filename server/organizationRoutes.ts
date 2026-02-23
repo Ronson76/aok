@@ -2,11 +2,11 @@ import { Express, Request, Response, NextFunction } from "express";
 import { organizationStorage, storage, orgMemberStorage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema, activeEmergencyAlerts, checkIns, organizationClients, users } from "@shared/schema";
+import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema, activeEmergencyAlerts, checkIns, organizationClients, users, safeguardingLeads, dbsChecks, trainingRecords } from "@shared/schema";
 import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail, sendStaffInviteSMS, sendEmergencyContactConfirmationForStaffInvite } from "./notifications";
 import { plantTreeForNewSubscriber } from "./ecologiService";
 import { ensureDb } from "./db";
-import { sql, eq, and, isNotNull } from "drizzle-orm";
+import { sql, eq, and, isNotNull, desc } from "drizzle-orm";
 import { loginRateLimiter, passwordResetRateLimiter } from "./security";
 import { getPeakTimes, getAlertHeatmap, getActiveSOSAlerts } from "./services/analyticsService";
 
@@ -1887,6 +1887,249 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching audit trail:", error);
       res.status(500).json({ error: "Failed to fetch audit trail" });
+    }
+  });
+
+  // ==================== SAFEGUARDING POLICY ROUTES ====================
+
+  // Get safeguarding leads
+  app.get("/api/org/safeguarding/leads", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req.user as any).id;
+      const leads = await db.select().from(safeguardingLeads).where(eq(safeguardingLeads.organizationId, orgId)).orderBy(desc(safeguardingLeads.createdAt));
+      res.json(leads);
+    } catch (error) {
+      console.error("Error fetching safeguarding leads:", error);
+      res.status(500).json({ error: "Failed to fetch safeguarding leads" });
+    }
+  });
+
+  // Add safeguarding lead
+  app.post("/api/org/safeguarding/leads", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req.user as any).id;
+      const { name, role, email, phone, isPrimary } = req.body;
+      if (!name || !role) return res.status(400).json({ error: "Name and role are required" });
+      if (isPrimary) {
+        await db.update(safeguardingLeads).set({ isPrimary: false, updatedAt: new Date() }).where(eq(safeguardingLeads.organizationId, orgId));
+      }
+      const [lead] = await db.insert(safeguardingLeads).values({ organizationId: orgId, name, role, email: email || null, phone: phone || null, isPrimary: isPrimary || false }).returning();
+      res.json(lead);
+    } catch (error) {
+      console.error("Error adding safeguarding lead:", error);
+      res.status(500).json({ error: "Failed to add safeguarding lead" });
+    }
+  });
+
+  // Update safeguarding lead
+  app.patch("/api/org/safeguarding/leads/:id", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req.user as any).id;
+      const { name, role, email, phone, isPrimary } = req.body;
+      if (isPrimary) {
+        await db.update(safeguardingLeads).set({ isPrimary: false, updatedAt: new Date() }).where(eq(safeguardingLeads.organizationId, orgId));
+      }
+      const [updated] = await db.update(safeguardingLeads).set({ ...(name && { name }), ...(role && { role }), email: email ?? undefined, phone: phone ?? undefined, ...(isPrimary !== undefined && { isPrimary }), updatedAt: new Date() }).where(and(eq(safeguardingLeads.id, req.params.id), eq(safeguardingLeads.organizationId, orgId))).returning();
+      if (!updated) return res.status(404).json({ error: "Lead not found" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating safeguarding lead:", error);
+      res.status(500).json({ error: "Failed to update safeguarding lead" });
+    }
+  });
+
+  // Delete safeguarding lead
+  app.delete("/api/org/safeguarding/leads/:id", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req.user as any).id;
+      await db.delete(safeguardingLeads).where(and(eq(safeguardingLeads.id, req.params.id), eq(safeguardingLeads.organizationId, orgId)));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting safeguarding lead:", error);
+      res.status(500).json({ error: "Failed to delete safeguarding lead" });
+    }
+  });
+
+  // Get DBS checks
+  app.get("/api/org/safeguarding/dbs-checks", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req.user as any).id;
+      const checks = await db.select().from(dbsChecks).where(eq(dbsChecks.organizationId, orgId)).orderBy(desc(dbsChecks.createdAt));
+      res.json(checks);
+    } catch (error) {
+      console.error("Error fetching DBS checks:", error);
+      res.status(500).json({ error: "Failed to fetch DBS checks" });
+    }
+  });
+
+  // Add DBS check
+  app.post("/api/org/safeguarding/dbs-checks", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req.user as any).id;
+      const { staffName, staffEmail, dbsType, certificateNumber, issueDate, expiryDate, status, notes } = req.body;
+      if (!staffName || !dbsType) return res.status(400).json({ error: "Staff name and DBS type are required" });
+      const [check] = await db.insert(dbsChecks).values({
+        organizationId: orgId, staffName, staffEmail: staffEmail || null, dbsType, certificateNumber: certificateNumber || null,
+        issueDate: issueDate ? new Date(issueDate) : null, expiryDate: expiryDate ? new Date(expiryDate) : null,
+        status: status || "pending", notes: notes || null,
+      }).returning();
+      res.json(check);
+    } catch (error) {
+      console.error("Error adding DBS check:", error);
+      res.status(500).json({ error: "Failed to add DBS check" });
+    }
+  });
+
+  // Update DBS check
+  app.patch("/api/org/safeguarding/dbs-checks/:id", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req.user as any).id;
+      const updates: any = { updatedAt: new Date() };
+      const { staffName, staffEmail, dbsType, certificateNumber, issueDate, expiryDate, status, notes } = req.body;
+      if (staffName) updates.staffName = staffName;
+      if (staffEmail !== undefined) updates.staffEmail = staffEmail || null;
+      if (dbsType) updates.dbsType = dbsType;
+      if (certificateNumber !== undefined) updates.certificateNumber = certificateNumber || null;
+      if (issueDate !== undefined) updates.issueDate = issueDate ? new Date(issueDate) : null;
+      if (expiryDate !== undefined) updates.expiryDate = expiryDate ? new Date(expiryDate) : null;
+      if (status) updates.status = status;
+      if (notes !== undefined) updates.notes = notes || null;
+      const [updated] = await db.update(dbsChecks).set(updates).where(and(eq(dbsChecks.id, req.params.id), eq(dbsChecks.organizationId, orgId))).returning();
+      if (!updated) return res.status(404).json({ error: "DBS check not found" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating DBS check:", error);
+      res.status(500).json({ error: "Failed to update DBS check" });
+    }
+  });
+
+  // Delete DBS check
+  app.delete("/api/org/safeguarding/dbs-checks/:id", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req.user as any).id;
+      await db.delete(dbsChecks).where(and(eq(dbsChecks.id, req.params.id), eq(dbsChecks.organizationId, orgId)));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting DBS check:", error);
+      res.status(500).json({ error: "Failed to delete DBS check" });
+    }
+  });
+
+  // Get training records
+  app.get("/api/org/safeguarding/training-records", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req.user as any).id;
+      const records = await db.select().from(trainingRecords).where(eq(trainingRecords.organizationId, orgId)).orderBy(desc(trainingRecords.createdAt));
+      res.json(records);
+    } catch (error) {
+      console.error("Error fetching training records:", error);
+      res.status(500).json({ error: "Failed to fetch training records" });
+    }
+  });
+
+  // Add training record
+  app.post("/api/org/safeguarding/training-records", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req.user as any).id;
+      const { staffName, staffEmail, courseName, provider, completionDate, expiryDate, certificateRef, status, notes } = req.body;
+      if (!staffName || !courseName) return res.status(400).json({ error: "Staff name and course name are required" });
+      const [record] = await db.insert(trainingRecords).values({
+        organizationId: orgId, staffName, staffEmail: staffEmail || null, courseName, provider: provider || null,
+        completionDate: completionDate ? new Date(completionDate) : null, expiryDate: expiryDate ? new Date(expiryDate) : null,
+        certificateRef: certificateRef || null, status: status || "pending", notes: notes || null,
+      }).returning();
+      res.json(record);
+    } catch (error) {
+      console.error("Error adding training record:", error);
+      res.status(500).json({ error: "Failed to add training record" });
+    }
+  });
+
+  // Update training record
+  app.patch("/api/org/safeguarding/training-records/:id", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req.user as any).id;
+      const updates: any = { updatedAt: new Date() };
+      const { staffName, staffEmail, courseName, provider, completionDate, expiryDate, certificateRef, status, notes } = req.body;
+      if (staffName) updates.staffName = staffName;
+      if (staffEmail !== undefined) updates.staffEmail = staffEmail || null;
+      if (courseName) updates.courseName = courseName;
+      if (provider !== undefined) updates.provider = provider || null;
+      if (completionDate !== undefined) updates.completionDate = completionDate ? new Date(completionDate) : null;
+      if (expiryDate !== undefined) updates.expiryDate = expiryDate ? new Date(expiryDate) : null;
+      if (certificateRef !== undefined) updates.certificateRef = certificateRef || null;
+      if (status) updates.status = status;
+      if (notes !== undefined) updates.notes = notes || null;
+      const [updated] = await db.update(trainingRecords).set(updates).where(and(eq(trainingRecords.id, req.params.id), eq(trainingRecords.organizationId, orgId))).returning();
+      if (!updated) return res.status(404).json({ error: "Training record not found" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating training record:", error);
+      res.status(500).json({ error: "Failed to update training record" });
+    }
+  });
+
+  // Delete training record
+  app.delete("/api/org/safeguarding/training-records/:id", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req.user as any).id;
+      await db.delete(trainingRecords).where(and(eq(trainingRecords.id, req.params.id), eq(trainingRecords.organizationId, orgId)));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting training record:", error);
+      res.status(500).json({ error: "Failed to delete training record" });
+    }
+  });
+
+  // Get safeguarding policy compliance summary
+  app.get("/api/org/safeguarding/policy-summary", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req.user as any).id;
+      const leads = await db.select().from(safeguardingLeads).where(eq(safeguardingLeads.organizationId, orgId));
+      const checks = await db.select().from(dbsChecks).where(eq(dbsChecks.organizationId, orgId));
+      const records = await db.select().from(trainingRecords).where(eq(trainingRecords.organizationId, orgId));
+
+      const now = new Date();
+      const hasDesignatedLead = leads.some(l => l.isPrimary);
+      const totalDbs = checks.length;
+      const validDbs = checks.filter(c => c.status === "valid").length;
+      const expiredDbs = checks.filter(c => c.status === "expired" || (c.expiryDate && new Date(c.expiryDate) < now)).length;
+      const renewalDueDbs = checks.filter(c => {
+        if (!c.expiryDate) return false;
+        const expiry = new Date(c.expiryDate);
+        const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        return expiry > now && expiry < thirtyDaysFromNow;
+      }).length;
+      const totalTraining = records.length;
+      const completedTraining = records.filter(r => r.status === "completed").length;
+      const expiredTraining = records.filter(r => r.status === "expired" || (r.expiryDate && new Date(r.expiryDate) < now)).length;
+
+      let overallStatus: "green" | "amber" | "red" = "green";
+      if (!hasDesignatedLead || expiredDbs > 0 || expiredTraining > 0) overallStatus = "red";
+      else if (renewalDueDbs > 0 || totalDbs === 0 || totalTraining === 0) overallStatus = "amber";
+
+      res.json({
+        overallStatus,
+        leads: { total: leads.length, hasDesignatedLead },
+        dbs: { total: totalDbs, valid: validDbs, expired: expiredDbs, renewalDue: renewalDueDbs },
+        training: { total: totalTraining, completed: completedTraining, expired: expiredTraining },
+      });
+    } catch (error) {
+      console.error("Error fetching policy summary:", error);
+      res.status(500).json({ error: "Failed to fetch policy summary" });
     }
   });
 
