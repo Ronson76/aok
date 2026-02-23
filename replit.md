@@ -133,6 +133,7 @@ Database rule: When clearing or modifying data, it must be done via the applicat
 - **Audit Expiration Warnings**: Yellow/red banners warn organisations when audit trail data is approaching or past retention limits.
 - **Admin Permanent Delete**: Super admins can permanently delete archived users via DELETE `/api/admin/users/:id/permanent` with audit logging.
 - **Low Battery Alert**: Automatically emails primary contact/carer when device battery drops to 20% or below. Enabled by default, 4-hour cooldown between alerts. Toggle in Settings. API: `POST /api/battery-alert`. Separate from activity-specific low battery alerts. Uses Browser Battery API with `useBatteryMonitor` hook.
+- **Security & Compliance Page**: Public page at `/security` showcasing ISO 27001-certified infrastructure badge, SOC 2 Type 2 compliance, UK GDPR compliance, Cyber Essentials progress, security features (2FA, encryption, audit trails, rate limiting, CSRF, service resilience, contact consent), data architecture principles, and related legal document links. Footer link added on landing page.
 
 ## Test Admin Credentials
 - **Email**: `agent-test@aok.care` (env var: `TEST_ADMIN_EMAIL`)

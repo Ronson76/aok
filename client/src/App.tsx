@@ -90,6 +90,7 @@ import WellbeingAI from "@/pages/wellbeing-ai";
 import LoneWorker from "@/pages/lone-worker";
 import Errands from "@/pages/errands";
 import Demo from "@/pages/demo";
+import Security from "@/pages/security";
 import { TermsModal } from "@/components/terms-modal";
 
 function PaymentBlockedScreen() {
@@ -767,6 +768,10 @@ function Router() {
     return <NDA />;
   }
 
+  if (location === "/security") {
+    return <Security />;
+  }
+
   if (location.startsWith("/confirm-contact")) {
     return <ConfirmContact />;
   }
@@ -816,7 +821,7 @@ function App() {
   const [showSplash, setShowSplash] = useState(() => {
     if (sessionStorage.getItem("splashShown") === "true") return false;
     const path = window.location.pathname;
-    if (path.startsWith("/org/") || path.startsWith("/admin/") || path === "/guide" || path === "/demo") return false;
+    if (path.startsWith("/org/") || path.startsWith("/admin/") || path === "/guide" || path === "/demo" || path === "/security") return false;
     return true;
   });
 
