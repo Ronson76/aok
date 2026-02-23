@@ -31,6 +31,7 @@ import { useAuth } from "@/contexts/auth-context";
 
 import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_animation.mp4";
 import alertsVideo from "@assets/generated_videos/english_sms_alert_notification.mp4";
+import isoBadgeImg from "@/assets/images/iso-27001-badge.png";
 
 const TIER1_MONTHLY_PRICE = 9.99;
 const TIER1_YEARLY_PRICE = 99.99;
@@ -553,6 +554,21 @@ export default function Landing() {
                 </p>
               </CardContent>
             </Card>
+
+            <Link href="/security">
+              <Card className="border-0 shadow-lg ring-2 ring-green-500/20 cursor-pointer hover:shadow-xl transition-shadow" data-testid="card-feature-iso">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <img src={isoBadgeImg} alt="ISO 27001" className="h-12 w-12 object-contain" />
+                    <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400 border-0">Verified</Badge>
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">ISO 27001 Infrastructure</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Built on ISO 27001-certified cloud infrastructure with SOC 2 Type 2 compliance. UK GDPR compliant with 2FA, encrypted data, and tamper-evident audit trails.
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
 
             <Card className="border-0 shadow-lg">
               <CardContent className="pt-6">
