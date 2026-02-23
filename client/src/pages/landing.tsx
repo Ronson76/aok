@@ -304,7 +304,7 @@ export default function Landing() {
                 <span className="text-primary">Stay Well.</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-lg mx-auto md:mx-0">
-                A check-in, safeguarding, risk mitigation and wellbeing platform for individuals and organisations, notifying contacts via email, SMS, and phone calls if a check-in is missed with unlimited access to our AI-powered wellbeing assistant.
+                A check-in, safeguarding, risk mitigation and wellbeing platform for individuals and organisations, notifying contacts via email, SMS, and phone calls if a check-in is missed — built on ISO 27001-compliant infrastructure with funder-ready audit trails and full UK GDPR compliance.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                 <Link href="/onboarding">
