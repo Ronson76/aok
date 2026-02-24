@@ -3273,7 +3273,7 @@ export function registerOrganizationRoutes(app: Express) {
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-      const allCheckIns = await getDb()
+      const allCheckIns = await ensureDb()
         .select()
         .from(checkIns)
         .where(sql`${checkIns.userId} IN (SELECT client_id FROM organization_clients WHERE organization_id = ${orgId} AND status = 'active')`)
@@ -3282,7 +3282,7 @@ export function registerOrganizationRoutes(app: Express) {
       const recentCheckIns = allCheckIns.filter((c: any) => new Date(c.timestamp) >= thirtyDaysAgo);
       const weekCheckIns = allCheckIns.filter((c: any) => new Date(c.timestamp) >= sevenDaysAgo);
 
-      const activeAlerts = await getDb()
+      const activeAlerts = await ensureDb()
         .select()
         .from(activeEmergencyAlerts)
         .where(and(
@@ -3290,7 +3290,7 @@ export function registerOrganizationRoutes(app: Express) {
           eq(activeEmergencyAlerts.isActive, true)
         ));
 
-      const totalAlerts30d = await getDb()
+      const totalAlerts30d = await ensureDb()
         .select()
         .from(activeEmergencyAlerts)
         .where(sql`${activeEmergencyAlerts.userId} IN (SELECT client_id FROM organization_clients WHERE organization_id = ${orgId} AND status = 'active') AND ${activeEmergencyAlerts.activatedAt} >= ${thirtyDaysAgo}`);
@@ -3349,7 +3349,7 @@ export function registerOrganizationRoutes(app: Express) {
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
       const clientRisks = await Promise.all(activeClients.map(async (client: any) => {
-        const clientCheckIns = await getDb()
+        const clientCheckIns = await ensureDb()
           .select()
           .from(checkIns)
           .where(and(
@@ -3357,7 +3357,7 @@ export function registerOrganizationRoutes(app: Express) {
             sql`${checkIns.timestamp} >= ${sevenDaysAgo}`
           ));
 
-        const clientAlerts = await getDb()
+        const clientAlerts = await ensureDb()
           .select()
           .from(activeEmergencyAlerts)
           .where(and(
@@ -3402,7 +3402,7 @@ export function registerOrganizationRoutes(app: Express) {
       const orgId = req.orgId!;
       const { alertId } = req.params;
 
-      const [alert] = await getDb()
+      const [alert] = await ensureDb()
         .select()
         .from(activeEmergencyAlerts)
         .where(eq(activeEmergencyAlerts.id, parseInt(alertId)));
@@ -3498,7 +3498,7 @@ export function registerOrganizationRoutes(app: Express) {
       const now = new Date();
       const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
-      const alerts = await getDb()
+      const alerts = await ensureDb()
         .select()
         .from(activeEmergencyAlerts)
         .where(sql`${activeEmergencyAlerts.userId} IN (SELECT client_id FROM organization_clients WHERE organization_id = ${orgId}) AND ${activeEmergencyAlerts.activatedAt} >= ${ninetyDaysAgo}`)
