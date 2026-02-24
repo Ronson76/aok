@@ -237,12 +237,12 @@ export default function Landing() {
                 Continuous control monitoring, automated missed check-in alerts, and funder-ready audit trails — delivered on ISO 27001-compliant, UK GDPR-ready infrastructure. With real-time assurance for your GRC framework.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                <Link href="/onboarding">
+                <a href="mailto:help@aok.care?subject=Organisation%20Enquiry">
                   <Button size="lg" className="w-full sm:w-auto gap-2" data-testid="button-get-started">
-                    Get Started Free
-                    <ChevronRight className="h-4 w-4" />
+                    Get a Quote
+                    <Mail className="h-4 w-4" />
                   </Button>
-                </Link>
+                </a>
                 <Link href="/demo">
                   <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2" data-testid="button-view-demo">
                     See Demo
@@ -254,15 +254,15 @@ export default function Landing() {
                 <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 md:gap-6 text-xs md:text-base text-muted-foreground">
                   <div className="flex items-center gap-1 md:gap-2">
                     <CheckCircle className="h-3 w-3 md:h-5 md:w-5 text-green-500 flex-shrink-0" />
-                    <span className="md:font-medium">Free trial</span>
+                    <span className="md:font-medium">Tailored pricing</span>
                   </div>
                   <div className="flex items-center gap-1 md:gap-2">
                     <CheckCircle className="h-3 w-3 md:h-5 md:w-5 text-green-500 flex-shrink-0" />
-                    <span className="md:font-medium">No commitment</span>
+                    <span className="md:font-medium">Dedicated support</span>
                   </div>
                   <div className="flex items-center gap-1 md:gap-2">
                     <CheckCircle className="h-3 w-3 md:h-5 md:w-5 text-green-500 flex-shrink-0" />
-                    <span className="md:font-medium">2 min set up</span>
+                    <span className="md:font-medium">Full onboarding</span>
                   </div>
                 </div>
               </div>
@@ -1138,17 +1138,18 @@ export default function Landing() {
         <div className="container mx-auto max-w-3xl text-center">
           <Heart className="h-12 w-12 mx-auto mb-6 opacity-80" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Start Protecting Yourself Today
+            Ready to Safeguard Your Organisation?
           </h2>
           <p className="text-lg opacity-90 mb-8 max-w-xl mx-auto">
-            It takes less than 2 minutes to set up. Give yourself and your loved ones peace of mind.
+            Get in touch for a tailored package that fits your organisation's needs and budget.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/onboarding">
-              <Button size="lg" variant="secondary" className="w-full sm:w-auto" data-testid="button-start-now">
-                Create Account
+            <a href="mailto:help@aok.care?subject=Organisation%20Enquiry">
+              <Button size="lg" variant="secondary" className="w-full sm:w-auto gap-2" data-testid="button-start-now">
+                <Mail className="h-4 w-4" />
+                Get a Quote
               </Button>
-            </Link>
+            </a>
           </div>
         </div>
       </section>

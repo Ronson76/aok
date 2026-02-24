@@ -158,22 +158,6 @@ export default function LandingIndividual() {
       launchNote: "Launch pricing - Lock in today's rate forever",
       priceProtected: true,
     },
-    {
-      name: "Organisations",
-      description: "Support your staff, clients, or residents with wellbeing tools.",
-      monthlyPrice: null,
-      yearlyPrice: null,
-      features: [
-        { text: "All Complete Wellbeing features", icon: Check },
-        { text: "Dedicated organisation dashboard", icon: Building2 },
-        { text: "Bulk user management", icon: Users },
-        { text: "Custom bundles & packages", icon: Heart },
-      ],
-      cta: "Contact Us",
-      ctaLink: "mailto:help@aok.care?subject=Organisation%20Enquiry%20-%20aok%20Bundles%20%26%20Packages",
-      highlight: false,
-      isOrganisation: true,
-    },
   ];
 
   return (
@@ -795,7 +779,7 @@ export default function LandingIndividual() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {pricingPlans.map((plan, index) => (
               <Card
                 key={index}
