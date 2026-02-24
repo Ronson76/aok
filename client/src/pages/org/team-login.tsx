@@ -128,9 +128,8 @@ export default function OrgTeamLogin() {
               </Button>
               <div className="text-center space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  Not a team member?{" "}
                   <Link href="/org/login">
-                    <span className="text-primary hover:underline cursor-pointer" data-testid="link-login-select">Back to sign in options</span>
+                    <span className="text-primary hover:underline cursor-pointer" data-testid="link-back-login">Back to Login</span>
                   </Link>
                 </p>
               </div>
