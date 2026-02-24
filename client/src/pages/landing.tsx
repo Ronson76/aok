@@ -1255,7 +1255,7 @@ export default function Landing() {
                 <span className="font-bold text-green-600">aok</span>
               </Link>
               <p className="text-sm text-muted-foreground">
-                Your personal check-in companion. Stay connected, stay in touch.
+                Enterprise safeguarding and compliance for care organisations.
               </p>
             </div>
             
@@ -1274,19 +1274,12 @@ export default function Landing() {
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">For Users</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/onboarding"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-signup">Sign Up</span></Link></li>
-                <li><Link href="/login"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-signin">Sign In</span></Link></li>
-                <li><Link href="/forgot-password"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-reset">Reset Password</span></Link></li>
-                <li><a href="mailto:help@aok.care?subject=Support%20Enquiry" className="hover:text-foreground transition-colors" data-testid="link-footer-contact">Contact Us</a></li>
-              </ul>
-            </div>
-            
-            <div>
               <h4 className="font-semibold mb-4">For Organisations</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link href="/org/login"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-org-login">Organisation Login</span></Link></li>
                 <li><a href="mailto:help@aok.care?subject=Organisation%20Enquiry" className="hover:text-foreground transition-colors" data-testid="link-footer-sales">Contact Sales</a></li>
+                <li><Link href="/org/help"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-org-help">Help Centre</span></Link></li>
+                <li><a href="mailto:help@aok.care?subject=Support%20Enquiry" className="hover:text-foreground transition-colors" data-testid="link-footer-contact">Contact Us</a></li>
               </ul>
             </div>
             
@@ -1315,18 +1308,6 @@ export default function Landing() {
             <p className="text-sm text-muted-foreground" data-testid="text-copyright">
               &copy; {new Date().getFullYear()} aok by NaiyaTech. All rights reserved.
             </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <Link href="/admin/login">
-                <Button variant="outline" size="sm" data-testid="link-footer-admin">
-                  Admin Login
-                </Button>
-              </Link>
-              <Link href="/org/login">
-                <Button variant="outline" size="sm" data-testid="link-footer-org">
-                  Organisation Login
-                </Button>
-              </Link>
-            </div>
           </div>
           <div className="flex justify-center mt-8">
             <Button 
