@@ -44,12 +44,12 @@ export default function OrgTeamLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-background dark:from-indigo-950 dark:to-background flex flex-col">
-      <header className="bg-indigo-900 dark:bg-indigo-950 border-b border-indigo-800">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-background dark:from-slate-950 dark:to-background flex flex-col">
+      <header className="bg-slate-900 dark:bg-slate-950 border-b border-slate-800">
         <div className="container mx-auto px-4 py-4 flex items-center gap-3">
           <Building2 className="h-7 w-7 text-white" />
           <span className="text-xl font-bold text-white">aok</span>
-          <Badge variant="outline" className="text-indigo-300 border-indigo-600">Organisation</Badge>
+          <Badge variant="outline" className="text-emerald-300 border-emerald-700">Organisation</Badge>
         </div>
       </header>
 
