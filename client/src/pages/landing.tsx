@@ -22,7 +22,7 @@ import {
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
   ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles,
   MessageCircle, MessageSquare, ArrowLeft, Home, TreeDeciduous, Leaf, Timer,
-  Map, HardHat, Flame, Moon, BatteryLow
+  Map, HardHat, Flame, Moon, BatteryLow, FileCheck, ClipboardCheck
 } from "lucide-react";
 import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
@@ -936,32 +936,124 @@ export default function Landing() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3 mb-6">
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                  <span className="text-sm">Flexible pricing based on organisation size</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                  <span className="text-sm">Custom bundle allocations and seat packages</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                  <span className="text-sm">Volume discounts for larger organisations</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                  <span className="text-sm">Dedicated onboarding, training, and account management</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                  <span className="text-sm">Full access to safeguarding, audit trails, and compliance tools</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Shield className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                  <span className="text-sm">ISO 27001-compliant, UK GDPR-ready infrastructure</span>
-                </li>
-              </ul>
+              <div className="space-y-6">
+                <div>
+                  <p className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    Core Platform
+                  </p>
+                  <ul className="space-y-3 ml-6">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                      <span className="text-sm">Flexible pricing based on organisation size</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                      <span className="text-sm">Custom bundle allocations and seat packages</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                      <span className="text-sm">Volume discounts for larger organisations</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                      <span className="text-sm">Dedicated onboarding, training, and account management</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                      <span className="text-sm">Full access to safeguarding, audit trails, and compliance tools</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="border-t pt-4">
+                  <p className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <FileCheck className="h-4 w-4 text-indigo-500" />
+                    Funder Ready
+                  </p>
+                  <ul className="space-y-3 ml-6">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-indigo-500" />
+                      <span className="text-sm">Tamper-evident audit trails with hash-chain verification</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-indigo-500" />
+                      <span className="text-sm">Exportable PDF and CSV compliance reports for funders and regulators</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-indigo-500" />
+                      <span className="text-sm">Measurable outcomes and evidence of safeguarding impact</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="border-t pt-4">
+                  <p className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-emerald-500" />
+                    Assurance Dashboard
+                  </p>
+                  <ul className="space-y-3 ml-6">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                      <span className="text-sm">Real-time assurance scoring across your client base</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                      <span className="text-sm">Board-level reporting with RAG status indicators</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                      <span className="text-sm">Trend analysis and early-warning indicators for at-risk clients</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="border-t pt-4">
+                  <p className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <ClipboardCheck className="h-4 w-4 text-blue-500" />
+                    GRC (Governance, Risk & Compliance)
+                  </p>
+                  <ul className="space-y-3 ml-6">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-500" />
+                      <span className="text-sm">Role-based access control with 8-tier permission hierarchy</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-500" />
+                      <span className="text-sm">Full security audit logging with PII redaction</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-500" />
+                      <span className="text-sm">UK GDPR-compliant data handling and retention policies</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-500" />
+                      <span className="text-sm">Two-factor authentication (TOTP) for all accounts</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="border-t pt-4">
+                  <p className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-primary" />
+                    Infrastructure
+                  </p>
+                  <ul className="space-y-3 ml-6">
+                    <li className="flex items-start gap-2">
+                      <Shield className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                      <span className="text-sm">ISO 27001-compliant, UK GDPR-ready infrastructure</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                      <span className="text-sm">External API access available for integration with existing systems</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                      <span className="text-sm">Circuit breaker resilience with multi-provider notification fallback</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-3">
               <a href="mailto:help@aok.care?subject=Organisation%20Pricing%20Enquiry" className="w-full">
