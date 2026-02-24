@@ -300,11 +300,11 @@ export default function Landing() {
                 Personal Wellbeing Made Simple
               </div>
               <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-                Stay Connected.<br />
-                <span className="text-primary">Stay Well.</span>
+                Where safeguarding becomes<br />
+                <span className="text-primary">measurable assurance.</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-lg mx-auto md:mx-0">
-                A check-in, safeguarding, risk mitigation and wellbeing platform for individuals and organisations, notifying contacts via email, SMS, and phone calls if a check-in is missed — built on ISO 27001-compliant infrastructure with funder-ready audit trails and full UK GDPR compliance.
+                Continuous control monitoring, automated missed check-in alerts, and funder-ready audit trails — delivered on ISO 27001-compliant, UK GDPR-ready infrastructure. With real-time assurance for your GRC framework.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                 <Link href="/onboarding">
