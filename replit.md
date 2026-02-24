@@ -15,7 +15,7 @@ Database rule: When clearing or modifying data, it must be done via the applicat
 - **Framework & Libraries**: React 18 with TypeScript, Wouter for routing, TanStack React Query for state management.
 - **Styling**: Tailwind CSS with CSS custom properties for theming (light/dark mode, Admin slate, Org indigo), shadcn/ui built on Radix UI for UI components.
 - **Build & Design**: Vite build tool, mobile-first design, card-based layout, consistent spacing, bottom navigation.
-- **Entry Flow**: Role-selection entry screen (Individual / Organisation / Lone Worker) with tailored landing pages per audience. Selection stored in localStorage (`aok_landing_type`). Routes: `/individual`, `/organisations`, `/lone-worker`.
+- **Entry Flow**: Role-selection entry screen (Individual / Organisation / Lone Worker) with tailored landing pages per audience. Selection stored in localStorage (`aok_landing_type`). Routes: `/individual`, `/organisations`, `/lone-worker`. Each landing page has a **Home** button (top-left header) that clears the stored preference and returns to the entry screen, allowing users to switch category.
 - **Native Support**: Capacitor 8 for iOS, Android, and Mac Catalyst app builds with native plugins.
 - **Internationalization**: i18next with English, Welsh, and Spanish translations, browser language detection.
 - **Accessibility**: Skip-to-content links, ARIA roles, `aria-current="page"`, `role="alert"`, `aria-labels` on icon-only buttons, 44px touch targets.

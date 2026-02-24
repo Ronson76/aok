@@ -504,6 +504,7 @@ const HELP_TOPICS: HelpTopic[] = [
     keywords: ["getting started", "setup", "begin", "first", "new organisation", "onboarding", "start"],
     content: [
       "Welcome to aok. Here's how to get your organisation set up:",
+      "**Tip:** If you landed on the wrong page, tap the **Home** button in the top-left corner of the header to return to the entry screen and choose a different category (Individual, Organisation, or Lone Worker).",
       "1. Log in to your organisation portal using the credentials provided by the aok team.",
       "2. Review your **bundle allocation** — how many seats you have available.",
       "3. **Add your first clients** by tapping the Add Client button on the dashboard.",
