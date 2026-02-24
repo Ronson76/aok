@@ -4,8 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,10 +32,6 @@ import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_
 import alertsVideo from "@assets/generated_videos/english_sms_alert_notification.mp4";
 import isoBadgeImg from "@/assets/images/iso-27001-badge.png";
 
-const TIER1_MONTHLY_PRICE = 9.99;
-const TIER1_YEARLY_PRICE = 99.99;
-const TIER2_MONTHLY_PRICE = 16.99;
-const TIER2_YEARLY_PRICE = 169.99;
 
 interface EcologiImpact {
   trees: number;
@@ -48,7 +42,6 @@ interface EcologiImpact {
 export default function Landing() {
   const { toast } = useToast();
   const { user, logout } = useAuth();
-  const [isYearly, setIsYearly] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   // Fetch Ecologi environmental impact stats
@@ -101,83 +94,6 @@ export default function Landing() {
     }
   };
 
-  const pricingPlans = [
-    {
-      name: "7 Day Trial",
-      description: "Try all features free for 7 days. No commitment required.",
-      note: "After your trial ends, you'll automatically continue unless you cancel.",
-      monthlyPrice: 0,
-      yearlyPrice: 0,
-      features: [
-        { text: "Full access to all features", icon: Check },
-        { text: "No payment details required upfront", icon: Lock },
-        { text: "Cancel anytime during trial", icon: Clock },
-      ],
-      cta: "Start Free Trial",
-      ctaLink: "/onboarding",
-      highlight: false,
-      isTrial: true,
-    },
-    {
-      name: "Essential",
-      description: "Core check-in and alert tools for peace of mind.",
-      monthlyPrice: TIER1_MONTHLY_PRICE,
-      yearlyPrice: TIER1_YEARLY_PRICE,
-      features: [
-        { text: "Shake to Alert - instant emergency help", icon: Zap },
-        { text: "Flexible check-in timer (5 mins to 48 hours)", icon: Clock },
-        { text: "Up to 5 emergency contacts", icon: Users },
-        { text: "Email, SMS & voice call alerts", icon: Bell },
-        { text: "Emergency alert button", icon: AlertTriangle },
-        { text: "GPS location with what3words", icon: MapPin },
-        { text: "Push notifications", icon: Smartphone },
-        { text: "Primary contact/carer updates", icon: Heart },
-        { text: "Offline SMS check-in backup", icon: MessageSquare },
-      ],
-      cta: "Get Started",
-      ctaLink: "/onboarding",
-      highlight: false,
-      launchNote: "Launch pricing - Lock in today's rate forever",
-      priceProtected: true,
-    },
-    {
-      name: "Complete Wellbeing",
-      description: "Everything in Essential plus wellness, AI, and more.",
-      monthlyPrice: TIER2_MONTHLY_PRICE,
-      yearlyPrice: TIER2_YEARLY_PRICE,
-      features: [
-        { text: "Everything in Essential", icon: Check },
-        { text: "Emergency recording (opt-in)", icon: Lock },
-        { text: "Mood & wellness tracking", icon: TrendingUp },
-        { text: "Pet protection profiles", icon: PawPrint },
-        { text: "Important document storage", icon: Scroll },
-        { text: "Wellbeing AI (Exclusive)", icon: Sparkles },
-        { text: "Activities tracker", icon: MapPin },
-      ],
-      cta: "Get Started",
-      ctaLink: "/onboarding",
-      highlight: true,
-      badge: "Most Popular",
-      launchNote: "Launch pricing - Lock in today's rate forever",
-      priceProtected: true,
-    },
-    {
-      name: "Organisations",
-      description: "Support your staff, clients, or residents with wellbeing tools.",
-      monthlyPrice: null,
-      yearlyPrice: null,
-      features: [
-        { text: "All Complete Wellbeing features", icon: Check },
-        { text: "Dedicated organisation dashboard", icon: Building2 },
-        { text: "Bulk user management", icon: Users },
-        { text: "Custom bundles & packages", icon: Heart },
-      ],
-      cta: "Contact Us",
-      ctaLink: "mailto:help@aok.care?subject=Organisation%20Enquiry%20-%20aok%20Bundles%20%26%20Packages",
-      highlight: false,
-      isOrganisation: true,
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -1004,118 +920,61 @@ export default function Landing() {
       </section>
 
       <section id="pricing" className="py-20 px-4">
-        <div className="container mx-auto max-w-6xl">
+        <div className="container mx-auto max-w-3xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-pricing-title">Simple, Transparent Pricing</h2>
-            <p className="text-lg text-muted-foreground mb-2">Get Peace of Mind Today</p>
-            <p className="text-muted-foreground">Start with a 7-day free trial. Cancel anytime.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-pricing-title">Pricing</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Tailored to your organisation. No one-size-fits-all.
+            </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
-            <div className="flex items-center justify-center gap-2 p-2 bg-muted rounded-lg">
-              <Lock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">SSL Secured</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center gap-4 mb-12">
-            <Label htmlFor="landing-billing-toggle" className={!isYearly ? "font-semibold" : "text-muted-foreground"}>
-              Monthly
-            </Label>
-            <Switch
-              id="landing-billing-toggle"
-              checked={isYearly}
-              onCheckedChange={setIsYearly}
-              data-testid="switch-landing-billing-toggle"
-            />
-            <div className="flex items-center gap-2">
-              <Label htmlFor="landing-billing-toggle" className={isYearly ? "font-semibold" : "text-muted-foreground"}>
-                Yearly
-              </Label>
-              <Badge variant="secondary" className="text-xs">2 months OFF!</Badge>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {pricingPlans.map((plan, index) => (
-              <Card 
-                key={index} 
-                className={`relative flex flex-col ${plan.highlight ? "border-primary shadow-lg" : ""}`}
-                data-testid={`card-landing-plan-${plan.name.toLowerCase().replace(/\s+/g, '-')}`}
-              >
-                {plan.badge && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2" data-testid="badge-landing-most-popular">
-                    {plan.badge}
-                  </Badge>
-                )}
-                <CardHeader>
-                  <CardTitle className="text-2xl flex items-center gap-2">
-                    {plan.name}
-                  </CardTitle>
-                  <div className="mt-4">
-                    {plan.isTrial ? (
-                      <div className="text-4xl font-bold">Free<span className="text-lg font-normal text-muted-foreground"> for 7 days</span></div>
-                    ) : plan.isOrganisation ? (
-                      <div className="text-2xl font-bold">Contact us<span className="text-lg font-normal text-muted-foreground block">for bundles & packages</span></div>
-                    ) : (
-                      <div className="text-4xl font-bold">
-                        £{isYearly ? plan.yearlyPrice : plan.monthlyPrice}
-                        <span className="text-lg font-normal text-muted-foreground">/{isYearly ? "year" : "month"}</span>
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  {plan.launchNote && (
-                    <p className="text-sm text-primary mb-4">{plan.launchNote}</p>
-                  )}
-                  {plan.priceProtected && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                      <Lock className="h-4 w-4" />
-                      Price-protected for life
-                    </div>
-                  )}
-                  <CardDescription className="mb-4">{plan.description}</CardDescription>
-                  {plan.note && (
-                    <p className="text-sm text-muted-foreground mb-4">{plan.note}</p>
-                  )}
-                  {plan.features.length > 0 && (
-                    <ul className="space-y-2">
-                      {plan.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-start gap-2">
-                          <feature.icon className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                          <span className="text-sm">{feature.text}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                                  </CardContent>
-                <CardFooter>
-                  {plan.ctaLink.startsWith("mailto:") ? (
-                    <a href={plan.ctaLink} className="w-full">
-                      <Button 
-                        variant={plan.highlight ? "default" : "outline"} 
-                        className="w-full"
-                        data-testid={`button-landing-plan-${plan.name.toLowerCase()}`}
-                      >
-                        {plan.cta}
-                      </Button>
-                    </a>
-                  ) : (
-                    <Link href={plan.ctaLink} className="w-full">
-                      <Button 
-                        variant={plan.highlight ? "default" : "outline"} 
-                        className="w-full"
-                        data-testid={`button-landing-plan-${plan.name.toLowerCase()}`}
-                      >
-                        {plan.cta}
-                      </Button>
-                    </Link>
-                  )}
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+          <Card className="border-primary shadow-lg" data-testid="card-pricing-contact">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl">Contact Us for Pricing</CardTitle>
+              <CardDescription className="text-base mt-2">
+                Organisation pricing depends on the number of clients, staff, and the features your service requires. We'll work with you to build a package that fits your organisation and budget.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Flexible pricing based on organisation size</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Custom bundle allocations and seat packages</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Volume discounts for larger organisations</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Dedicated onboarding, training, and account management</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Full access to safeguarding, audit trails, and compliance tools</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Shield className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">ISO 27001-compliant, UK GDPR-ready infrastructure</span>
+                </li>
+              </ul>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-3">
+              <a href="mailto:help@aok.care?subject=Organisation%20Pricing%20Enquiry" className="w-full">
+                <Button className="w-full" size="lg" data-testid="button-contact-pricing">
+                  <Mail className="h-4 w-4 mr-2" />
+                  Get a Quote
+                </Button>
+              </a>
+              <p className="text-xs text-muted-foreground text-center">
+                Email help@aok.care or use the button above. We typically respond within 24 hours.
+              </p>
+            </CardFooter>
+          </Card>
         </div>
       </section>
 
@@ -1131,11 +990,11 @@ export default function Landing() {
           <Accordion type="single" collapsible className="space-y-4">
             <AccordionItem value="item-1" className="bg-card rounded-lg border px-6" data-testid="faq-item-1">
               <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-1">
-                Is aok free to use?
+                How much does aok cost for organisations?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-1">
-                The app gives you 7 days free. After that, our Essential plan starts at £{TIER1_MONTHLY_PRICE.toFixed(2)} per month, 
-                or upgrade to Complete Wellbeing at £{TIER2_MONTHLY_PRICE.toFixed(2)} per month for wellness, AI, and more.
+                Organisation pricing is tailored to your needs — it depends on the number of clients, staff members, 
+                and features you require. Contact us at help@aok.care for a personalised quote.
               </AccordionContent>
             </AccordionItem>
             
