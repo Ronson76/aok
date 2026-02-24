@@ -5,10 +5,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Building2 } from "lucide-react";
+import { Loader2, Building2, User, ArrowLeft } from "lucide-react";
 
 export default function OrganizationClientLogin() {
   const [, setLocation] = useLocation();
@@ -57,32 +55,32 @@ export default function OrganizationClientLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-background dark:from-slate-950 dark:to-background flex flex-col">
-      <header className="bg-slate-900 dark:bg-slate-950 border-b border-slate-800">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-gray-950">
+      <header className="border-b border-white/10">
         <div className="container mx-auto px-4 py-4 flex items-center gap-3">
-          <Building2 className="h-7 w-7 text-white" />
+          <Link href="/org/login" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-back-org-login">
+            <ArrowLeft className="h-5 w-5 text-emerald-400" />
+          </Link>
+          <Building2 className="h-7 w-7 text-emerald-400" />
           <span className="text-xl font-bold text-white">aok</span>
-          <Badge variant="outline" className="text-emerald-300 border-emerald-700">Organisation</Badge>
+          <span className="text-xs text-emerald-300 border border-emerald-700 rounded-full px-2 py-0.5">Organisation</span>
         </div>
       </header>
 
       <div className="flex-1 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="rounded-full bg-primary/10 p-4">
-                <Building2 className="h-10 w-10 text-primary" />
-              </div>
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 mb-2">
+              <User className="h-10 w-10 text-emerald-400" />
             </div>
-            <CardTitle className="text-2xl">Client Login</CardTitle>
-            <CardDescription>
-              Sign in using your reference code
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
+            <h1 className="text-3xl font-bold text-white">Client Login</h1>
+            <p className="text-slate-300/70">Sign in using your reference code</p>
+          </div>
+
+          <div className="rounded-xl border border-white/15 bg-white/5 backdrop-blur-sm p-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="referenceCode">Reference Code</Label>
+                <Label htmlFor="referenceCode" className="text-slate-200/90 font-medium">Reference Code</Label>
                 <Input
                   id="referenceCode"
                   type="text"
@@ -91,19 +89,17 @@ export default function OrganizationClientLogin() {
                   onChange={(e) => setReferenceCode(e.target.value.toUpperCase())}
                   required
                   maxLength={6}
-                  className="uppercase tracking-widest text-center font-mono text-lg"
+                  className="uppercase tracking-widest text-center font-mono text-lg bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-emerald-400/60 focus:ring-emerald-400/30 h-12"
                   autoComplete="off"
                   data-testid="input-org-reference"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-slate-400/60 text-center">
                   Enter the 6-digit code sent to you
                 </p>
               </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-4">
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold h-12 text-base"
                 disabled={loginMutation.isPending}
                 data-testid="button-org-signin"
               >
@@ -116,17 +112,19 @@ export default function OrganizationClientLogin() {
                   "Sign In"
                 )}
               </Button>
-              <p className="text-sm text-muted-foreground text-center">
+              <p className="text-sm text-center text-slate-400/50">
                 <Link href="/org/login">
-                  <span className="text-primary hover:underline cursor-pointer" data-testid="link-back-login">Back to Login</span>
+                  <span className="text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer transition-colors" data-testid="link-back-login">Back to Login</span>
                 </Link>
               </p>
-            </CardFooter>
-          </form>
-        </Card>
+            </form>
+          </div>
+        </div>
       </div>
 
-      <footer className="py-4 text-center"><p className="text-xs text-muted-foreground">aok Organisation Portal</p></footer>
+      <footer className="border-t border-white/10 py-4">
+        <p className="text-center text-xs text-slate-400/30">&copy; {new Date().getFullYear()} aok by NaiyaTech</p>
+      </footer>
     </div>
   );
 }
