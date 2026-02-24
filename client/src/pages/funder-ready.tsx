@@ -369,6 +369,10 @@ export default function FunderReadyPage() {
                 </div>
               </TabsContent>
             </Tabs>
+
+            <div className="text-center mt-16">
+              <p className="text-3xl md:text-4xl font-bold">Operational Safeguarding Assurance</p>
+            </div>
           </div>
         </section>
       </main>
