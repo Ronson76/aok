@@ -123,7 +123,10 @@ export default function OrgTeamLogin() {
                   "Sign In"
                 )}
               </Button>
-              <div className="text-center pt-1">
+              <div className="text-center space-y-2 pt-1">
+                <Link href="/org/forgot-password">
+                  <span className="text-sm text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer transition-colors" data-testid="link-forgot-password">Forgot password?</span>
+                </Link>
                 <p className="text-sm text-slate-400/50">
                   <Link href="/org/login">
                     <span className="text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer transition-colors" data-testid="link-back-login">Back to Login</span>
