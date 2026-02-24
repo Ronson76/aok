@@ -162,9 +162,8 @@ export default function OrganizationStaffLogin() {
                   <span className="text-sm text-primary hover:underline cursor-pointer" data-testid="link-forgot-password">Forgot password?</span>
                 </Link>
                 <p className="text-sm text-muted-foreground">
-                  Are you a client?{" "}
                   <Link href="/org/login">
-                    <span className="text-primary hover:underline cursor-pointer">Sign in here</span>
+                    <span className="text-primary hover:underline cursor-pointer" data-testid="link-back-login">Back to Login</span>
                   </Link>
                 </p>
               </div>

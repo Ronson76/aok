@@ -117,9 +117,8 @@ export default function OrganizationClientLogin() {
                 )}
               </Button>
               <p className="text-sm text-muted-foreground text-center">
-                From an organisation?{" "}
                 <Link href="/org/login">
-                  <span className="text-primary hover:underline cursor-pointer">Staff login</span>
+                  <span className="text-primary hover:underline cursor-pointer" data-testid="link-back-login">Back to Login</span>
                 </Link>
               </p>
             </CardFooter>
