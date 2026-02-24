@@ -1047,20 +1047,12 @@ export default function Demo() {
                 </Button>
               </a>
             ) : (
-              <>
-                <Link href="/onboarding">
-                  <Button size="lg" variant="secondary" className="w-full sm:w-auto gap-2" data-testid="button-demo-start-trial">
-                    Start Free Trial
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <a href="mailto:help@aok.care?subject=Organisation%20Enquiry%20-%20aok%20Demo">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 bg-white/10 border-white/30 text-white hover:bg-white/20" data-testid="button-demo-contact">
-                    <Building2 className="h-4 w-4" />
-                    Organisation Enquiry
-                  </Button>
-                </a>
-              </>
+              <Link href="/onboarding">
+                <Button size="lg" variant="secondary" className="w-full sm:w-auto gap-2" data-testid="button-demo-start-trial">
+                  Start Free Trial
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </Link>
             )}
           </div>
         </div>
