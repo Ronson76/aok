@@ -439,7 +439,7 @@ async function getResendCredentials() {
   if (apiKey) {
     return { 
       apiKey, 
-      fromEmail: 'aok <support@aok.care>' 
+      fromEmail: 'aok <help@aok.care>' 
     };
   }
   
@@ -486,7 +486,7 @@ async function getSendGridCredentials() {
   if (envApiKey && envApiKey.startsWith('SG.')) {
     console.log('[SENDGRID] Using SENDGRID_API_KEY from environment');
     // Use a default from email or get from env
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@aok.care';
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'help@aok.care';
     return { apiKey: envApiKey, fromEmail };
   }
 
@@ -568,7 +568,7 @@ async function sendEmailViaResend(to: string, subject: string, body: string, htm
     text: string;
     html?: string;
   } = {
-    from: fromEmail || 'aok <support@aok.care>',
+    from: fromEmail || 'aok <help@aok.care>',
     to: [to],
     subject: subject,
     text: body
@@ -754,7 +754,7 @@ ${declineUrl}
 
 If you do nothing, this request will expire automatically.
 
-Your Data & Privacy: By accepting, your name, email, and phone number will be stored by aok to send you safety alerts. Under UK GDPR, you have the right to request access to, correction of, or deletion of your data at any time. To decline or request removal, use the Decline link above or contact privacy@aok.care.
+Your Data & Privacy: By accepting, your name, email, and phone number will be stored by aok to send you safety alerts. Under UK GDPR, you have the right to request access to, correction of, or deletion of your data at any time. To decline or request removal, use the Decline link above or contact help@aok.care.
 
 Thank you,
 - The aok Team`
@@ -776,7 +776,7 @@ ${declineUrl}
 
 If you do nothing, this request will expire automatically.
 
-Your Data & Privacy: By accepting, your name, email, and phone number will be stored by aok to send you safety alerts. Under UK GDPR, you have the right to request access to, correction of, or deletion of your data at any time. To decline or request removal, use the Decline link above or contact privacy@aok.care.
+Your Data & Privacy: By accepting, your name, email, and phone number will be stored by aok to send you safety alerts. Under UK GDPR, you have the right to request access to, correction of, or deletion of your data at any time. To decline or request removal, use the Decline link above or contact help@aok.care.
 
 Thank you,
 - The aok Team`;
@@ -827,7 +827,7 @@ Thank you,
 
   <div style="background-color: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 12px 16px; margin-bottom: 20px;">
     <p style="color: #1e40af; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Your Data &amp; Privacy</p>
-    <p style="color: #6b7280; font-size: 12px; margin: 0;">By accepting, your name, email, and phone number will be stored by aok to send you safety alerts. Under UK GDPR, you have the right to request access to, correction of, or deletion of your data at any time. To decline or request data removal, use the Decline button above or contact us at <a href="mailto:privacy@aok.care" style="color: #2563eb;">privacy@aok.care</a>.</p>
+    <p style="color: #6b7280; font-size: 12px; margin: 0;">By accepting, your name, email, and phone number will be stored by aok to send you safety alerts. Under UK GDPR, you have the right to request access to, correction of, or deletion of your data at any time. To decline or request data removal, use the Decline button above or contact us at <a href="mailto:help@aok.care" style="color: #2563eb;">help@aok.care</a>.</p>
   </div>
 
   <p style="color: #6b7280; font-size: 14px;">Thank you,<br>- The aok Team</p>
@@ -2483,7 +2483,7 @@ export async function sendPushNotification(
   }
   
   webpush.setVapidDetails(
-    'mailto:support@aok.app',
+    'mailto:help@aok.care',
     vapidPublicKey,
     vapidPrivateKey
   );

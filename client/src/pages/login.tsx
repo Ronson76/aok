@@ -90,7 +90,7 @@ export default function Login() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <a href="mailto:support@aok.app" className="flex items-center gap-2" data-testid="link-contact-us">
+              <a href="mailto:help@aok.care" className="flex items-center gap-2" data-testid="link-contact-us">
                 <Mail className="h-4 w-4" />
                 Contact Us
               </a>

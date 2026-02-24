@@ -162,7 +162,7 @@ export default function Terms() {
             <section>
               <h2 className="text-xl font-semibold mb-3">15. Contact Us</h2>
               <p className="text-muted-foreground leading-relaxed">
-                If you have any questions about these Terms and Conditions, please contact us at support@aok.care.
+                If you have any questions about these Terms and Conditions, please contact us at help@aok.care.
               </p>
             </section>
 

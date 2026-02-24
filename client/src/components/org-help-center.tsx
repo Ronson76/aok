@@ -493,7 +493,7 @@ const HELP_TOPICS: HelpTopic[] = [
       "**Right to access** — client data can be viewed and exported at any time.",
       "**Data portability** — individual users can download all their personal data in a portable JSON format from Settings > Your Data & Privacy > Export.",
       "**Right to erasure** — individual users can delete their own account and all associated data from Settings > Your Data & Privacy > Delete Account. Data is permanently removed within 30 days.",
-      "**Data protection contacts** — users and contacts can reach out to privacy@aok.care or dpo@aok.care for any data requests.",
+      "**Data protection contacts** — users and contacts can reach out to help@aok.care for any data requests.",
     ],
     relatedTopics: ["ip-ownership-agreement", "nda-confidentiality"],
   },

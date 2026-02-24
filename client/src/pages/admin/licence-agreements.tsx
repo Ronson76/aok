@@ -59,7 +59,7 @@ const documentContentMap: Record<string, { title: string; sections: Array<{ head
       { heading: "5. Data Sharing", content: "We do not sell your personal data. We may share data with emergency contacts you designate, service providers who assist in operating our platform, and law enforcement when legally required." },
       { heading: "6. Your Rights (GDPR)", content: "You have the right to access, rectify, erase, restrict processing, data portability, and object to processing of your personal data. You may also withdraw consent at any time." },
       { heading: "7. Data Retention", content: "We retain your personal data only for as long as necessary to provide our services and fulfil legal obligations. Check-in history is retained for 12 months." },
-      { heading: "8. Contact Us", content: "For privacy-related enquiries, contact us at privacy@naiyatech.com. Our Data Protection Officer can be reached at the same address." },
+      { heading: "8. Contact Us", content: "For privacy-related enquiries, contact us at help@aok.care. Our Data Protection Officer can be reached at the same address." },
     ],
   },
   terms: {
@@ -79,7 +79,7 @@ const documentContentMap: Record<string, { title: string; sections: Array<{ head
       { heading: "12. Indemnification", content: "You agree to indemnify and hold harmless Naiyatech Ltd from any claims, damages, or expenses arising from your use of aok or violation of these terms." },
       { heading: "13. Changes to Terms", content: "We may update these terms from time to time. We will notify you of material changes via email or in-app notification." },
       { heading: "14. Governing Law", content: "These terms are governed by the laws of England and Wales. Any disputes shall be subject to the exclusive jurisdiction of the courts of England and Wales." },
-      { heading: "15. Contact Us", content: "For questions about these terms, contact us at support@naiyatech.com or write to Naiyatech Ltd." },
+      { heading: "15. Contact Us", content: "For questions about these terms, contact us at help@aok.care or write to Naiyatech Ltd." },
     ],
   },
   "enterprise-licence": {

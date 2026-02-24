@@ -1561,7 +1561,7 @@ export default function Settings() {
           <div className="flex items-start gap-2 p-3 rounded-md bg-blue-50 dark:bg-blue-950/30">
             <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-muted-foreground space-y-1">
-              <p>Under UK GDPR you have the right to access, correct, export, and delete your personal data. For any data requests, you can also contact us at <strong>privacy@aok.care</strong>.</p>
+              <p>Under UK GDPR you have the right to access, correct, export, and delete your personal data. For any data requests, you can also contact us at <strong>help@aok.care</strong>.</p>
             </div>
           </div>
         </CardContent>

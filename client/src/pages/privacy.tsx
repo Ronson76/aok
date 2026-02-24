@@ -133,7 +133,7 @@ export default function Privacy() {
                 <li><strong>Restriction:</strong> Request limited processing of your data</li>
               </ul>
               <p className="text-muted-foreground leading-relaxed mt-2">
-                You can exercise your rights to data export and account deletion directly from your Settings page. For all other requests, please contact us at privacy@aok.care.
+                You can exercise your rights to data export and account deletion directly from your Settings page. For all other requests, please contact us at help@aok.care.
               </p>
             </section>
 
@@ -164,8 +164,8 @@ export default function Privacy() {
                 If you have any questions about this Privacy Policy or our data practices, please contact us at:
               </p>
               <p className="text-muted-foreground mt-2">
-                Email: privacy@aok.care<br />
-                Data Protection Officer: dpo@aok.care
+                Email: help@aok.care<br />
+                Data Protection Officer: help@aok.care
               </p>
             </section>
 
