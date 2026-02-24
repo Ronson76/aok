@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/bottom-nav";
-import { SplashScreen } from "@/components/splash-screen";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdminProvider, useAdmin } from "@/contexts/admin-context";
 import { HeartbeatProvider } from "@/contexts/heartbeat-context";
@@ -25,6 +24,9 @@ import { useBatteryMonitor } from "@/hooks/use-battery-monitor";
 import { EmergencyConfirmOverlay } from "@/components/emergency-confirm-overlay";
 import { shakeDetector } from "@/lib/shake-detector";
 import Landing from "@/pages/landing";
+import EntrySelect from "@/pages/entry-select";
+import LandingIndividual from "@/pages/landing-individual";
+import LandingLoneWorker from "@/pages/landing-lone-worker";
 import Login from "@/pages/login";
 import LoginSelect from "@/pages/login-select";
 import Register from "@/pages/register";
@@ -666,7 +668,23 @@ function Router() {
         </div>
       );
     }
+    const savedLanding = localStorage.getItem("aok_landing_type");
+    if (savedLanding === "individual") return <LandingIndividual />;
+    if (savedLanding === "organisations") return <Landing />;
+    if (savedLanding === "lone-worker") return <LandingLoneWorker />;
+    return <EntrySelect />;
+  }
+
+  if (location === "/individual") {
+    return <LandingIndividual />;
+  }
+
+  if (location === "/organisations") {
     return <Landing />;
+  }
+
+  if (location === "/lone-worker") {
+    return <LandingLoneWorker />;
   }
 
   if (location === "/login") {
@@ -831,18 +849,6 @@ function Router() {
 }
 
 function App() {
-  const [showSplash, setShowSplash] = useState(() => {
-    if (sessionStorage.getItem("splashShown") === "true") return false;
-    const path = window.location.pathname;
-    if (path.startsWith("/org/") || path.startsWith("/admin/") || path === "/guide" || path === "/demo" || path === "/security" || path === "/funder-ready") return false;
-    return true;
-  });
-
-  const handleSplashComplete = () => {
-    sessionStorage.setItem("splashShown", "true");
-    setShowSplash(false);
-  };
-
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
@@ -850,7 +856,6 @@ function App() {
           <AuthProvider>
             <HeartbeatProvider>
               <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[9999] focus:bg-background focus:text-foreground focus:px-4 focus:py-2 focus:rounded focus:border focus:border-border" data-testid="link-skip-to-content">Skip to main content</a>
-              {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
               <Router />
               <OfflineEmergencyOverlay />
               <Toaster />
