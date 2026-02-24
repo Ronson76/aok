@@ -2,13 +2,14 @@ import { Express, Request, Response, NextFunction } from "express";
 import { organizationStorage, storage, orgMemberStorage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema, activeEmergencyAlerts, checkIns, organizationClients, users, safeguardingLeads, dbsChecks, trainingRecords, rolePermissions, OrgPermission, roleLabels } from "@shared/schema";
+import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema, activeEmergencyAlerts, checkIns, organizationClients, users, safeguardingLeads, dbsChecks, trainingRecords, rolePermissions, OrgPermission, roleLabels, orgApiKeys } from "@shared/schema";
 import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail, sendStaffInviteSMS, sendEmergencyContactConfirmationForStaffInvite } from "./notifications";
 import { plantTreeForNewSubscriber } from "./ecologiService";
 import { ensureDb } from "./db";
 import { sql, eq, and, isNotNull, desc } from "drizzle-orm";
 import { loginRateLimiter, passwordResetRateLimiter } from "./security";
 import { getPeakTimes, getAlertHeatmap, getActiveSOSAlerts } from "./services/analyticsService";
+import { createHash, randomBytes } from "crypto";
 
 function generateReferenceCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -3520,6 +3521,316 @@ export function registerOrganizationRoutes(app: Express) {
       res.json({ incidents });
     } catch (error) {
       console.error("[ASSURANCE] Incident timeline error:", error);
+      res.status(500).json({ error: "Failed to load incident timeline" });
+    }
+  });
+
+  // ===== API KEY MANAGEMENT =====
+
+  function hashApiKey(key: string): string {
+    return createHash("sha256").update(key).digest("hex");
+  }
+
+  app.get("/api/org/api-keys", requireOrganization, requirePermission("org.manage"), async (req, res) => {
+    try {
+      const db = ensureDb();
+      const keys = await db.select({
+        id: orgApiKeys.id,
+        name: orgApiKeys.name,
+        keyPrefix: orgApiKeys.keyPrefix,
+        permissions: orgApiKeys.permissions,
+        lastUsedAt: orgApiKeys.lastUsedAt,
+        requestCount: orgApiKeys.requestCount,
+        isActive: orgApiKeys.isActive,
+        createdBy: orgApiKeys.createdBy,
+        createdAt: orgApiKeys.createdAt,
+        expiresAt: orgApiKeys.expiresAt,
+      }).from(orgApiKeys).where(eq(orgApiKeys.organizationId, req.orgId!));
+      res.json(keys);
+    } catch (error) {
+      console.error("[API-KEYS] List error:", error);
+      res.status(500).json({ error: "Failed to list API keys" });
+    }
+  });
+
+  app.post("/api/org/api-keys", requireOrganization, requirePermission("org.manage"), async (req, res) => {
+    try {
+      const { name, permissions, expiresAt } = req.body;
+      if (!name || typeof name !== "string" || name.trim().length === 0) {
+        return res.status(400).json({ error: "Key name is required" });
+      }
+
+      const validPermissions = ["assurance.overview", "assurance.heatmap", "assurance.chronology", "assurance.oversight", "assurance.timeline"];
+      const perms = Array.isArray(permissions) ? permissions.filter((p: string) => validPermissions.includes(p)) : validPermissions;
+
+      const rawKey = `aok_${randomBytes(32).toString("hex")}`;
+      const keyHash = hashApiKey(rawKey);
+      const keyPrefix = rawKey.substring(0, 11);
+
+      const db = ensureDb();
+      const [created] = await db.insert(orgApiKeys).values({
+        organizationId: req.orgId!,
+        name: name.trim(),
+        keyHash,
+        keyPrefix,
+        permissions: perms,
+        createdBy: req.orgMember?.email || "owner",
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+      }).returning();
+
+      await logViewEvent(req, "api_key_created", undefined, { keyName: name.trim(), keyId: created.id });
+
+      res.json({
+        id: created.id,
+        name: created.name,
+        keyPrefix: created.keyPrefix,
+        permissions: created.permissions,
+        createdAt: created.createdAt,
+        expiresAt: created.expiresAt,
+        apiKey: rawKey,
+      });
+    } catch (error) {
+      console.error("[API-KEYS] Create error:", error);
+      res.status(500).json({ error: "Failed to create API key" });
+    }
+  });
+
+  app.delete("/api/org/api-keys/:keyId", requireOrganization, requirePermission("org.manage"), async (req, res) => {
+    try {
+      const db = ensureDb();
+      const [key] = await db.select().from(orgApiKeys)
+        .where(and(eq(orgApiKeys.id, req.params.keyId), eq(orgApiKeys.organizationId, req.orgId!)));
+      if (!key) return res.status(404).json({ error: "API key not found" });
+
+      await db.update(orgApiKeys).set({ isActive: false }).where(eq(orgApiKeys.id, req.params.keyId));
+
+      await logViewEvent(req, "api_key_revoked", undefined, { keyName: key.name, keyId: key.id });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[API-KEYS] Revoke error:", error);
+      res.status(500).json({ error: "Failed to revoke API key" });
+    }
+  });
+
+  // ===== EXTERNAL ASSURANCE API (API Key Authenticated) =====
+
+  const apiKeyRateLimits = new Map<string, { count: number; resetAt: number }>();
+
+  async function requireApiKey(req: Request, res: Response, next: NextFunction) {
+    const apiKey = req.headers["x-api-key"] as string;
+    if (!apiKey || !apiKey.startsWith("aok_")) {
+      return res.status(401).json({ error: "Missing or invalid API key. Provide a valid key via X-API-Key header." });
+    }
+
+    const keyHash = hashApiKey(apiKey);
+    const db = ensureDb();
+    const [key] = await db.select().from(orgApiKeys).where(eq(orgApiKeys.keyHash, keyHash));
+
+    if (!key || !key.isActive) {
+      return res.status(401).json({ error: "Invalid or revoked API key." });
+    }
+
+    if (key.expiresAt && new Date(key.expiresAt) < new Date()) {
+      return res.status(401).json({ error: "API key has expired." });
+    }
+
+    const now = Date.now();
+    const rateKey = key.id;
+    const rateData = apiKeyRateLimits.get(rateKey);
+    if (rateData && rateData.resetAt > now) {
+      if (rateData.count >= 100) {
+        return res.status(429).json({ error: "Rate limit exceeded. Maximum 100 requests per minute." });
+      }
+      rateData.count++;
+    } else {
+      apiKeyRateLimits.set(rateKey, { count: 1, resetAt: now + 60000 });
+    }
+
+    await db.update(orgApiKeys).set({
+      lastUsedAt: new Date(),
+      requestCount: sql`${orgApiKeys.requestCount} + 1`,
+    }).where(eq(orgApiKeys.id, key.id));
+
+    (req as any).apiKeyOrg = key.organizationId;
+    (req as any).apiKeyPermissions = key.permissions;
+    (req as any).apiKeyId = key.id;
+    next();
+  }
+
+  function requireApiPermission(permission: string) {
+    return (req: Request, res: Response, next: NextFunction) => {
+      const permissions = (req as any).apiKeyPermissions as string[];
+      if (!permissions || !permissions.includes(permission)) {
+        return res.status(403).json({ error: `API key does not have '${permission}' permission.` });
+      }
+      next();
+    };
+  }
+
+  app.get("/api/v1/assurance/overview", requireApiKey, requireApiPermission("assurance.overview"), async (req, res) => {
+    try {
+      const orgId = (req as any).apiKeyOrg;
+      const clients = await organizationStorage.getOrganizationClients(orgId);
+      const activeClients = clients.filter((c: any) => c.status === "active");
+      const db = ensureDb();
+
+      let overdueCount = 0;
+      let safeCount = 0;
+      let totalResponseTimeMs = 0;
+      let responseCount = 0;
+
+      for (const client of activeClients) {
+        if (!client.userId) continue;
+        const [latestCheckIn] = await db.select().from(checkIns)
+          .where(eq(checkIns.userId, client.userId)).orderBy(desc(checkIns.checkedInAt)).limit(1);
+        if (latestCheckIn) safeCount++;
+        else overdueCount++;
+      }
+
+      const allAlerts = await db.select().from(activeEmergencyAlerts)
+        .where(eq(activeEmergencyAlerts.organizationId, orgId));
+      const openAlerts = allAlerts.filter((a: any) => a.status === "active").length;
+
+      for (const alert of allAlerts) {
+        if (alert.resolvedAt && alert.createdAt) {
+          totalResponseTimeMs += new Date(alert.resolvedAt).getTime() - new Date(alert.createdAt).getTime();
+          responseCount++;
+        }
+      }
+
+      const slaCompliance = activeClients.length > 0
+        ? Math.round((safeCount / activeClients.length) * 100)
+        : 100;
+      const avgResponseMins = responseCount > 0 ? Math.round(totalResponseTimeMs / responseCount / 60000) : 0;
+
+      res.json({
+        timestamp: new Date().toISOString(),
+        totalClients: activeClients.length,
+        safeClients: safeCount,
+        overdueClients: overdueCount,
+        openAlerts,
+        slaCompliancePercent: slaCompliance,
+        avgResponseMinutes: avgResponseMins,
+        controlScore: Math.min(100, Math.max(0, slaCompliance - (openAlerts * 5))),
+      });
+    } catch (error) {
+      console.error("[EXT-API] Overview error:", error);
+      res.status(500).json({ error: "Failed to load assurance overview" });
+    }
+  });
+
+  app.get("/api/v1/assurance/service-heatmap", requireApiKey, requireApiPermission("assurance.heatmap"), async (req, res) => {
+    try {
+      const orgId = (req as any).apiKeyOrg;
+      const clients = await organizationStorage.getOrganizationClients(orgId);
+      const activeClients = clients.filter((c: any) => c.status === "active");
+      const db = ensureDb();
+
+      const heatmapItems = [];
+      for (const client of activeClients) {
+        if (!client.userId) continue;
+        const [latestCheckIn] = await db.select().from(checkIns)
+          .where(eq(checkIns.userId, client.userId)).orderBy(desc(checkIns.checkedInAt)).limit(1);
+        const alerts = await db.select().from(activeEmergencyAlerts)
+          .where(eq(activeEmergencyAlerts.userId, client.userId));
+
+        const activeAlerts = alerts.filter((a: any) => a.status === "active").length;
+        const lastCheckInAge = latestCheckIn ? (Date.now() - new Date(latestCheckIn.checkedInAt).getTime()) / 3600000 : 999;
+
+        let riskLevel = "low";
+        if (activeAlerts > 0 || lastCheckInAge > 48) riskLevel = "high";
+        else if (lastCheckInAge > 24) riskLevel = "medium";
+
+        heatmapItems.push({
+          clientId: client.id,
+          referenceId: client.referenceId,
+          nickname: client.nickname,
+          riskLevel,
+          lastCheckInHoursAgo: Math.round(lastCheckInAge),
+          activeAlerts,
+        });
+      }
+
+      res.json({
+        timestamp: new Date().toISOString(),
+        clients: heatmapItems,
+        summary: {
+          high: heatmapItems.filter(i => i.riskLevel === "high").length,
+          medium: heatmapItems.filter(i => i.riskLevel === "medium").length,
+          low: heatmapItems.filter(i => i.riskLevel === "low").length,
+        },
+      });
+    } catch (error) {
+      console.error("[EXT-API] Heatmap error:", error);
+      res.status(500).json({ error: "Failed to load service heatmap" });
+    }
+  });
+
+  app.get("/api/v1/assurance/manager-oversight", requireApiKey, requireApiPermission("assurance.oversight"), async (req, res) => {
+    try {
+      const orgId = (req as any).apiKeyOrg;
+      const members = await orgMemberStorage.getMembersByOrganization(orgId);
+      const now = new Date();
+
+      const oversight = members.map((m: any) => {
+        const lastLogin = m.lastLoginAt ? new Date(m.lastLoginAt) : null;
+        const daysSinceLogin = lastLogin ? Math.floor((now.getTime() - lastLogin.getTime()) / 86400000) : null;
+        return {
+          memberId: m.id,
+          name: m.name,
+          email: m.email,
+          role: m.role,
+          lastLoginAt: m.lastLoginAt,
+          daysSinceLogin,
+          isOverdue: daysSinceLogin !== null && daysSinceLogin > 7,
+        };
+      });
+
+      res.json({
+        timestamp: new Date().toISOString(),
+        managers: oversight,
+        overdueCount: oversight.filter((o: any) => o.isOverdue).length,
+      });
+    } catch (error) {
+      console.error("[EXT-API] Oversight error:", error);
+      res.status(500).json({ error: "Failed to load manager oversight" });
+    }
+  });
+
+  app.get("/api/v1/assurance/incident-timeline", requireApiKey, requireApiPermission("assurance.timeline"), async (req, res) => {
+    try {
+      const orgId = (req as any).apiKeyOrg;
+      const db = ensureDb();
+      const now = new Date();
+      const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+
+      const alerts = await db.select().from(activeEmergencyAlerts)
+        .where(and(
+          eq(activeEmergencyAlerts.organizationId, orgId),
+          sql`${activeEmergencyAlerts.createdAt} >= ${ninetyDaysAgo}`
+        ))
+        .orderBy(desc(activeEmergencyAlerts.createdAt));
+
+      const incidents = alerts.map((a: any) => ({
+        id: a.id,
+        type: a.triggerType || "manual",
+        status: a.status,
+        createdAt: a.createdAt,
+        resolvedAt: a.resolvedAt,
+        resolutionMinutes: a.resolvedAt && a.createdAt
+          ? Math.round((new Date(a.resolvedAt).getTime() - new Date(a.createdAt).getTime()) / 60000)
+          : null,
+      }));
+
+      res.json({
+        timestamp: new Date().toISOString(),
+        periodDays: 90,
+        totalIncidents: incidents.length,
+        incidents,
+      });
+    } catch (error) {
+      console.error("[EXT-API] Timeline error:", error);
       res.status(500).json({ error: "Failed to load incident timeline" });
     }
   });
