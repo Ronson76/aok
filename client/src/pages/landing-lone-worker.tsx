@@ -22,7 +22,7 @@ import {
   ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail,
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User,
   ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles,
-  MessageCircle, MessageSquare, ArrowLeft, TreeDeciduous, Leaf, Timer,
+  MessageCircle, MessageSquare, ArrowLeft, Home, TreeDeciduous, Leaf, Timer,
   Map, HardHat, Flame, Moon, BatteryLow
 } from "lucide-react";
 import { SiApple, SiGoogleplay } from "react-icons/si";
@@ -180,9 +180,18 @@ export default function LandingLoneWorker() {
       <header className="sticky top-0 z-50 bg-background border-b shadow-sm">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-3">
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            <Link href="/" className="flex items-center text-muted-foreground hover:text-foreground transition-colors" data-testid="link-back-entry">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
+            <button
+              onClick={() => {
+                localStorage.removeItem("aok_landing_type");
+                window.location.href = "/";
+              }}
+              className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-muted"
+              data-testid="button-home"
+              aria-label="Back to home"
+            >
+              <Home className="h-4 w-4" />
+              <span className="hidden sm:inline">Home</span>
+            </button>
             <Link href="/" className="flex items-center gap-1.5 sm:gap-2 hover:opacity-80 transition-opacity" data-testid="link-logo-home">
               <ShieldCheck className="h-7 w-7 sm:h-9 sm:w-9 text-green-600" aria-label="aok shield logo" />
               <span className="text-lg sm:text-2xl font-bold text-green-600">aok</span>
