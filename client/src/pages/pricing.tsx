@@ -116,7 +116,7 @@ export default function Pricing() {
     { name: "Pet protection profiles", trial: true, essential: false, complete: true, org: true },
     { name: "Important document storage", trial: true, essential: false, complete: true, org: true },
     { name: "Wellbeing AI chat + voice mode", trial: true, essential: false, complete: true, org: true },
-    { name: "Ecologi tree planting", trial: false, essential: false, complete: true, org: true },
+    { name: "Ecologi tree planting + net zero certificates", trial: false, essential: false, complete: true, org: true },
     { name: "Organisation dashboard", trial: false, essential: false, complete: false, org: true },
     { name: "Bulk client management", trial: false, essential: false, complete: false, org: true },
     { name: "Staff roles & team management", trial: false, essential: false, complete: false, org: true },
@@ -329,7 +329,7 @@ export default function Pricing() {
               { q: "What payment methods do you accept?", a: "We accept all major debit and credit cards, Apple Pay, and Google Pay for quick and easy payment." },
               { q: "How does the organisation plan work?", a: "Organisations purchase bundles of seats and manage clients through a dedicated dashboard. Contact us for custom pricing based on your team size." },
               { q: "Is my data safe?", a: "Absolutely. We use encryption for all data, location is only shared during emergencies, AI conversations are never stored, and emergency contacts must give consent before receiving alerts. Our IP Ownership Agreement and NDA protect all confidential information. View our full legal documents including Privacy Policy, EULA, IP Ownership Agreement, and NDA from the footer links." },
-              { q: "How am I helping the environment by using aok?", a: "Every time a new subscriber joins aok, we plant a tree on their behalf through our partnership with Ecologi. It's our small way of giving back to the planet and helping offset carbon emissions — just by being part of aok, you're making a positive impact." },
+              { q: "How am I helping the environment by using aok?", a: "Every aok subscription contributes to verified tree planting and carbon offsetting through our partnership with Ecologi. For organisations, this means auditable environmental impact certificates suitable for board-level ESG reporting and funder submissions — demonstrating measurable progress towards net zero targets. It's a tangible way to show your commitment to sustainability while protecting your people." },
             ].map((faq, i) => (
               <Card key={i}>
                 <CardContent className="py-4">

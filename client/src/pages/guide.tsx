@@ -205,12 +205,13 @@ const GUIDE_TOPICS: GuideTopic[] = [
   },
   {
     id: "ecologi",
-    title: "Ecologi — environmental impact",
+    title: "Ecologi — environmental impact & net zero",
     content: [
-      "aok partners with Ecologi to track environmental impact.",
-      "When you subscribe, a tree is planted automatically on your behalf.",
+      "aok partners with Ecologi to contribute to verified tree planting and carbon offsetting.",
+      "Every subscription plants a tree and offsets carbon through certified environmental projects.",
       "You can view the collective impact (trees planted, carbon offset) on the landing page.",
-      "This is our way of making a positive difference alongside personal safety.",
+      "For organisations, aok provides auditable environmental impact certificates suitable for board-level ESG reporting, funder submissions, and demonstrating measurable progress towards net zero targets.",
+      "This is our way of making a positive, quantifiable difference alongside personal safety.",
     ],
   },
   {

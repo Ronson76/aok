@@ -270,9 +270,18 @@ export default function LandingLoneWorker() {
       </section>
 
       {ecologiImpact && (
-        <section className="py-12 px-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-y border-green-200 dark:border-green-800/50">
-          <div className="container mx-auto max-w-4xl">
-            <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
+        <section className="py-16 px-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-y border-green-200 dark:border-green-800/50">
+          <div className="container mx-auto max-w-5xl">
+            <div className="text-center mb-8">
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-300 dark:border-green-700 mb-3">Net Zero Commitment</Badge>
+              <h3 className="text-2xl md:text-3xl font-bold text-green-800 dark:text-green-300 mb-2">Contributing to Net Zero</h3>
+              <p className="text-sm text-green-700 dark:text-green-400 max-w-2xl mx-auto">
+                Every aok subscription contributes to verified tree planting and carbon offsetting through our partnership with{" "}
+                <a href="https://ecologi.com/nghuman18" target="_blank" rel="noopener noreferrer" className="underline font-medium hover:text-green-800 dark:hover:text-green-300">Ecologi</a>.
+                Demonstrate your commitment to net zero with auditable environmental certificates suitable for board reporting and ESG compliance.
+              </p>
+            </div>
+            <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 mb-8">
               <div className="text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <TreeDeciduous className="h-8 w-8 text-green-600" />
@@ -292,20 +301,22 @@ export default function LandingLoneWorker() {
                 </div>
                 <p className="text-sm text-emerald-600 dark:text-emerald-500 font-medium">CO₂ Offset</p>
               </div>
-              <div className="hidden md:block h-12 w-px bg-green-300 dark:bg-green-700" />
-              <div className="text-center max-w-xs">
-                <p className="text-sm text-green-700 dark:text-green-400">
-                  Every new subscriber plants a tree. We're proud to partner with{" "}
-                  <a
-                    href="https://ecologi.com/nghuman18"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline font-medium hover:text-green-800 dark:hover:text-green-300"
-                  >
-                    Ecologi
-                  </a>{" "}
-                  to protect our planet.
-                </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+              <div className="bg-white/60 dark:bg-white/5 rounded-lg p-4 text-center border border-green-200 dark:border-green-800">
+                <Leaf className="h-5 w-5 text-green-600 mx-auto mb-2" />
+                <p className="text-xs font-semibold text-green-800 dark:text-green-300">Verified Certificates</p>
+                <p className="text-[11px] text-green-700 dark:text-green-400 mt-1">Board-ready environmental impact certificates for ESG reporting</p>
+              </div>
+              <div className="bg-white/60 dark:bg-white/5 rounded-lg p-4 text-center border border-green-200 dark:border-green-800">
+                <TreeDeciduous className="h-5 w-5 text-green-600 mx-auto mb-2" />
+                <p className="text-xs font-semibold text-green-800 dark:text-green-300">Automatic Contribution</p>
+                <p className="text-[11px] text-green-700 dark:text-green-400 mt-1">Every worker account contributes to verified tree planting and carbon offset</p>
+              </div>
+              <div className="bg-white/60 dark:bg-white/5 rounded-lg p-4 text-center border border-green-200 dark:border-green-800">
+                <Shield className="h-5 w-5 text-green-600 mx-auto mb-2" />
+                <p className="text-xs font-semibold text-green-800 dark:text-green-300">Net Zero Pathway</p>
+                <p className="text-[11px] text-green-700 dark:text-green-400 mt-1">Measurable progress towards your net zero targets with quantifiable outcomes</p>
               </div>
             </div>
           </div>
