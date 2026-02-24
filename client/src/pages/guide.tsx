@@ -694,6 +694,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
     title: "Assurance Dashboard (organisations)",
     content: [
       "The **Assurance Dashboard** is your live safeguarding position — designed for inspection readiness, board governance, and funder due diligence.",
+      "This is an enterprise add-on included in selected organisation packages. If you don't see it on your dashboard, contact help@aok.care to discuss adding it to your plan.",
       "Access it from the **Assurance** button on your organisation dashboard.",
       "**Screen 1: Live Safeguarding Position** — KPI tiles showing control effectiveness score, SLA compliance, open high-risk alerts, active clients, check-in activity, average response time, and audit chain integrity verification.",
       "**Screen 2: Service Risk Heatmap** — shows which clients are at risk right now. Clients are categorised as high risk (active alerts), medium risk (no recent check-ins), or low risk (all clear). Includes a colour-coded summary.",
@@ -709,6 +710,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
     title: "API Access (organisations)",
     content: [
       "The **API Access** page allows organisations to create API keys for integrating aok assurance data with external GRC (Governance, Risk, Compliance) platforms.",
+      "This is an enterprise add-on included in selected organisation packages. If you don't see it on your dashboard, contact help@aok.care to discuss adding it to your plan.",
       "Access it from the **API** button on your organisation dashboard.",
       "API keys provide **read-only** access to your assurance data — external systems can view compliance summaries, risk heatmaps, and incident timelines but cannot modify any data.",
       "**Creating a key:** Tap **Create Key**, give it a descriptive name, select which data endpoints it can access, choose an expiry period, and tap **Generate Key**. The key is shown once — copy and store it securely.",
@@ -716,6 +718,31 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "**Security:** All API requests require the `X-API-Key` header, are rate-limited to 100 requests per minute, and are fully audit-logged.",
       "**Revoking a key:** Tap the **Revoke** button next to any active key. This is permanent — the external system will immediately lose access.",
       "Revoked keys remain visible in the audit trail for compliance purposes.",
+    ],
+  },
+  {
+    id: "grc-compliance",
+    title: "GRC — Governance, Risk & Compliance (organisations)",
+    content: [
+      "aok is built with **GRC (Governance, Risk & Compliance)** principles at its core, helping organisations meet regulatory requirements and demonstrate due diligence.",
+      "**Governance** — enterprise-grade role-based access control (RBAC) with 8 permission tiers, ensuring every team member has exactly the right level of access. All role changes are audit-logged.",
+      "**Risk** — the Assurance Dashboard provides real-time risk scoring, service risk heatmaps, and early-warning indicators for at-risk clients. Board-level RAG status reports help leadership monitor safeguarding effectiveness.",
+      "**Compliance** — tamper-evident audit trails with hash-chain verification, exportable PDF and CSV reports for funders and regulators, full security audit logging with PII redaction, and UK GDPR-compliant data handling.",
+      "**Two-factor authentication (TOTP)** is available for all account types — individual, organisation, and admin.",
+      "**ISO 27001-compliant infrastructure** underpins the platform, with circuit breaker resilience and multi-provider notification fallback for maximum reliability.",
+      "For organisations needing to integrate aok data with external GRC platforms, the **API Access** feature provides read-only endpoints for compliance summaries, risk heatmaps, and incident timelines.",
+    ],
+  },
+  {
+    id: "funder-ready",
+    title: "Funder Ready (organisations)",
+    content: [
+      "aok is designed to be **funder ready** — providing the evidence and reporting that funders, commissioners, and regulators require.",
+      "**Tamper-evident audit trails** — every action is recorded with cryptographic hash-chain verification, ensuring records cannot be altered retroactively.",
+      "**Exportable reports** — generate PDF and CSV compliance reports from the Assurance Dashboard, suitable for board packs, commissioner reviews, funding applications, and regulatory inspections.",
+      "**Measurable outcomes** — demonstrate safeguarding impact with quantifiable metrics: control effectiveness scores, SLA compliance rates, response times, and incident resolution data.",
+      "**Board governance** — the Assurance Dashboard provides RAG status indicators, trend analysis, and early-warning flags — exactly what governance boards and funders need to see.",
+      "All funder-ready features are part of the Assurance Dashboard enterprise add-on. Contact help@aok.care to discuss your requirements.",
     ],
   },
   {
