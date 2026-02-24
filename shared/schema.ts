@@ -2021,5 +2021,34 @@ export const insertPricingConfigSchema = createInsertSchema(pricingConfig).omit(
 export type InsertPricingConfig = z.infer<typeof insertPricingConfigSchema>;
 export type PricingConfig = typeof pricingConfig.$inferSelect;
 
+// ===== ORGANISATION API KEYS =====
+
+export const orgApiKeys = pgTable("org_api_keys", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  keyHash: varchar("key_hash", { length: 128 }).notNull(),
+  keyPrefix: varchar("key_prefix", { length: 12 }).notNull(),
+  permissions: text("permissions").array().notNull().default(sql`'{}'::text[]`),
+  lastUsedAt: timestamp("last_used_at"),
+  requestCount: integer("request_count").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdBy: varchar("created_by", { length: 255 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"),
+});
+
+export const insertOrgApiKeySchema = createInsertSchema(orgApiKeys).omit({
+  id: true,
+  keyHash: true,
+  keyPrefix: true,
+  lastUsedAt: true,
+  requestCount: true,
+  isActive: true,
+  createdAt: true,
+});
+export type InsertOrgApiKey = z.infer<typeof insertOrgApiKeySchema>;
+export type OrgApiKey = typeof orgApiKeys.$inferSelect;
+
 // Re-export chat models for AI integrations (used by integration storage)
 export * from "./models/chat";
