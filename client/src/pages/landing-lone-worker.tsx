@@ -4,8 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +19,7 @@ import {
 import {
   ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, MoreVertical, Mail,
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User,
-  ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles,
+  ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, Check, LogOut,
   MessageCircle, MessageSquare, ArrowLeft, Home, TreeDeciduous, Leaf, Timer,
   Map, HardHat, Flame, Moon, BatteryLow
 } from "lucide-react";
@@ -31,10 +29,6 @@ import { useAuth } from "@/contexts/auth-context";
 
 import isoBadgeImg from "@/assets/images/iso-27001-badge.png";
 
-const TIER1_MONTHLY_PRICE = 9.99;
-const TIER1_YEARLY_PRICE = 99.99;
-const TIER2_MONTHLY_PRICE = 16.99;
-const TIER2_YEARLY_PRICE = 169.99;
 
 interface EcologiImpact {
   trees: number;
@@ -45,7 +39,6 @@ interface EcologiImpact {
 export default function LandingLoneWorker() {
   const { toast } = useToast();
   const { user, logout } = useAuth();
-  const [isYearly, setIsYearly] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const { data: ecologiImpact } = useQuery<EcologiImpact>({
@@ -97,83 +90,6 @@ export default function LandingLoneWorker() {
     }
   };
 
-  const pricingPlans = [
-    {
-      name: "7 Day Trial",
-      description: "Try all features free for 7 days. No commitment required.",
-      note: "After your trial ends, you'll automatically continue unless you cancel.",
-      monthlyPrice: 0,
-      yearlyPrice: 0,
-      features: [
-        { text: "Full access to all features", icon: Check },
-        { text: "No payment details required upfront", icon: Lock },
-        { text: "Cancel anytime during trial", icon: Clock },
-      ],
-      cta: "Start Free Trial",
-      ctaLink: "/onboarding",
-      highlight: false,
-      isTrial: true,
-    },
-    {
-      name: "Essential",
-      description: "Core check-in and alert tools for peace of mind.",
-      monthlyPrice: TIER1_MONTHLY_PRICE,
-      yearlyPrice: TIER1_YEARLY_PRICE,
-      features: [
-        { text: "Shake to Alert - instant emergency help", icon: Zap },
-        { text: "Flexible check-in timer (5 mins to 48 hours)", icon: Clock },
-        { text: "Up to 5 emergency contacts", icon: Users },
-        { text: "Email, SMS & voice call alerts", icon: Bell },
-        { text: "Emergency alert button", icon: AlertTriangle },
-        { text: "GPS location with what3words", icon: MapPin },
-        { text: "Push notifications", icon: Smartphone },
-        { text: "Primary contact/carer updates", icon: Heart },
-        { text: "Offline SMS check-in backup", icon: MessageSquare },
-      ],
-      cta: "Get Started",
-      ctaLink: "/onboarding",
-      highlight: false,
-      launchNote: "Launch pricing - Lock in today's rate forever",
-      priceProtected: true,
-    },
-    {
-      name: "Complete Wellbeing",
-      description: "Everything in Essential plus wellness, AI, and more.",
-      monthlyPrice: TIER2_MONTHLY_PRICE,
-      yearlyPrice: TIER2_YEARLY_PRICE,
-      features: [
-        { text: "Everything in Essential", icon: Check },
-        { text: "Emergency recording (opt-in)", icon: Lock },
-        { text: "Mood & wellness tracking", icon: TrendingUp },
-        { text: "Pet protection profiles", icon: PawPrint },
-        { text: "Important document storage", icon: Scroll },
-        { text: "Wellbeing AI (Exclusive)", icon: Sparkles },
-        { text: "Activities tracker", icon: MapPin },
-      ],
-      cta: "Get Started",
-      ctaLink: "/onboarding",
-      highlight: true,
-      badge: "Most Popular",
-      launchNote: "Launch pricing - Lock in today's rate forever",
-      priceProtected: true,
-    },
-    {
-      name: "Organisations",
-      description: "Support your staff, clients, or residents with wellbeing tools.",
-      monthlyPrice: null,
-      yearlyPrice: null,
-      features: [
-        { text: "All Complete Wellbeing features", icon: Check },
-        { text: "Dedicated organisation dashboard", icon: Building2 },
-        { text: "Bulk user management", icon: Users },
-        { text: "Custom bundles & packages", icon: Heart },
-      ],
-      cta: "Contact Us",
-      ctaLink: "mailto:help@aok.care?subject=Organisation%20Enquiry%20-%20aok%20Bundles%20%26%20Packages",
-      highlight: false,
-      isOrganisation: true,
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -653,119 +569,61 @@ export default function LandingLoneWorker() {
       </section>
 
       <section id="pricing" className="py-20 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
+        <div className="container mx-auto max-w-3xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Pricing</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Start protecting your lone workers today. No hidden fees, cancel anytime.
+              Tailored to your organisation. No one-size-fits-all.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
-            <div className="flex items-center justify-center gap-2 p-2 bg-muted rounded-lg">
-              <Lock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">SSL Secured</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center gap-4 mb-12">
-            <Label htmlFor="lw-billing-toggle" className={!isYearly ? "font-semibold" : "text-muted-foreground"}>
-              Monthly
-            </Label>
-            <Switch
-              id="lw-billing-toggle"
-              checked={isYearly}
-              onCheckedChange={setIsYearly}
-              data-testid="switch-billing-toggle"
-            />
-            <div className="flex items-center gap-2">
-              <Label htmlFor="lw-billing-toggle" className={isYearly ? "font-semibold" : "text-muted-foreground"}>
-                Yearly
-              </Label>
-              <Badge variant="secondary" className="text-xs">2 months OFF!</Badge>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {pricingPlans.map((plan, index) => (
-              <Card
-                key={index}
-                className={`relative flex flex-col ${plan.highlight ? "border-primary shadow-lg" : ""}`}
-                data-testid={`card-plan-${plan.name.toLowerCase().replace(/\s+/g, '-')}`}
-              >
-                {plan.badge && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2" data-testid="badge-most-popular">
-                    {plan.badge}
-                  </Badge>
-                )}
-                <CardHeader>
-                  <CardTitle className="text-2xl flex items-center gap-2">
-                    {plan.name}
-                  </CardTitle>
-                  <div className="mt-4">
-                    {plan.isTrial ? (
-                      <div className="text-4xl font-bold">Free<span className="text-lg font-normal text-muted-foreground"> for 7 days</span></div>
-                    ) : plan.isOrganisation ? (
-                      <div className="text-2xl font-bold">Contact us<span className="text-lg font-normal text-muted-foreground block">for bundles &amp; packages</span></div>
-                    ) : (
-                      <div className="text-4xl font-bold">
-                        £{isYearly ? plan.yearlyPrice : plan.monthlyPrice}
-                        <span className="text-lg font-normal text-muted-foreground">/{isYearly ? "year" : "month"}</span>
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  {plan.launchNote && (
-                    <p className="text-sm text-primary mb-4">{plan.launchNote}</p>
-                  )}
-                  {plan.priceProtected && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                      <Lock className="h-4 w-4" />
-                      Price-protected for life
-                    </div>
-                  )}
-                  <CardDescription className="mb-4">{plan.description}</CardDescription>
-                  {plan.note && (
-                    <p className="text-sm text-muted-foreground mb-4">{plan.note}</p>
-                  )}
-                  {plan.features.length > 0 && (
-                    <ul className="space-y-2">
-                      {plan.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-start gap-2">
-                          <feature.icon className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                          <span className="text-sm">{feature.text}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </CardContent>
-                <CardFooter>
-                  {plan.ctaLink.startsWith("mailto:") ? (
-                    <a href={plan.ctaLink} className="w-full">
-                      <Button
-                        variant={plan.highlight ? "default" : "outline"}
-                        className="w-full"
-                        data-testid={`button-plan-${plan.name.toLowerCase()}`}
-                      >
-                        {plan.cta}
-                      </Button>
-                    </a>
-                  ) : (
-                    <Link href={plan.ctaLink} className="w-full">
-                      <Button
-                        variant={plan.highlight ? "default" : "outline"}
-                        className="w-full"
-                        data-testid={`button-plan-${plan.name.toLowerCase()}`}
-                      >
-                        {plan.cta}
-                      </Button>
-                    </Link>
-                  )}
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+          <Card className="border-primary shadow-lg" data-testid="card-pricing-contact">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl">Contact Us for Pricing</CardTitle>
+              <CardDescription className="text-base mt-2">
+                Lone worker pricing depends on your company size, number of workers, and the features you need. We'll work with you to build a package that fits your organisation and budget.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Flexible pricing based on team size</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Custom bundle allocations and seat packages</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Volume discounts for larger organisations</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Dedicated onboarding and account management</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Full access to all lone worker features</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Shield className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">ISO 27001-compliant, UK GDPR-ready infrastructure</span>
+                </li>
+              </ul>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-3">
+              <a href="mailto:help@aok.care?subject=Lone%20Worker%20Pricing%20Enquiry" className="w-full">
+                <Button className="w-full" size="lg" data-testid="button-contact-pricing">
+                  <Mail className="h-4 w-4 mr-2" />
+                  Get a Quote
+                </Button>
+              </a>
+              <p className="text-xs text-muted-foreground text-center">
+                Email help@aok.care or use the button above. We typically respond within 24 hours.
+              </p>
+            </CardFooter>
+          </Card>
         </div>
       </section>
 

@@ -575,6 +575,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "**7-Day Free Trial** — full access to every feature, no payment details required upfront. Cancel anytime during the trial.",
       "**Complete Wellbeing** — £16.99/month or £169.99/year (save 2 months). Includes check-ins, emergency alerts, SMS and voice call alerts, GPS location sharing, wellbeing AI chat, mood tracking, pet protection, important document storage, GPS fitness tracking, activities tracker, and a tree planted via Ecologi.",
       "**Organisations** — custom pricing for bundles of seats. Includes everything in Complete Wellbeing plus a dedicated organisation dashboard, bulk client management, staff roles, safeguarding hub, lone worker session management, Call Supervisor, reports, analytics dashboard, and emergency recording per-client controls.",
+      "**Lone Worker** — pricing depends on your company size, number of workers, and features required. Contact help@aok.care to get a tailored quote for your organisation.",
       "Apple Pay and Google Pay are supported for quick and easy payment.",
       "You can cancel at any time — your account stays active until the end of your billing period.",
       "If you're managed by an organisation, your access is included at no cost to you.",
