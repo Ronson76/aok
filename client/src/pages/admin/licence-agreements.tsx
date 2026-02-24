@@ -227,6 +227,25 @@ const documentContentMap: Record<string, { title: string; sections: Array<{ head
       { heading: "8. Organisational Risk Mitigation Impact", content: "Clear evidential safeguarding trail in the event of incident investigation. Strengthened insurer confidence and positioning. Enhanced board-level reporting capability. Reduced exposure to negligence claims. Transparent, accountable safeguarding governance." },
     ],
   },
+  "grc-rollout-plan": {
+    title: "GRC / Safeguarding Assurance \u2014 Commercial Roll Out Plan",
+    sections: [
+      { heading: "1. Who You Pilot First", content: "Start where safeguarding pressure is high, governance is weak, inspection risk is real, and the decision chain is short. Do not start with the biggest names." },
+      { heading: "Tier 1 \u2014 Fastest Wins (Ideal First 5 Pilots)", content: "Supported housing providers (mid-size): CQC pressure (if regulated activity), local authority contract monitoring, weak assurance tooling, CEO accessible. Typical size: 50\u2013300 units, 40\u2013250 staff.\n\nChildren\u2019s homes (small groups with 2\u20136 homes): Ofsted \u201Cleadership & management\u201D is everything, need oversight across multiple homes, manual processes everywhere. Your dashboard = instant value.\n\nHomelessness / outreach charities: Lone working risk, funder scrutiny, incident defensibility issues. You give them funder leverage." },
+      { heading: "Who NOT to Start With", content: "Too slow for pilot cycle: Local authorities (procurement delay), NHS trusts, huge housing associations. They come after case studies exist." },
+      { heading: "2. The Buyer (You Are NOT Selling to Ops)", content: "Primary targets inside the organisation: Director of Governance, Head of Safeguarding, CEO (in smaller orgs).\n\nSecondary: Responsible Individual (children\u2019s homes), CQC Registered Manager (supported living).\n\nAvoid starting with: IT, frontline managers. They don\u2019t own the problem." },
+      { heading: "3. The Pitch \u2014 Door Opener", content: "You are not selling software. You are selling: \u201CInspection & Funder Readiness in 60 Days.\u201D\n\nOpening line: \u201CIf Ofsted/CQC inspected today, could you evidence safeguarding oversight in real time \u2014 at board level?\u201D Pause. Then: \u201CWe don\u2019t replace your systems. We give leadership live assurance and an exportable audit trail.\u201D\n\nThat lands instantly." },
+      { heading: "4-Slide Pilot Pitch", content: "Slide 1 \u2014 The Risk: Safeguarding judged on evidence, not policy. Governance gap between frontline & board.\n\nSlide 2 \u2014 The Shift: From manual reporting to live control monitoring.\n\nSlide 3 \u2014 The Outcome (In 60 days): Safeguarding assurance score, service risk heatmap, inspection-ready board report, funder-ready audit pack.\n\nSlide 4 \u2014 The Pilot Structure: 1 service, 8 weeks, fixed fee, no system replacement. Close." },
+      { heading: "4. Pilot Commercial Model", content: "You do NOT pilot for free. That kills perceived value.\n\nPilot pricing: \u00A35k \u2013 \u00A315k (depending on org size).\n\nIncludes: onboarding, configuration, weekly governance report, final board pack.\n\nThis is cheap compared to: failed inspection, lost funding, serious incident review." },
+      { heading: "5. Case Study Output", content: "Every pilot must produce: \u201CBefore vs After Safeguarding Assurance\u201D\n\nBefore AOK: No measurable oversight, spreadsheet reporting, no response time visibility.\n\nAfter AOK: 93% welfare check compliance, 8 min average response time, real-time board dashboard, inspection-ready in 8 weeks.\n\nThat document sells the next 10 clients." },
+      { heading: "6. Pricing Model \u2014 GRC Layer (Separate from Per-Seat)", content: "Two revenue lines: (1) AOK operational platform (per user / per service), (2) Safeguarding Assurance & GRC layer (per organisation).\n\nTier 1 \u2014 Core Assurance (small providers): \u00A3750 \u2013 \u00A31,500/month. Includes KPI dashboard, control effectiveness, board report export.\n\nTier 2 \u2014 Governance & Inspection (mid-size orgs): \u00A31,500 \u2013 \u00A33,000/month. Adds service-level heatmaps, serious incident chronology, funder pack exports, SSO.\n\nTier 3 \u2014 Enterprise GRC Data Feed (large orgs / groups): \u00A33,000 \u2013 \u00A37,000+/month. Adds API access for their GRC platform, automated control feed, custom reporting, multi-entity oversight." },
+      { heading: "7. Why This Pricing Works", content: "You\u2019re not positioned as a feature. You\u2019re positioned as governance infrastructure, inspection protection, and a funding enabler. That lives in a different budget." },
+      { heading: "8. 12-Month Land Grab Strategy", content: "Months 1\u20133: 5 pilots (children\u2019s + supported housing).\n\nMonths 4\u20136: Turn pilots \u2192 contracts. Publish case studies. Target groups with multiple services.\n\nMonths 7\u201312: Framework conversations. National charities. Housing groups.\n\nNow you\u2019re a recognised category." },
+      { heading: "9. The Category You Claim Publicly", content: "You are: \u201CThe Safeguarding Assurance Platform.\u201D Not a check-in app. Not a wellbeing app.\n\nThat changes: who buys, how much they pay, how investors value you." },
+      { heading: "10. The Blunt Commercial Reality", content: "If you execute this: You are no longer selling \u00A34.50/user/month. You are selling \u00A312k \u2013 \u00A360k/year organisational contracts. That is a completely different company." },
+      { heading: "Next Steps", content: "Exact first 20 target organisations in the UK. Actual outreach message that gets meetings with governance leads. Landing page structure for the GRC product line. That\u2019s the move from strategy \u2192 pipeline." },
+    ],
+  },
   "final-pitch": {
     title: "A-OK \u2014 Final Pitch (Full)",
     sections: [
@@ -268,6 +287,7 @@ const documentIdTitleMap: Record<string, string> = {
   "final-pitch": "Final Pitch",
   "safeguarding-compliance-framework": "Safeguarding Compliance Framework",
   "load-test-report": "Load Testing Report",
+  "grc-rollout-plan": "GRC Roll Out Plan",
 };
 
 function exportDocumentPdf(documentId: string, title: string) {
@@ -955,6 +975,7 @@ export default function AdminLicenceAgreements() {
                 { title: "Final Pitch (Full)", route: "#", icon: FileText, docId: "final-pitch", exportOnly: true },
                 { title: "Safeguarding Compliance Framework", route: "#", icon: Shield, docId: "safeguarding-compliance-framework", exportOnly: true },
                 { title: "Load Testing Report", route: "#", icon: Activity, docId: "load-test-report", exportOnly: true },
+                { title: "GRC Roll Out Plan", route: "#", icon: TrendingUp, docId: "grc-rollout-plan", exportOnly: true },
               ].map((doc) => (
                 <div key={doc.docId} className="flex items-center gap-3 p-3 border rounded-md" data-testid={`quicklink-${doc.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
                   <doc.icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
