@@ -205,12 +205,12 @@ export default function LandingLoneWorker() {
                 UK Health &amp; Safety Executive compliant lone worker monitoring. Automatic check-ins, real-time GPS tracking, and instant escalation when something goes wrong.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                <Link href="/onboarding">
+                <a href="mailto:help@aok.care?subject=Lone%20Worker%20Pricing%20Enquiry">
                   <Button size="lg" className="w-full sm:w-auto gap-2" data-testid="button-get-started">
-                    Get Started Free
-                    <ChevronRight className="h-4 w-4" />
+                    Get a Quote
+                    <Mail className="h-4 w-4" />
                   </Button>
-                </Link>
+                </a>
                 <Link href="/demo">
                   <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2" data-testid="button-view-demo">
                     See Demo
@@ -222,7 +222,7 @@ export default function LandingLoneWorker() {
                 <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 md:gap-6 text-xs md:text-base text-muted-foreground">
                   <div className="flex items-center gap-1 md:gap-2">
                     <CheckCircle className="h-3 w-3 md:h-5 md:w-5 text-green-500 flex-shrink-0" />
-                    <span className="md:font-medium">Free trial</span>
+                    <span className="md:font-medium">Tailored pricing</span>
                   </div>
                   <div className="flex items-center gap-1 md:gap-2">
                     <CheckCircle className="h-3 w-3 md:h-5 md:w-5 text-green-500 flex-shrink-0" />
@@ -230,7 +230,7 @@ export default function LandingLoneWorker() {
                   </div>
                   <div className="flex items-center gap-1 md:gap-2">
                     <CheckCircle className="h-3 w-3 md:h-5 md:w-5 text-green-500 flex-shrink-0" />
-                    <span className="md:font-medium">2 min set up</span>
+                    <span className="md:font-medium">Full onboarding</span>
                   </div>
                 </div>
               </div>
@@ -719,14 +719,15 @@ export default function LandingLoneWorker() {
             Protect Your Lone Workers Today
           </h2>
           <p className="text-lg opacity-90 mb-8 max-w-xl mx-auto">
-            It takes less than 2 minutes to set up. Give your team the protection they deserve.
+            Get in touch for a tailored package based on your team size and requirements.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/onboarding">
-              <Button size="lg" variant="secondary" className="w-full sm:w-auto" data-testid="button-start-now">
-                Create Account
+            <a href="mailto:help@aok.care?subject=Lone%20Worker%20Pricing%20Enquiry">
+              <Button size="lg" variant="secondary" className="w-full sm:w-auto gap-2" data-testid="button-start-now">
+                <Mail className="h-4 w-4" />
+                Get a Quote
               </Button>
-            </Link>
+            </a>
           </div>
         </div>
       </section>
