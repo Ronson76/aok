@@ -173,7 +173,7 @@ export default function Landing() {
         { text: "Custom bundles & packages", icon: Heart },
       ],
       cta: "Contact Us",
-      ctaLink: "mailto:organisations@aok.care?subject=Organisation%20Enquiry%20-%20aok%20Bundles%20%26%20Packages",
+      ctaLink: "mailto:help@aok.care?subject=Organisation%20Enquiry%20-%20aok%20Bundles%20%26%20Packages",
       highlight: false,
       isOrganisation: true,
     },
@@ -281,7 +281,7 @@ export default function Landing() {
                   Share aok
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <a href="mailto:support@aok.care?subject=Support%20Enquiry" className="flex items-center gap-2" data-testid="link-contact-us">
+                  <a href="mailto:help@aok.care?subject=Support%20Enquiry" className="flex items-center gap-2" data-testid="link-contact-us">
                     <Mail className="h-4 w-4" />
                     Contact Us
                   </a>
@@ -1315,14 +1315,14 @@ export default function Landing() {
                 <li><Link href="/onboarding"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-signup">Sign Up</span></Link></li>
                 <li><Link href="/login"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-signin">Sign In</span></Link></li>
                 <li><Link href="/forgot-password"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-reset">Reset Password</span></Link></li>
-                <li><a href="mailto:support@aok.care?subject=Support%20Enquiry" className="hover:text-foreground transition-colors" data-testid="link-footer-contact">Contact Us</a></li>
+                <li><a href="mailto:help@aok.care?subject=Support%20Enquiry" className="hover:text-foreground transition-colors" data-testid="link-footer-contact">Contact Us</a></li>
               </ul>
             </div>
             
             <div>
               <h4 className="font-semibold mb-4">For Organisations</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="mailto:organisations@aok.care?subject=Organisation%20Enquiry" className="hover:text-foreground transition-colors" data-testid="link-footer-sales">Contact Sales</a></li>
+                <li><a href="mailto:help@aok.care?subject=Organisation%20Enquiry" className="hover:text-foreground transition-colors" data-testid="link-footer-sales">Contact Sales</a></li>
               </ul>
             </div>
             

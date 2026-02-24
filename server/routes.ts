@@ -4310,7 +4310,7 @@ export async function registerRoutes(
       const { Resend } = await import("resend");
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
-        from: "aok <no-reply@aok.care>",
+        from: "aok <help@aok.care>",
         to: contact.email,
         subject: `${user?.name || "Someone"} shared a route with you`,
         html: `<h2>Route: ${route.name}</h2><p><strong>${user?.name}</strong> shared a planned route with you.</p><p><strong>Distance:</strong> ${distanceKm} km</p><p><strong>Band:</strong> ${route.distanceBand || "Unknown"}</p><p>This route was shared via aok - the personal safety check-in app.</p>`,

@@ -232,8 +232,8 @@ export default function Security() {
         </section>
 
         <div className="text-center text-sm text-muted-foreground">
-          <p>Questions about our security practices? Contact us at <a href="mailto:security@aok.care" className="text-green-600 hover:underline">security@aok.care</a></p>
-          <p className="mt-1">Data protection enquiries: <a href="mailto:dpo@aok.care" className="text-green-600 hover:underline">dpo@aok.care</a></p>
+          <p>Questions about our security practices? Contact us at <a href="mailto:help@aok.care" className="text-green-600 hover:underline">help@aok.care</a></p>
+          <p className="mt-1">Data protection enquiries: <a href="mailto:help@aok.care" className="text-green-600 hover:underline">help@aok.care</a></p>
         </div>
       </main>
     </div>

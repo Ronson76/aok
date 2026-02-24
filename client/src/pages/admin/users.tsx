@@ -896,7 +896,7 @@ export default function AdminUsers() {
               <Input
                 id="org-email"
                 type="email"
-                placeholder="admin@naiyacare.com"
+                placeholder="admin@aok.care"
                 value={orgEmail}
                 onChange={(e) => setOrgEmail(e.target.value)}
                 data-testid="input-org-email"

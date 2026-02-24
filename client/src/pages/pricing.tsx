@@ -93,7 +93,7 @@ export default function Pricing() {
         { text: "Volume discounts on seat bundles", icon: TrendingUp },
       ],
       cta: "Contact Us",
-      ctaLink: "mailto:organisations@aok.care?subject=Organisation%20Enquiry%20-%20aok%20Bundles%20%26%20Packages",
+      ctaLink: "mailto:help@aok.care?subject=Organisation%20Enquiry%20-%20aok%20Bundles%20%26%20Packages",
       highlight: false,
       isOrganisation: true,
     },

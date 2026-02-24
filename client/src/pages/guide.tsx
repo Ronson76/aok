@@ -588,7 +588,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "- **Correction**: Update your personal details in Settings at any time",
       "- **Deletion**: Delete your account and all data from **Settings > Your Data & Privacy > Delete Account**",
       "- **Objection**: Object to certain types of data processing",
-      "For any data requests, contact **privacy@aok.care** or **dpo@aok.care**.",
+      "For any data requests, contact **help@aok.care**.",
     ],
   },
   {
