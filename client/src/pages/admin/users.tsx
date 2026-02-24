@@ -52,6 +52,10 @@ export default function AdminUsers() {
   const [orgEmail, setOrgEmail] = useState("");
   const [orgPassword, setOrgPassword] = useState("");
   const [showOrgPassword, setShowOrgPassword] = useState(false);
+  const [orgSafeguardingEnabled, setOrgSafeguardingEnabled] = useState(false);
+  const [orgSafeguardingExpiry, setOrgSafeguardingExpiry] = useState("");
+  const [orgRegisterEnabled, setOrgRegisterEnabled] = useState(false);
+  const [orgRegisterExpiry, setOrgRegisterExpiry] = useState("");
   const [orgAssuranceEnabled, setOrgAssuranceEnabled] = useState(false);
   const [orgAssuranceExpiry, setOrgAssuranceExpiry] = useState("");
   const [orgApiAccessEnabled, setOrgApiAccessEnabled] = useState(false);
@@ -345,6 +349,10 @@ export default function AdminUsers() {
   const createOrgMutation = useMutation({
     mutationFn: async () => {
       const featureDefaults: Record<string, any> = {};
+      featureDefaults.orgFeatureSafeguarding = orgSafeguardingEnabled;
+      featureDefaults.orgFeatureSafeguardingExpiresAt = orgSafeguardingExpiry || null;
+      featureDefaults.orgFeatureRegister = orgRegisterEnabled;
+      featureDefaults.orgFeatureRegisterExpiresAt = orgRegisterExpiry || null;
       featureDefaults.orgFeatureAssurance = orgAssuranceEnabled;
       featureDefaults.orgFeatureAssuranceExpiresAt = orgAssuranceExpiry || null;
       featureDefaults.orgFeatureApiAccess = orgApiAccessEnabled;
@@ -764,6 +772,90 @@ export default function AdminUsers() {
                               <div className="space-y-3">
                                 <div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-md">
                                   <div className="flex items-center gap-2">
+                                    <ShieldCheck className="h-4 w-4 text-red-500" />
+                                    <span className="text-sm font-medium">Safeguarding</span>
+                                    {expandedOrgFeatures?.orgFeatureSafeguardingExpiresAt && (
+                                      <span className="text-xs text-muted-foreground">
+                                        (expires {new Date(expandedOrgFeatures.orgFeatureSafeguardingExpiresAt).toLocaleDateString("en-GB")})
+                                      </span>
+                                    )}
+                                  </div>
+                                  <Switch
+                                    checked={expandedOrgFeatures?.orgFeatureSafeguarding ?? false}
+                                    onCheckedChange={(checked) => {
+                                      if (expandedOrgId) {
+                                        updateOrgFeatureMutation.mutate({
+                                          orgId: expandedOrgId,
+                                          updates: { orgFeatureSafeguarding: checked },
+                                        });
+                                      }
+                                    }}
+                                    data-testid={`switch-safeguarding-${org.id}`}
+                                  />
+                                </div>
+                                {expandedOrgFeatures?.orgFeatureSafeguarding && (
+                                  <div className="ml-6 flex items-center gap-2">
+                                    <Label className="text-xs text-muted-foreground whitespace-nowrap">Expiry:</Label>
+                                    <Input
+                                      type="date"
+                                      value={expandedOrgFeatures?.orgFeatureSafeguardingExpiresAt ? new Date(expandedOrgFeatures.orgFeatureSafeguardingExpiresAt).toISOString().split('T')[0] : ""}
+                                      onChange={(e) => {
+                                        if (expandedOrgId) {
+                                          updateOrgFeatureMutation.mutate({
+                                            orgId: expandedOrgId,
+                                            updates: { orgFeatureSafeguardingExpiresAt: e.target.value || null },
+                                          });
+                                        }
+                                      }}
+                                      className="h-7 text-xs w-40"
+                                      data-testid={`input-safeguarding-expiry-${org.id}`}
+                                    />
+                                  </div>
+                                )}
+                                <div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-md">
+                                  <div className="flex items-center gap-2">
+                                    <Archive className="h-4 w-4 text-teal-500" />
+                                    <span className="text-sm font-medium">Register</span>
+                                    {expandedOrgFeatures?.orgFeatureRegisterExpiresAt && (
+                                      <span className="text-xs text-muted-foreground">
+                                        (expires {new Date(expandedOrgFeatures.orgFeatureRegisterExpiresAt).toLocaleDateString("en-GB")})
+                                      </span>
+                                    )}
+                                  </div>
+                                  <Switch
+                                    checked={expandedOrgFeatures?.orgFeatureRegister ?? false}
+                                    onCheckedChange={(checked) => {
+                                      if (expandedOrgId) {
+                                        updateOrgFeatureMutation.mutate({
+                                          orgId: expandedOrgId,
+                                          updates: { orgFeatureRegister: checked },
+                                        });
+                                      }
+                                    }}
+                                    data-testid={`switch-register-${org.id}`}
+                                  />
+                                </div>
+                                {expandedOrgFeatures?.orgFeatureRegister && (
+                                  <div className="ml-6 flex items-center gap-2">
+                                    <Label className="text-xs text-muted-foreground whitespace-nowrap">Expiry:</Label>
+                                    <Input
+                                      type="date"
+                                      value={expandedOrgFeatures?.orgFeatureRegisterExpiresAt ? new Date(expandedOrgFeatures.orgFeatureRegisterExpiresAt).toISOString().split('T')[0] : ""}
+                                      onChange={(e) => {
+                                        if (expandedOrgId) {
+                                          updateOrgFeatureMutation.mutate({
+                                            orgId: expandedOrgId,
+                                            updates: { orgFeatureRegisterExpiresAt: e.target.value || null },
+                                          });
+                                        }
+                                      }}
+                                      className="h-7 text-xs w-40"
+                                      data-testid={`input-register-expiry-${org.id}`}
+                                    />
+                                  </div>
+                                )}
+                                <div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-md">
+                                  <div className="flex items-center gap-2">
                                     <Shield className="h-4 w-4 text-indigo-500" />
                                     <span className="text-sm font-medium">Assurance Dashboard</span>
                                     {expandedOrgFeatures?.orgFeatureAssuranceExpiresAt && (
@@ -1062,6 +1154,60 @@ export default function AdminUsers() {
             <div className="border-t pt-4 mt-2">
               <p className="text-sm font-medium mb-3">Enterprise Features</p>
               <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="org-safeguarding" className="flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4 text-red-500" />
+                      Safeguarding
+                    </Label>
+                    <Switch
+                      id="org-safeguarding"
+                      checked={orgSafeguardingEnabled}
+                      onCheckedChange={setOrgSafeguardingEnabled}
+                      data-testid="switch-org-safeguarding"
+                    />
+                  </div>
+                  {orgSafeguardingEnabled && (
+                    <div className="ml-6">
+                      <Label htmlFor="org-safeguarding-expiry" className="text-xs text-muted-foreground">Expiry Date (optional)</Label>
+                      <Input
+                        id="org-safeguarding-expiry"
+                        type="date"
+                        value={orgSafeguardingExpiry}
+                        onChange={(e) => setOrgSafeguardingExpiry(e.target.value)}
+                        className="mt-1"
+                        data-testid="input-org-safeguarding-expiry"
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="org-register" className="flex items-center gap-2">
+                      <Archive className="h-4 w-4 text-teal-500" />
+                      Register
+                    </Label>
+                    <Switch
+                      id="org-register"
+                      checked={orgRegisterEnabled}
+                      onCheckedChange={setOrgRegisterEnabled}
+                      data-testid="switch-org-register"
+                    />
+                  </div>
+                  {orgRegisterEnabled && (
+                    <div className="ml-6">
+                      <Label htmlFor="org-register-expiry" className="text-xs text-muted-foreground">Expiry Date (optional)</Label>
+                      <Input
+                        id="org-register-expiry"
+                        type="date"
+                        value={orgRegisterExpiry}
+                        onChange={(e) => setOrgRegisterExpiry(e.target.value)}
+                        className="mt-1"
+                        data-testid="input-org-register-expiry"
+                      />
+                    </div>
+                  )}
+                </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="org-assurance" className="flex items-center gap-2">

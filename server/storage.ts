@@ -2652,6 +2652,10 @@ class DatabaseStorage implements IStorage {
       orgFeatureWellbeingAi: users.orgFeatureWellbeingAi,
       orgFeatureFitnessTracking: users.orgFeatureFitnessTracking,
       orgFeatureActivitiesTracker: users.orgFeatureActivitiesTracker,
+      orgFeatureSafeguarding: users.orgFeatureSafeguarding,
+      orgFeatureSafeguardingExpiresAt: users.orgFeatureSafeguardingExpiresAt,
+      orgFeatureRegister: users.orgFeatureRegister,
+      orgFeatureRegisterExpiresAt: users.orgFeatureRegisterExpiresAt,
       orgFeatureAssurance: users.orgFeatureAssurance,
       orgFeatureAssuranceExpiresAt: users.orgFeatureAssuranceExpiresAt,
       orgFeatureApiAccess: users.orgFeatureApiAccess,
@@ -2660,6 +2664,8 @@ class DatabaseStorage implements IStorage {
     if (!user) return undefined;
     return {
       ...user,
+      orgFeatureSafeguardingExpiresAt: user.orgFeatureSafeguardingExpiresAt?.toISOString() ?? null,
+      orgFeatureRegisterExpiresAt: user.orgFeatureRegisterExpiresAt?.toISOString() ?? null,
       orgFeatureAssuranceExpiresAt: user.orgFeatureAssuranceExpiresAt?.toISOString() ?? null,
       orgFeatureApiAccessExpiresAt: user.orgFeatureApiAccessExpiresAt?.toISOString() ?? null,
     };
@@ -2667,6 +2673,12 @@ class DatabaseStorage implements IStorage {
 
   async updateOrgFeatureDefaults(orgId: string, updates: OrgFeatureDefaults): Promise<void> {
     const dbUpdates: any = { ...updates };
+    if ('orgFeatureSafeguardingExpiresAt' in dbUpdates) {
+      dbUpdates.orgFeatureSafeguardingExpiresAt = dbUpdates.orgFeatureSafeguardingExpiresAt ? new Date(dbUpdates.orgFeatureSafeguardingExpiresAt) : null;
+    }
+    if ('orgFeatureRegisterExpiresAt' in dbUpdates) {
+      dbUpdates.orgFeatureRegisterExpiresAt = dbUpdates.orgFeatureRegisterExpiresAt ? new Date(dbUpdates.orgFeatureRegisterExpiresAt) : null;
+    }
     if ('orgFeatureAssuranceExpiresAt' in dbUpdates) {
       dbUpdates.orgFeatureAssuranceExpiresAt = dbUpdates.orgFeatureAssuranceExpiresAt ? new Date(dbUpdates.orgFeatureAssuranceExpiresAt) : null;
     }
