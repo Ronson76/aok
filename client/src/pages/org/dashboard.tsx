@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon, Video, Scale, PenLine, Share2, Copy, ClipboardList, ChevronDown, ChevronUp, ChevronRight, Filter, ArrowLeft, ArrowRight, BarChart3, Calendar, MessageSquare } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Clock, AlertTriangle, AlertOctagon, Loader2, Trash2, Eye, EyeOff, Key, KeyRound, User, Phone, Mail, FileText, MapPin, Edit2, Pause, Play, XCircle, X, LogOut, Settings, TrendingUp, PawPrint, Scroll, ExternalLink, Smartphone, Shield, ShieldCheck, Plus, RotateCcw, Bell, BellOff, Search, Archive, Upload, Download, FileSpreadsheet, CheckCircle2, XOctagon, Video, Scale, PenLine, Share2, Copy, ClipboardList, ChevronDown, ChevronUp, ChevronRight, Filter, ArrowLeft, ArrowRight, BarChart3, Calendar, MessageSquare } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -1600,6 +1600,12 @@ export default function OrganizationDashboard() {
               <Button variant="outline" size="sm" className="border-green-600 text-green-600 hover:bg-green-50" data-testid="button-assurance">
                 <ShieldCheck className="h-4 w-4 mr-2" />
                 Assurance
+              </Button>
+            </Link>
+            <Link href="/org/api-access">
+              <Button variant="outline" size="sm" className="border-indigo-600 text-indigo-600" data-testid="button-api-access">
+                <Key className="h-4 w-4 mr-2" />
+                API
               </Button>
             </Link>
             <Button 

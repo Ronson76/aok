@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Search, X, Users, UserPlus, Radio, Shield, FileText,
-  ChevronRight, ArrowLeft, Settings, HelpCircle, BarChart3
+  ChevronRight, ArrowLeft, Settings, HelpCircle, BarChart3, Key
 } from "lucide-react";
 
 interface HelpTopic {
@@ -30,6 +30,7 @@ const HELP_CATEGORIES = [
   { id: "analytics", label: "Analytics", icon: BarChart3, color: "text-purple-600" },
   { id: "reports", label: "Reports", icon: FileText, color: "text-muted-foreground" },
   { id: "account", label: "Account & Settings", icon: Settings, color: "text-indigo-600" },
+  { id: "api-access", label: "API Access", icon: Key, color: "text-violet-600" },
 ];
 
 const HELP_TOPICS: HelpTopic[] = [
@@ -1322,6 +1323,88 @@ const HELP_TOPICS: HelpTopic[] = [
       "On **Mac** (Apple Silicon): the iOS app runs natively on MacBook or iMac via Mac Catalyst, with full keyboard, trackpad, and window resizing support.",
     ],
     relatedTopics: ["offline-sms-checkin", "troubleshooting-org"],
+  },
+  {
+    id: "api-access-overview",
+    title: "API Access — overview",
+    category: "api-access",
+    keywords: ["api", "key", "external", "grc", "integration", "assurance", "endpoint", "access"],
+    content: [
+      "The **API Access** page lets you create and manage API keys that allow external platforms to read your assurance data.",
+      "Navigate to it from the **API** button on your organisation dashboard.",
+      "API keys provide **read-only** access — external systems can view compliance summaries, risk heatmaps, and incident timelines but cannot modify any data.",
+      "All API requests are **rate-limited** (100 per minute) and **fully audit-logged** for security.",
+      "This feature is designed for integration with third-party GRC (Governance, Risk, Compliance) platforms, board reporting tools, and funder monitoring systems.",
+    ],
+    relatedTopics: ["api-create-key", "api-permissions", "api-endpoints"],
+  },
+  {
+    id: "api-create-key",
+    title: "Creating an API key",
+    category: "api-access",
+    keywords: ["api", "key", "create", "generate", "new", "token"],
+    content: [
+      "From the **API Access** page, tap **Create Key**.",
+      "Enter a descriptive **name** for the key (e.g. \"BoardEffect Integration\" or \"Funder Portal\").",
+      "Select which **permissions** the key should have — you can grant access to specific endpoints only.",
+      "Choose an **expiry period** (30 days, 90 days, 6 months, 1 year, or never).",
+      "Tap **Generate Key** — your API key will be displayed **once only**.",
+      "**Copy the key immediately** and store it securely. It cannot be retrieved after closing the dialog.",
+      "The key format starts with `aok_` followed by a long string of characters.",
+    ],
+    relatedTopics: ["api-access-overview", "api-revoke-key"],
+  },
+  {
+    id: "api-revoke-key",
+    title: "Revoking an API key",
+    category: "api-access",
+    keywords: ["api", "key", "revoke", "delete", "disable", "deactivate", "remove"],
+    content: [
+      "To revoke an API key, go to the **API Access** page and find the key you want to disable.",
+      "Tap the **Revoke** button next to the key.",
+      "Confirm the revocation — **this action is permanent** and cannot be undone.",
+      "Any external systems using that key will **immediately lose access**.",
+      "Revoked keys remain visible in a separate section for audit purposes, showing their total request count.",
+      "If you need to restore access, create a new key and update the external system's configuration.",
+    ],
+    relatedTopics: ["api-create-key", "api-access-overview"],
+  },
+  {
+    id: "api-permissions",
+    title: "API key permissions",
+    category: "api-access",
+    keywords: ["api", "permission", "scope", "access", "endpoint", "assurance"],
+    content: [
+      "Each API key can be configured with specific **permissions** that control which data it can access:",
+      "• **Assurance Overview** — compliance summary, control scores, SLA percentages, and open alert counts.",
+      "• **Service Heatmap** — per-client risk levels based on check-in recency and active alerts.",
+      "• **Manager Oversight** — staff login activity and overdue engagement flags.",
+      "• **Incident Timeline** — 90-day emergency alert history with resolution times.",
+      "• **Event Chronology** — chronological event feed for detailed audit trails.",
+      "You can select all permissions or limit a key to only the endpoints the external platform needs.",
+      "This follows the **principle of least privilege** — only grant the minimum access required.",
+    ],
+    relatedTopics: ["api-create-key", "api-endpoints"],
+  },
+  {
+    id: "api-endpoints",
+    title: "API endpoints reference",
+    category: "api-access",
+    keywords: ["api", "endpoint", "url", "curl", "request", "header", "response"],
+    content: [
+      "All endpoints use **GET** requests and require an `X-API-Key` header.",
+      "**Base URL:** `/api/v1/assurance/`",
+      "**Endpoints:**",
+      "• `GET /api/v1/assurance/overview` — real-time compliance summary with control score",
+      "• `GET /api/v1/assurance/service-heatmap` — client risk levels and check-in status",
+      "• `GET /api/v1/assurance/manager-oversight` — staff engagement and login activity",
+      "• `GET /api/v1/assurance/incident-timeline` — 90-day emergency incident history",
+      "**Example request:**",
+      "`curl -H \"X-API-Key: aok_your_key_here\" https://aok.care/api/v1/assurance/overview`",
+      "All responses are in **JSON** format and include a `timestamp` field.",
+      "Rate limit: **100 requests per minute** per API key.",
+    ],
+    relatedTopics: ["api-permissions", "api-access-overview"],
   },
 ];
 

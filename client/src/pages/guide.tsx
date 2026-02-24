@@ -693,6 +693,20 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "api-access",
+    title: "API Access (organisations)",
+    content: [
+      "The **API Access** page allows organisations to create API keys for integrating aok assurance data with external GRC (Governance, Risk, Compliance) platforms.",
+      "Access it from the **API** button on your organisation dashboard.",
+      "API keys provide **read-only** access to your assurance data — external systems can view compliance summaries, risk heatmaps, and incident timelines but cannot modify any data.",
+      "**Creating a key:** Tap **Create Key**, give it a descriptive name, select which data endpoints it can access, choose an expiry period, and tap **Generate Key**. The key is shown once — copy and store it securely.",
+      "**Available endpoints:** Overview (compliance scores), Service Heatmap (client risk levels), Manager Oversight (staff activity), and Incident Timeline (90-day alert history).",
+      "**Security:** All API requests require the `X-API-Key` header, are rate-limited to 100 requests per minute, and are fully audit-logged.",
+      "**Revoking a key:** Tap the **Revoke** button next to any active key. This is permanent — the external system will immediately lose access.",
+      "Revoked keys remain visible in the audit trail for compliance purposes.",
+    ],
+  },
+  {
     id: "analytics-dashboard",
     title: "Analytics dashboard (organisations)",
     content: [
