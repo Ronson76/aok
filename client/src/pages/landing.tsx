@@ -243,7 +243,7 @@ export default function Landing() {
                     <Mail className="h-4 w-4" />
                   </Button>
                 </a>
-                <Link href="/demo">
+                <Link href="/demo?type=organisation">
                   <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2" data-testid="button-view-demo">
                     See Demo
                     <Play className="h-4 w-4" />
