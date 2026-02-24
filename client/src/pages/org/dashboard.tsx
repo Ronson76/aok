@@ -1596,6 +1596,12 @@ export default function OrganizationDashboard() {
                 Analytics
               </Button>
             </Link>
+            <Link href="/org/assurance">
+              <Button variant="outline" size="sm" className="border-green-600 text-green-600 hover:bg-green-50" data-testid="button-assurance">
+                <ShieldCheck className="h-4 w-4 mr-2" />
+                Assurance
+              </Button>
+            </Link>
             <Button 
               size="sm"
               data-testid="button-register-client" 

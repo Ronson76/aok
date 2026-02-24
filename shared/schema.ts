@@ -1583,11 +1583,88 @@ export type LoneWorkerCheckIn = typeof loneWorkerCheckIns.$inferSelect;
 
 // ===== ORGANIZATION IAM =====
 
-export const orgMemberRoles = ["owner", "manager", "staff", "viewer"] as const;
+export const orgMemberRoles = ["owner", "admin", "safeguarding_lead", "service_manager", "manager", "staff", "trustee", "viewer"] as const;
 export type OrgMemberRole = typeof orgMemberRoles[number];
 
 export const orgMemberStatuses = ["active", "disabled", "pending"] as const;
 export type OrgMemberStatus = typeof orgMemberStatuses[number];
+
+export const orgPermissions = [
+  "org.manage",
+  "org.settings",
+  "members.manage",
+  "members.view",
+  "clients.manage",
+  "clients.view",
+  "alerts.manage",
+  "alerts.view",
+  "safeguarding.manage",
+  "safeguarding.view",
+  "incidents.manage",
+  "incidents.view",
+  "audit.view",
+  "audit.export",
+  "reports.view",
+  "reports.export",
+  "analytics.view",
+  "lone_worker.manage",
+  "lone_worker.view",
+  "assurance.view",
+] as const;
+export type OrgPermission = typeof orgPermissions[number];
+
+export const rolePermissions: Record<OrgMemberRole, readonly OrgPermission[]> = {
+  owner: orgPermissions,
+  admin: orgPermissions,
+  safeguarding_lead: [
+    "clients.view", "alerts.manage", "alerts.view",
+    "safeguarding.manage", "safeguarding.view",
+    "incidents.manage", "incidents.view",
+    "audit.view", "audit.export",
+    "reports.view", "reports.export",
+    "analytics.view", "lone_worker.view",
+    "assurance.view", "members.view",
+  ],
+  service_manager: [
+    "clients.manage", "clients.view",
+    "alerts.view", "safeguarding.view",
+    "incidents.view", "audit.view",
+    "reports.view", "analytics.view",
+    "lone_worker.manage", "lone_worker.view",
+    "members.view",
+  ],
+  manager: [
+    "clients.manage", "clients.view",
+    "alerts.view", "safeguarding.view",
+    "incidents.view", "audit.view",
+    "reports.view", "lone_worker.manage",
+    "lone_worker.view", "members.view",
+  ],
+  staff: [
+    "clients.view", "alerts.view",
+    "incidents.view", "lone_worker.view",
+  ],
+  trustee: [
+    "assurance.view", "reports.view",
+    "reports.export", "analytics.view",
+    "audit.view", "safeguarding.view",
+  ],
+  viewer: [
+    "assurance.view", "reports.view",
+    "analytics.view",
+  ],
+};
+
+export const roleLabels: Record<OrgMemberRole, string> = {
+  owner: "Organisation Owner",
+  admin: "Organisation Admin",
+  safeguarding_lead: "Safeguarding Lead",
+  service_manager: "Service Manager",
+  manager: "Manager",
+  staff: "Staff",
+  trustee: "Trustee / Board Member",
+  viewer: "Read-Only Viewer",
+};
 
 export const organizationMembers = pgTable("organization_members", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

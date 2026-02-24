@@ -2,7 +2,7 @@ import { Express, Request, Response, NextFunction } from "express";
 import { organizationStorage, storage, orgMemberStorage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema, activeEmergencyAlerts, checkIns, organizationClients, users, safeguardingLeads, dbsChecks, trainingRecords } from "@shared/schema";
+import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema, activeEmergencyAlerts, checkIns, organizationClients, users, safeguardingLeads, dbsChecks, trainingRecords, rolePermissions, OrgPermission, roleLabels } from "@shared/schema";
 import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail, sendStaffInviteSMS, sendEmergencyContactConfirmationForStaffInvite } from "./notifications";
 import { plantTreeForNewSubscriber } from "./ecologiService";
 import { ensureDb } from "./db";
@@ -62,6 +62,44 @@ async function requireOrganization(req: Request, res: Response, next: NextFuncti
   req.orgId = req.userId;
   req.orgRole = "owner";
   next();
+}
+
+async function logViewEvent(req: Request, entityType: string, entityId?: string, details?: Record<string, any>) {
+  if (!req.orgId) return;
+  try {
+    await storage.createAuditEntry(req.orgId, {
+      userEmail: req.orgMember?.email || (req.user as any)?.email,
+      userRole: req.orgRole || "owner",
+      actorId: req.orgMember?.id || req.userId,
+      actorRole: req.orgRole || "owner",
+      action: "view",
+      entityType,
+      entityId,
+      eventType: "data_access",
+      newData: details || null,
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+  } catch (err) {
+    console.error("[AUDIT] Failed to log view event:", err);
+  }
+}
+
+function hasPermission(role: string, permission: OrgPermission): boolean {
+  const perms = rolePermissions[role as keyof typeof rolePermissions];
+  if (!perms) return false;
+  return perms.includes(permission);
+}
+
+function requirePermission(...permissions: OrgPermission[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const role = req.orgRole || "viewer";
+    const hasAll = permissions.every(p => hasPermission(role, p));
+    if (!hasAll) {
+      return res.status(403).json({ error: "You do not have permission to perform this action" });
+    }
+    next();
+  };
 }
 
 // Schema for adding a client
@@ -470,9 +508,8 @@ export function registerOrganizationRoutes(app: Express) {
   // Permanently delete an archived client (senior team members only: owner/manager)
   app.delete("/api/org/clients/:clientId/permanent", requireOrganization, async (req, res) => {
     try {
-      const role = req.orgRole;
-      if (role !== "owner" && role !== "manager") {
-        return res.status(403).json({ error: "Only senior team members (owner or manager) can permanently delete clients." });
+      if (!hasPermission(req.orgRole || "viewer", "clients.manage")) {
+        return res.status(403).json({ error: "You do not have permission to permanently delete clients." });
       }
 
       const { clientId } = req.params;
@@ -506,9 +543,11 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
-  // Get current user's organisation role
   app.get("/api/org/my-role", requireOrganization, async (req, res) => {
-    res.json({ role: req.orgRole || "owner" });
+    const role = req.orgRole || "owner";
+    const permissions = rolePermissions[role as keyof typeof rolePermissions] || [];
+    const label = roleLabels[role as keyof typeof roleLabels] || role;
+    res.json({ role, permissions, label });
   });
 
   // Update client basic details (nickname, name, phone, supervisor)
@@ -2730,13 +2769,13 @@ export function registerOrganizationRoutes(app: Express) {
 
   app.post("/api/org/team/invite", requireOrganization, async (req, res) => {
     try {
-      if (req.orgRole !== "owner") {
-        return res.status(403).json({ error: "Only the owner can invite team members" });
+      if (req.orgRole !== "owner" && req.orgRole !== "admin") {
+        return res.status(403).json({ error: "Only owners and admins can invite team members" });
       }
       const schema = z.object({
         email: z.string().email(),
         name: z.string().min(1),
-        role: z.enum(["manager", "staff", "viewer"]),
+        role: z.enum(["admin", "safeguarding_lead", "service_manager", "manager", "staff", "trustee", "viewer"]),
       });
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) {
@@ -2783,11 +2822,12 @@ export function registerOrganizationRoutes(app: Express) {
 
   app.patch("/api/org/team/:memberId/role", requireOrganization, async (req, res) => {
     try {
-      if (req.orgRole !== "owner") {
-        return res.status(403).json({ error: "Only the owner can change roles" });
+      if (req.orgRole !== "owner" && req.orgRole !== "admin") {
+        return res.status(403).json({ error: "Only owners and admins can change roles" });
       }
       const { role } = req.body;
-      if (!role || !["manager", "staff", "viewer"].includes(role)) {
+      const validRoles = ["admin", "safeguarding_lead", "service_manager", "manager", "staff", "trustee", "viewer"];
+      if (!role || !validRoles.includes(role)) {
         return res.status(400).json({ error: "Invalid role" });
       }
       const member = await orgMemberStorage.getMemberById(req.params.memberId);
@@ -2814,8 +2854,8 @@ export function registerOrganizationRoutes(app: Express) {
 
   app.patch("/api/org/team/:memberId/status", requireOrganization, async (req, res) => {
     try {
-      if (req.orgRole !== "owner") {
-        return res.status(403).json({ error: "Only the owner can change status" });
+      if (!hasPermission(req.orgRole || "viewer", "members.manage")) {
+        return res.status(403).json({ error: "You do not have permission to change member status" });
       }
       const { status } = req.body;
       if (!status || !["active", "disabled"].includes(status)) {
@@ -2845,8 +2885,8 @@ export function registerOrganizationRoutes(app: Express) {
 
   app.delete("/api/org/team/:memberId", requireOrganization, async (req, res) => {
     try {
-      if (req.orgRole !== "owner") {
-        return res.status(403).json({ error: "Only the owner can remove team members" });
+      if (!hasPermission(req.orgRole || "viewer", "members.manage")) {
+        return res.status(403).json({ error: "You do not have permission to remove team members" });
       }
       const member = await orgMemberStorage.getMemberById(req.params.memberId);
       if (!member || member.organizationId !== req.orgId) {
@@ -3216,6 +3256,271 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error: any) {
       console.error("[LONE WORKER] Supervisor cancel error:", error);
       res.status(500).json({ error: "Failed to cancel emergency" });
+    }
+  });
+
+  // ===== ASSURANCE DASHBOARD (Inspection Demo) =====
+
+  app.get("/api/org/assurance/overview", requireOrganization, requirePermission("assurance.view"), async (req, res) => {
+    try {
+      const orgId = req.orgId!;
+
+      const clients = await organizationStorage.getOrganizationClients(orgId);
+      const activeClients = clients.filter((c: any) => c.status === "active");
+
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const allCheckIns = await getDb()
+        .select()
+        .from(checkIns)
+        .where(sql`${checkIns.userId} IN (SELECT client_id FROM organization_clients WHERE organization_id = ${orgId} AND status = 'active')`)
+        .orderBy(desc(checkIns.timestamp));
+
+      const recentCheckIns = allCheckIns.filter((c: any) => new Date(c.timestamp) >= thirtyDaysAgo);
+      const weekCheckIns = allCheckIns.filter((c: any) => new Date(c.timestamp) >= sevenDaysAgo);
+
+      const activeAlerts = await getDb()
+        .select()
+        .from(activeEmergencyAlerts)
+        .where(and(
+          sql`${activeEmergencyAlerts.userId} IN (SELECT client_id FROM organization_clients WHERE organization_id = ${orgId} AND status = 'active')`,
+          eq(activeEmergencyAlerts.isActive, true)
+        ));
+
+      const totalAlerts30d = await getDb()
+        .select()
+        .from(activeEmergencyAlerts)
+        .where(sql`${activeEmergencyAlerts.userId} IN (SELECT client_id FROM organization_clients WHERE organization_id = ${orgId} AND status = 'active') AND ${activeEmergencyAlerts.activatedAt} >= ${thirtyDaysAgo}`);
+
+      const resolvedAlerts30d = totalAlerts30d.filter((a: any) => !a.isActive);
+      const avgResponseTime = resolvedAlerts30d.length > 0
+        ? Math.round(resolvedAlerts30d.reduce((sum: number, a: any) => {
+            const activated = new Date(a.activatedAt).getTime();
+            const resolved = a.resolvedAt ? new Date(a.resolvedAt).getTime() : now.getTime();
+            return sum + (resolved - activated);
+          }, 0) / resolvedAlerts30d.length / 60000)
+        : 0;
+
+      const auditResult = await storage.verifyAuditChain(orgId);
+
+      const missedCheckInAlerts = totalAlerts30d.filter((a: any) => a.alertType === "missed_checkin" || !a.alertType);
+      const slaCompliant = totalAlerts30d.length > 0
+        ? Math.round((resolvedAlerts30d.length / totalAlerts30d.length) * 100)
+        : 100;
+
+      const controlScore = Math.min(100, Math.round(
+        (activeClients.length > 0 ? 20 : 0) +
+        (weekCheckIns.length > 0 ? 25 : 0) +
+        (slaCompliant >= 80 ? 20 : slaCompliant >= 50 ? 10 : 0) +
+        (auditResult.valid ? 20 : 0) +
+        (avgResponseTime < 30 || totalAlerts30d.length === 0 ? 15 : avgResponseTime < 60 ? 10 : 5)
+      ));
+
+      await logViewEvent(req, "assurance_dashboard", undefined, { screen: "overview" });
+
+      res.json({
+        controlScore,
+        slaCompliance: slaCompliant,
+        openHighRiskAlerts: activeAlerts.length,
+        totalClients: activeClients.length,
+        activeCheckIns7d: weekCheckIns.length,
+        totalAlerts30d: totalAlerts30d.length,
+        resolvedAlerts30d: resolvedAlerts30d.length,
+        avgResponseTimeMinutes: avgResponseTime,
+        auditIntegrity: auditResult.valid,
+        auditEntriesChecked: auditResult.totalChecked,
+      });
+    } catch (error) {
+      console.error("[ASSURANCE] Overview error:", error);
+      res.status(500).json({ error: "Failed to load assurance overview" });
+    }
+  });
+
+  app.get("/api/org/assurance/service-heatmap", requireOrganization, requirePermission("assurance.view"), async (req, res) => {
+    try {
+      const orgId = req.orgId!;
+      const clients = await organizationStorage.getOrganizationClients(orgId);
+      const activeClients = clients.filter((c: any) => c.status === "active");
+
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const clientRisks = await Promise.all(activeClients.map(async (client: any) => {
+        const clientCheckIns = await getDb()
+          .select()
+          .from(checkIns)
+          .where(and(
+            eq(checkIns.userId, client.clientId),
+            sql`${checkIns.timestamp} >= ${sevenDaysAgo}`
+          ));
+
+        const clientAlerts = await getDb()
+          .select()
+          .from(activeEmergencyAlerts)
+          .where(and(
+            eq(activeEmergencyAlerts.userId, client.clientId),
+            eq(activeEmergencyAlerts.isActive, true)
+          ));
+
+        const hasRecentCheckIn = clientCheckIns.length > 0;
+        const hasActiveAlert = clientAlerts.length > 0;
+        let riskLevel: "low" | "medium" | "high" = "low";
+        if (hasActiveAlert) riskLevel = "high";
+        else if (!hasRecentCheckIn) riskLevel = "medium";
+
+        return {
+          clientId: client.clientId,
+          nickname: client.nickname || client.referenceCode,
+          referenceCode: client.referenceCode,
+          riskLevel,
+          lastCheckIn: clientCheckIns[0]?.timestamp || null,
+          activeAlerts: clientAlerts.length,
+          checkInsThisWeek: clientCheckIns.length,
+        };
+      }));
+
+      const summary = {
+        high: clientRisks.filter(c => c.riskLevel === "high").length,
+        medium: clientRisks.filter(c => c.riskLevel === "medium").length,
+        low: clientRisks.filter(c => c.riskLevel === "low").length,
+      };
+
+      await logViewEvent(req, "assurance_dashboard", undefined, { screen: "service_heatmap" });
+
+      res.json({ clients: clientRisks, summary });
+    } catch (error) {
+      console.error("[ASSURANCE] Service heatmap error:", error);
+      res.status(500).json({ error: "Failed to load service heatmap" });
+    }
+  });
+
+  app.get("/api/org/assurance/alert-chronology/:alertId", requireOrganization, requirePermission("alerts.view"), async (req, res) => {
+    try {
+      const orgId = req.orgId!;
+      const { alertId } = req.params;
+
+      const [alert] = await getDb()
+        .select()
+        .from(activeEmergencyAlerts)
+        .where(eq(activeEmergencyAlerts.id, parseInt(alertId)));
+
+      if (!alert) {
+        return res.status(404).json({ error: "Alert not found" });
+      }
+
+      const auditEntries = await storage.getAuditTrail(orgId, {
+        entityType: undefined,
+        action: undefined,
+        search: alertId,
+        page: 1,
+        limit: 50,
+      });
+
+      const timeline = [
+        {
+          timestamp: alert.activatedAt,
+          event: "Alert activated",
+          type: "activation",
+          details: {
+            alertType: alert.alertType || "emergency",
+            location: alert.location || null,
+          },
+        },
+        ...auditEntries.entries.map((entry: any) => ({
+          timestamp: entry.createdAt,
+          event: entry.action,
+          type: "audit",
+          details: {
+            userEmail: entry.userEmail,
+            entityType: entry.entityType,
+            newData: entry.newData,
+          },
+        })),
+      ];
+
+      if (!alert.isActive && alert.resolvedAt) {
+        timeline.push({
+          timestamp: alert.resolvedAt,
+          event: "Alert resolved",
+          type: "resolution",
+          details: { resolvedBy: "system" },
+        });
+      }
+
+      timeline.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+      await logViewEvent(req, "alert_chronology", alertId, { screen: "chronology" });
+
+      res.json({ alert, timeline });
+    } catch (error) {
+      console.error("[ASSURANCE] Alert chronology error:", error);
+      res.status(500).json({ error: "Failed to load alert chronology" });
+    }
+  });
+
+  app.get("/api/org/assurance/manager-oversight", requireOrganization, requirePermission("assurance.view"), async (req, res) => {
+    try {
+      const orgId = req.orgId!;
+      const members = await orgMemberStorage.getMembersByOrganization(orgId);
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      const managerData = members
+        .filter(m => ["owner", "admin", "safeguarding_lead", "service_manager", "manager"].includes(m.role))
+        .map(m => ({
+          id: m.id,
+          name: m.name,
+          email: m.email,
+          role: m.role,
+          roleLabel: roleLabels[m.role as keyof typeof roleLabels] || m.role,
+          lastLogin: m.lastLoginAt,
+          status: m.status,
+          daysSinceLogin: m.lastLoginAt
+            ? Math.floor((now.getTime() - new Date(m.lastLoginAt).getTime()) / (1000 * 60 * 60 * 24))
+            : null,
+        }));
+
+      await logViewEvent(req, "assurance_dashboard", undefined, { screen: "manager_oversight" });
+
+      res.json({ managers: managerData });
+    } catch (error) {
+      console.error("[ASSURANCE] Manager oversight error:", error);
+      res.status(500).json({ error: "Failed to load manager oversight" });
+    }
+  });
+
+  app.get("/api/org/assurance/incident-timeline", requireOrganization, requirePermission("assurance.view"), async (req, res) => {
+    try {
+      const orgId = req.orgId!;
+      const now = new Date();
+      const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+
+      const alerts = await getDb()
+        .select()
+        .from(activeEmergencyAlerts)
+        .where(sql`${activeEmergencyAlerts.userId} IN (SELECT client_id FROM organization_clients WHERE organization_id = ${orgId}) AND ${activeEmergencyAlerts.activatedAt} >= ${ninetyDaysAgo}`)
+        .orderBy(desc(activeEmergencyAlerts.activatedAt));
+
+      const incidents = alerts.map((a: any) => ({
+        id: a.id,
+        type: a.alertType || "emergency",
+        activatedAt: a.activatedAt,
+        resolvedAt: a.resolvedAt,
+        isActive: a.isActive,
+        location: a.location,
+        responseTimeMinutes: a.resolvedAt
+          ? Math.round((new Date(a.resolvedAt).getTime() - new Date(a.activatedAt).getTime()) / 60000)
+          : null,
+      }));
+
+      await logViewEvent(req, "assurance_dashboard", undefined, { screen: "incident_timeline" });
+
+      res.json({ incidents });
+    } catch (error) {
+      console.error("[ASSURANCE] Incident timeline error:", error);
+      res.status(500).json({ error: "Failed to load incident timeline" });
     }
   });
 }
