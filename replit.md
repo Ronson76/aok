@@ -1,7 +1,7 @@
 # aok
 
 ## Overview
-aok is a personal safety check-in application designed to provide peace of mind by connecting users with loved ones. It features configurable check-in frequencies, automated alerts to emergency contacts via email and voice calls upon missed check-ins, and an emergency alert button with GPS sharing. The application also includes a comprehensive dashboard for managing check-ins, contacts, history, and settings, alongside optional wellness features like mood tracking, pet protection profiles, secure digital document storage, and built-in GPS fitness tracking with AI integration. The project aims to deliver a robust, reliable, and user-friendly personal safety solution.
+aok is a personal safety check-in application designed to connect users with loved ones, offering peace of mind through configurable check-in frequencies and automated alerts to emergency contacts via email and voice calls upon missed check-ins. It includes an emergency alert button with GPS sharing and a comprehensive dashboard for managing check-ins, contacts, history, and settings. The application also incorporates optional wellness features such as mood tracking, pet protection profiles, secure digital document storage, and built-in GPS fitness tracking with AI integration. The project's vision is to provide a robust, reliable, and user-friendly personal safety solution with significant market potential.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -12,82 +12,50 @@ Database rule: When clearing or modifying data, it must be done via the applicat
 ## System Architecture
 
 ### Frontend
-- **Framework**: React 18 with TypeScript
-- **Routing**: Wouter
-- **State Management**: TanStack React Query
-- **Styling**: Tailwind CSS with CSS custom properties for theming (light/dark mode, Admin slate, Org indigo)
-- **UI Components**: shadcn/ui built on Radix UI
-- **Build Tool**: Vite
-- **Design Principles**: Mobile-first, card-based layout, consistent spacing, bottom navigation.
-- **Native App Support**: Capacitor 8 for iOS, Android, and Mac Catalyst app build capability with native plugins.
-- **Internationalisation (i18n)**: i18next with English, Welsh (Cymraeg), and Spanish (Español) translations; browser language detection; inline resources from `client/src/locales/`.
-- **Accessibility**: Skip-to-content links, ARIA navigation roles, `aria-current="page"` on active nav items, `role="alert"` on form errors, `aria-labels` on icon-only buttons, 44px touch targets.
+- **Framework & Libraries**: React 18 with TypeScript, Wouter for routing, TanStack React Query for state management.
+- **Styling**: Tailwind CSS with CSS custom properties for theming (light/dark mode, Admin slate, Org indigo), shadcn/ui built on Radix UI for UI components.
+- **Build & Design**: Vite build tool, mobile-first design, card-based layout, consistent spacing, bottom navigation.
+- **Native Support**: Capacitor 8 for iOS, Android, and Mac Catalyst app builds with native plugins.
+- **Internationalization**: i18next with English, Welsh, and Spanish translations, browser language detection.
+- **Accessibility**: Skip-to-content links, ARIA roles, `aria-current="page"`, `role="alert"`, `aria-labels` on icon-only buttons, 44px touch targets.
+- **PWA & Offline**: Service Worker (v3) for app shell and API response caching, `offline.html` fallback, offline emergency overlay, PWA install prompts.
 
 ### Backend
-- **Runtime**: Node.js with Express
-- **Language**: TypeScript
-- **API Design**: RESTful JSON API (`/api/` prefix)
-- **Build Process**: esbuild for production, tsx for development
-
-### Security & Resilience
-- **Two-Factor Authentication (2FA)**: TOTP-based using OTPAuth library; 6-digit codes, 30-second period, 1-window validation tolerance. Available for user, organisation, and admin accounts. QR code setup flow. Secrets excluded from all API responses.
-- **Rate Limiting**: express-rate-limit on login (10/15min) and password reset (5/hour) endpoints, plus global API rate limiting (120/min).
-- **CSRF Protection**: Double-submit cookie pattern with x-csrf-token header validation; excludes webhook endpoints.
-- **Service Resilience**: Retry with exponential backoff, circuit breakers (5 failures threshold, 60s cooldown), multi-provider fallback for notifications.
-- **Structured Logging**: pino-based JSON logging with module-specific child loggers (auth, notifications, resilience, analytics, scheduler); PII redaction.
-- **Database Indexes**: 12 performance indexes created automatically on startup via `server/performanceIndexes.ts` (using `CREATE INDEX IF NOT EXISTS` for idempotency) covering active_emergency_alerts (activated_at, user_id, location, is_active), check_ins (user_id, timestamp), organization_clients (organization_id, client_id), sessions, mood_entries, contacts, and audit_logs.
-- **Notification Health Checks**: `/api/admin/notifications/health` endpoint monitoring external service status (Resend, SendGrid, Gmail, Outlook, Twilio).
-
-### PWA & Offline Support
-- **Service Worker**: `client/public/sw.js` (v3) with app shell caching, API response caching with offline fallback, and dedicated `offline.html` fallback page.
-- **Offline Emergency Overlay**: Quick-dial buttons for primary contact and 999 when connection is lost.
-- **Safe Area Insets**: `viewport-fit=cover` meta tag for notch devices; safe-area-inset padding applied.
-- **Install Prompt**: PWA installable on iOS (Safari) and Android (Chrome).
-
-### Native App (Capacitor)
-- **Framework**: Capacitor 8 with `capacitor.config.ts`.
-- **Plugins**: Geolocation (background/foreground), Haptics, Status Bar, Keyboard.
-- **Theme**: Dark theme backgrounds (`#0f172a`), status bar overlay.
-- **Permissions**: Location (always/when-in-use), camera, microphone.
-- **Mac Catalyst**: `SUPPORTS_MACCATALYST = YES`, `TARGETED_DEVICE_FAMILY = "1,2,6"`. Mac-safe plugin fallbacks in `client/src/lib/native.ts` (Haptics, Motion, StatusBar gracefully disabled on Mac). Window sizing constraints (375x667 min, 1400x1000 max). `preferredContentMode: 'desktop'` for proper layout.
+- **Runtime**: Node.js with Express.
+- **Language**: TypeScript.
+- **API Design**: RESTful JSON API (`/api/` prefix).
+- **Build Process**: esbuild for production, tsx for development.
 
 ### Data Layer
-- **ORM**: Drizzle ORM for PostgreSQL
-- **Schema Definition**: Shared TypeScript schemas with Zod validation.
-- **Storage**: Fully persistent PostgreSQL via Drizzle ORM.
+- **ORM**: Drizzle ORM for PostgreSQL.
+- **Schema**: Shared TypeScript schemas with Zod validation.
+- **Storage**: Persistent PostgreSQL database.
+
+### Security & Resilience
+- **Authentication**: TOTP-based Two-Factor Authentication (2FA) for user, organization, and admin accounts.
+- **Rate Limiting**: `express-rate-limit` on critical endpoints and global API.
+- **CSRF Protection**: Double-submit cookie pattern.
+- **Service Resilience**: Retry with exponential backoff, circuit breakers, multi-provider fallback for notifications.
+- **Logging**: `pino`-based structured JSON logging with PII redaction.
+- **Database Indexes**: 12 performance indexes created automatically on startup.
+- **Notification Health Checks**: `/api/admin/notifications/health` endpoint for monitoring external service status.
 
 ### Core Features
-- **Check-in System**: User-defined frequency, automated alerts on missed check-ins.
-- **Alert System**: Email and voice calls to emergency contacts.
+- **Check-in & Alert System**: User-defined check-in frequency, automated email and voice call alerts to emergency contacts.
 - **Emergency Features**: Emergency alert button with GPS, shake-to-SOS, offline emergency overlay, optional emergency recording.
-- **Wellness Features**: Mood/Wellness Tracking, Pet Protection, Important Document Storage, GPS Fitness Tracking, Route Planning, Activities Tracker.
+- **Wellness Features**: Mood/Wellness Tracking, Pet Protection profiles, Important Document Storage, GPS Fitness Tracking, Route Planning, Activities Tracker, AI chat for wellbeing.
 - **Compliance**: Non-skippable onboarding with legal disclaimers and consent logging.
-- **Admin Dashboard**: Role-based access for user/organization management, license agreements, revenue tracking, feature permissions, and security audit logging.
-- **Organization Features**: Client and staff management (including bulk import), monitoring, dynamic feature control per client, safeguarding hub, analytics dashboard (peak times, alert heatmap, active SOS alerts), comprehensive audit trail with tamper-evident hash chains, PDF/CSV exports, integrity verification, and configurable retention policies.
-- **AI Integration**: In-app AI chat for wellbeing with mood pattern detection, streaming responses, and voice chat mode.
-- **Two-Factor Authentication**: TOTP-based 2FA for all account types (user, organisation, admin) with QR code setup, authenticator app verification, and password-protected disable flow.
-- **Multi-Language Support**: English, Welsh (Cymraeg), and Spanish (Español) with automatic browser language detection and persistent preference.
+- **Admin Dashboard**: Role-based access, user/organization management, license agreements, revenue tracking, feature permissions, security audit logging.
+- **Organization Features**: Client and staff management, monitoring, dynamic feature control, safeguarding hub, analytics dashboard, comprehensive audit trail with tamper-evident hash chains, PDF/CSV exports.
+- **Enterprise RBAC**: 8 tiers of organization member roles with granular permission-based middleware.
+- **Legal Agreements**: Comprehensive suite of legal documents including EULA, DPA, Privacy Policy, and Terms.
 
-### Legal / Licence Agreements
-- Comprehensive suite of legal documents including EULA, Enterprise Licence, DPA, SLA, Lone Worker Addendum, IP Ownership, NDA, Privacy Policy, and Terms and Conditions.
-
-## Key Files
-- `server/routes.ts` — Main API routes (auth, check-ins, contacts, emergencies, settings, 2FA)
-- `server/adminRoutes.ts` — Admin dashboard API routes
-- `server/organizationRoutes.ts` — Organisation management API routes
-- `server/storage.ts` — Database storage layer (Drizzle ORM)
-- `server/performanceIndexes.ts` — Database performance indexes (auto-created on startup)
-- `shared/schema.ts` — Shared TypeScript/Zod schemas and Drizzle table definitions
-- `client/src/pages/login.tsx` — Login page with 2FA support
-- `client/src/pages/settings.tsx` — Settings page with 2FA setup, language switcher
-- `client/src/pages/guide.tsx` — Public How-to Guide (A-Z searchable)
-- `client/src/components/org-help-center.tsx` — Organisation Help Centre (categorised, searchable)
-- `client/src/components/two-factor-setup.tsx` — 2FA QR code setup component
-- `client/src/lib/i18n.ts` — i18next configuration and initialisation
-- `client/src/locales/en.json`, `cy.json`, `es.json` — Translation files
-- `client/public/sw.js` — Service worker for offline PWA support
-- `client/public/offline.html` — Offline fallback page
-- `capacitor.config.ts` — Capacitor native app configuration
+### Native App (Capacitor)
+- **Configuration**: Capacitor 8 with `capacitor.config.ts`.
+- **Plugins**: Geolocation (background/foreground), Haptics, Status Bar, Keyboard.
+- **Theme**: Dark theme backgrounds, status bar overlay.
+- **Permissions**: Location, camera, microphone.
+- **Mac Catalyst**: Specific configuration for Mac build, including plugin fallbacks and window sizing constraints.
 
 ## External Dependencies
 
@@ -106,38 +74,3 @@ Database rule: When clearing or modifying data, it must be done via the applicat
 - **Ecologi**: Environmental impact tracking.
 - **OpenAI**: AI chat features (GPT-4o, TTS, Whisper API).
 - **Leaflet/OpenStreetMap**: Map rendering.
-
-### Service Resilience
-- **Retry Mechanisms**: Exponential backoff for critical notifications.
-- **Email Fallback Chain**: Sequential fallback across multiple email providers.
-- **Circuit Breaker**: Isolates failing services to prevent cascading failures.
-- **Health Tracking**: Real-time monitoring of external service status via `/api/admin/notifications/health`.
-
-## Recent Changes
-- **Supervisor Emergency Cancellation**: Supervisors can cancel emergencies for unresponsive/panic lone workers from the Live Monitor. Requires checkbox confirmation that they've spoken to the worker and entry of the organisation account password. Failed attempts are audit-logged. API: `POST /api/org/lone-worker/:sessionId/supervisor-cancel`.
-- **Alert Flowcharts**: Visual step-by-step diagrams for Individual User, Organisation Client, Lone Worker, and Activity Tracker flows. Available in the admin dashboard under "Alert Flow" tab and at `/flowcharts`.
-- **Lone Worker Supervisor System**: Supervisor designated as primary contact for missed check-ins and emergencies; emergency contacts are secondary. Supervisor fields (name, phone, email) stored on staff invites. Edit dialog in Lone Worker Hub staff tab with SMS phone verification.
-- **International Phone Handling**: Country code selector (UK +44 default, plus IE, DE, FR, US) on all phone fields. Auto-strips leading zeros for correct E.164 formatting.
-- **Live Location Map**: Location button per worker in Live Monitor expands inline Leaflet/OSM map with pulsing status-coloured marker, coordinates, last-updated time, and Google Maps link. Marker colour updates live with status changes. GPS sent immediately on shift start, then every 60 seconds.
-- **SMS Supervisor Verification**: POST `/api/org/supervisor/send-verification` and `/verify-sms` endpoints. 6-digit code sent via Twilio, verified before saving supervisor phone.
-- **Staff Detail Editing**: PATCH `/api/org/staff/invite/:inviteId/details` endpoint for updating staff name, phone, email, supervisor details. Edit dialog in Lone Worker Hub staff tab.
-- **Documentation**: Guide and Help Centre updated with staff registration (including cancellation password), supervisor emergency cancellation, live location tracking, supervisor details, SMS verification, and international phone number entries.
-- **2FA Security Hardening**: `twoFactorSecret` excluded from all user profile API responses across routes, admin, org, and storage layers. 2FA TOTP verification added to organisation login flow.
-- **Multi-Language Support**: i18next with EN/CY/ES translations, browser detection, language switcher component.
-- **Offline PWA**: Service worker v3, offline.html fallback, app shell caching, API response caching.
-- **Performance Indexes**: 12 database indexes auto-created on startup for critical query paths.
-- **Accessibility**: Skip links, ARIA roles, keyboard navigation, 44px touch targets.
-- **Capacitor Polish**: Dark theme backgrounds, geolocation/haptics/status bar/keyboard plugins configured.
-- **Notification Health**: Admin endpoint for monitoring external notification service status.
-- **Emergency Notes**: Organisation clients can have emergency notes (medical conditions, allergies, etc.) that are automatically included in alert messages.
-- **Audit Expiration Warnings**: Yellow/red banners warn organisations when audit trail data is approaching or past retention limits.
-- **Admin Permanent Delete**: Super admins can permanently delete archived users via DELETE `/api/admin/users/:id/permanent` with audit logging.
-- **Low Battery Alert**: Automatically emails primary contact/carer when device battery drops to 20% or below. Enabled by default, 4-hour cooldown between alerts. Toggle in Settings. API: `POST /api/battery-alert`. Separate from activity-specific low battery alerts. Uses Browser Battery API with `useBatteryMonitor` hook.
-- **Security & Compliance Page**: Public page at `/security` showcasing ISO 27001-certified infrastructure badge, SOC 2 Type 2 compliance, UK GDPR compliance, Cyber Essentials progress, security features (2FA, encryption, audit trails, rate limiting, CSRF, service resilience, contact consent), data architecture principles, and related legal document links. Footer link added on landing page.
-- **Safeguarding Policy Hub**: Policy tab in Safeguarding Hub for managing designated safeguarding leads (with primary lead designation), DBS checks (Basic/Standard/Enhanced/Enhanced+Barred, certificate tracking, expiry monitoring), and training records (course completion, provider, certificate references, renewal tracking). Compliance dashboard with traffic light status (green/amber/red). Three new DB tables: `safeguarding_leads`, `dbs_checks`, `training_records`. Full CRUD API under `/api/org/safeguarding/leads`, `/dbs-checks`, `/training-records`, `/policy-summary`. Guide and Help Centre updated.
-
-## Test Admin Credentials
-- **Email**: `agent-test@aok.care` (env var: `TEST_ADMIN_EMAIL`)
-- **Password**: `TestAdmin123!` (env var: `TEST_ADMIN_PASSWORD`)
-- **Role**: super_admin
-- These are stored in development environment variables for automated testing.

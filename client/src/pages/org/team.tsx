@@ -21,25 +21,31 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/auth-context";
 import { format, formatDistanceToNow } from "date-fns";
 import type { OrgMemberProfile, OrgMemberInvite, OrgMemberRole } from "@shared/schema";
+import { roleLabels } from "@shared/schema";
 
 interface TeamData {
   members: OrgMemberProfile[];
   invites: OrgMemberInvite[];
 }
 
+const roleBadgeStyles: Record<string, string> = {
+  owner: "bg-purple-600 text-white",
+  admin: "bg-purple-500 text-white",
+  safeguarding_lead: "bg-red-600 text-white",
+  service_manager: "bg-indigo-600 text-white",
+  manager: "bg-blue-600 text-white",
+  staff: "bg-green-600 text-white",
+  trustee: "bg-amber-600 text-white",
+  viewer: "",
+};
+
 function getRoleBadge(role: OrgMemberRole) {
-  switch (role) {
-    case "owner":
-      return <Badge className="bg-purple-600 text-white no-default-hover-elevate no-default-active-elevate" data-testid={`badge-role-${role}`}>Owner</Badge>;
-    case "manager":
-      return <Badge className="bg-blue-600 text-white no-default-hover-elevate no-default-active-elevate" data-testid={`badge-role-${role}`}>Manager</Badge>;
-    case "staff":
-      return <Badge className="bg-green-600 text-white no-default-hover-elevate no-default-active-elevate" data-testid={`badge-role-${role}`}>Staff</Badge>;
-    case "viewer":
-      return <Badge variant="secondary" data-testid={`badge-role-${role}`}>Viewer</Badge>;
-    default:
-      return <Badge variant="secondary">{role}</Badge>;
+  const style = roleBadgeStyles[role] || "";
+  const label = roleLabels[role] || role;
+  if (!style) {
+    return <Badge variant="secondary" data-testid={`badge-role-${role}`}>{label}</Badge>;
   }
+  return <Badge className={`${style} no-default-hover-elevate no-default-active-elevate`} data-testid={`badge-role-${role}`}>{label}</Badge>;
 }
 
 function getStatusBadge(status: string) {
@@ -359,30 +365,17 @@ export default function OrgTeam() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => updateRoleMutation.mutate({ memberId: member.id, role: "manager" })}
-                                disabled={member.role === "manager"}
-                                data-testid={`button-set-role-manager-${member.id}`}
-                              >
-                                <Shield className="h-4 w-4 mr-2 text-blue-600" />
-                                Set as Manager
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => updateRoleMutation.mutate({ memberId: member.id, role: "staff" })}
-                                disabled={member.role === "staff"}
-                                data-testid={`button-set-role-staff-${member.id}`}
-                              >
-                                <UserCog className="h-4 w-4 mr-2 text-green-600" />
-                                Set as Staff
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => updateRoleMutation.mutate({ memberId: member.id, role: "viewer" })}
-                                disabled={member.role === "viewer"}
-                                data-testid={`button-set-role-viewer-${member.id}`}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                Set as Viewer
-                              </DropdownMenuItem>
+                              {(["admin", "safeguarding_lead", "service_manager", "manager", "staff", "trustee", "viewer"] as const).map((r) => (
+                                <DropdownMenuItem
+                                  key={r}
+                                  onClick={() => updateRoleMutation.mutate({ memberId: member.id, role: r })}
+                                  disabled={member.role === r}
+                                  data-testid={`button-set-role-${r}-${member.id}`}
+                                >
+                                  <UserCog className="h-4 w-4 mr-2" />
+                                  Set as {roleLabels[r]}
+                                </DropdownMenuItem>
+                              ))}
                               {member.status === "active" ? (
                                 <DropdownMenuItem
                                   onClick={() => updateStatusMutation.mutate({ memberId: member.id, status: "disabled" })}
@@ -529,9 +522,13 @@ export default function OrgTeam() {
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="admin">Organisation Admin</SelectItem>
+                  <SelectItem value="safeguarding_lead">Safeguarding Lead</SelectItem>
+                  <SelectItem value="service_manager">Service Manager</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
                   <SelectItem value="staff">Staff</SelectItem>
-                  <SelectItem value="viewer">Viewer</SelectItem>
+                  <SelectItem value="trustee">Trustee / Board Member</SelectItem>
+                  <SelectItem value="viewer">Read-Only Viewer</SelectItem>
                 </SelectContent>
               </Select>
             </div>
