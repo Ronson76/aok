@@ -740,7 +740,7 @@ export default function Landing() {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Get started in less than 2 minutes. No complicated setup required.
+              From onboarding to compliance reporting — we handle the setup so you can focus on safeguarding.
             </p>
           </div>
           
@@ -749,9 +749,9 @@ export default function Landing() {
               <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 1
               </div>
-              <h3 className="text-lg font-semibold mb-2">Start Your Onboarding Journey</h3>
+              <h3 className="text-lg font-semibold mb-2">We Set Up Your Organisation</h3>
               <p className="text-sm text-muted-foreground">
-                Begin our simple guided setup to create your account and personalise your safety settings.
+                The aok team creates your organisation account, configures your bundle allocation, and provides your login credentials.
               </p>
             </div>
             
@@ -759,9 +759,9 @@ export default function Landing() {
               <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 2
               </div>
-              <h3 className="text-lg font-semibold mb-2">Insert Your Details</h3>
+              <h3 className="text-lg font-semibold mb-2">Add Clients &amp; Staff</h3>
               <p className="text-sm text-muted-foreground">
-                Add your personal information and emergency contacts who'll be notified if needed.
+                Register your clients with reference codes, set individual check-in schedules, assign emergency contacts, and invite staff members with role-based access.
               </p>
             </div>
             
@@ -769,9 +769,9 @@ export default function Landing() {
               <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 3
               </div>
-              <h3 className="text-lg font-semibold mb-2">Set Your Check-In Time</h3>
+              <h3 className="text-lg font-semibold mb-2">Monitor &amp; Safeguard</h3>
               <p className="text-sm text-muted-foreground">
-                Choose how often you want to check in - from every 5 minutes to every 48 hours.
+                Track check-ins in real time, receive automated escalation alerts for missed check-ins, log safeguarding incidents, and manage cases through the Safeguarding Hub.
               </p>
             </div>
             
@@ -779,9 +779,9 @@ export default function Landing() {
               <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 4
               </div>
-              <h3 className="text-lg font-semibold mb-2">You're All Set</h3>
+              <h3 className="text-lg font-semibold mb-2">Report &amp; Evidence</h3>
               <p className="text-sm text-muted-foreground">
-                Start checking in and stay connected with your loved ones. We've got your back.
+                Generate funder-ready reports, export tamper-evident audit trails as PDF or CSV, and demonstrate compliance with CQC, Ofsted, and safeguarding regulations.
               </p>
             </div>
           </div>
