@@ -280,7 +280,7 @@ export default function LandingIndividual() {
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </Link>
-                <Link href="/demo">
+                <Link href="/demo?type=individual">
                   <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2" data-testid="button-view-demo">
                     See Demo
                     <Play className="h-4 w-4" />

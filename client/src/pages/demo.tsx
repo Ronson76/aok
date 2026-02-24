@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,8 @@ import {
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User,
   ChevronRight, Shield, Zap, Lock, TrendingUp, PawPrint, Scroll, Check,
   Sparkles, MessageSquare, ArrowLeft, Timer, Map, Camera, HardHat,
-  ChevronDown, Globe, Share2, Eye, Mic, ArrowRight
+  ChevronDown, Globe, Share2, Eye, Mic, ArrowRight, FileCheck,
+  ClipboardCheck, Key, BarChart3
 } from "lucide-react";
 
 type DemoSection = "overview" | "individual" | "organisation" | "lone-worker";
@@ -275,6 +276,183 @@ const DEMO_STEPS_ORG = [
     }
   },
   {
+    id: "org-assurance",
+    title: "Assurance Dashboard",
+    description: "Real-time safeguarding position with KPI tiles, service risk heatmaps, RAG status indicators, and board governance reports. Inspection-ready at all times.",
+    phone: {
+      bg: "bg-card",
+      content: (
+        <div className="flex flex-col h-full p-3">
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className="h-4 w-4 text-emerald-500" />
+            <span className="text-xs font-bold text-foreground">Assurance Dashboard</span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5 mb-3">
+            <div className="bg-green-500/10 rounded p-1.5 text-center">
+              <p className="text-sm font-bold text-green-600">94%</p>
+              <p className="text-[7px] text-muted-foreground">Control Score</p>
+            </div>
+            <div className="bg-blue-500/10 rounded p-1.5 text-center">
+              <p className="text-sm font-bold text-blue-600">97%</p>
+              <p className="text-[7px] text-muted-foreground">SLA Compliance</p>
+            </div>
+            <div className="bg-amber-500/10 rounded p-1.5 text-center">
+              <p className="text-sm font-bold text-amber-600">2</p>
+              <p className="text-[7px] text-muted-foreground">Open Alerts</p>
+            </div>
+            <div className="bg-emerald-500/10 rounded p-1.5 text-center">
+              <p className="text-sm font-bold text-emerald-600">16</p>
+              <p className="text-[7px] text-muted-foreground">Active Clients</p>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between p-1.5 rounded bg-muted/50 border">
+              <span className="text-[9px] text-foreground">Risk Heatmap</span>
+              <div className="flex gap-1">
+                <div className="h-2.5 w-2.5 rounded-sm bg-red-500" />
+                <div className="h-2.5 w-2.5 rounded-sm bg-amber-500" />
+                <div className="h-2.5 w-2.5 rounded-sm bg-green-500" />
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-1.5 rounded bg-muted/50 border">
+              <span className="text-[9px] text-foreground">Board Report</span>
+              <Badge variant="outline" className="text-[7px] px-1 py-0">Export</Badge>
+            </div>
+            <div className="flex items-center justify-between p-1.5 rounded bg-muted/50 border">
+              <span className="text-[9px] text-foreground">Incident Timeline</span>
+              <span className="text-[8px] text-muted-foreground">90 days</span>
+            </div>
+          </div>
+        </div>
+      )
+    }
+  },
+  {
+    id: "org-grc",
+    title: "GRC — Governance, Risk & Compliance",
+    description: "8-tier role-based access control, tamper-evident audit trails with hash-chain verification, security logging with PII redaction, and UK GDPR-compliant data handling.",
+    phone: {
+      bg: "bg-card",
+      content: (
+        <div className="flex flex-col h-full p-3">
+          <div className="flex items-center gap-2 mb-3">
+            <ClipboardCheck className="h-4 w-4 text-blue-500" />
+            <span className="text-xs font-bold text-foreground">GRC</span>
+          </div>
+          <div className="space-y-2">
+            <div className="p-2 rounded bg-blue-500/10 border border-blue-500/20">
+              <div className="flex items-center gap-1 mb-1">
+                <Users className="h-3 w-3 text-blue-500" />
+                <span className="text-[10px] font-semibold text-foreground">RBAC — 8 Tiers</span>
+              </div>
+              <p className="text-[9px] text-muted-foreground">Owner, Admin, Safeguarding Lead, Service Manager, Manager, Staff, Trustee, Viewer</p>
+            </div>
+            <div className="p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
+              <div className="flex items-center gap-1 mb-1">
+                <Shield className="h-3 w-3 text-emerald-500" />
+                <span className="text-[10px] font-semibold text-foreground">Audit Trail</span>
+              </div>
+              <p className="text-[9px] text-muted-foreground">Hash-chain verified, tamper-evident, exportable PDF/CSV</p>
+            </div>
+            <div className="p-2 rounded bg-indigo-500/10 border border-indigo-500/20">
+              <div className="flex items-center gap-1 mb-1">
+                <Lock className="h-3 w-3 text-indigo-500" />
+                <span className="text-[10px] font-semibold text-foreground">Security</span>
+              </div>
+              <p className="text-[9px] text-muted-foreground">TOTP 2FA, PII redaction, UK GDPR compliant</p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+  },
+  {
+    id: "org-funder",
+    title: "Funder Ready Reporting",
+    description: "Exportable PDF and CSV compliance reports, measurable outcomes with quantifiable metrics, board-level RAG status indicators, and trend analysis for funders and regulators.",
+    phone: {
+      bg: "bg-card",
+      content: (
+        <div className="flex flex-col h-full p-3">
+          <div className="flex items-center gap-2 mb-3">
+            <FileCheck className="h-4 w-4 text-indigo-500" />
+            <span className="text-xs font-bold text-foreground">Funder Ready</span>
+          </div>
+          <div className="space-y-2">
+            <div className="p-2 rounded bg-indigo-500/10 border border-indigo-500/20">
+              <p className="text-[10px] font-semibold text-foreground mb-1">Board Governance Report</p>
+              <div className="flex gap-1.5">
+                <Badge variant="outline" className="text-[7px] px-1 py-0">PDF</Badge>
+                <Badge variant="outline" className="text-[7px] px-1 py-0">CSV</Badge>
+                <Badge variant="outline" className="text-[7px] px-1 py-0">JSON</Badge>
+              </div>
+            </div>
+            <div className="space-y-1">
+              {[
+                { label: "Control Effectiveness", value: "94%", color: "bg-green-500" },
+                { label: "SLA Compliance", value: "97%", color: "bg-green-500" },
+                { label: "Response Time", value: "4.2m", color: "bg-green-500" },
+                { label: "Open Alerts", value: "2", color: "bg-amber-500" },
+              ].map((m) => (
+                <div key={m.label} className="flex items-center justify-between p-1.5 rounded bg-muted/50 border">
+                  <span className="text-[9px] text-foreground">{m.label}</span>
+                  <div className="flex items-center gap-1">
+                    <div className={`h-1.5 w-1.5 rounded-full ${m.color}`} />
+                    <span className="text-[9px] font-semibold text-foreground">{m.value}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-1.5 rounded bg-green-500/10 border border-green-500/20 text-center">
+              <p className="text-[9px] text-green-600 font-medium">Trend: Improving over 90 days</p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+  },
+  {
+    id: "org-api",
+    title: "API Access for External Integration",
+    description: "Create read-only API keys for integrating aok assurance data with third-party GRC platforms, board reporting tools, and funder monitoring systems.",
+    phone: {
+      bg: "bg-card",
+      content: (
+        <div className="flex flex-col h-full p-3">
+          <div className="flex items-center gap-2 mb-3">
+            <Key className="h-4 w-4 text-violet-500" />
+            <span className="text-xs font-bold text-foreground">API Access</span>
+          </div>
+          <div className="space-y-2">
+            <div className="p-2 rounded bg-violet-500/10 border border-violet-500/20">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-semibold text-foreground">BoardEffect Key</span>
+                <Badge className="text-[7px] px-1 py-0 bg-green-500">Active</Badge>
+              </div>
+              <p className="text-[8px] text-muted-foreground font-mono">aok_7f3a...x9k2</p>
+              <p className="text-[8px] text-muted-foreground">142 requests today</p>
+            </div>
+            <div className="p-2 rounded bg-muted/50 border">
+              <p className="text-[10px] font-semibold text-foreground mb-1">Endpoints</p>
+              <div className="space-y-1">
+                {["Overview", "Heatmap", "Manager", "Incidents"].map((e) => (
+                  <div key={e} className="flex items-center gap-1">
+                    <Check className="h-2.5 w-2.5 text-green-500" />
+                    <span className="text-[8px] text-muted-foreground">/api/v1/assurance/{e.toLowerCase()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-1.5 rounded bg-muted/50 border flex items-center gap-1">
+              <Lock className="h-3 w-3 text-muted-foreground" />
+              <span className="text-[8px] text-muted-foreground">Read-only, rate-limited, audit-logged</span>
+            </div>
+          </div>
+        </div>
+      )
+    }
+  },
+  {
     id: "org-features",
     title: "Control Client Features",
     description: "Toggle individual wellness features on or off for each client. Different clients may need different tools — you decide what they see.",
@@ -384,6 +562,85 @@ const DEMO_STEPS_LONE_WORKER = [
         </div>
       )
     }
+  },
+  {
+    id: "lw-monitor",
+    title: "Supervisor Monitoring Dashboard",
+    description: "Supervisors see all active lone workers in real time — who's checked in, who's overdue, and where they are. One view, full oversight.",
+    phone: {
+      bg: "bg-card",
+      content: (
+        <div className="flex flex-col h-full p-3">
+          <div className="flex items-center gap-2 mb-3">
+            <Building2 className="h-4 w-4 text-indigo-500" />
+            <span className="text-xs font-bold text-foreground">Lone Worker Monitor</span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5 mb-3">
+            <div className="bg-green-500/10 rounded p-1.5 text-center">
+              <p className="text-sm font-bold text-green-600">4</p>
+              <p className="text-[8px] text-muted-foreground">Active</p>
+            </div>
+            <div className="bg-red-500/10 rounded p-1.5 text-center">
+              <p className="text-sm font-bold text-red-600">1</p>
+              <p className="text-[8px] text-muted-foreground">Overdue</p>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            {[
+              { name: "David K.", role: "Field Engineer", status: "Overdue", color: "bg-red-500" },
+              { name: "Lisa R.", role: "Social Worker", status: "Active", color: "bg-green-500" },
+              { name: "Tom M.", role: "Estate Agent", status: "Active", color: "bg-green-500" },
+            ].map((w) => (
+              <div key={w.name} className="flex items-center gap-2 p-1.5 rounded bg-muted/50 border">
+                <div className={`h-2 w-2 rounded-full ${w.color}`} />
+                <div className="flex-1">
+                  <p className="text-[10px] font-medium text-foreground">{w.name}</p>
+                  <p className="text-[8px] text-muted-foreground">{w.role}</p>
+                </div>
+                <Badge variant={w.status === "Overdue" ? "destructive" : "outline"} className="text-[7px] px-1 py-0">{w.status}</Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+      )
+    }
+  },
+  {
+    id: "lw-audit",
+    title: "Audit Trail & Compliance",
+    description: "Every check-in, escalation, and action is logged in a tamper-evident audit trail. Exportable reports for HSE compliance and lone worker risk assessments.",
+    phone: {
+      bg: "bg-card",
+      content: (
+        <div className="flex flex-col h-full p-3">
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className="h-4 w-4 text-green-500" />
+            <span className="text-xs font-bold text-foreground">Audit Trail</span>
+          </div>
+          <div className="space-y-1.5">
+            {[
+              { time: "14:32", event: "Check-in confirmed", who: "David K.", icon: Check, color: "text-green-500" },
+              { time: "14:02", event: "SMS reminder sent", who: "David K.", icon: MessageSquare, color: "text-blue-500" },
+              { time: "14:00", event: "Check-in overdue", who: "David K.", icon: AlertTriangle, color: "text-amber-500" },
+              { time: "13:30", event: "Session started", who: "David K.", icon: Play, color: "text-indigo-500" },
+              { time: "13:28", event: "GPS tracking enabled", who: "System", icon: MapPin, color: "text-purple-500" },
+            ].map((e, i) => (
+              <div key={i} className="flex items-start gap-2 p-1.5 rounded bg-muted/50 border">
+                <e.icon className={`h-3 w-3 mt-0.5 ${e.color} flex-shrink-0`} />
+                <div className="flex-1">
+                  <p className="text-[9px] font-medium text-foreground">{e.event}</p>
+                  <p className="text-[8px] text-muted-foreground">{e.who} · {e.time}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 p-1.5 rounded bg-green-500/10 border border-green-500/20 flex items-center gap-1">
+            <Lock className="h-3 w-3 text-green-500" />
+            <span className="text-[8px] text-green-600">Hash-chain verified</span>
+          </div>
+        </div>
+      )
+    }
   }
 ];
 
@@ -430,11 +687,10 @@ function DemoStepCard({ step, index, isActive, onClick }: {
   );
 }
 
-function DemoWalkthrough({ title, subtitle, steps, accentColor = "green" }: {
+function DemoWalkthrough({ title, subtitle, steps }: {
   title: string;
   subtitle: string;
   steps: typeof DEMO_STEPS_INDIVIDUAL;
-  accentColor?: string;
 }) {
   const [activeStep, setActiveStep] = useState(0);
   const current = steps[activeStep];
@@ -474,14 +730,50 @@ function DemoWalkthrough({ title, subtitle, steps, accentColor = "green" }: {
 }
 
 export default function Demo() {
-  const [activeSection, setActiveSection] = useState<DemoSection>("overview");
+  const [location] = useLocation();
+  const urlParams = new URLSearchParams(window.location.search);
+  const typeParam = urlParams.get("type") as DemoSection | null;
 
-  const sections: { id: DemoSection; label: string; icon: typeof Shield }[] = [
-    { id: "overview", label: "Overview", icon: Shield },
-    { id: "individual", label: "Individuals", icon: User },
-    { id: "organisation", label: "Organisations", icon: Building2 },
-    { id: "lone-worker", label: "Lone Workers", icon: HardHat },
-  ];
+  const initialSection: DemoSection = typeParam && ["individual", "organisation", "lone-worker"].includes(typeParam)
+    ? typeParam
+    : "overview";
+
+  const [activeSection, setActiveSection] = useState<DemoSection>(initialSection);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get("type") as DemoSection | null;
+    if (t && ["individual", "organisation", "lone-worker"].includes(t)) {
+      setActiveSection(t);
+    }
+  }, [location]);
+
+  const isOrgOrLoneWorker = activeSection === "organisation" || activeSection === "lone-worker";
+
+  const heroContent = {
+    overview: {
+      badge: "Interactive Product Demo",
+      title: <>See How <span className="text-green-600">aok</span> Keeps<br />People Safe</>,
+      subtitle: "Walk through the key features of aok and see how individuals, organisations, and lone workers stay connected and protected."
+    },
+    individual: {
+      badge: "Personal Safety Demo",
+      title: <>Your Safety Net,<br /><span className="text-green-600">Always On</span></>,
+      subtitle: "See how aok keeps you connected with loved ones through automated check-ins, emergency alerts, and wellness tracking."
+    },
+    organisation: {
+      badge: "Organisation & Safeguarding Demo",
+      title: <>Safeguarding With<br /><span className="text-green-600">Measurable Assurance</span></>,
+      subtitle: "See how aok delivers real-time safeguarding, GRC compliance, funder-ready reporting, and tamper-evident audit trails for your organisation."
+    },
+    "lone-worker": {
+      badge: "Lone Worker Protection Demo",
+      title: <>Protecting Those<br /><span className="text-green-600">Who Work Alone</span></>,
+      subtitle: "See how aok provides automatic check-ins, GPS tracking, supervisor alerts, and HSE-compliant audit trails for lone workers."
+    }
+  };
+
+  const hero = heroContent[activeSection];
 
   return (
     <div className="min-h-screen bg-background" data-testid="page-demo">
@@ -500,12 +792,21 @@ export default function Demo() {
             <Badge variant="outline" className="hidden sm:inline-flex">Product Demo</Badge>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/onboarding">
-              <Button size="sm" data-testid="button-demo-get-started">
-                Get Started Free
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </Link>
+            {isOrgOrLoneWorker ? (
+              <a href="mailto:help@aok.care?subject=Organisation%20Enquiry%20-%20aok%20Demo">
+                <Button size="sm" data-testid="button-demo-get-quote">
+                  Get a Quote
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </a>
+            ) : (
+              <Link href="/onboarding">
+                <Button size="sm" data-testid="button-demo-get-started">
+                  Get Started Free
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -515,30 +816,36 @@ export default function Demo() {
         <div className="container mx-auto max-w-4xl relative text-center">
           <Badge variant="outline" className="mb-6 px-4 py-1 text-sm" data-testid="badge-demo">
             <Play className="h-3.5 w-3.5 mr-1.5" />
-            Interactive Product Demo
+            {hero.badge}
           </Badge>
           <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight text-foreground" data-testid="text-demo-title">
-            See How <span className="text-green-600">aok</span> Keeps<br />People Safe
+            {hero.title}
           </h1>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Walk through the key features of aok and see how individuals, organisations, and lone workers stay connected and protected.
+            {hero.subtitle}
           </p>
 
-          <div className="flex flex-wrap justify-center gap-2 mb-4" data-testid="demo-section-tabs">
-            {sections.map((s) => (
-              <Button
-                key={s.id}
-                variant={activeSection === s.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveSection(s.id)}
-                className="gap-1.5"
-                data-testid={`button-tab-${s.id}`}
-              >
-                <s.icon className="h-4 w-4" />
-                {s.label}
-              </Button>
-            ))}
-          </div>
+          {activeSection === "overview" && (
+            <div className="flex flex-wrap justify-center gap-2 mb-4" data-testid="demo-section-tabs">
+              {[
+                { id: "individual" as DemoSection, label: "Individuals", icon: User },
+                { id: "organisation" as DemoSection, label: "Organisations", icon: Building2 },
+                { id: "lone-worker" as DemoSection, label: "Lone Workers", icon: HardHat },
+              ].map((s) => (
+                <Button
+                  key={s.id}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveSection(s.id)}
+                  className="gap-1.5"
+                  data-testid={`button-tab-${s.id}`}
+                >
+                  <s.icon className="h-4 w-4" />
+                  {s.label}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -707,7 +1014,7 @@ export default function Demo() {
       {activeSection === "organisation" && (
         <DemoWalkthrough
           title="For Organisations"
-          subtitle="Manage clients, monitor wellbeing, and respond to emergencies with a dedicated organisation dashboard."
+          subtitle="Manage clients, monitor wellbeing, demonstrate GRC compliance, and generate funder-ready assurance reports — all from one platform."
           steps={DEMO_STEPS_ORG}
         />
       )}
@@ -715,30 +1022,46 @@ export default function Demo() {
       {activeSection === "lone-worker" && (
         <DemoWalkthrough
           title="For Lone Workers"
-          subtitle="Protect staff who work alone with GPS tracking, automatic check-ins, and instant supervisor alerts."
+          subtitle="Protect staff who work alone with GPS tracking, automatic check-ins, instant supervisor alerts, and HSE-compliant audit trails."
           steps={DEMO_STEPS_LONE_WORKER}
         />
       )}
 
       <section className="py-16 px-4 bg-gradient-to-br from-green-600 to-green-700">
         <div className="container mx-auto max-w-3xl text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4 text-white" data-testid="text-demo-cta">Ready to Get Started?</h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-4 text-white" data-testid="text-demo-cta">
+            {isOrgOrLoneWorker ? "Ready to Protect Your Team?" : "Ready to Get Started?"}
+          </h2>
           <p className="text-green-100 mb-8 max-w-lg mx-auto">
-            Try aok free for 7 days. No payment details required. Set up in under 2 minutes.
+            {isOrgOrLoneWorker
+              ? "Contact us to discuss your organisation's requirements. We'll build a package tailored to your needs."
+              : "Try aok free for 7 days. No payment details required. Set up in under 2 minutes."
+            }
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/onboarding">
-              <Button size="lg" variant="secondary" className="w-full sm:w-auto gap-2" data-testid="button-demo-start-trial">
-                Start Free Trial
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <a href="mailto:help@aok.care?subject=Organisation%20Enquiry%20-%20aok%20Demo">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 bg-white/10 border-white/30 text-white hover:bg-white/20" data-testid="button-demo-contact">
-                <Building2 className="h-4 w-4" />
-                Organisation Enquiry
-              </Button>
-            </a>
+            {isOrgOrLoneWorker ? (
+              <a href="mailto:help@aok.care?subject=Organisation%20Enquiry%20-%20aok%20Demo">
+                <Button size="lg" variant="secondary" className="w-full sm:w-auto gap-2" data-testid="button-demo-get-quote-cta">
+                  <Mail className="h-4 w-4" />
+                  Get a Quote
+                </Button>
+              </a>
+            ) : (
+              <>
+                <Link href="/onboarding">
+                  <Button size="lg" variant="secondary" className="w-full sm:w-auto gap-2" data-testid="button-demo-start-trial">
+                    Start Free Trial
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <a href="mailto:help@aok.care?subject=Organisation%20Enquiry%20-%20aok%20Demo">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 bg-white/10 border-white/30 text-white hover:bg-white/20" data-testid="button-demo-contact">
+                    <Building2 className="h-4 w-4" />
+                    Organisation Enquiry
+                  </Button>
+                </a>
+              </>
+            )}
           </div>
         </div>
       </section>
