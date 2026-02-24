@@ -649,7 +649,9 @@ function PhoneMockup({ bg, children }: { bg: string; children: React.ReactNode }
     <div className="relative aspect-[9/19] rounded-[2.5rem] overflow-hidden bg-gradient-to-b from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700 border-[3px] border-gray-300 dark:border-gray-600 shadow-xl max-w-[220px] mx-auto">
       <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-5 bg-gradient-to-b from-gray-400 to-gray-500 dark:from-gray-500 dark:to-gray-600 rounded-full z-10" />
       <div className={`absolute inset-1 rounded-[2rem] overflow-hidden ${bg}`}>
-        {children}
+        <div className="pt-7">
+          {children}
+        </div>
       </div>
       <div className="absolute inset-1 rounded-[2rem] pointer-events-none bg-gradient-to-br from-white/20 via-transparent to-transparent" />
     </div>
