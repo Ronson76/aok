@@ -91,6 +91,7 @@ import LoneWorker from "@/pages/lone-worker";
 import Errands from "@/pages/errands";
 import Demo from "@/pages/demo";
 import Security from "@/pages/security";
+import FunderReady from "@/pages/funder-ready";
 import { TermsModal } from "@/components/terms-modal";
 
 function PaymentBlockedScreen() {
@@ -776,6 +777,10 @@ function Router() {
     return <Security />;
   }
 
+  if (location === "/funder-ready") {
+    return <FunderReady />;
+  }
+
   if (location.startsWith("/confirm-contact")) {
     return <ConfirmContact />;
   }
@@ -825,7 +830,7 @@ function App() {
   const [showSplash, setShowSplash] = useState(() => {
     if (sessionStorage.getItem("splashShown") === "true") return false;
     const path = window.location.pathname;
-    if (path.startsWith("/org/") || path.startsWith("/admin/") || path === "/guide" || path === "/demo" || path === "/security") return false;
+    if (path.startsWith("/org/") || path.startsWith("/admin/") || path === "/guide" || path === "/demo" || path === "/security" || path === "/funder-ready") return false;
     return true;
   });
 
