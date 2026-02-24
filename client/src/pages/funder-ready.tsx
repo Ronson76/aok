@@ -26,12 +26,12 @@ export default function FunderReadyPage() {
               <span className="text-xl font-bold text-green-600">aok</span>
             </Link>
           </div>
-          <Link href="/onboarding">
-            <Button size="sm" className="gap-2" data-testid="button-header-get-started">
-              Get Started Free
+          <a href="mailto:help@aok.care?subject=Organisation%20Enquiry">
+            <Button size="sm" className="gap-2" data-testid="button-header-get-quote">
+              Get a Quote
               <ChevronRight className="h-4 w-4" />
             </Button>
-          </Link>
+          </a>
         </div>
       </header>
 
@@ -357,12 +357,12 @@ export default function FunderReadyPage() {
                     <Card className="bg-primary/5 border-primary/20">
                       <CardContent className="pt-6 pb-6">
                         <p className="text-lg font-semibold mb-4">Be inspection-ready. Be funder-ready. Be continuously compliant.</p>
-                        <Link href="/onboarding">
+                        <a href="mailto:help@aok.care?subject=Funder%20Ready%20Enquiry">
                           <Button size="lg" className="gap-2" data-testid="button-funder-cta">
-                            Get Started Free
+                            Get a Quote
                             <ChevronRight className="h-4 w-4" />
                           </Button>
-                        </Link>
+                        </a>
                       </CardContent>
                     </Card>
                   </div>
