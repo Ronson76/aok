@@ -16,6 +16,16 @@ interface GuideTopic {
 
 const GUIDE_TOPICS: GuideTopic[] = [
   {
+    id: "home-button",
+    title: "Home button — switching category",
+    content: [
+      "Each landing page (Individual, Organisation, Lone Worker) has a **Home** button in the top-left corner of the header.",
+      "Tapping **Home** takes you back to the main entry screen where you can choose a different category.",
+      "This clears your saved preference so the entry screen appears again on your next visit.",
+      "You can switch between Individual, Organisation, and Lone Worker landing pages at any time using this button.",
+    ],
+  },
+  {
     id: "account-creation",
     title: "Account creation",
     content: [
@@ -180,7 +190,7 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "The demo covers three sections: **Individual** users, **Organisation** accounts, and **Lone Worker** features.",
       "Click a section tab to see a step-by-step breakdown of the key features and how they protect you.",
       "The demo also explains how the protection net works across four layers.",
-      "You can access the demo from the landing page by clicking **See Demo**, or go directly to **/demo**.",
+      "You can access the demo from any landing page by clicking **See Demo**, or go directly to **/demo**.",
     ],
   },
   {
@@ -596,12 +606,13 @@ const GUIDE_TOPICS: GuideTopic[] = [
     title: "Quick start guide",
     content: [
       "Here's how to get up and running with aok in 5 minutes:",
-      "1. Create your account with your name, date of birth, and phone number.",
-      "2. Set your check-in frequency (we suggest starting with every 24 hours).",
-      "3. Add at least one emergency contact.",
-      "4. Wait for your contact to confirm via email.",
-      "5. Complete payment (free for 7 days).",
-      "6. You're all set — check in on time each day to support your wellbeing.",
+      "1. Choose your category on the entry screen — **Individual**, **Organisation**, or **Lone Worker**. You can change this later using the **Home** button on any landing page.",
+      "2. Create your account with your name, date of birth, and phone number.",
+      "3. Set your check-in frequency (we suggest starting with every 24 hours).",
+      "4. Add at least one emergency contact.",
+      "5. Wait for your contact to confirm via email.",
+      "6. Complete payment (free for 7 days).",
+      "7. You're all set — check in on time each day to support your wellbeing.",
     ],
   },
   {
