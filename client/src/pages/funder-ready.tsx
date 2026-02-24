@@ -51,13 +51,13 @@ export default function FunderReadyPage() {
 
             <Tabs defaultValue="standards" className="space-y-8">
               <div className="overflow-x-auto -mx-4 px-4">
-                <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-6">
-                  <TabsTrigger value="standards" data-testid="tab-funder-standards">Standards</TabsTrigger>
-                  <TabsTrigger value="control" data-testid="tab-funder-control">Live Control</TabsTrigger>
-                  <TabsTrigger value="assurance" data-testid="tab-funder-assurance">Assurance</TabsTrigger>
-                  <TabsTrigger value="funder" data-testid="tab-funder-ready">Funder Ready</TabsTrigger>
-                  <TabsTrigger value="security" data-testid="tab-funder-security">Security</TabsTrigger>
-                  <TabsTrigger value="levels" data-testid="tab-funder-levels">Every Level</TabsTrigger>
+                <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-6 h-auto p-1.5 gap-1 bg-muted/60 border border-border rounded-xl">
+                  <TabsTrigger value="standards" className="rounded-lg py-2.5 px-4 font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-foreground/10 cursor-pointer" data-testid="tab-funder-standards">Standards</TabsTrigger>
+                  <TabsTrigger value="control" className="rounded-lg py-2.5 px-4 font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-foreground/10 cursor-pointer" data-testid="tab-funder-control">Live Control</TabsTrigger>
+                  <TabsTrigger value="assurance" className="rounded-lg py-2.5 px-4 font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-foreground/10 cursor-pointer" data-testid="tab-funder-assurance">Assurance</TabsTrigger>
+                  <TabsTrigger value="funder" className="rounded-lg py-2.5 px-4 font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-foreground/10 cursor-pointer" data-testid="tab-funder-ready">Funder Ready</TabsTrigger>
+                  <TabsTrigger value="security" className="rounded-lg py-2.5 px-4 font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-foreground/10 cursor-pointer" data-testid="tab-funder-security">Security</TabsTrigger>
+                  <TabsTrigger value="levels" className="rounded-lg py-2.5 px-4 font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-foreground/10 cursor-pointer" data-testid="tab-funder-levels">Every Level</TabsTrigger>
                 </TabsList>
               </div>
 
