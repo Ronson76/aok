@@ -1172,7 +1172,22 @@ const HELP_TOPICS: HelpTopic[] = [
       "**Board governance** — the Assurance Dashboard provides RAG status indicators, trend analysis, and early-warning flags — exactly what governance boards and funders need to see.",
       "All funder-ready features are part of the Assurance Dashboard enterprise add-on. Contact help@aok.care to discuss your requirements.",
     ],
-    relatedTopics: ["assurance-dashboard", "grc-compliance", "enterprise-rbac"],
+    relatedTopics: ["assurance-dashboard", "grc-compliance", "enterprise-rbac", "ecologi-net-zero"],
+  },
+  {
+    id: "ecologi-net-zero",
+    title: "Ecologi — environmental impact & net zero",
+    category: "account",
+    keywords: ["ecologi", "environment", "net zero", "carbon", "tree", "trees", "planting", "offset", "esg", "certificate", "board", "sustainability", "green", "climate"],
+    content: [
+      "aok partners with **Ecologi** to contribute to verified tree planting and carbon offsetting with every subscription.",
+      "**Every account plants a tree** — when a client or staff member is added, a tree is planted through certified environmental offset projects on behalf of your organisation.",
+      "**Board-ready certificates** — your organisation receives auditable environmental impact certificates that can be included in board packs, ESG reports, and funder submissions.",
+      "**Net zero pathway** — demonstrate measurable, quantifiable progress towards your organisation's net zero targets. The certificates provide evidence of your commitment to sustainability.",
+      "**Collective impact** — view your organisation's total trees planted and CO₂ offset on the aok landing page. These figures update in real time as your organisation grows.",
+      "This feature is included automatically for all organisation accounts — no setup required.",
+    ],
+    relatedTopics: ["funder-ready", "assurance-dashboard"],
   },
   {
     id: "service-limitation",

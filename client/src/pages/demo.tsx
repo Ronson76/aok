@@ -9,7 +9,7 @@ import {
   ChevronRight, Shield, Zap, Lock, TrendingUp, PawPrint, Scroll, Check,
   Sparkles, MessageSquare, ArrowLeft, Timer, Map, Camera, HardHat,
   ChevronDown, Globe, Share2, Eye, Mic, ArrowRight, FileCheck,
-  ClipboardCheck, Key, BarChart3
+  ClipboardCheck, Key, BarChart3, TreeDeciduous, Leaf
 } from "lucide-react";
 
 type DemoSection = "overview" | "individual" | "organisation" | "lone-worker";
@@ -1025,6 +1025,39 @@ export default function Demo() {
           subtitle="Protect staff who work alone with GPS tracking, automatic check-ins, instant supervisor alerts, and HSE-compliant audit trails."
           steps={DEMO_STEPS_LONE_WORKER}
         />
+      )}
+
+      {isOrgOrLoneWorker && (
+        <section className="py-14 px-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-y border-green-200 dark:border-green-800/50">
+          <div className="container mx-auto max-w-4xl">
+            <div className="text-center mb-8">
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-300 dark:border-green-700 mb-3">Net Zero Commitment</Badge>
+              <h3 className="text-2xl font-bold text-green-800 dark:text-green-300 mb-2">Making an Environmental Difference</h3>
+              <p className="text-sm text-green-700 dark:text-green-400 max-w-2xl mx-auto">
+                Every aok subscription contributes to verified tree planting and carbon offsetting through our partnership with{" "}
+                <a href="https://ecologi.com/nghuman18" target="_blank" rel="noopener noreferrer" className="underline font-medium hover:text-green-800 dark:hover:text-green-300">Ecologi</a>.
+                Your organisation receives auditable environmental impact certificates suitable for board-level reporting and ESG compliance.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+              <div className="bg-white/60 dark:bg-white/5 rounded-lg p-4 text-center border border-green-200 dark:border-green-800">
+                <TreeDeciduous className="h-6 w-6 text-green-600 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-green-800 dark:text-green-300">Verified Tree Planting</p>
+                <p className="text-xs text-green-700 dark:text-green-400 mt-1">Every account plants a tree through certified carbon offset projects</p>
+              </div>
+              <div className="bg-white/60 dark:bg-white/5 rounded-lg p-4 text-center border border-green-200 dark:border-green-800">
+                <Leaf className="h-6 w-6 text-green-600 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-green-800 dark:text-green-300">Board-Ready Certificates</p>
+                <p className="text-xs text-green-700 dark:text-green-400 mt-1">Environmental impact certificates for ESG reporting and funder submissions</p>
+              </div>
+              <div className="bg-white/60 dark:bg-white/5 rounded-lg p-4 text-center border border-green-200 dark:border-green-800">
+                <Shield className="h-6 w-6 text-green-600 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-green-800 dark:text-green-300">Net Zero Pathway</p>
+                <p className="text-xs text-green-700 dark:text-green-400 mt-1">Demonstrate measurable progress towards your organisation's net zero targets</p>
+              </div>
+            </div>
+          </div>
+        </section>
       )}
 
       <section className="py-16 px-4 bg-gradient-to-br from-green-600 to-green-700">
