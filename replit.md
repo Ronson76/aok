@@ -46,10 +46,14 @@ Database rule: When clearing or modifying data, it must be done via the applicat
 - **Emergency Features**: Emergency alert button with GPS, shake-to-SOS, offline emergency overlay, optional emergency recording.
 - **Wellness Features**: Mood/Wellness Tracking, Pet Protection profiles, Important Document Storage, GPS Fitness Tracking, Route Planning, Activities Tracker, AI chat for wellbeing.
 - **Compliance**: Non-skippable onboarding with legal disclaimers and consent logging.
-- **Admin Dashboard**: Role-based access, user/organization management, license agreements, revenue tracking, feature permissions, security audit logging.
+- **Admin Dashboard**: Role-based access, user/organization management, license agreements, revenue tracking, feature permissions, security audit logging. Enterprise feature toggles (Assurance Dashboard, API Access) with optional expiry dates per organisation.
 - **Organization Features**: Client and staff management, monitoring, dynamic feature control, safeguarding hub, analytics dashboard, comprehensive audit trail with tamper-evident hash chains, PDF/CSV exports.
+- **Enterprise Add-ons**: Assurance Dashboard (real-time safeguarding position, risk heatmaps, board governance reports) and API Access (read-only external integration) — toggled on/off per organisation by admin with optional expiry dates.
+- **GRC (Governance, Risk & Compliance)**: 8-tier RBAC, tamper-evident audit trails with hash-chain verification, security audit logging with PII redaction, UK GDPR-compliant data handling, TOTP 2FA for all accounts.
+- **Funder Ready**: Exportable PDF/CSV compliance reports, measurable outcomes with quantifiable metrics, board-level RAG status indicators and trend analysis.
 - **Enterprise RBAC**: 8 tiers of organization member roles with granular permission-based middleware.
 - **Legal Agreements**: Comprehensive suite of legal documents including EULA, DPA, Privacy Policy, and Terms.
+- **Organisation Pricing**: Contact-based (no self-serve). Pricing card includes Core Platform, Funder Ready, Assurance Dashboard, GRC, and Infrastructure sections.
 
 ### Native App (Capacitor)
 - **Configuration**: Capacitor 8 with `capacitor.config.ts`.
