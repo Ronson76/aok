@@ -1019,13 +1019,6 @@ export default function LandingIndividual() {
             </div>
 
             <div>
-              <h4 className="font-semibold mb-4">For Organisations</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="mailto:help@aok.care?subject=Organisation%20Enquiry" className="hover:text-foreground transition-colors" data-testid="link-footer-sales">Contact Sales</a></li>
-              </ul>
-            </div>
-
-            <div>
               <h4 className="font-semibold mb-4">Download the App</h4>
               <div className="flex flex-col gap-3">
                 <a href="#" className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border hover-elevate transition-colors" data-testid="link-app-store-footer">
@@ -1050,18 +1043,6 @@ export default function LandingIndividual() {
             <p className="text-sm text-muted-foreground" data-testid="text-copyright">
               &copy; {new Date().getFullYear()} aok by NaiyaTech. All rights reserved.
             </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <Link href="/admin/login">
-                <Button variant="outline" size="sm" data-testid="link-footer-admin">
-                  Admin Login
-                </Button>
-              </Link>
-              <Link href="/org/login">
-                <Button variant="outline" size="sm" data-testid="link-footer-org">
-                  Organisation Login
-                </Button>
-              </Link>
-            </div>
           </div>
           <div className="flex justify-center mt-8">
             <Button
