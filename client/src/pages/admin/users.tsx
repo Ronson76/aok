@@ -52,6 +52,10 @@ export default function AdminUsers() {
   const [orgEmail, setOrgEmail] = useState("");
   const [orgPassword, setOrgPassword] = useState("");
   const [showOrgPassword, setShowOrgPassword] = useState(false);
+  const [orgAssuranceEnabled, setOrgAssuranceEnabled] = useState(false);
+  const [orgAssuranceExpiry, setOrgAssuranceExpiry] = useState("");
+  const [orgApiAccessEnabled, setOrgApiAccessEnabled] = useState(false);
+  const [orgApiAccessExpiry, setOrgApiAccessExpiry] = useState("");
   
   // Feature management
   const [showFeaturesDialog, setShowFeaturesDialog] = useState(false);
@@ -88,6 +92,29 @@ export default function AdminUsers() {
       return res.json();
     },
     enabled: !!expandedOrgId,
+  });
+
+  const { data: expandedOrgFeatures } = useQuery<any>({
+    queryKey: ["/api/admin/organizations", expandedOrgId, "feature-defaults"],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/organizations/${expandedOrgId}/feature-defaults`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch features");
+      return res.json();
+    },
+    enabled: !!expandedOrgId,
+  });
+
+  const updateOrgFeatureMutation = useMutation({
+    mutationFn: async ({ orgId, updates }: { orgId: string; updates: Record<string, any> }) => {
+      await apiRequest("PUT", `/api/admin/organizations/${orgId}/feature-defaults`, updates);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations", variables.orgId, "feature-defaults"] });
+      toast({ title: "Feature updated", description: "Organisation feature settings saved." });
+    },
+    onError: (error: any) => {
+      toast({ variant: "destructive", title: "Update failed", description: error.message });
+    },
   });
 
   // Filter and sort users based on search terms (individual users only - orgs have their own tab)
@@ -317,10 +344,17 @@ export default function AdminUsers() {
 
   const createOrgMutation = useMutation({
     mutationFn: async () => {
+      const featureDefaults: Record<string, any> = {};
+      featureDefaults.orgFeatureAssurance = orgAssuranceEnabled;
+      featureDefaults.orgFeatureAssuranceExpiresAt = orgAssuranceExpiry || null;
+      featureDefaults.orgFeatureApiAccess = orgApiAccessEnabled;
+      featureDefaults.orgFeatureApiAccessExpiresAt = orgApiAccessExpiry || null;
+
       await apiRequest("POST", "/api/admin/organizations", {
         name: orgName,
         email: orgEmail,
         password: orgPassword,
+        featureDefaults,
       });
     },
     onSuccess: () => {
@@ -330,6 +364,10 @@ export default function AdminUsers() {
       setOrgName("");
       setOrgEmail("");
       setOrgPassword("");
+      setOrgAssuranceEnabled(false);
+      setOrgAssuranceExpiry("");
+      setOrgApiAccessEnabled(false);
+      setOrgApiAccessExpiry("");
       toast({
         title: "Organisation created",
         description: `${orgName} has been created. They can now log in.`,
@@ -722,6 +760,96 @@ export default function AdminUsers() {
                             )}
 
                             <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Enterprise Features</p>
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-md">
+                                  <div className="flex items-center gap-2">
+                                    <Shield className="h-4 w-4 text-indigo-500" />
+                                    <span className="text-sm font-medium">Assurance Dashboard</span>
+                                    {expandedOrgFeatures?.orgFeatureAssuranceExpiresAt && (
+                                      <span className="text-xs text-muted-foreground">
+                                        (expires {new Date(expandedOrgFeatures.orgFeatureAssuranceExpiresAt).toLocaleDateString("en-GB")})
+                                      </span>
+                                    )}
+                                  </div>
+                                  <Switch
+                                    checked={expandedOrgFeatures?.orgFeatureAssurance ?? false}
+                                    onCheckedChange={(checked) => {
+                                      if (expandedOrgId) {
+                                        updateOrgFeatureMutation.mutate({
+                                          orgId: expandedOrgId,
+                                          updates: { orgFeatureAssurance: checked },
+                                        });
+                                      }
+                                    }}
+                                    data-testid={`switch-assurance-${org.id}`}
+                                  />
+                                </div>
+                                {expandedOrgFeatures?.orgFeatureAssurance && (
+                                  <div className="ml-6 flex items-center gap-2">
+                                    <Label className="text-xs text-muted-foreground whitespace-nowrap">Expiry:</Label>
+                                    <Input
+                                      type="date"
+                                      value={expandedOrgFeatures?.orgFeatureAssuranceExpiresAt ? new Date(expandedOrgFeatures.orgFeatureAssuranceExpiresAt).toISOString().split('T')[0] : ""}
+                                      onChange={(e) => {
+                                        if (expandedOrgId) {
+                                          updateOrgFeatureMutation.mutate({
+                                            orgId: expandedOrgId,
+                                            updates: { orgFeatureAssuranceExpiresAt: e.target.value || null },
+                                          });
+                                        }
+                                      }}
+                                      className="h-7 text-xs w-40"
+                                      data-testid={`input-assurance-expiry-${org.id}`}
+                                    />
+                                  </div>
+                                )}
+                                <div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-md">
+                                  <div className="flex items-center gap-2">
+                                    <Settings2 className="h-4 w-4 text-orange-500" />
+                                    <span className="text-sm font-medium">API Access</span>
+                                    {expandedOrgFeatures?.orgFeatureApiAccessExpiresAt && (
+                                      <span className="text-xs text-muted-foreground">
+                                        (expires {new Date(expandedOrgFeatures.orgFeatureApiAccessExpiresAt).toLocaleDateString("en-GB")})
+                                      </span>
+                                    )}
+                                  </div>
+                                  <Switch
+                                    checked={expandedOrgFeatures?.orgFeatureApiAccess ?? false}
+                                    onCheckedChange={(checked) => {
+                                      if (expandedOrgId) {
+                                        updateOrgFeatureMutation.mutate({
+                                          orgId: expandedOrgId,
+                                          updates: { orgFeatureApiAccess: checked },
+                                        });
+                                      }
+                                    }}
+                                    data-testid={`switch-api-access-${org.id}`}
+                                  />
+                                </div>
+                                {expandedOrgFeatures?.orgFeatureApiAccess && (
+                                  <div className="ml-6 flex items-center gap-2">
+                                    <Label className="text-xs text-muted-foreground whitespace-nowrap">Expiry:</Label>
+                                    <Input
+                                      type="date"
+                                      value={expandedOrgFeatures?.orgFeatureApiAccessExpiresAt ? new Date(expandedOrgFeatures.orgFeatureApiAccessExpiresAt).toISOString().split('T')[0] : ""}
+                                      onChange={(e) => {
+                                        if (expandedOrgId) {
+                                          updateOrgFeatureMutation.mutate({
+                                            orgId: expandedOrgId,
+                                            updates: { orgFeatureApiAccessExpiresAt: e.target.value || null },
+                                          });
+                                        }
+                                      }}
+                                      className="h-7 text-xs w-40"
+                                      data-testid={`input-api-expiry-${org.id}`}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div>
                               <p className="text-xs font-medium text-muted-foreground mb-2">
                                 Client Reference Numbers
                               </p>
@@ -929,6 +1057,65 @@ export default function AdminUsers() {
                     <Eye className="h-4 w-4 text-muted-foreground" />
                   )}
                 </Button>
+              </div>
+            </div>
+            <div className="border-t pt-4 mt-2">
+              <p className="text-sm font-medium mb-3">Enterprise Features</p>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="org-assurance" className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-indigo-500" />
+                      Assurance Dashboard
+                    </Label>
+                    <Switch
+                      id="org-assurance"
+                      checked={orgAssuranceEnabled}
+                      onCheckedChange={setOrgAssuranceEnabled}
+                      data-testid="switch-org-assurance"
+                    />
+                  </div>
+                  {orgAssuranceEnabled && (
+                    <div className="ml-6">
+                      <Label htmlFor="org-assurance-expiry" className="text-xs text-muted-foreground">Expiry Date (optional)</Label>
+                      <Input
+                        id="org-assurance-expiry"
+                        type="date"
+                        value={orgAssuranceExpiry}
+                        onChange={(e) => setOrgAssuranceExpiry(e.target.value)}
+                        className="mt-1"
+                        data-testid="input-org-assurance-expiry"
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="org-api-access" className="flex items-center gap-2">
+                      <Settings2 className="h-4 w-4 text-orange-500" />
+                      API Access
+                    </Label>
+                    <Switch
+                      id="org-api-access"
+                      checked={orgApiAccessEnabled}
+                      onCheckedChange={setOrgApiAccessEnabled}
+                      data-testid="switch-org-api-access"
+                    />
+                  </div>
+                  {orgApiAccessEnabled && (
+                    <div className="ml-6">
+                      <Label htmlFor="org-api-expiry" className="text-xs text-muted-foreground">Expiry Date (optional)</Label>
+                      <Input
+                        id="org-api-expiry"
+                        type="date"
+                        value={orgApiAccessExpiry}
+                        onChange={(e) => setOrgApiAccessExpiry(e.target.value)}
+                        className="mt-1"
+                        data-testid="input-org-api-expiry"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

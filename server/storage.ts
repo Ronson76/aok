@@ -2652,12 +2652,28 @@ class DatabaseStorage implements IStorage {
       orgFeatureWellbeingAi: users.orgFeatureWellbeingAi,
       orgFeatureFitnessTracking: users.orgFeatureFitnessTracking,
       orgFeatureActivitiesTracker: users.orgFeatureActivitiesTracker,
+      orgFeatureAssurance: users.orgFeatureAssurance,
+      orgFeatureAssuranceExpiresAt: users.orgFeatureAssuranceExpiresAt,
+      orgFeatureApiAccess: users.orgFeatureApiAccess,
+      orgFeatureApiAccessExpiresAt: users.orgFeatureApiAccessExpiresAt,
     }).from(users).where(eq(users.id, orgId));
-    return user || undefined;
+    if (!user) return undefined;
+    return {
+      ...user,
+      orgFeatureAssuranceExpiresAt: user.orgFeatureAssuranceExpiresAt?.toISOString() ?? null,
+      orgFeatureApiAccessExpiresAt: user.orgFeatureApiAccessExpiresAt?.toISOString() ?? null,
+    };
   }
 
   async updateOrgFeatureDefaults(orgId: string, updates: OrgFeatureDefaults): Promise<void> {
-    await getDb().update(users).set(updates).where(eq(users.id, orgId));
+    const dbUpdates: any = { ...updates };
+    if ('orgFeatureAssuranceExpiresAt' in dbUpdates) {
+      dbUpdates.orgFeatureAssuranceExpiresAt = dbUpdates.orgFeatureAssuranceExpiresAt ? new Date(dbUpdates.orgFeatureAssuranceExpiresAt) : null;
+    }
+    if ('orgFeatureApiAccessExpiresAt' in dbUpdates) {
+      dbUpdates.orgFeatureApiAccessExpiresAt = dbUpdates.orgFeatureApiAccessExpiresAt ? new Date(dbUpdates.orgFeatureApiAccessExpiresAt) : null;
+    }
+    await getDb().update(users).set(dbUpdates).where(eq(users.id, orgId));
   }
 
   private documentSignatures: Map<string, { id: string; documentId: string; signerName: string; signerEmail: string; signerRole: string; signedAt: Date; ipAddress?: string; organisationId?: string; organisationName?: string }> = new Map();
