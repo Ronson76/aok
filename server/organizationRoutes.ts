@@ -3266,7 +3266,7 @@ export function registerOrganizationRoutes(app: Express) {
     try {
       const orgId = req.orgId!;
 
-      const clients = await organizationStorage.getOrganizationClients(orgId);
+      const clients = await organizationStorage.getClients(orgId);
       const activeClients = clients.filter((c: any) => c.status === "active");
 
       const now = new Date();
@@ -3342,7 +3342,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.get("/api/org/assurance/service-heatmap", requireOrganization, requirePermission("assurance.view"), async (req, res) => {
     try {
       const orgId = req.orgId!;
-      const clients = await organizationStorage.getOrganizationClients(orgId);
+      const clients = await organizationStorage.getClients(orgId);
       const activeClients = clients.filter((c: any) => c.status === "active");
 
       const now = new Date();
@@ -3671,7 +3671,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.get("/api/v1/assurance/overview", requireApiKey, requireApiPermission("assurance.overview"), async (req, res) => {
     try {
       const orgId = (req as any).apiKeyOrg;
-      const clients = await organizationStorage.getOrganizationClients(orgId);
+      const clients = await organizationStorage.getClients(orgId);
       const activeClients = clients.filter((c: any) => c.status === "active");
       const db = ensureDb();
 
@@ -3723,7 +3723,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.get("/api/v1/assurance/service-heatmap", requireApiKey, requireApiPermission("assurance.heatmap"), async (req, res) => {
     try {
       const orgId = (req as any).apiKeyOrg;
-      const clients = await organizationStorage.getOrganizationClients(orgId);
+      const clients = await organizationStorage.getClients(orgId);
       const activeClients = clients.filter((c: any) => c.status === "active");
       const db = ensureDb();
 
