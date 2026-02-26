@@ -623,12 +623,23 @@ export default function OrgLoneWorkerHub() {
   const handleImportFileUpload = async (file: File) => {
     setImportFile(file);
     try {
-      const XLSX = await import("xlsx");
+      const ExcelJS = await import("exceljs");
+      const workbook = new ExcelJS.Workbook();
       const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: "array" });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+      await workbook.xlsx.load(data);
+      const worksheet = workbook.worksheets[0];
+      const headers: string[] = [];
+      const jsonData: any[] = [];
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) {
+          (row.values as any[]).slice(1).forEach((v: any) => headers.push(String(v ?? "")));
+        } else {
+          const obj: any = {};
+          const vals = row.values as any[];
+          headers.forEach((h, i) => { obj[h] = vals[i + 1] ?? ""; });
+          jsonData.push(obj);
+        }
+      });
 
       if (jsonData.length === 0) {
         toast({ title: "Empty spreadsheet", description: "The spreadsheet contains no data rows.", variant: "destructive" });
@@ -683,7 +694,7 @@ export default function OrgLoneWorkerHub() {
   };
 
   const downloadStaffTemplate = () => {
-    import("xlsx").then((XLSX) => {
+    import("exceljs").then(async (ExcelJS) => {
       const templateData = [
         {
           "Staff Name": "Jane Smith",
@@ -704,14 +715,25 @@ export default function OrgLoneWorkerHub() {
           "Emergency Contact Relationship": "Colleague",
         },
       ];
-      const ws = XLSX.utils.json_to_sheet(templateData);
-      ws["!cols"] = [
-        { wch: 20 }, { wch: 18 }, { wch: 25 },
-        { wch: 25 }, { wch: 25 }, { wch: 18 }, { wch: 20 },
-      ];
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Staff");
-      XLSX.writeFile(wb, "aok-staff-import-template.xlsx");
+      const colWidths = [20, 18, 25, 25, 25, 18, 20];
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet("Staff");
+      sheet.columns = Object.keys(templateData[0]).map((key, i) => ({
+        header: key,
+        key,
+        width: colWidths[i] ?? 15,
+      }));
+      templateData.forEach((row) => sheet.addRow(row));
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "aok-staff-import-template.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     });
   };
 
