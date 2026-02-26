@@ -747,6 +747,24 @@ const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "funding-assurance",
+    title: "Funding Assurance (organisations)",
+    content: [
+      "**Funding Assurance** is an enterprise add-on that gives organisations a GRC-grade audit trail for all funding activity — from income to allocation to delivery and incidents.",
+      "Access it from the **Funding** button on your organisation dashboard. It is gated by the Organisation Dashboard enterprise toggle — your admin must enable it for your organisation.",
+      "**Funding Sources** — record each funder (local authority, housing benefit, grant, charity, or private) with start/end dates, total value, and whether the funding is restricted. Edit or soft-delete sources at any time.",
+      "**Transactions** — log every incoming and outgoing payment against a funding source. Each transaction shows its allocation status (unallocated, partially allocated, or fully allocated) and can be linked to a property or service user.",
+      "**Allocations** — break a transaction into allocations directed at a property, service user, or service. The system enforces that the total allocated never exceeds the transaction amount and shows remaining funds in real time.",
+      "**Activities** — record welfare visits, home visits, lone worker sessions, check-ins, and other activity types. Link each activity to a funding allocation so you can demonstrate exactly how funding was spent.",
+      "**Incidents** — log safeguarding or operational incidents with severity levels (Low, Medium, High, Critical). Link incidents to a funding allocation and resolve them when addressed.",
+      "**Overview dashboard** — at-a-glance cards for total incoming/outgoing this month, unallocated funds, safeguarding coverage percentage, and open incidents. A 6-month bar chart shows funding received and activities delivered over time.",
+      "**Risk & Compliance** — automated risk flags highlight unallocated transactions older than 7 days, orphaned allocations with no linked activities, activities without funding links, low safeguarding coverage, and stale open incidents. A compliance score (0–100) summarises your overall funding governance posture.",
+      "**Audit Export** — download a CSV of every create, update, and delete action across all funding entities, filtered by date range. Every mutation is automatically logged with the actor, entity, before/after state, and timestamp.",
+      "**Simulated bank import** — a settings tab lets you simulate importing transactions from a bank feed (e.g. TrueLayer) to test your workflow before connecting a live integration.",
+      "Funding Assurance is part of the Organisation Dashboard enterprise add-on. Contact help@aok.care to enable it for your organisation.",
+    ],
+  },
+  {
     id: "analytics-dashboard",
     title: "Analytics dashboard (organisations)",
     content: [
