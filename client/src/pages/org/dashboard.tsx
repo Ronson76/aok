@@ -787,7 +787,7 @@ export default function OrganizationDashboard() {
   };
 
   const downloadTemplate = () => {
-    import("xlsx").then((XLSX) => {
+    import("exceljs").then(async (ExcelJS) => {
       const templateData = [
         {
           "Client Name": "Jane Smith",
@@ -812,18 +812,29 @@ export default function OrganizationDashboard() {
           "Emergency Contact 3 Relationship": "",
         },
       ];
-      const ws = XLSX.utils.json_to_sheet(templateData);
       const colWidths = [
-        { wch: 20 }, { wch: 18 }, { wch: 25 }, { wch: 14 },
-        { wch: 30 }, { wch: 30 }, { wch: 35 }, { wch: 24 },
-        { wch: 25 }, { wch: 25 }, { wch: 18 }, { wch: 20 },
-        { wch: 25 }, { wch: 25 }, { wch: 18 }, { wch: 20 },
-        { wch: 25 }, { wch: 25 }, { wch: 18 }, { wch: 20 },
+        20, 18, 25, 14, 30, 30, 35, 24,
+        25, 25, 18, 20, 25, 25, 18, 20,
+        25, 25, 18, 20,
       ];
-      ws["!cols"] = colWidths;
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Clients");
-      XLSX.writeFile(wb, "aok-client-import-template.xlsx");
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet("Clients");
+      sheet.columns = Object.keys(templateData[0]).map((key, i) => ({
+        header: key,
+        key,
+        width: colWidths[i] ?? 15,
+      }));
+      templateData.forEach((row) => sheet.addRow(row));
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "aok-client-import-template.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     });
   };
 
