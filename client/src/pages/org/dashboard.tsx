@@ -696,12 +696,23 @@ export default function OrganizationDashboard() {
   const handleFileUpload = async (file: File) => {
     setImportFile(file);
     try {
-      const XLSX = await import("xlsx");
+      const ExcelJS = await import("exceljs");
+      const workbook = new ExcelJS.Workbook();
       const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: "array" });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+      await workbook.xlsx.load(data);
+      const worksheet = workbook.worksheets[0];
+      const headers: string[] = [];
+      const jsonData: any[] = [];
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) {
+          (row.values as any[]).slice(1).forEach((v: any) => headers.push(String(v ?? "")));
+        } else {
+          const obj: any = {};
+          const vals = row.values as any[];
+          headers.forEach((h, i) => { obj[h] = vals[i + 1] ?? ""; });
+          jsonData.push(obj);
+        }
+      });
 
       if (jsonData.length === 0) {
         toast({ title: "Empty spreadsheet", description: "The spreadsheet contains no data rows.", variant: "destructive" });
