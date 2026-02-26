@@ -184,6 +184,7 @@ export default function AdminDashboard() {
   const [editOrgName, setEditOrgName] = useState("");
   const [editOrgEmail, setEditOrgEmail] = useState("");
   const [editOrgDisabled, setEditOrgDisabled] = useState(false);
+  const [editOrgFeatures, setEditOrgFeatures] = useState<Record<string, boolean>>({});
 
   // State for resetting organization password
   const [showResetOrgPasswordDialog, setShowResetOrgPasswordDialog] = useState(false);
@@ -528,23 +529,46 @@ export default function AdminDashboard() {
     },
   });
 
+  const { data: editOrgFeatureDefaults, isLoading: isLoadingEditOrgFeatures } = useQuery<Record<string, boolean>>({
+    queryKey: ["/api/admin/organizations", editOrgTarget?.id, "feature-defaults-edit"],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/organizations/${editOrgTarget!.id}/feature-defaults`, { credentials: "include" });
+      if (!res.ok) return {};
+      return res.json();
+    },
+    enabled: !!editOrgTarget && showEditOrgDialog,
+  });
+
+  useEffect(() => {
+    if (editOrgFeatureDefaults) {
+      setEditOrgFeatures(editOrgFeatureDefaults);
+    }
+  }, [editOrgFeatureDefaults]);
+
   const editOrgMutation = useMutation({
     mutationFn: async ({ orgId, updates }: { orgId: string; updates: { name?: string; email?: string; disabled?: boolean } }) => {
       const response = await apiRequest("PATCH", `/api/admin/organizations/${orgId}`, updates);
       return response.json();
     },
     onSuccess: () => {
-      setShowEditOrgDialog(false);
-      setEditOrgTarget(null);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
-      toast({ title: "Organisation updated", description: "The organisation details have been updated successfully." });
     },
     onError: (error: any) => {
       toast({ title: "Failed to update organisation", description: error.message || "Please try again.", variant: "destructive" });
     },
   });
 
-  const handleEditOrg = () => {
+  const editOrgFeaturesMutation = useMutation({
+    mutationFn: async ({ orgId, features }: { orgId: string; features: Record<string, boolean> }) => {
+      const response = await apiRequest("PUT", `/api/admin/organizations/${orgId}/feature-defaults`, features);
+      return response.json();
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to update features", description: error.message || "Please try again.", variant: "destructive" });
+    },
+  });
+
+  const handleEditOrg = async () => {
     if (!editOrgTarget) return;
     if (!editOrgName.trim()) {
       toast({ title: "Name required", description: "Organisation name cannot be empty.", variant: "destructive" });
@@ -554,10 +578,21 @@ export default function AdminDashboard() {
       toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
       return;
     }
-    editOrgMutation.mutate({
-      orgId: editOrgTarget.id,
-      updates: { name: editOrgName.trim(), email: editOrgEmail.trim(), disabled: editOrgDisabled },
-    });
+    try {
+      await editOrgMutation.mutateAsync({
+        orgId: editOrgTarget.id,
+        updates: { name: editOrgName.trim(), email: editOrgEmail.trim(), disabled: editOrgDisabled },
+      });
+      await editOrgFeaturesMutation.mutateAsync({
+        orgId: editOrgTarget.id,
+        features: editOrgFeatures,
+      });
+      setShowEditOrgDialog(false);
+      setEditOrgTarget(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+      refetchOrgFeatureDefaults();
+      toast({ title: "Organisation updated", description: "The organisation details and features have been updated successfully." });
+    } catch (_) {}
   };
 
   const resetOrgPasswordMutation = useMutation({
@@ -2047,7 +2082,7 @@ export default function AdminDashboard() {
             setEditOrgTarget(null);
           }
         }}>
-          <DialogContent>
+          <DialogContent className="max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Organisation</DialogTitle>
               <DialogDescription>
@@ -2085,6 +2120,34 @@ export default function AdminDashboard() {
                 />
                 <Label htmlFor="edit-org-disabled">Disabled</Label>
               </div>
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">Enterprise Features</Label>
+                <p className="text-xs text-muted-foreground">Toggle features available to this organisation's clients.</p>
+                {isLoadingEditOrgFeatures ? (
+                  <div className="flex items-center gap-2 py-4">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm text-muted-foreground">Loading features...</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-1 max-h-60 overflow-y-auto border rounded-md p-2">
+                    {allTierFeatureKeys.map((key) => {
+                      const orgKey = "org" + key.charAt(0).toUpperCase() + key.slice(1);
+                      return (
+                        <div key={orgKey} className="flex items-center justify-between py-1.5 px-2 rounded-md hover:bg-muted/50">
+                          <span className="text-sm">{featureLabels[key] || key}</span>
+                          <Switch
+                            checked={editOrgFeatures[orgKey] ?? false}
+                            onCheckedChange={(checked) => {
+                              setEditOrgFeatures(prev => ({ ...prev, [orgKey]: checked }));
+                            }}
+                            data-testid={`switch-edit-org-feature-${orgKey}`}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowEditOrgDialog(false)} data-testid="button-cancel-edit-org">
@@ -2092,10 +2155,10 @@ export default function AdminDashboard() {
               </Button>
               <Button
                 onClick={handleEditOrg}
-                disabled={editOrgMutation.isPending}
+                disabled={editOrgMutation.isPending || editOrgFeaturesMutation.isPending}
                 data-testid="button-submit-edit-org"
               >
-                {editOrgMutation.isPending ? (
+                {(editOrgMutation.isPending || editOrgFeaturesMutation.isPending) ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
                 ) : (
                   "Save Changes"
