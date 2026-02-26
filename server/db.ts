@@ -17,3 +17,5 @@ export function ensureDb() {
   }
   return db;
 }
+
+export const getDb = ensureDb;

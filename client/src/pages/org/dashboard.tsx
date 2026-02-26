@@ -1644,6 +1644,12 @@ export default function OrganizationDashboard() {
                 API
               </Button>
             </Link>
+            <Link href="/org/funding">
+              <Button variant="outline" size="sm" className="border-blue-600 text-blue-600 hover:bg-blue-50" data-testid="button-funding">
+                <Scale className="h-4 w-4 mr-2" />
+                Funding
+              </Button>
+            </Link>
             <Button 
               size="sm"
               data-testid="button-register-client" 
