@@ -178,6 +178,13 @@ export default function AdminDashboard() {
   const [purgePassword, setPurgePassword] = useState("");
   const [purgeConfirmText, setPurgeConfirmText] = useState("");
   
+  // State for editing organization details
+  const [showEditOrgDialog, setShowEditOrgDialog] = useState(false);
+  const [editOrgTarget, setEditOrgTarget] = useState<AdminOrganizationView | null>(null);
+  const [editOrgName, setEditOrgName] = useState("");
+  const [editOrgEmail, setEditOrgEmail] = useState("");
+  const [editOrgDisabled, setEditOrgDisabled] = useState(false);
+
   // State for resetting organization password
   const [showResetOrgPasswordDialog, setShowResetOrgPasswordDialog] = useState(false);
   const [resetOrgPasswordTarget, setResetOrgPasswordTarget] = useState<AdminOrganizationView | null>(null);
@@ -520,6 +527,38 @@ export default function AdminDashboard() {
       });
     },
   });
+
+  const editOrgMutation = useMutation({
+    mutationFn: async ({ orgId, updates }: { orgId: string; updates: { name?: string; email?: string; disabled?: boolean } }) => {
+      const response = await apiRequest("PATCH", `/api/admin/organizations/${orgId}`, updates);
+      return response.json();
+    },
+    onSuccess: () => {
+      setShowEditOrgDialog(false);
+      setEditOrgTarget(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+      toast({ title: "Organisation updated", description: "The organisation details have been updated successfully." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to update organisation", description: error.message || "Please try again.", variant: "destructive" });
+    },
+  });
+
+  const handleEditOrg = () => {
+    if (!editOrgTarget) return;
+    if (!editOrgName.trim()) {
+      toast({ title: "Name required", description: "Organisation name cannot be empty.", variant: "destructive" });
+      return;
+    }
+    if (!editOrgEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editOrgEmail)) {
+      toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
+      return;
+    }
+    editOrgMutation.mutate({
+      orgId: editOrgTarget.id,
+      updates: { name: editOrgName.trim(), email: editOrgEmail.trim(), disabled: editOrgDisabled },
+    });
+  };
 
   const resetOrgPasswordMutation = useMutation({
     mutationFn: async ({ organizationId, newPassword }: { organizationId: string; newPassword: string }) => {
@@ -1170,6 +1209,23 @@ export default function AdminDashboard() {
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
+                    {isSuperAdmin && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditOrgTarget(org);
+                          setEditOrgName(org.name);
+                          setEditOrgEmail(org.email);
+                          setEditOrgDisabled(org.disabled);
+                          setShowEditOrgDialog(true);
+                        }}
+                        data-testid={`button-edit-org-${org.id}`}
+                      >
+                        <PenLine className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                    )}
                     {isSuperAdmin && (
                       <Button
                         variant="outline"
@@ -1985,6 +2041,70 @@ export default function AdminDashboard() {
         </Dialog>
 
         {/* Reset Organization Password Dialog */}
+        <Dialog open={showEditOrgDialog} onOpenChange={(open) => {
+          if (!open) {
+            setShowEditOrgDialog(false);
+            setEditOrgTarget(null);
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Organisation</DialogTitle>
+              <DialogDescription>
+                Update the details for {editOrgTarget?.name || "this organisation"}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-org-name">Organisation Name</Label>
+                <Input
+                  id="edit-org-name"
+                  value={editOrgName}
+                  onChange={(e) => setEditOrgName(e.target.value)}
+                  placeholder="Organisation name"
+                  data-testid="input-edit-org-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-org-email">Email</Label>
+                <Input
+                  id="edit-org-email"
+                  type="email"
+                  value={editOrgEmail}
+                  onChange={(e) => setEditOrgEmail(e.target.value)}
+                  placeholder="organisation@example.com"
+                  data-testid="input-edit-org-email"
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <Switch
+                  id="edit-org-disabled"
+                  checked={editOrgDisabled}
+                  onCheckedChange={setEditOrgDisabled}
+                  data-testid="switch-edit-org-disabled"
+                />
+                <Label htmlFor="edit-org-disabled">Disabled</Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowEditOrgDialog(false)} data-testid="button-cancel-edit-org">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleEditOrg}
+                disabled={editOrgMutation.isPending}
+                data-testid="button-submit-edit-org"
+              >
+                {editOrgMutation.isPending ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={showResetOrgPasswordDialog} onOpenChange={(open) => {
           if (!open) {
             setShowResetOrgPasswordDialog(false);
