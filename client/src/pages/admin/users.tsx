@@ -28,7 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
-  Users, LogOut, Shield, ShieldCheck, Trash2, ArrowLeft, Building2, User, Ban, CheckCircle, Plus, Loader2, Eye, EyeOff, Settings2, Search, RotateCcw, Archive, ChevronDown, ChevronRight, AlertTriangle, Siren
+  Users, LogOut, Shield, ShieldCheck, Trash2, ArrowLeft, Building2, User, Ban, CheckCircle, Plus, Loader2, Eye, EyeOff, Settings2, Search, RotateCcw, Archive, ChevronDown, ChevronRight, AlertTriangle, Siren, BarChart3, LayoutDashboard
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest } from "@/lib/queryClient";
@@ -60,6 +60,8 @@ export default function AdminUsers() {
   const [orgAssuranceExpiry, setOrgAssuranceExpiry] = useState("");
   const [orgApiAccessEnabled, setOrgApiAccessEnabled] = useState(false);
   const [orgApiAccessExpiry, setOrgApiAccessExpiry] = useState("");
+  const [orgDashboardEnabled, setOrgDashboardEnabled] = useState(false);
+  const [orgDashboardExpiry, setOrgDashboardExpiry] = useState("");
   
   // Feature management
   const [showFeaturesDialog, setShowFeaturesDialog] = useState(false);
@@ -357,6 +359,8 @@ export default function AdminUsers() {
       featureDefaults.orgFeatureAssuranceExpiresAt = orgAssuranceExpiry || null;
       featureDefaults.orgFeatureApiAccess = orgApiAccessEnabled;
       featureDefaults.orgFeatureApiAccessExpiresAt = orgApiAccessExpiry || null;
+      featureDefaults.orgFeatureDashboard = orgDashboardEnabled;
+      featureDefaults.orgFeatureDashboardExpiresAt = orgDashboardExpiry || null;
 
       await apiRequest("POST", "/api/admin/organizations", {
         name: orgName,
@@ -938,6 +942,48 @@ export default function AdminUsers() {
                                     />
                                   </div>
                                 )}
+                                <div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-md">
+                                  <div className="flex items-center gap-2">
+                                    <LayoutDashboard className="h-4 w-4 text-blue-500" />
+                                    <span className="text-sm font-medium">Organisation Dashboard</span>
+                                    {expandedOrgFeatures?.orgFeatureDashboardExpiresAt && (
+                                      <span className="text-xs text-muted-foreground">
+                                        (expires {new Date(expandedOrgFeatures.orgFeatureDashboardExpiresAt).toLocaleDateString("en-GB")})
+                                      </span>
+                                    )}
+                                  </div>
+                                  <Switch
+                                    checked={expandedOrgFeatures?.orgFeatureDashboard ?? false}
+                                    onCheckedChange={(checked) => {
+                                      if (expandedOrgId) {
+                                        updateOrgFeatureMutation.mutate({
+                                          orgId: expandedOrgId,
+                                          updates: { orgFeatureDashboard: checked },
+                                        });
+                                      }
+                                    }}
+                                    data-testid={`switch-dashboard-${org.id}`}
+                                  />
+                                </div>
+                                {expandedOrgFeatures?.orgFeatureDashboard && (
+                                  <div className="ml-6 flex items-center gap-2">
+                                    <Label className="text-xs text-muted-foreground whitespace-nowrap">Expiry:</Label>
+                                    <Input
+                                      type="date"
+                                      value={expandedOrgFeatures?.orgFeatureDashboardExpiresAt ? new Date(expandedOrgFeatures.orgFeatureDashboardExpiresAt).toISOString().split('T')[0] : ""}
+                                      onChange={(e) => {
+                                        if (expandedOrgId) {
+                                          updateOrgFeatureMutation.mutate({
+                                            orgId: expandedOrgId,
+                                            updates: { orgFeatureDashboardExpiresAt: e.target.value || null },
+                                          });
+                                        }
+                                      }}
+                                      className="h-7 text-xs w-40"
+                                      data-testid={`input-dashboard-expiry-${org.id}`}
+                                    />
+                                  </div>
+                                )}
                               </div>
                             </div>
 
@@ -1258,6 +1304,33 @@ export default function AdminUsers() {
                         onChange={(e) => setOrgApiAccessExpiry(e.target.value)}
                         className="mt-1"
                         data-testid="input-org-api-expiry"
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="org-dashboard" className="flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4 text-blue-500" />
+                      Organisation Dashboard
+                    </Label>
+                    <Switch
+                      id="org-dashboard"
+                      checked={orgDashboardEnabled}
+                      onCheckedChange={setOrgDashboardEnabled}
+                      data-testid="switch-org-dashboard"
+                    />
+                  </div>
+                  {orgDashboardEnabled && (
+                    <div className="ml-6">
+                      <Label htmlFor="org-dashboard-expiry" className="text-xs text-muted-foreground">Expiry Date (optional)</Label>
+                      <Input
+                        id="org-dashboard-expiry"
+                        type="date"
+                        value={orgDashboardExpiry}
+                        onChange={(e) => setOrgDashboardExpiry(e.target.value)}
+                        className="mt-1"
+                        data-testid="input-org-dashboard-expiry"
                       />
                     </div>
                   )}

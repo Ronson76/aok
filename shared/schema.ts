@@ -73,6 +73,8 @@ export const users = pgTable("users", {
   orgFeatureAssuranceExpiresAt: timestamp("org_feature_assurance_expires_at"),
   orgFeatureApiAccess: boolean("org_feature_api_access").notNull().default(false),
   orgFeatureApiAccessExpiresAt: timestamp("org_feature_api_access_expires_at"),
+  orgFeatureDashboard: boolean("org_feature_dashboard").notNull().default(false),
+  orgFeatureDashboardExpiresAt: timestamp("org_feature_dashboard_expires_at"),
   // Audit retention policy in days (default 2190 = 6 years, min 365, max 3650)
   retentionPolicyDays: integer("retention_policy_days").notNull().default(2190),
   // Last known location (updated on check-in if provided)
@@ -619,6 +621,8 @@ export const orgFeatureDefaultsSchema = z.object({
   orgFeatureAssuranceExpiresAt: z.string().nullable().optional(),
   orgFeatureApiAccess: z.boolean().optional(),
   orgFeatureApiAccessExpiresAt: z.string().nullable().optional(),
+  orgFeatureDashboard: z.boolean().optional(),
+  orgFeatureDashboardExpiresAt: z.string().nullable().optional(),
 });
 
 export type OrgFeatureDefaults = z.infer<typeof orgFeatureDefaultsSchema>;

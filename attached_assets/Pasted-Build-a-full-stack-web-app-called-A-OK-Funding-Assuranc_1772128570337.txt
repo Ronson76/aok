@@ -1,0 +1,166 @@
+Build a full-stack web app called "A-OK Funding Assurance (MVP)".
+
+Goal:
+Create a GRC-grade audit trail that links (1) funding received/spent to (2) allocations to properties/services/service users, and (3) frontline safeguarding activities and incidents. Provide dashboards and risk flags.
+
+Tech requirements:
+- Use Next.js (App Router) + TypeScript for frontend.
+- Use Node.js API routes (Next.js route handlers) for backend.
+- Use PostgreSQL for database with Prisma ORM.
+- Use Tailwind CSS for styling.
+- Include authentication (simple email+password with bcrypt + JWT in httpOnly cookie). Roles: ADMIN, MANAGER, AUDITOR.
+- Seed demo data so the dashboard works immediately.
+- Provide a clean UI with sidebar nav: Overview, Funding Sources, Transactions, Allocations, Activities, Incidents, Risk & Compliance, Audit Export, Settings.
+
+Core entities:
+1) Organisation
+2) User (role-based)
+3) Property (e.g., supported living property)
+4) ServiceUser (optional for MVP but include)
+5) FundingSource
+6) FundingTransaction
+7) FundingAllocation
+8) ActivitySession (safeguarding activity log)
+9) Incident (safeguarding incident log)
+10) AuditEvent (server-side immutable audit log for any create/update)
+
+Database schema (must implement in Prisma):
+- Organisation: id, name, createdAt
+- User: id, organisationId, name, email (unique), passwordHash, role, createdAt
+- Property: id, organisationId, name, address, createdAt
+- ServiceUser: id, organisationId, fullName, referenceCode, createdAt
+- FundingSource:
+  id
+  organisationId
+  name
+  type ENUM: LA, HOUSING_BENEFIT, GRANT, CHARITY, PRIVATE
+  restricted boolean
+  startDate, endDate (nullable)
+  totalValue decimal (nullable)
+  complianceRules json (nullable)  // e.g. {"requiresSafeguardingCoveragePct": 95, "maxDaysUnallocated": 7}
+  createdAt
+- FundingTransaction:
+  id
+  organisationId
+  fundingSourceId (nullable)  // allow unassigned then later classify
+  amount decimal
+  direction ENUM: INCOMING, OUTGOING
+  transactionDate datetime
+  reference text
+  externalApiProvider text (nullable)
+  externalApiId text (nullable)
+  linkedPropertyId (nullable)
+  linkedServiceUserId (nullable)
+  createdAt
+- FundingAllocation:
+  id
+  organisationId
+  transactionId
+  allocatedToType ENUM: PROPERTY, SERVICE_USER, SERVICE
+  allocatedToId text  // store Property.id or ServiceUser.id (MVP)
+  allocatedAmount decimal
+  allocationDate datetime
+  createdByUserId
+  notes text (nullable)
+  createdAt
+- ActivitySession:
+  id
+  organisationId
+  propertyId (nullable)
+  serviceUserId (nullable)
+  activityType ENUM: WELFARE_VISIT, HOME_VISIT, LONE_WORKER, CHECK_IN, OTHER
+  startTime datetime
+  endTime datetime (nullable)
+  status ENUM: COMPLETED, MISSED, ESCALATED
+  safeguardingCoverage boolean DEFAULT true
+  fundingAllocationId (nullable)  // link to allocation for outcome-based evidence
+  createdByUserId
+  createdAt
+- Incident:
+  id
+  organisationId
+  propertyId (nullable)
+  serviceUserId (nullable)
+  severity ENUM: LOW, MEDIUM, HIGH, CRITICAL
+  description text
+  occurredAt datetime
+  resolvedAt datetime (nullable)
+  status ENUM: OPEN, RESOLVED
+  fundingAllocationId (nullable)
+  createdByUserId
+  createdAt
+- AuditEvent:
+  id
+  organisationId
+  actorUserId (nullable)
+  entityType text  // e.g. "FundingTransaction"
+  entityId text
+  action ENUM: CREATE, UPDATE, DELETE
+  before json (nullable)
+  after json (nullable)
+  createdAt
+Rules:
+- Every create/update of FundingSource, FundingTransaction, FundingAllocation, ActivitySession, Incident must write an AuditEvent.
+- "DELETE" should be soft-delete only (add deletedAt if needed); prefer soft delete for compliance.
+
+MVP features (must implement):
+A) Manual Funding Entry:
+- Create/edit Funding Sources
+- Create Transactions (incoming/outgoing)
+- Link transactions to a funding source and optionally a property/service user
+B) Allocation Engine:
+- Create allocations against a transaction (one transaction can have multiple allocations)
+- Validate that sum(allocations) <= transaction amount
+C) Activity + Incident logging:
+- Create activity sessions (with status and safeguardingCoverage boolean)
+- Create incidents and mark resolved
+- Allow linking activity/incidents to a fundingAllocationId
+D) Dashboards:
+1) Overview dashboard:
+- Cards: total incoming this month, total outgoing this month, unallocated funds, safeguarding coverage %, open incidents
+- Chart: funding incoming vs count of activities (simple line/bar using a minimal chart lib or plain SVG)
+2) Property dashboard:
+- Select a property; show funding allocated, activities delivered, coverage %, incidents count
+3) Risk & Compliance dashboard:
+- Risk flags:
+  - Funding received but no allocations after N days (default 7)
+  - Allocations exist but no linked activities (possible "money not delivering outcomes")
+  - Activities delivered with NO linked allocation (unfunded delivery risk)
+  - Safeguarding coverage below threshold (default 95%)
+  - Open incidents older than N days (default 14)
+- Compliance score (0-100) based on above flags; show explanation.
+E) Audit Export:
+- Generate a downloadable PDF OR CSV report (CSV is acceptable for MVP) for a date range:
+  - Funding transactions + allocations + linked activities/incidents
+  - Include audit events count and key changes
+- Provide "Generate report" UI with date range filters.
+F) Integrations (stub, not full OAuth):
+- Create a simple "Bank Integration" settings page with fields:
+  provider (TrueLayer), clientId, clientSecret (from env), and a button "Simulate Import".
+- Simulate Import should insert demo transactions with externalApiProvider="TrueLayer" and realistic references.
+(No real bank OAuth required for MVP.)
+
+UI/UX requirements:
+- Clean admin dashboard style with sidebar.
+- Tables with search/filter by date and property.
+- Use modals or separate pages for create/edit forms.
+
+Seed data:
+- One organisation "Demo YMCA"
+- Admin user:
+  email: admin@aok.local
+  password: Admin123!
+- Two properties, three service users
+- Two funding sources (LA + Grant)
+- A set of transactions and allocations
+- Activities and incidents linked to allocations (and some unlinked to trigger risk flags)
+
+Project setup tasks:
+- Provide README with run steps.
+- Use dotenv for DATABASE_URL and JWT_SECRET.
+- Include Prisma migrate + seed.
+
+Output:
+- Create all code files needed.
+- Ensure it runs with `npm install` then `npm run dev`.
+- Ensure the landing page redirects to /login then /dashboard after login.
