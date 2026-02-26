@@ -117,6 +117,13 @@ export function registerOrganizationRoutes(app: Express) {
   // Get organization dashboard stats
   app.get("/api/org/dashboard", requireOrganization, async (req, res) => {
     try {
+      const orgUser = await storage.getUserById(req.userId!);
+      if (orgUser && !orgUser.orgFeatureDashboard) {
+        return res.status(403).json({ error: "Organisation Dashboard is not enabled for this account. Please contact your administrator." });
+      }
+      if (orgUser?.orgFeatureDashboardExpiresAt && new Date(orgUser.orgFeatureDashboardExpiresAt) < new Date()) {
+        return res.status(403).json({ error: "Organisation Dashboard access has expired. Please contact your administrator." });
+      }
       const stats = await organizationStorage.getOrganizationDashboardStats(req.userId!);
       res.json(stats);
     } catch (error) {

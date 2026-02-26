@@ -2660,6 +2660,8 @@ class DatabaseStorage implements IStorage {
       orgFeatureAssuranceExpiresAt: users.orgFeatureAssuranceExpiresAt,
       orgFeatureApiAccess: users.orgFeatureApiAccess,
       orgFeatureApiAccessExpiresAt: users.orgFeatureApiAccessExpiresAt,
+      orgFeatureDashboard: users.orgFeatureDashboard,
+      orgFeatureDashboardExpiresAt: users.orgFeatureDashboardExpiresAt,
     }).from(users).where(eq(users.id, orgId));
     if (!user) return undefined;
     return {
@@ -2668,6 +2670,7 @@ class DatabaseStorage implements IStorage {
       orgFeatureRegisterExpiresAt: user.orgFeatureRegisterExpiresAt?.toISOString() ?? null,
       orgFeatureAssuranceExpiresAt: user.orgFeatureAssuranceExpiresAt?.toISOString() ?? null,
       orgFeatureApiAccessExpiresAt: user.orgFeatureApiAccessExpiresAt?.toISOString() ?? null,
+      orgFeatureDashboardExpiresAt: user.orgFeatureDashboardExpiresAt?.toISOString() ?? null,
     };
   }
 
@@ -2684,6 +2687,9 @@ class DatabaseStorage implements IStorage {
     }
     if ('orgFeatureApiAccessExpiresAt' in dbUpdates) {
       dbUpdates.orgFeatureApiAccessExpiresAt = dbUpdates.orgFeatureApiAccessExpiresAt ? new Date(dbUpdates.orgFeatureApiAccessExpiresAt) : null;
+    }
+    if ('orgFeatureDashboardExpiresAt' in dbUpdates) {
+      dbUpdates.orgFeatureDashboardExpiresAt = dbUpdates.orgFeatureDashboardExpiresAt ? new Date(dbUpdates.orgFeatureDashboardExpiresAt) : null;
     }
     await getDb().update(users).set(dbUpdates).where(eq(users.id, orgId));
   }

@@ -296,7 +296,7 @@ export default function OrganizationDashboard() {
     return `${hours} hour${hours !== 1 ? 's' : ''}`;
   };
 
-  const { data: stats, isLoading: statsLoading, isError: statsError } = useQuery<OrganizationDashboardStats>({
+  const { data: stats, isLoading: statsLoading, isError: statsError, error: statsErrorObj } = useQuery<OrganizationDashboardStats>({
     queryKey: ["/api/org/dashboard"],
     retry: false,
   });
@@ -1355,6 +1355,42 @@ export default function OrganizationDashboard() {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const isDashboardDisabled = statsError && (
+    (statsErrorObj as any)?.message?.includes("403") ||
+    (statsErrorObj as any)?.message?.includes("not enabled") ||
+    (statsErrorObj as any)?.message?.includes("expired")
+  );
+
+  if (isDashboardDisabled) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-background dark:from-indigo-950 dark:to-background flex flex-col items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <div className="flex justify-center mb-4">
+              <div className="rounded-full bg-muted p-4">
+                <Shield className="h-10 w-10 text-muted-foreground" />
+              </div>
+            </div>
+            <CardTitle className="text-xl" data-testid="text-dashboard-disabled-title">Dashboard Not Available</CardTitle>
+            <CardDescription data-testid="text-dashboard-disabled-description">
+              The Organisation Dashboard is not currently enabled for your account. Please contact your administrator to request access.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="outline"
+              className="w-full"
+              data-testid="button-go-home"
+              onClick={() => setLocation("/")}
+            >
+              Go to Home
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
