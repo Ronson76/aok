@@ -61,7 +61,7 @@ const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 export default function OrganizationDashboard() {
   const { toast } = useToast();
-  const { logout } = useAuth();
+  const { logout, user: authUser } = useAuth();
   const [, setLocation] = useLocation();
   const [showAddClientDialog, setShowAddClientDialog] = useState(false);
   const [clientEmail, setClientEmail] = useState("");
@@ -1381,41 +1381,6 @@ export default function OrganizationDashboard() {
     );
   }
 
-  const isDashboardDisabled = statsError && (
-    (statsErrorObj as any)?.message?.includes("403") ||
-    (statsErrorObj as any)?.message?.includes("not enabled") ||
-    (statsErrorObj as any)?.message?.includes("expired")
-  );
-
-  if (isDashboardDisabled) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-background dark:from-indigo-950 dark:to-background flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center">
-          <CardHeader>
-            <div className="flex justify-center mb-4">
-              <div className="rounded-full bg-muted p-4">
-                <Shield className="h-10 w-10 text-muted-foreground" />
-              </div>
-            </div>
-            <CardTitle className="text-xl" data-testid="text-dashboard-disabled-title">Dashboard Not Available</CardTitle>
-            <CardDescription data-testid="text-dashboard-disabled-description">
-              The Organisation Dashboard is not currently enabled for your account. Please contact your administrator to request access.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              variant="outline"
-              className="w-full"
-              data-testid="button-go-home"
-              onClick={() => setLocation("/")}
-            >
-              Go to Home
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   if (statsError || clientsError) {
     return (
@@ -1636,42 +1601,52 @@ export default function OrganizationDashboard() {
                 <span className="hidden sm:inline">Lone Worker </span>Hub
               </Button>
             </Link>
-            <Link href="/org/safeguarding">
-              <Button variant="outline" size="sm" data-testid="button-safeguarding-hub">
-                <Shield className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Safeguarding </span>Hub
-              </Button>
-            </Link>
+            {authUser?.orgFeatureSafeguarding && !(authUser.orgFeatureSafeguardingExpiresAt && new Date(authUser.orgFeatureSafeguardingExpiresAt) < new Date()) && (
+              <Link href="/org/safeguarding">
+                <Button variant="outline" size="sm" data-testid="button-safeguarding-hub">
+                  <Shield className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Safeguarding </span>Hub
+                </Button>
+              </Link>
+            )}
             <Link href="/org/team">
               <Button variant="outline" size="sm" data-testid="button-team-management">
                 <Users className="h-4 w-4 mr-2" />
                 Team
               </Button>
             </Link>
-            <Link href="/org/analytics">
-              <Button variant="outline" size="sm" data-testid="button-analytics">
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Analytics
-              </Button>
-            </Link>
-            <Link href="/org/assurance">
-              <Button variant="outline" size="sm" className="border-green-600 text-green-600 hover:bg-green-50" data-testid="button-assurance">
-                <ShieldCheck className="h-4 w-4 mr-2" />
-                Assurance
-              </Button>
-            </Link>
-            <Link href="/org/api-access">
-              <Button variant="outline" size="sm" className="border-indigo-600 text-indigo-600" data-testid="button-api-access">
-                <Key className="h-4 w-4 mr-2" />
-                API
-              </Button>
-            </Link>
-            <Link href="/org/funding">
-              <Button variant="outline" size="sm" className="border-blue-600 text-blue-600 hover:bg-blue-50" data-testid="button-funding">
-                <Scale className="h-4 w-4 mr-2" />
-                Funding
-              </Button>
-            </Link>
+            {authUser?.orgFeatureDashboard && !(authUser.orgFeatureDashboardExpiresAt && new Date(authUser.orgFeatureDashboardExpiresAt) < new Date()) && (
+              <Link href="/org/analytics">
+                <Button variant="outline" size="sm" data-testid="button-analytics">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Analytics
+                </Button>
+              </Link>
+            )}
+            {authUser?.orgFeatureAssurance && !(authUser.orgFeatureAssuranceExpiresAt && new Date(authUser.orgFeatureAssuranceExpiresAt) < new Date()) && (
+              <Link href="/org/assurance">
+                <Button variant="outline" size="sm" className="border-green-600 text-green-600 hover:bg-green-50" data-testid="button-assurance">
+                  <ShieldCheck className="h-4 w-4 mr-2" />
+                  Assurance
+                </Button>
+              </Link>
+            )}
+            {authUser?.orgFeatureApiAccess && !(authUser.orgFeatureApiAccessExpiresAt && new Date(authUser.orgFeatureApiAccessExpiresAt) < new Date()) && (
+              <Link href="/org/api-access">
+                <Button variant="outline" size="sm" className="border-indigo-600 text-indigo-600" data-testid="button-api-access">
+                  <Key className="h-4 w-4 mr-2" />
+                  API
+                </Button>
+              </Link>
+            )}
+            {authUser?.orgFeatureDashboard && !(authUser.orgFeatureDashboardExpiresAt && new Date(authUser.orgFeatureDashboardExpiresAt) < new Date()) && (
+              <Link href="/org/funding">
+                <Button variant="outline" size="sm" className="border-blue-600 text-blue-600 hover:bg-blue-50" data-testid="button-funding">
+                  <Scale className="h-4 w-4 mr-2" />
+                  Funding
+                </Button>
+              </Link>
+            )}
             <Button 
               size="sm"
               data-testid="button-register-client" 
