@@ -184,7 +184,7 @@ export default function AdminDashboard() {
   const [editOrgName, setEditOrgName] = useState("");
   const [editOrgEmail, setEditOrgEmail] = useState("");
   const [editOrgDisabled, setEditOrgDisabled] = useState(false);
-  const [editOrgFeatures, setEditOrgFeatures] = useState<Record<string, boolean>>({});
+  const [editOrgFeatures, setEditOrgFeatures] = useState<Record<string, any>>({});
 
   // State for resetting organization password
   const [showResetOrgPasswordDialog, setShowResetOrgPasswordDialog] = useState(false);
@@ -529,7 +529,7 @@ export default function AdminDashboard() {
     },
   });
 
-  const { data: editOrgFeatureDefaults, isLoading: isLoadingEditOrgFeatures } = useQuery<Record<string, boolean>>({
+  const { data: editOrgFeatureDefaults, isLoading: isLoadingEditOrgFeatures } = useQuery<Record<string, any>>({
     queryKey: ["/api/admin/organizations", editOrgTarget?.id, "feature-defaults-edit"],
     queryFn: async () => {
       const res = await fetch(`/api/admin/organizations/${editOrgTarget!.id}/feature-defaults`, { credentials: "include" });
@@ -559,7 +559,7 @@ export default function AdminDashboard() {
   });
 
   const editOrgFeaturesMutation = useMutation({
-    mutationFn: async ({ orgId, features }: { orgId: string; features: Record<string, boolean> }) => {
+    mutationFn: async ({ orgId, features }: { orgId: string; features: Record<string, any> }) => {
       const response = await apiRequest("PUT", `/api/admin/organizations/${orgId}/feature-defaults`, features);
       return response.json();
     },
@@ -2122,29 +2122,51 @@ export default function AdminDashboard() {
               </div>
               <div className="space-y-2">
                 <Label className="text-base font-semibold">Enterprise Features</Label>
-                <p className="text-xs text-muted-foreground">Toggle features available to this organisation's clients.</p>
+                <p className="text-xs text-muted-foreground">Toggle enterprise modules and set expiry dates for this organisation.</p>
                 {isLoadingEditOrgFeatures ? (
                   <div className="flex items-center gap-2 py-4">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span className="text-sm text-muted-foreground">Loading features...</span>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-1 max-h-60 overflow-y-auto border rounded-md p-2">
-                    {allTierFeatureKeys.map((key) => {
-                      const orgKey = "org" + key.charAt(0).toUpperCase() + key.slice(1);
-                      return (
-                        <div key={orgKey} className="flex items-center justify-between py-1.5 px-2 rounded-md hover:bg-muted/50">
-                          <span className="text-sm">{featureLabels[key] || key}</span>
+                  <div className="space-y-3 border rounded-md p-3">
+                    {([
+                      { key: "orgFeatureSafeguarding", label: "Safeguarding", expiresKey: "orgFeatureSafeguardingExpiresAt" },
+                      { key: "orgFeatureRegister", label: "Register", expiresKey: "orgFeatureRegisterExpiresAt" },
+                      { key: "orgFeatureAssurance", label: "Assurance / GRC", expiresKey: "orgFeatureAssuranceExpiresAt" },
+                      { key: "orgFeatureApiAccess", label: "API Access", expiresKey: "orgFeatureApiAccessExpiresAt" },
+                      { key: "orgFeatureDashboard", label: "Finance / Dashboard", expiresKey: "orgFeatureDashboardExpiresAt" },
+                    ] as const).map(({ key, label, expiresKey }) => (
+                      <div key={key} className="space-y-1.5 py-1.5 px-2 rounded-md hover:bg-muted/50">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{label}</span>
                           <Switch
-                            checked={editOrgFeatures[orgKey] ?? false}
+                            checked={editOrgFeatures[key] ?? false}
                             onCheckedChange={(checked) => {
-                              setEditOrgFeatures(prev => ({ ...prev, [orgKey]: checked }));
+                              setEditOrgFeatures(prev => ({ ...prev, [key]: checked }));
                             }}
-                            data-testid={`switch-edit-org-feature-${orgKey}`}
+                            data-testid={`switch-edit-org-feature-${key}`}
                           />
                         </div>
-                      );
-                    })}
+                        {editOrgFeatures[key] && (
+                          <div className="flex items-center gap-2">
+                            <Label className="text-xs text-muted-foreground whitespace-nowrap">Expires</Label>
+                            <Input
+                              type="date"
+                              className="h-7 text-xs"
+                              value={editOrgFeatures[expiresKey] ? String(editOrgFeatures[expiresKey]).split("T")[0] : ""}
+                              onChange={(e) => {
+                                setEditOrgFeatures(prev => ({
+                                  ...prev,
+                                  [expiresKey]: e.target.value ? new Date(e.target.value).toISOString() : null,
+                                }));
+                              }}
+                              data-testid={`input-edit-org-feature-expires-${key}`}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
