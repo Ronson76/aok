@@ -1466,6 +1466,75 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  const updateOrganizationSchema = z.object({
+    name: z.string().min(1, "Name is required").max(200).optional(),
+    email: z.string().email("Invalid email address").optional(),
+    disabled: z.boolean().optional(),
+  }).refine(data => data.name !== undefined || data.email !== undefined || data.disabled !== undefined, {
+    message: "At least one field must be provided",
+  });
+
+  app.patch("/api/admin/organizations/:orgId", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { orgId } = req.params;
+      const validation = updateOrganizationSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors[0].message });
+      }
+      const { name, email, disabled } = validation.data;
+
+      const db = ensureDb();
+      const existing = await db.execute(sql`SELECT id, name, email, disabled, account_type FROM users WHERE id = ${orgId}`);
+      if (!existing.rows[0] || existing.rows[0].account_type !== "organization") {
+        return res.status(404).json({ error: "Organisation not found" });
+      }
+
+      const changes: string[] = [];
+      const setClauses: any = {};
+
+      if (name !== undefined && name !== existing.rows[0].name) {
+        setClauses.name = name;
+        changes.push(`name: "${existing.rows[0].name}" → "${name}"`);
+      }
+
+      if (email !== undefined && email.toLowerCase() !== existing.rows[0].email) {
+        const emailExists = await storage.getUserByEmail(email.toLowerCase());
+        if (emailExists && emailExists.id !== orgId) {
+          return res.status(400).json({ error: "An account with this email already exists" });
+        }
+        setClauses.email = email.toLowerCase();
+        changes.push(`email: "${existing.rows[0].email}" → "${email.toLowerCase()}"`);
+      }
+
+      if (disabled !== undefined && disabled !== existing.rows[0].disabled) {
+        setClauses.disabled = disabled;
+        changes.push(`disabled: ${existing.rows[0].disabled} → ${disabled}`);
+      }
+
+      if (changes.length === 0) {
+        return res.json({ message: "No changes made" });
+      }
+
+      if (setClauses.name !== undefined) await db.execute(sql`UPDATE users SET name = ${setClauses.name} WHERE id = ${orgId}`);
+      if (setClauses.email !== undefined) await db.execute(sql`UPDATE users SET email = ${setClauses.email} WHERE id = ${orgId}`);
+      if (setClauses.disabled !== undefined) await db.execute(sql`UPDATE users SET disabled = ${setClauses.disabled} WHERE id = ${orgId}`);
+
+      await adminStorage.createAuditLog(
+        req.admin!.id,
+        "update",
+        "organization",
+        orgId,
+        `Updated organisation: ${changes.join(", ")}`
+      );
+
+      const updated = await db.execute(sql`SELECT id, name, email, disabled FROM users WHERE id = ${orgId}`);
+      res.json(updated.rows[0]);
+    } catch (error) {
+      console.error("[ADMIN] Error updating organisation:", error);
+      res.status(500).json({ error: "Failed to update organisation" });
+    }
+  });
+
   app.post("/api/admin/document-signatures", adminAuthMiddleware, async (req, res) => {
     const { documentId, signerName, signerEmail, signerRole, organisationId, organisationName } = req.body;
     if (!documentId || !signerName || !signerEmail || !signerRole) {
