@@ -28,7 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
-  Users, LogOut, Shield, ShieldCheck, Trash2, ArrowLeft, Building2, User, Ban, CheckCircle, Plus, Loader2, Eye, EyeOff, Settings2, Search, RotateCcw, Archive, ChevronDown, ChevronRight, AlertTriangle, Siren, BarChart3, LayoutDashboard
+  Users, LogOut, Shield, ShieldCheck, Trash2, ArrowLeft, Building2, User, Ban, CheckCircle, Plus, Loader2, Eye, EyeOff, Settings2, Search, RotateCcw, Archive, ChevronDown, ChevronRight, AlertTriangle, Siren, BarChart3, LayoutDashboard, Pencil
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest } from "@/lib/queryClient";
@@ -62,6 +62,12 @@ export default function AdminUsers() {
   const [orgApiAccessExpiry, setOrgApiAccessExpiry] = useState("");
   const [orgDashboardEnabled, setOrgDashboardEnabled] = useState(false);
   const [orgDashboardExpiry, setOrgDashboardExpiry] = useState("");
+
+  const [showEditOrgDialog, setShowEditOrgDialog] = useState(false);
+  const [editOrgId, setEditOrgId] = useState<string | null>(null);
+  const [editOrgName, setEditOrgName] = useState("");
+  const [editOrgEmail, setEditOrgEmail] = useState("");
+  const [editOrgDisabled, setEditOrgDisabled] = useState(false);
   
   // Feature management
   const [showFeaturesDialog, setShowFeaturesDialog] = useState(false);
@@ -393,6 +399,42 @@ export default function AdminUsers() {
       });
     },
   });
+
+  const editOrgMutation = useMutation({
+    mutationFn: async () => {
+      if (!editOrgId) return;
+      await apiRequest("PATCH", `/api/admin/organizations/${editOrgId}`, {
+        name: editOrgName,
+        email: editOrgEmail,
+        disabled: editOrgDisabled,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard/stats"] });
+      setShowEditOrgDialog(false);
+      toast({
+        title: "Organisation updated",
+        description: `${editOrgName} has been updated successfully.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to update organisation",
+        description: error.message || "Could not update organisation",
+      });
+    },
+  });
+
+  const openEditOrgDialog = (org: AdminOrganizationView) => {
+    setEditOrgId(org.id);
+    setEditOrgName(org.name);
+    setEditOrgEmail(org.email);
+    setEditOrgDisabled(org.disabled);
+    setShowEditOrgDialog(true);
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -741,15 +783,28 @@ export default function AdminUsers() {
 
                         {expandedOrgId === org.id && (
                           <div className="border-t px-4 py-4 space-y-4" data-testid={`org-details-${org.id}`}>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <p className="text-xs font-medium text-muted-foreground mb-1">Created</p>
-                                <p className="text-sm">{formatDate(org.createdAt?.toString() || "")}</p>
+                            <div className="flex items-center justify-between">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">Created</p>
+                                  <p className="text-sm">{formatDate(org.createdAt?.toString() || "")}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">Total Alerts</p>
+                                  <p className="text-sm">{org.totalAlerts}</p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-xs font-medium text-muted-foreground mb-1">Total Alerts</p>
-                                <p className="text-sm">{org.totalAlerts}</p>
-                              </div>
+                              {isSuperAdmin && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => { e.stopPropagation(); openEditOrgDialog(org); }}
+                                  data-testid={`button-edit-org-${org.id}`}
+                                >
+                                  <Pencil className="w-4 h-4 mr-1.5" />
+                                  Edit
+                                </Button>
+                              )}
                             </div>
 
                             {org.bundles.length > 0 && (
@@ -1358,6 +1413,82 @@ export default function AdminUsers() {
                 </>
               ) : (
                 "Create Organisation"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Organisation Dialog */}
+      <Dialog open={showEditOrgDialog} onOpenChange={setShowEditOrgDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="w-5 h-5" />
+              Edit Organisation
+            </DialogTitle>
+            <DialogDescription>
+              Update organisation details. Changes take effect immediately.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-org-name">Organisation Name</Label>
+              <Input
+                id="edit-org-name"
+                value={editOrgName}
+                onChange={(e) => setEditOrgName(e.target.value)}
+                data-testid="input-edit-org-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-org-email">Email</Label>
+              <Input
+                id="edit-org-email"
+                type="email"
+                value={editOrgEmail}
+                onChange={(e) => setEditOrgEmail(e.target.value)}
+                data-testid="input-edit-org-email"
+              />
+            </div>
+            <div className="flex items-center justify-between border-t pt-4">
+              <div>
+                <Label htmlFor="edit-org-disabled" className="flex items-center gap-2">
+                  <Ban className="h-4 w-4 text-destructive" />
+                  Disable Organisation
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Disabled organisations cannot log in or access their dashboard.
+                </p>
+              </div>
+              <Switch
+                id="edit-org-disabled"
+                checked={editOrgDisabled}
+                onCheckedChange={setEditOrgDisabled}
+                data-testid="switch-edit-org-disabled"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowEditOrgDialog(false)}
+              data-testid="button-cancel-edit-org"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => editOrgMutation.mutate()}
+              disabled={!editOrgName || !editOrgEmail || editOrgMutation.isPending}
+              data-testid="button-submit-edit-org"
+            >
+              {editOrgMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
               )}
             </Button>
           </DialogFooter>
