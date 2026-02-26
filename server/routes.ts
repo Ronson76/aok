@@ -15,6 +15,7 @@ import { registerOrganizationRoutes } from "./organizationRoutes";
 import { registerOrgMemberRoutes } from "./orgMemberRoutes";
 import { registerWellbeingAIRoutes } from "./wellbeingAI";
 import { registerReportingRoutes } from "./reportingRoutes";
+import { registerFundingRoutes } from "./fundingRoutes";
 import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
 import { stripeService } from "./stripeService";
 import { getEcologiImpact, plantTreeForNewSubscriber, isTestMode as isEcologiTestMode } from "./ecologiService";
@@ -704,6 +705,7 @@ export async function registerRoutes(
   });
   registerOrganizationRoutes(app);
   registerReportingRoutes(app);
+  registerFundingRoutes(app);
   
   registerOrgMemberRoutes(app);
   

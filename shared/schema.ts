@@ -2070,5 +2070,143 @@ export const insertOrgApiKeySchema = createInsertSchema(orgApiKeys).omit({
 export type InsertOrgApiKey = z.infer<typeof insertOrgApiKeySchema>;
 export type OrgApiKey = typeof orgApiKeys.$inferSelect;
 
+// =============================================
+// FUNDING ASSURANCE TABLES (Enterprise Feature)
+// =============================================
+
+export const fundingSourceTypes = ["LA", "HOUSING_BENEFIT", "GRANT", "CHARITY", "PRIVATE"] as const;
+export type FundingSourceType = typeof fundingSourceTypes[number];
+
+export const fundingDirections = ["INCOMING", "OUTGOING"] as const;
+export type FundingDirection = typeof fundingDirections[number];
+
+export const allocationTargetTypes = ["PROPERTY", "SERVICE_USER", "SERVICE"] as const;
+export type AllocationTargetType = typeof allocationTargetTypes[number];
+
+export const fundingActivityTypes = ["WELFARE_VISIT", "HOME_VISIT", "LONE_WORKER", "CHECK_IN", "OTHER"] as const;
+export type FundingActivityType = typeof fundingActivityTypes[number];
+
+export const fundingActivityStatuses = ["COMPLETED", "MISSED", "ESCALATED"] as const;
+export type FundingActivityStatus = typeof fundingActivityStatuses[number];
+
+export const fundingIncidentSeverities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
+export type FundingIncidentSeverity = typeof fundingIncidentSeverities[number];
+
+export const fundingIncidentStatuses = ["OPEN", "RESOLVED"] as const;
+export type FundingIncidentStatus = typeof fundingIncidentStatuses[number];
+
+export const fundingAuditActions = ["CREATE", "UPDATE", "DELETE"] as const;
+export type FundingAuditAction = typeof fundingAuditActions[number];
+
+export const fundingSources = pgTable("funding_sources", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organisationId: varchar("organisation_id").notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  restricted: boolean("restricted").notNull().default(false),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  totalValue: text("total_value"),
+  complianceRules: jsonb("compliance_rules"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export const insertFundingSourceSchema = createInsertSchema(fundingSources).omit({ id: true, createdAt: true, deletedAt: true });
+export type InsertFundingSource = z.infer<typeof insertFundingSourceSchema>;
+export type FundingSource = typeof fundingSources.$inferSelect;
+
+export const fundingTransactions = pgTable("funding_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organisationId: varchar("organisation_id").notNull(),
+  fundingSourceId: varchar("funding_source_id"),
+  amount: text("amount").notNull(),
+  direction: text("direction").notNull(),
+  transactionDate: timestamp("transaction_date").notNull(),
+  reference: text("reference").notNull(),
+  externalApiProvider: text("external_api_provider"),
+  externalApiId: text("external_api_id"),
+  linkedPropertyId: varchar("linked_property_id"),
+  linkedServiceUserId: varchar("linked_service_user_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export const insertFundingTransactionSchema = createInsertSchema(fundingTransactions).omit({ id: true, createdAt: true, deletedAt: true });
+export type InsertFundingTransaction = z.infer<typeof insertFundingTransactionSchema>;
+export type FundingTransaction = typeof fundingTransactions.$inferSelect;
+
+export const fundingAllocations = pgTable("funding_allocations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organisationId: varchar("organisation_id").notNull(),
+  transactionId: varchar("transaction_id").notNull(),
+  allocatedToType: text("allocated_to_type").notNull(),
+  allocatedToId: text("allocated_to_id").notNull(),
+  allocatedAmount: text("allocated_amount").notNull(),
+  allocationDate: timestamp("allocation_date").notNull(),
+  createdByUserId: varchar("created_by_user_id").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export const insertFundingAllocationSchema = createInsertSchema(fundingAllocations).omit({ id: true, createdAt: true, deletedAt: true });
+export type InsertFundingAllocation = z.infer<typeof insertFundingAllocationSchema>;
+export type FundingAllocation = typeof fundingAllocations.$inferSelect;
+
+export const fundingActivities = pgTable("funding_activities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organisationId: varchar("organisation_id").notNull(),
+  propertyId: varchar("property_id"),
+  serviceUserId: varchar("service_user_id"),
+  activityType: text("activity_type").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  status: text("status").notNull(),
+  safeguardingCoverage: boolean("safeguarding_coverage").notNull().default(true),
+  fundingAllocationId: varchar("funding_allocation_id"),
+  createdByUserId: varchar("created_by_user_id").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export const insertFundingActivitySchema = createInsertSchema(fundingActivities).omit({ id: true, createdAt: true, deletedAt: true });
+export type InsertFundingActivity = z.infer<typeof insertFundingActivitySchema>;
+export type FundingActivity = typeof fundingActivities.$inferSelect;
+
+export const fundingIncidents = pgTable("funding_incidents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organisationId: varchar("organisation_id").notNull(),
+  propertyId: varchar("property_id"),
+  serviceUserId: varchar("service_user_id"),
+  severity: text("severity").notNull(),
+  description: text("description").notNull(),
+  occurredAt: timestamp("occurred_at").notNull(),
+  resolvedAt: timestamp("resolved_at"),
+  status: text("status").notNull().default("OPEN"),
+  fundingAllocationId: varchar("funding_allocation_id"),
+  createdByUserId: varchar("created_by_user_id").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export const insertFundingIncidentSchema = createInsertSchema(fundingIncidents).omit({ id: true, createdAt: true, deletedAt: true });
+export type InsertFundingIncident = z.infer<typeof insertFundingIncidentSchema>;
+export type FundingIncident = typeof fundingIncidents.$inferSelect;
+
+export const fundingAuditEvents = pgTable("funding_audit_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organisationId: varchar("organisation_id").notNull(),
+  actorUserId: varchar("actor_user_id"),
+  entityType: text("entity_type").notNull(),
+  entityId: text("entity_id").notNull(),
+  action: text("action").notNull(),
+  before: jsonb("before"),
+  after: jsonb("after"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type FundingAuditEvent = typeof fundingAuditEvents.$inferSelect;
+
 // Re-export chat models for AI integrations (used by integration storage)
 export * from "./models/chat";
