@@ -6,7 +6,7 @@ interface VideoIntroProps {
   onContinue: () => void;
 }
 
-const VIDEO_DURATION_MS = 60000;
+const VIDEO_DURATION_MS = 64000;
 
 export default function VideoIntro({ onContinue }: VideoIntroProps) {
   const [showSkip, setShowSkip] = useState(false);
