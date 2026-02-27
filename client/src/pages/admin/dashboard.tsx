@@ -247,10 +247,12 @@ export default function AdminDashboard() {
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/admin/dashboard/stats"],
+    refetchInterval: 5000,
   });
   
   const { data: organizations, isLoading: orgsLoading } = useQuery<AdminOrganizationView[]>({
     queryKey: ["/api/admin/organizations"],
+    refetchInterval: 5000,
   });
   
   const updateClientStatusMutation = useMutation({
@@ -779,7 +781,16 @@ export default function AdminDashboard() {
                 <span className="text-lg sm:text-2xl font-bold text-green-600">aok</span>
               </div>
               <div className="min-w-0">
-                <h1 className="text-base sm:text-xl font-semibold truncate">Admin Dashboard</h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-base sm:text-xl font-semibold truncate">Admin Dashboard</h1>
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400" data-testid="badge-admin-live-indicator">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                    </span>
+                    LIVE
+                  </span>
+                </div>
                 <p className="text-xs sm:text-sm text-muted-foreground truncate">Welcome, {admin?.name}</p>
               </div>
             </div>
