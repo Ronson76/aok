@@ -299,15 +299,18 @@ export default function OrganizationDashboard() {
   const { data: stats, isLoading: statsLoading, isError: statsError, error: statsErrorObj } = useQuery<OrganizationDashboardStats>({
     queryKey: ["/api/org/dashboard"],
     retry: false,
+    refetchInterval: 5000,
   });
 
   const { data: clients, isLoading: clientsLoading, isError: clientsError } = useQuery<OrganizationClientWithDetails[]>({
     queryKey: ["/api/org/clients"],
     retry: false,
+    refetchInterval: 5000,
   });
 
   const { data: archivedClients } = useQuery<any[]>({
     queryKey: ["/api/org/clients/archived"],
+    refetchInterval: 5000,
   });
 
   const { data: myRoleData } = useQuery<{ role: string }>({
@@ -1562,7 +1565,16 @@ export default function OrganizationDashboard() {
       <div className="container mx-auto p-4 space-y-6">
         <div className="space-y-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold" data-testid="text-org-dashboard-title">Organisation Dashboard</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl sm:text-2xl font-bold" data-testid="text-org-dashboard-title">Organisation Dashboard</h1>
+              <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400" data-testid="badge-live-indicator">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                </span>
+                LIVE
+              </span>
+            </div>
             <p className="text-sm text-muted-foreground">View your clients' check-in status and wellbeing</p>
           </div>
           <div className="flex gap-2 flex-wrap">
