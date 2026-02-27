@@ -25,6 +25,7 @@ import { EmergencyConfirmOverlay } from "@/components/emergency-confirm-overlay"
 import { shakeDetector } from "@/lib/shake-detector";
 import Landing from "@/pages/landing";
 import EntrySelect from "@/pages/entry-select";
+import VideoIntro from "@/pages/video-intro";
 import LandingIndividual from "@/pages/landing-individual";
 import LandingLoneWorker from "@/pages/landing-lone-worker";
 import Login from "@/pages/login";
@@ -669,6 +670,13 @@ function Router() {
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       );
+    }
+    const videoSeen = localStorage.getItem("aok_video_seen");
+    if (!videoSeen) {
+      return <VideoIntro onContinue={() => {
+        localStorage.setItem("aok_video_seen", "true");
+        window.location.reload();
+      }} />;
     }
     const savedLanding = localStorage.getItem("aok_landing_type");
     if (savedLanding === "individual") return <LandingIndividual />;
