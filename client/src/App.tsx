@@ -675,7 +675,7 @@ function Router() {
     if (!videoSeen) {
       return <VideoIntro onContinue={() => {
         localStorage.setItem("aok_video_seen", "true");
-        window.location.reload();
+        setLocation("/");
       }} />;
     }
     const savedLanding = localStorage.getItem("aok_landing_type");
@@ -683,6 +683,13 @@ function Router() {
     if (savedLanding === "organisations") return <Landing />;
     if (savedLanding === "lone-worker") return <LandingLoneWorker />;
     return <EntrySelect />;
+  }
+
+  if (location === "/video") {
+    return <VideoIntro onContinue={() => {
+      localStorage.setItem("aok_video_seen", "true");
+      setLocation("/");
+    }} />;
   }
 
   if (location === "/individual") {
