@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/contexts/auth-context";
 import { OrgHelpButton } from "@/components/org-help-center";
 import {
   Key, ArrowLeft, Plus, Loader2, Copy, Check, Trash2,
@@ -50,7 +51,15 @@ const AVAILABLE_PERMISSIONS = [
 
 export default function OrgApiAccess() {
   const { toast } = useToast();
+  const { user: authUser } = useAuth();
+  const [, setLocation] = useLocation();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+
+  useEffect(() => {
+    if (authUser && (!authUser.orgFeatureApiAccess || (authUser.orgFeatureApiAccessExpiresAt && new Date(authUser.orgFeatureApiAccessExpiresAt) < new Date()))) {
+      setLocation("/org/dashboard");
+    }
+  }, [authUser, setLocation]);
   const [showKeyDialog, setShowKeyDialog] = useState(false);
   const [showRevokeDialog, setShowRevokeDialog] = useState<string | null>(null);
   const [newKeyName, setNewKeyName] = useState("");
