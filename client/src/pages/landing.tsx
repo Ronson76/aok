@@ -1122,75 +1122,77 @@ export default function Landing() {
             
             <AccordionItem value="item-2" className="bg-card rounded-lg border px-6" data-testid="faq-item-2">
               <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-2">
-                What happens if I miss a check-in?
+                What happens when a client misses a check-in?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-2">
-                If you miss a check-in, your primary contact/carer is alerted by email and your location is shared 
-                through what3words - a simple three-word address that pinpoints your exact location to within 
-                3 metres. You'll also hear an alert sound on your phone to remind you to check in.
+                Your organisation dashboard updates in real time. When a client misses a check-in, their status changes immediately 
+                and designated staff members are alerted via email. The client's location is shared through what3words — a simple 
+                three-word address that pinpoints their location to within 3 metres — so your team can respond quickly.
               </AccordionContent>
             </AccordionItem>
             
             <AccordionItem value="item-3" className="bg-card rounded-lg border px-6" data-testid="faq-item-3">
               <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-3">
-                How do emergency alerts work?
+                How do emergency alerts work for organisations?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-3">
-                When you activate an emergency alert, all your confirmed contacts are immediately notified 
-                via email, SMS text message, and automated phone calls. Your GPS location is shared and 
-                updated every 5 minutes until you deactivate the alert with your password.
+                When a client triggers an emergency alert, your organisation's designated staff are immediately notified 
+                via email, SMS, and automated phone calls. The client's GPS location is shared on the dashboard and 
+                updated every 5 minutes until the alert is resolved. Your team can monitor all active alerts from a single view.
               </AccordionContent>
             </AccordionItem>
             
             <AccordionItem value="item-4" className="bg-card rounded-lg border px-6" data-testid="faq-item-4">
               <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-4">
-                Do my contacts need to download the app?
+                How do we onboard clients?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-4">
-                No! Your emergency contacts don't need to download anything. They'll receive alerts via 
-                email, SMS, and phone calls. They just need to confirm they accept being your emergency 
-                contact when you add them.
+                You can add clients individually from the dashboard or bulk import them via Excel spreadsheet. 
+                Once added, clients receive an SMS invitation to set up their account. Your staff can also 
+                register clients directly on their behalf and manage their check-in schedules and emergency contacts.
               </AccordionContent>
             </AccordionItem>
             
             <AccordionItem value="item-5" className="bg-card rounded-lg border px-6" data-testid="faq-item-5">
               <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-5">
-                How often can I check in?
+                Can we customise check-in schedules per client?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-5">
-                You can set your check-in interval anywhere from 5 minutes (great for testing) to 48 hours. 
-                Choose what works best for your lifestyle - daily check-ins are popular for most users.
+                Yes. Each client can have their own check-in schedule tailored to their needs — from every 5 minutes 
+                to every 48 hours. Your staff can set and adjust schedules directly from the organisation dashboard, 
+                so higher-risk clients can be monitored more frequently.
               </AccordionContent>
             </AccordionItem>
             
             <AccordionItem value="item-6" className="bg-card rounded-lg border px-6" data-testid="faq-item-6">
               <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-6">
-                Is my data secure?
+                Is client data secure and compliant?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-6">
-                Yes! We take security seriously. Your data is encrypted and passwords are hashed. 
-                Location data from emergency alerts is automatically deleted after 30 days. 
-                The contacts page also has screenshot protection.
+                Yes. All data is encrypted in transit and at rest. Passwords are hashed and location data from 
+                emergency alerts is automatically deleted after 30 days. The platform includes full audit trails, 
+                role-based access controls, and safeguarding features to help your organisation meet regulatory 
+                and compliance requirements.
               </AccordionContent>
             </AccordionItem>
             
             <AccordionItem value="item-7" className="bg-card rounded-lg border px-6" data-testid="faq-item-7">
               <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-7">
-                Can organisations use aok?
+                What types of organisations use aok?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-7">
-                Yes! We offer organisation accounts for care homes, housing associations, and other 
-                organisations that need to monitor multiple individuals. Contact us for organisation 
-                bundles and pricing.
+                aok is used by care homes, housing associations, charities, local authorities, domiciliary care providers, 
+                and supported living services. Any organisation responsible for the safety and wellbeing of vulnerable 
+                individuals or lone workers can benefit from aok's monitoring and safeguarding tools.
               </AccordionContent>
             </AccordionItem>
             
             <AccordionItem value="item-8" className="bg-card rounded-lg border px-6" data-testid="faq-item-8">
               <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-8">
-                Who is contacted in an emergency?
+                How are staff and roles managed?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-8">
-                <p className="mb-4">You can designate up to 3 primary contacts/carers who receive more frequent updates. Here's how notifications work:</p>
+                <p className="mb-4">Organisation administrators can invite staff members and assign roles with different permission levels. Here's how notifications are routed to your team:</p>
                 
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm border-collapse mb-4">
@@ -1204,7 +1206,7 @@ export default function Landing() {
                     </thead>
                     <tbody>
                       <tr className="border-b border-border/50">
-                        <td colSpan={4} className="py-2 font-semibold text-foreground">Primary Contacts/Carers (up to 3)</td>
+                        <td colSpan={4} className="py-2 font-semibold text-foreground">Designated Staff / Key Workers</td>
                       </tr>
                       <tr className="border-b border-border/50">
                         <td className="py-2 pr-4 pl-4">Successful Check-in</td>
@@ -1225,7 +1227,7 @@ export default function Landing() {
                         <td className="text-center py-2 px-2 text-green-600">Yes</td>
                       </tr>
                       <tr className="border-b border-border/50">
-                        <td colSpan={4} className="py-2 font-semibold text-foreground">Non-Primary Contacts</td>
+                        <td colSpan={4} className="py-2 font-semibold text-foreground">Other Staff</td>
                       </tr>
                       <tr className="border-b border-border/50">
                         <td className="py-2 pr-4 pl-4">Successful Check-in</td>
@@ -1249,7 +1251,7 @@ export default function Landing() {
                   </table>
                 </div>
                 
-                <p>Non-primary contacts are only alerted in genuine emergencies, reducing notification fatigue while ensuring critical alerts always get through.</p>
+                <p>This ensures key workers stay informed about their assigned clients, while broader staff are only alerted during genuine emergencies — reducing notification fatigue across your team.</p>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
