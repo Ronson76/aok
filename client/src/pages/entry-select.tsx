@@ -4,9 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, User, Building2, HardHat, ChevronRight } from "lucide-react";
 
-import entryIndividualImg from "@/assets/images/entry-individual.png";
-import entryOrganisationImg from "@/assets/images/entry-organisation.png";
-import entryLoneWorkerImg from "@/assets/images/entry-lone-worker.png";
+import entryIndividualImg from "@/assets/images/entry-individual-photo.jpg";
+import entryOrganisationImg from "@/assets/images/entry-organisation-photo.jpg";
+import entryLoneWorkerImg from "@/assets/images/entry-lone-worker-photo.jpg";
 
 const options = [
   {
@@ -21,7 +21,7 @@ const options = [
     key: "organisations" as const,
     path: "/organisations",
     icon: Building2,
-    title: "Safeguarding & Compliance",
+    title: "Safeguarding & Compliance for Organisations",
     description: "Client monitoring, audit trails, and assurance dashboards for care homes, charities, and housing associations.",
     image: entryOrganisationImg,
   },
