@@ -24,7 +24,6 @@ import {
   MessageCircle, MessageSquare, ArrowLeft, Home, TreeDeciduous, Leaf, Timer,
   Map, HardHat, Flame, Moon, BatteryLow, FileCheck, ClipboardCheck, Eye, Handshake, GraduationCap
 } from "lucide-react";
-import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -116,19 +115,6 @@ export default function Landing() {
               <ShieldCheck className="h-7 w-7 sm:h-9 sm:w-9 text-green-600" aria-label="aok shield logo" />
               <span className="text-lg sm:text-2xl font-bold text-green-600">aok</span>
             </Link>
-            <div className="hidden sm:block h-8 w-px bg-muted-foreground/30" />
-            <Link 
-              href="/app/wellbeing-ai"
-              className="hidden sm:flex flex-col items-start"
-              data-testid="link-health-insight"
-            >
-              <div className="relative h-7 w-7 flex items-center justify-center mb-0.5">
-                <div className="w-5 h-2 bg-green-600 absolute rounded-sm" />
-                <div className="w-2 h-5 bg-green-600 absolute rounded-sm" />
-                <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-0.5 -right-0.5" fill="currentColor" />
-              </div>
-              <span className="text-xs font-semibold text-green-600 leading-none whitespace-nowrap">Wellbeing AI</span>
-            </Link>
           </div>
           <nav className="hidden lg:flex items-center gap-6">
             <Link href="/funder-ready" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-funder-ready">Funder Ready</Link>
@@ -138,17 +124,7 @@ export default function Landing() {
             <a href="#pricing" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-pricing">Pricing</a>
             <a href="#faq" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-faq">FAQ</a>
           </nav>
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className="hidden lg:flex items-center gap-2 mr-2">
-              <a href="#" className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-border hover-elevate" data-testid="link-app-store-header">
-                <SiApple className="h-5 w-5 text-black dark:text-white" />
-                <span className="text-sm font-medium">App Store</span>
-              </a>
-              <a href="#" className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-border hover-elevate" data-testid="link-play-store-header">
-                <SiGoogleplay className="h-5 w-5 text-[#414141] dark:text-[#34A853]" />
-                <span className="text-sm font-medium">Google Play</span>
-              </a>
-            </div>
+          <div className="flex items-center gap-2">
             {user ? (
               <Button 
                 onClick={handleLogout} 
@@ -166,9 +142,9 @@ export default function Landing() {
               </Link>
             )}
             <Button size="icon" variant="outline" onClick={handleShare} data-testid="button-share-aok">
-                <Share2 className="h-4 w-4" />
-              </Button>
-              <DropdownMenu>
+              <Share2 className="h-4 w-4" />
+            </Button>
+            <DropdownMenu>
               <DropdownMenuTrigger asChild className="lg:hidden">
                 <Button size="icon" variant="ghost" data-testid="button-menu">
                   <MoreVertical className="h-5 w-5" />
@@ -1300,7 +1276,7 @@ export default function Landing() {
 
       <footer className="border-t py-12 px-4">
         <div className="container mx-auto max-w-6xl">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+          <div className="grid md:grid-cols-4 gap-8 mb-8" data-testid="footer-grid">
             <div>
               <Link href="/" className="flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity" data-testid="link-footer-logo-home">
                 <ShieldCheck className="h-6 w-6 text-green-600" />
@@ -1336,23 +1312,12 @@ export default function Landing() {
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">Download the App</h4>
-              <div className="flex flex-col gap-3">
-                <a href="#" className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border hover-elevate transition-colors" data-testid="link-app-store-footer">
-                  <SiApple className="h-6 w-6 text-black dark:text-white" />
-                  <div className="text-left">
-                    <div className="text-xs text-muted-foreground">Download on the</div>
-                    <div className="text-sm font-semibold">App Store</div>
-                  </div>
-                </a>
-                <a href="#" className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border hover-elevate transition-colors" data-testid="link-play-store-footer">
-                  <SiGoogleplay className="h-6 w-6 text-[#414141] dark:text-[#34A853]" />
-                  <div className="text-left">
-                    <div className="text-xs text-muted-foreground">Get it on</div>
-                    <div className="text-sm font-semibold">Google Play</div>
-                  </div>
-                </a>
-              </div>
+              <h4 className="font-semibold mb-4">Contact</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="mailto:help@aok.care?subject=Pilot%20Discussion" className="hover:text-foreground transition-colors" data-testid="link-footer-pilot">Start a Pilot</a></li>
+                <li><a href="mailto:help@aok.care?subject=Organisation%20Pricing%20Enquiry" className="hover:text-foreground transition-colors" data-testid="link-footer-quote">Get a Quote</a></li>
+                <li><a href="mailto:help@aok.care?subject=General%20Enquiry" className="hover:text-foreground transition-colors" data-testid="link-footer-general">General Enquiry</a></li>
+              </ul>
             </div>
           </div>
           
