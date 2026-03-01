@@ -33,7 +33,7 @@ export default function Pricing() {
       monthlyPrice: 9.99,
       yearlyPrice: 99.99,
       features: [
-        { text: "Flexible check-in timer (5 minutes to 48 hours)", icon: Clock },
+        { text: "Flexible check-in timer (1 hour to 48 hours)", icon: Clock },
         { text: "Up to 5 emergency contacts", icon: Users },
         { text: "Email alerts for missed check-ins", icon: Mail },
         { text: "SMS text message alerts", icon: Smartphone },
@@ -100,7 +100,7 @@ export default function Pricing() {
   ];
 
   const comparisonFeatures = [
-    { name: "Check-in timer (5 min to 48 hours)", trial: true, essential: true, complete: true, org: true },
+    { name: "Check-in timer (1 hour to 48 hours)", trial: true, essential: true, complete: true, org: true },
     { name: "Up to 5 emergency contacts", trial: true, essential: true, complete: true, org: true },
     { name: "Email alerts", trial: true, essential: true, complete: true, org: true },
     { name: "SMS text alerts", trial: true, essential: true, complete: true, org: true },

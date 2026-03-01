@@ -375,7 +375,7 @@ export default function Landing() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Flexible Check-In Timer</h3>
                 <p className="text-muted-foreground text-sm">
-                  Set your check-in schedule from 5 minutes to 48 hours. Perfect for any lifestyle or activity.
+                  Set your check-in schedule from 1 hour to 48 hours. Perfect for any lifestyle or activity.
                 </p>
               </CardContent>
             </Card>
@@ -1158,7 +1158,7 @@ export default function Landing() {
                 Can we customise check-in schedules per client?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-5">
-                Yes. Each client can have their own check-in schedule tailored to their needs — from every 5 minutes 
+                Yes. Each client can have their own check-in schedule tailored to their needs — from every hour 
                 to every 48 hours. Your staff can set and adjust schedules directly from the organisation dashboard, 
                 so higher-risk clients can be monitored more frequently.
               </AccordionContent>

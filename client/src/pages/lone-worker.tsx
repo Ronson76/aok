@@ -102,8 +102,6 @@ const DURATION_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
 }));
 
 const CHECKIN_INTERVALS = [
-  { value: "15", label: "Every 15 mins" },
-  { value: "30", label: "Every 30 mins" },
   { value: "60", label: "Every hour" },
   { value: "90", label: "Every 90 mins" },
   { value: "120", label: "Every 2 hours" },

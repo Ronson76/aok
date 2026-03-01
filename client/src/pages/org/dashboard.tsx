@@ -282,8 +282,8 @@ export default function OrganizationDashboard() {
   const [scheduleStartTime, setScheduleStartTime] = useState("10:00");
   const [scheduleIntervalHours, setScheduleIntervalHours] = useState(24);
 
-  // Interval slider values (5 mins to 48 hours)
-  const INTERVAL_VALUES = [0.08, 0.25, 0.5, 1, 2, 3, 4, 6, 8, 12, 24, 36, 48];
+  // Interval slider values (1 hour to 48 hours)
+  const INTERVAL_VALUES = [1, 2, 3, 4, 6, 8, 12, 24, 36, 48];
   const hoursToIndex = (hours: number) => {
     const idx = INTERVAL_VALUES.findIndex(v => v >= hours);
     return idx >= 0 ? idx : INTERVAL_VALUES.length - 1;
@@ -4480,7 +4480,7 @@ export default function OrganizationDashboard() {
                 </p>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">5 mins</span>
+                <span className="text-sm text-muted-foreground">1 hour</span>
                 <span className="text-lg font-semibold text-primary">
                   {formatInterval(scheduleIntervalHours)}
                 </span>

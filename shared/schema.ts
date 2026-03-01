@@ -272,7 +272,7 @@ export type Settings = {
 
 export const updateSettingsSchema = z.object({
   frequency: z.enum(checkInFrequencies).optional(),
-  intervalHours: z.number().min(0.08).max(48).optional(), // Min 0.08 (~5 mins) for testing
+  intervalHours: z.number().min(1).max(48).optional(),
   scheduleStartTime: z.string().optional(),
   nextCheckInDue: z.string().optional(),
   lastCheckIn: z.string().optional(),
@@ -1556,7 +1556,7 @@ export const insertLoneWorkerSessionSchema = createInsertSchema(loneWorkerSessio
 }).extend({
   jobType: z.enum(loneWorkerJobTypes),
   expectedDurationMins: z.number().min(5).max(720),
-  checkInIntervalMins: z.number().min(5).max(240).default(30),
+  checkInIntervalMins: z.number().min(60).max(240).default(60),
   graceWindowSecs: z.number().min(30).max(300).default(120),
   locationLat: z.string().optional(),
   locationLng: z.string().optional(),

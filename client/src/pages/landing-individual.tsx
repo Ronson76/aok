@@ -122,7 +122,7 @@ export default function LandingIndividual() {
       yearlyPrice: TIER1_YEARLY_PRICE,
       features: [
         { text: "Shake to Alert - instant emergency help", icon: Zap },
-        { text: "Flexible check-in timer (5 mins to 48 hours)", icon: Clock },
+        { text: "Flexible check-in timer (1 hour to 48 hours)", icon: Clock },
         { text: "Up to 5 emergency contacts", icon: Users },
         { text: "Email, SMS & voice call alerts", icon: Bell },
         { text: "Emergency alert button", icon: AlertTriangle },
@@ -398,7 +398,7 @@ export default function LandingIndividual() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Flexible Check-In Timer</h3>
                 <p className="text-muted-foreground text-sm">
-                  Set your check-in schedule from 5 minutes to 48 hours. Perfect for any lifestyle or activity.
+                  Set your check-in schedule from 1 hour to 48 hours. Perfect for any lifestyle or activity.
                 </p>
               </CardContent>
             </Card>
@@ -643,7 +643,7 @@ export default function LandingIndividual() {
               </div>
               <h3 className="text-lg font-semibold mb-2">Set Check-In Time</h3>
               <p className="text-sm text-muted-foreground">
-                Choose how often you want to check in - from every 5 minutes to every 48 hours.
+                Choose how often you want to check in - from every hour to every 48 hours.
               </p>
             </div>
 
