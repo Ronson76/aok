@@ -719,6 +719,74 @@ export default function LandingLoneWorker() {
                 Absolutely. aok is built on ISO 27001-compliant, UK GDPR-ready infrastructure. All data is encrypted in transit and at rest. Passwords are hashed, and location data from emergency alerts is automatically deleted after 30 days.
               </AccordionContent>
             </AccordionItem>
+
+            <AccordionItem value="item-9" className="bg-card rounded-lg border px-6" data-testid="faq-item-9">
+              <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-9">
+                Who gets notified and how?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-9">
+                <p className="mb-4">When a lone worker misses a check-in or triggers an alert, the right people are notified through the right channels:</p>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border-collapse mb-4">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 pr-4 font-semibold text-foreground">Alert Type</th>
+                        <th className="text-center py-2 px-2 font-semibold text-foreground">Email</th>
+                        <th className="text-center py-2 px-2 font-semibold text-foreground">SMS</th>
+                        <th className="text-center py-2 px-2 font-semibold text-foreground">Voice Call</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-border/50">
+                        <td colSpan={4} className="py-2 font-semibold text-foreground">Assigned Supervisor</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 pr-4 pl-4">Successful Check-in</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 pr-4 pl-4">Missed Check-in</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 pr-4 pl-4">Panic Alert</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td colSpan={4} className="py-2 font-semibold text-foreground">Other Organisation Staff</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 pr-4 pl-4">Successful Check-in</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 pr-4 pl-4">Missed Check-in</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                        <td className="text-center py-2 px-2 text-muted-foreground">No</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 pr-4 pl-4">Panic Alert</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                        <td className="text-center py-2 px-2 text-green-600">Yes</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                
+                <p>Supervisors stay informed about their assigned workers' check-ins, while broader staff are only alerted during genuine emergencies - reducing notification fatigue across your team.</p>
+              </AccordionContent>
+            </AccordionItem>
           </Accordion>
         </div>
       </section>
