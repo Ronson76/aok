@@ -1562,6 +1562,37 @@ export default function OrganizationDashboard() {
         </div>
       </header>
       
+      {authUser?.orgSubscriptionExpiresAt && (() => {
+        const expiresAt = new Date(authUser.orgSubscriptionExpiresAt);
+        const now = new Date();
+        const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysLeft <= 0) {
+          return (
+            <div className="bg-red-600 text-white px-4 py-3" data-testid="banner-subscription-expired">
+              <div className="container mx-auto flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+                <p className="text-sm font-medium">
+                  Your subscription has expired. Please contact AOK to renew your subscription and avoid service interruption.
+                </p>
+              </div>
+            </div>
+          );
+        }
+        if (daysLeft <= 28) {
+          return (
+            <div className="bg-amber-500 text-white px-4 py-3" data-testid="banner-subscription-expiring">
+              <div className="container mx-auto flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+                <p className="text-sm font-medium">
+                  Your subscription expires in {daysLeft} day{daysLeft !== 1 ? "s" : ""} (on {expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}). Please contact AOK to renew.
+                </p>
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })()}
+
       <div className="container mx-auto p-4 space-y-6">
         <div className="space-y-4">
           <div>
