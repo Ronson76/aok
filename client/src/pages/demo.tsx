@@ -53,7 +53,7 @@ const DEMO_STEPS_INDIVIDUAL = [
   {
     id: "contacts",
     title: "Add Emergency Contacts",
-    description: "Add the people you trust most. They'll receive alerts via email, SMS, and automated phone calls if you miss a check-in.",
+    description: "Add the people you trust most. They'll receive alerts via email, SMS, and automated phone calls in an emergency.",
     phone: {
       bg: "bg-card",
       content: (
