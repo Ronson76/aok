@@ -19,9 +19,8 @@ import type { Settings as SettingsType, EmergencyRecording } from "@shared/schem
 import { TwoFactorSetup } from "@/components/two-factor-setup";
 import { useState, useEffect, useCallback } from "react";
 
-// Allowed interval values: 5 mins for testing, then 1-48 hours
+// Allowed interval values: 1-48 hours
 const INTERVAL_VALUES = [
-  0.0833, // 5 minutes (for testing)
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
   13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
   25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
@@ -40,10 +39,6 @@ function indexToHours(index: number): number {
 }
 
 function formatInterval(hours: number): string {
-  // Handle 5 minutes for testing
-  if (hours < 0.1) {
-    return "5 mins";
-  }
   if (hours === 1) return "1 hour";
   if (hours < 24) return `${Math.round(hours)} hours`;
   if (hours === 24) return "1 day";

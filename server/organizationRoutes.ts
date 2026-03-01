@@ -897,7 +897,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Update client's check-in schedule (time and interval)
   const updateScheduleSchema = z.object({
     scheduleStartTime: z.string().min(1, "Schedule start time is required"),
-    checkInIntervalHours: z.number().min(0.08).max(48),
+    checkInIntervalHours: z.number().min(1).max(48),
   });
 
   app.patch("/api/org/clients/:clientId/schedule", requireOrganization, async (req, res) => {

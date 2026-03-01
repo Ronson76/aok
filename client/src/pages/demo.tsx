@@ -990,7 +990,7 @@ export default function Demo() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {[
                   { value: "4", label: "Alert channels (Email, SMS, Voice, Push)" },
-                  { value: "5min", label: "Shortest check-in interval" },
+                  { value: "1hr", label: "Shortest check-in interval" },
                   { value: "48hr", label: "Longest check-in interval" },
                   { value: "12", label: "Monitored external services" },
                 ].map((stat) => (

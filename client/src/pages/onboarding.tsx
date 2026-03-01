@@ -1792,7 +1792,6 @@ function Step12Frequency({ data, setData }: { data: OnboardingData; setData: (d:
 
 // Interval values matching settings page
 const INTERVAL_VALUES = [
-  0.0833, // 5 minutes (for testing)
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
   13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
   25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
@@ -1809,7 +1808,6 @@ function indexToHours(index: number): number {
 }
 
 function formatInterval(hours: number): string {
-  if (hours < 0.1) return "5 mins";
   if (hours === 1) return "1 hour";
   if (hours < 24) return `${Math.round(hours)} hours`;
   if (hours === 24) return "1 day";
@@ -1869,7 +1867,7 @@ function Step13Time({ data, setData }: { data: OnboardingData; setData: (d: Onbo
 
           <div className="border-t pt-4 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">5 mins</span>
+              <span className="text-sm text-muted-foreground">1 hour</span>
               <span className="text-lg font-semibold text-primary">
                 {formatInterval(data.intervalHours)}
               </span>

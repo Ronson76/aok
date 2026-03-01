@@ -340,7 +340,7 @@ export default function LandingLoneWorker() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Automatic Check-In Schedules</h3>
                 <p className="text-muted-foreground text-sm">
-                  Set recurring check-in intervals from 5 minutes to 48 hours. Workers are prompted automatically throughout their shift.
+                  Set recurring check-in intervals from 1 hour to 48 hours. Workers are prompted automatically throughout their shift.
                 </p>
               </CardContent>
             </Card>
