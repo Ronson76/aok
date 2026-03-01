@@ -1607,12 +1607,14 @@ export default function OrganizationDashboard() {
               <Share2 className="h-4 w-4 mr-2" />
               Share
             </Button>
-            <Link href="/org/lone-worker">
-              <Button variant="outline" size="sm" data-testid="button-lone-worker-hub">
-                <Shield className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Lone Worker </span>Hub
-              </Button>
-            </Link>
+            {authUser?.orgFeatureLoneWorker && !(authUser.orgFeatureLoneWorkerExpiresAt && new Date(authUser.orgFeatureLoneWorkerExpiresAt) < new Date()) && (
+              <Link href="/org/lone-worker">
+                <Button variant="outline" size="sm" data-testid="button-lone-worker-hub">
+                  <Shield className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Lone Worker </span>Hub
+                </Button>
+              </Link>
+            )}
             {authUser?.orgFeatureSafeguarding && !(authUser.orgFeatureSafeguardingExpiresAt && new Date(authUser.orgFeatureSafeguardingExpiresAt) < new Date()) && (
               <Link href="/org/safeguarding">
                 <Button variant="outline" size="sm" data-testid="button-safeguarding-hub">
