@@ -124,6 +124,7 @@ export default function AdminDashboard() {
   const [showCreateOrgDialog, setShowCreateOrgDialog] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
   const [newOrgEmail, setNewOrgEmail] = useState("");
+  const [newOrgExpiresAt, setNewOrgExpiresAt] = useState("");
   
   const [showOrgFeatures, setShowOrgFeatures] = useState(false);
   const [requiredDocuments, setRequiredDocuments] = useState<string[]>([]);
@@ -184,6 +185,7 @@ export default function AdminDashboard() {
   const [editOrgName, setEditOrgName] = useState("");
   const [editOrgEmail, setEditOrgEmail] = useState("");
   const [editOrgDisabled, setEditOrgDisabled] = useState(false);
+  const [editOrgExpiresAt, setEditOrgExpiresAt] = useState("");
   const [editOrgFeatures, setEditOrgFeatures] = useState<Record<string, any>>({});
 
   // State for resetting organization password
@@ -504,7 +506,7 @@ export default function AdminDashboard() {
   });
 
   const createOrgMutation = useMutation({
-    mutationFn: async (data: { name: string; email: string; featureDefaults?: Record<string, boolean>; requiredDocuments?: string[] }) => {
+    mutationFn: async (data: { name: string; email: string; featureDefaults?: Record<string, boolean>; requiredDocuments?: string[]; subscriptionExpiresAt?: string }) => {
       const response = await apiRequest("POST", "/api/admin/organizations", data);
       return response.json();
     },
@@ -515,6 +517,7 @@ export default function AdminDashboard() {
       setShowCreateOrgDialog(false);
       setNewOrgName("");
       setNewOrgEmail("");
+      setNewOrgExpiresAt("");
       setShowOrgFeatures(false);
       setRequiredDocuments([]);
       toast({
@@ -548,7 +551,7 @@ export default function AdminDashboard() {
   }, [editOrgFeatureDefaults]);
 
   const editOrgMutation = useMutation({
-    mutationFn: async ({ orgId, updates }: { orgId: string; updates: { name?: string; email?: string; disabled?: boolean } }) => {
+    mutationFn: async ({ orgId, updates }: { orgId: string; updates: { name?: string; email?: string; disabled?: boolean; subscriptionExpiresAt?: string | null } }) => {
       const response = await apiRequest("PATCH", `/api/admin/organizations/${orgId}`, updates);
       return response.json();
     },
@@ -583,7 +586,7 @@ export default function AdminDashboard() {
     try {
       await editOrgMutation.mutateAsync({
         orgId: editOrgTarget.id,
-        updates: { name: editOrgName.trim(), email: editOrgEmail.trim(), disabled: editOrgDisabled },
+        updates: { name: editOrgName.trim(), email: editOrgEmail.trim(), disabled: editOrgDisabled, subscriptionExpiresAt: editOrgExpiresAt || null },
       });
       await editOrgFeaturesMutation.mutateAsync({
         orgId: editOrgTarget.id,
@@ -658,6 +661,7 @@ export default function AdminDashboard() {
       email: newOrgEmail.trim(),
       featureDefaults: orgFeatureDefaults,
       requiredDocuments: skipDocs ? undefined : (requiredDocuments.length > 0 ? requiredDocuments : undefined),
+      subscriptionExpiresAt: newOrgExpiresAt || undefined,
     });
   };
   
@@ -1264,6 +1268,7 @@ export default function AdminDashboard() {
                           setEditOrgName(org.name);
                           setEditOrgEmail(org.email);
                           setEditOrgDisabled(org.disabled);
+                          setEditOrgExpiresAt(org.orgSubscriptionExpiresAt ? new Date(org.orgSubscriptionExpiresAt).toISOString().split("T")[0] : "");
                           setShowEditOrgDialog(true);
                         }}
                         data-testid={`button-edit-org-${org.id}`}
@@ -1879,6 +1884,17 @@ export default function AdminDashboard() {
               </div>
               <p className="text-sm text-muted-foreground">A setup invitation will be sent to this email. The organisation will create their own password.</p>
               <div className="space-y-2">
+                <Label htmlFor="org-expires-at">Subscription Expiry Date</Label>
+                <Input
+                  id="org-expires-at"
+                  type="date"
+                  value={newOrgExpiresAt}
+                  onChange={(e) => setNewOrgExpiresAt(e.target.value)}
+                  data-testid="input-org-expires-at"
+                />
+                <p className="text-xs text-muted-foreground">The organisation will see a warning 28 days before this date. Leave blank for no expiry.</p>
+              </div>
+              <div className="space-y-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -2121,6 +2137,17 @@ export default function AdminDashboard() {
                   placeholder="organisation@example.com"
                   data-testid="input-edit-org-email"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-org-expires-at">Subscription Expiry Date</Label>
+                <Input
+                  id="edit-org-expires-at"
+                  type="date"
+                  value={editOrgExpiresAt}
+                  onChange={(e) => setEditOrgExpiresAt(e.target.value)}
+                  data-testid="input-edit-org-expires-at"
+                />
+                <p className="text-xs text-muted-foreground">The organisation will see a warning 28 days before this date. Clear to remove expiry.</p>
               </div>
               <div className="flex items-center gap-3">
                 <Switch

@@ -77,6 +77,7 @@ export const users = pgTable("users", {
   orgFeatureDashboardExpiresAt: timestamp("org_feature_dashboard_expires_at"),
   orgFeatureLoneWorker: boolean("org_feature_lone_worker").notNull().default(false),
   orgFeatureLoneWorkerExpiresAt: timestamp("org_feature_lone_worker_expires_at"),
+  orgSubscriptionExpiresAt: timestamp("org_subscription_expires_at"),
   // Audit retention policy in days (default 2190 = 6 years, min 365, max 3650)
   retentionPolicyDays: integer("retention_policy_days").notNull().default(2190),
   // Last known location (updated on check-in if provided)

@@ -6,8 +6,9 @@ import { z } from "zod";
 import { sendPasswordResetEmail, sendAdminInviteEmail, sendOrgSetupInviteEmail } from "./notifications";
 import { randomBytes } from "crypto";
 import { getAllServiceStatuses } from "./serviceResilience";
-import { ensureDb } from "./db";
-import { sql } from "drizzle-orm";
+import { ensureDb, getDb } from "./db";
+import { sql, eq } from "drizzle-orm";
+import { users } from "@shared/schema";
 import { loginRateLimiter, passwordResetRateLimiter } from "./security";
 import { getPeakTimes, getAlertHeatmap, getActiveSOSAlerts } from "./services/analyticsService";
 import * as OTPAuth from "otpauth";
@@ -307,6 +308,7 @@ export function registerAdminRoutes(app: Express) {
     email: z.string().email("Invalid email address"),
     featureDefaults: orgFeatureDefaultsSchema.optional(),
     requiredDocuments: z.array(z.string()).optional(),
+    subscriptionExpiresAt: z.string().optional(),
   });
 
   app.post("/api/admin/organizations", adminAuthMiddleware, requireSuperAdmin, async (req, res) => {
@@ -316,7 +318,7 @@ export function registerAdminRoutes(app: Express) {
         return res.status(400).json({ error: validation.error.errors[0].message });
       }
 
-      const { name, email, featureDefaults, requiredDocuments } = validation.data;
+      const { name, email, featureDefaults, requiredDocuments, subscriptionExpiresAt } = validation.data;
 
       const existingUser = await storage.getUserByEmail(email.toLowerCase());
       if (existingUser) {
@@ -332,6 +334,10 @@ export function registerAdminRoutes(app: Express) {
         accountType: "organization",
         name,
       });
+
+      if (subscriptionExpiresAt) {
+        await getDb().update(users).set({ orgSubscriptionExpiresAt: new Date(subscriptionExpiresAt) }).where(eq(users.id, user.id));
+      }
 
       if (featureDefaults) {
         await storage.updateOrgFeatureDefaults(user.id, featureDefaults);
@@ -1470,7 +1476,8 @@ export function registerAdminRoutes(app: Express) {
     name: z.string().min(1, "Name is required").max(200).optional(),
     email: z.string().email("Invalid email address").optional(),
     disabled: z.boolean().optional(),
-  }).refine(data => data.name !== undefined || data.email !== undefined || data.disabled !== undefined, {
+    subscriptionExpiresAt: z.string().nullable().optional(),
+  }).refine(data => data.name !== undefined || data.email !== undefined || data.disabled !== undefined || data.subscriptionExpiresAt !== undefined, {
     message: "At least one field must be provided",
   });
 
@@ -1481,10 +1488,10 @@ export function registerAdminRoutes(app: Express) {
       if (!validation.success) {
         return res.status(400).json({ error: validation.error.errors[0].message });
       }
-      const { name, email, disabled } = validation.data;
+      const { name, email, disabled, subscriptionExpiresAt } = validation.data;
 
       const db = ensureDb();
-      const existing = await db.execute(sql`SELECT id, name, email, disabled, account_type FROM users WHERE id = ${orgId}`);
+      const existing = await db.execute(sql`SELECT id, name, email, disabled, account_type, org_subscription_expires_at FROM users WHERE id = ${orgId}`);
       if (!existing.rows[0] || existing.rows[0].account_type !== "organization") {
         return res.status(404).json({ error: "Organisation not found" });
       }
@@ -1511,6 +1518,17 @@ export function registerAdminRoutes(app: Express) {
         changes.push(`disabled: ${existing.rows[0].disabled} → ${disabled}`);
       }
 
+      if (subscriptionExpiresAt !== undefined) {
+        const newExpiry = subscriptionExpiresAt ? new Date(subscriptionExpiresAt) : null;
+        const oldExpiry = existing.rows[0].org_subscription_expires_at;
+        const oldStr = oldExpiry ? new Date(oldExpiry as string).toISOString().split("T")[0] : "none";
+        const newStr = newExpiry ? newExpiry.toISOString().split("T")[0] : "none";
+        if (oldStr !== newStr) {
+          setClauses.subscriptionExpiresAt = newExpiry;
+          changes.push(`subscription expiry: ${oldStr} → ${newStr}`);
+        }
+      }
+
       if (changes.length === 0) {
         return res.json({ message: "No changes made" });
       }
@@ -1518,6 +1536,13 @@ export function registerAdminRoutes(app: Express) {
       if (setClauses.name !== undefined) await db.execute(sql`UPDATE users SET name = ${setClauses.name} WHERE id = ${orgId}`);
       if (setClauses.email !== undefined) await db.execute(sql`UPDATE users SET email = ${setClauses.email} WHERE id = ${orgId}`);
       if (setClauses.disabled !== undefined) await db.execute(sql`UPDATE users SET disabled = ${setClauses.disabled} WHERE id = ${orgId}`);
+      if (setClauses.subscriptionExpiresAt !== undefined) {
+        if (setClauses.subscriptionExpiresAt === null) {
+          await db.execute(sql`UPDATE users SET org_subscription_expires_at = NULL WHERE id = ${orgId}`);
+        } else {
+          await db.execute(sql`UPDATE users SET org_subscription_expires_at = ${setClauses.subscriptionExpiresAt} WHERE id = ${orgId}`);
+        }
+      }
 
       await adminStorage.createAuditLog(
         req.admin!.id,
