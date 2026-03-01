@@ -689,7 +689,7 @@ export default function LandingLoneWorker() {
                 Do workers need to download the app?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-5">
-                aok works as a progressive web app (PWA), so workers can use it directly from their browser or install it to their home screen. No app store download is required, making deployment fast and simple across your entire team.
+                A link will be sent to you from your organisation to download the app.
               </AccordionContent>
             </AccordionItem>
 
