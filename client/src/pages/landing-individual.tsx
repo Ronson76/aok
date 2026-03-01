@@ -599,7 +599,7 @@ export default function LandingIndividual() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Primary Contact/Carer</h3>
                 <p className="text-muted-foreground text-sm">
-                  Designate a primary contact/carer who receives a notification for every successful check-in — giving them ongoing peace of mind.
+                  Designate a primary contact/carer who receives a notification for every successful check-in -  giving them ongoing peace of mind.
                 </p>
               </CardContent>
             </Card>

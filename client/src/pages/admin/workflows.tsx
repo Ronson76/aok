@@ -280,7 +280,7 @@ export default function AdminWorkflows() {
           <StepBox icon={Shield} label="Confirmation Dialog" sublabel="Client confirms they want to place the call" />
           <StepBox icon={Phone} label="Twilio Voice Call" sublabel="Call placed to organisation's phone number" badge="Twilio" />
           <StepBox icon={MessageSquare} label="Voice Message" sublabel="Supervisor hears client name and request to speak" />
-          <StepBox icon={CheckCircle} label="Normal Incoming Call" sublabel="Supervisor answers on their phone — no app needed" />
+          <StepBox icon={CheckCircle} label="Normal Incoming Call" sublabel="Supervisor answers on their phone -  no app needed" />
         </WorkflowSection>
 
         <FlowArrow />

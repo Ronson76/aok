@@ -155,7 +155,7 @@ const DEMO_STEPS_INDIVIDUAL = [
   {
     id: "wellness",
     title: "Track Your Wellbeing",
-    description: "Log your mood, chat with the AI wellbeing assistant, and store important documents — all in one place.",
+    description: "Log your mood, chat with the AI wellbeing assistant, and store important documents -  all in one place.",
     phone: {
       bg: "bg-card",
       content: (
@@ -329,7 +329,7 @@ const DEMO_STEPS_ORG = [
   },
   {
     id: "org-grc",
-    title: "GRC — Governance, Risk & Compliance",
+    title: "GRC -  Governance, Risk & Compliance",
     description: "8-tier role-based access control, tamper-evident audit trails with hash-chain verification, security logging with PII redaction, and UK GDPR-compliant data handling.",
     phone: {
       bg: "bg-card",
@@ -343,7 +343,7 @@ const DEMO_STEPS_ORG = [
             <div className="p-2 rounded bg-blue-500/10 border border-blue-500/20">
               <div className="flex items-center gap-1 mb-1">
                 <Users className="h-3 w-3 text-blue-500" />
-                <span className="text-[10px] font-semibold text-foreground">RBAC — 8 Tiers</span>
+                <span className="text-[10px] font-semibold text-foreground">RBAC -  8 Tiers</span>
               </div>
               <p className="text-[9px] text-muted-foreground">Owner, Admin, Safeguarding Lead, Service Manager, Manager, Staff, Trustee, Viewer</p>
             </div>
@@ -455,7 +455,7 @@ const DEMO_STEPS_ORG = [
   {
     id: "org-features",
     title: "Control Client Features",
-    description: "Toggle individual wellness features on or off for each client. Different clients may need different tools — you decide what they see.",
+    description: "Toggle individual wellness features on or off for each client. Different clients may need different tools -  you decide what they see.",
     phone: {
       bg: "bg-card",
       content: (
@@ -566,7 +566,7 @@ const DEMO_STEPS_LONE_WORKER = [
   {
     id: "lw-monitor",
     title: "Supervisor Monitoring Dashboard",
-    description: "Supervisors see all active lone workers in real time — who's checked in, who's overdue, and where they are. One view, full oversight.",
+    description: "Supervisors see all active lone workers in real time -  who's checked in, who's overdue, and where they are. One view, full oversight.",
     phone: {
       bg: "bg-card",
       content: (
@@ -1016,7 +1016,7 @@ export default function Demo() {
       {activeSection === "organisation" && (
         <DemoWalkthrough
           title="For Organisations"
-          subtitle="Manage clients, monitor wellbeing, demonstrate GRC compliance, and generate funder-ready assurance reports — all from one platform."
+          subtitle="Manage clients, monitor wellbeing, demonstrate GRC compliance, and generate funder-ready assurance reports -  all from one platform."
           steps={DEMO_STEPS_ORG}
         />
       )}

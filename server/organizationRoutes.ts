@@ -3232,7 +3232,7 @@ export function registerOrganizationRoutes(app: Express) {
 
       const invite = await organizationStorage.getStaffInviteBySessionId(sessionId);
 
-      const resolved = await storage.resolveLoneWorkerSession(sessionId, orgId, "safe", "Supervisor confirmed worker is safe — emergency cancelled with organisation password");
+      const resolved = await storage.resolveLoneWorkerSession(sessionId, orgId, "safe", "Supervisor confirmed worker is safe -  emergency cancelled with organisation password");
 
       await storage.createAuditEntry(orgId, {
         userId: orgId,

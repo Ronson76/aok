@@ -754,7 +754,7 @@ export async function registerRoutes(
           return res.status(400).json({ error: "An account with this email already exists" });
         }
 
-        // Staff email match — update existing user's password and link to invite
+        // Staff email match -  update existing user's password and link to invite
         const newPasswordHash = await bcrypt.hash(password, 10);
         await storage.updateUserPassword(existingUser.id, newPasswordHash);
 
@@ -4524,7 +4524,7 @@ export async function registerRoutes(
       }
       const session = await storage.getActiveErrandSession(req.userId!);
       if (!session) {
-        return res.status(400).json({ error: "No active activity session — low battery alerts only apply during activities" });
+        return res.status(400).json({ error: "No active activity session -  low battery alerts only apply during activities" });
       }
       if (lowBatteryAlertedSessions.has(session.id)) {
         return res.json({ success: true, alreadySent: true, emailsSent: 0, emailsFailed: 0 });
@@ -4536,7 +4536,7 @@ export async function registerRoutes(
       const { sendLowBatteryAlert } = await import("./notifications");
       const activityLabel = session.customLabel || session.activityType;
       const result = await sendLowBatteryAlert(contacts, user, batteryLevel, activityLabel);
-      console.log(`[LOW BATTERY] Alert sent for user ${req.userId} at ${Math.round(batteryLevel)}% — ${result.emailsSent} emails sent`);
+      console.log(`[LOW BATTERY] Alert sent for user ${req.userId} at ${Math.round(batteryLevel)}% -  ${result.emailsSent} emails sent`);
       res.json({ success: true, ...result });
     } catch (error: any) {
       console.error("[LOW BATTERY] Error:", error);
@@ -4585,7 +4585,7 @@ export async function registerRoutes(
       lowBatteryAlertCooldowns.set(req.userId!, now);
       await storage.updateLastLowBatteryAlertTime(req.userId!, new Date(now));
 
-      console.log(`[LOW BATTERY] General alert sent for user ${req.userId} at ${Math.round(batteryLevel)}% — ${result.emailsSent} emails sent`);
+      console.log(`[LOW BATTERY] General alert sent for user ${req.userId} at ${Math.round(batteryLevel)}% -  ${result.emailsSent} emails sent`);
       res.json({ success: true, ...result });
     } catch (error: any) {
       console.error("[LOW BATTERY] General alert error:", error);

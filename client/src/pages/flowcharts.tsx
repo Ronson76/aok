@@ -86,7 +86,7 @@ function IndividualFlowchart() {
         <FlowArrow label="Every 15 minutes" />
         <FlowStep icon={Bell} title="Repeat alerts (Email + SMS)" description="Email and SMS alerts repeat to primary contacts/carers every 15 minutes until the user checks in. No voice calls for missed check-ins." variant="alert" />
         <FlowArrow label="User checks in" />
-        <FlowStep icon={CheckCircle} title="Check-in received — alerts stop" description="The user checks in via the app, SMS link, or push notification. All alerts cease and contacts are notified." variant="success" />
+        <FlowStep icon={CheckCircle} title="Check-in received -  alerts stop" description="The user checks in via the app, SMS link, or push notification. All alerts cease and contacts are notified." variant="success" />
       </div>
 
       <div className="border-t my-8" />
@@ -139,7 +139,7 @@ function OrganisationFlowchart() {
         <FlowArrow />
         <FlowStep icon={Building2} title="Org dashboard updates" description="The organisation's dashboard shows the client as 'overdue' in real-time. Staff can view status from the client management screen." variant="action" />
         <FlowArrow label="Client checks in" />
-        <FlowStep icon={CheckCircle} title="Check-in received — alerts stop" description="The client checks in via app, SMS link, or push notification. Status updates across the org dashboard." variant="success" />
+        <FlowStep icon={CheckCircle} title="Check-in received -  alerts stop" description="The client checks in via app, SMS link, or push notification. Status updates across the org dashboard." variant="success" />
       </div>
 
       <div className="border-t my-8" />
@@ -237,7 +237,7 @@ function LoneWorkerFlowchart() {
           }
         />
         <FlowArrow />
-        <FlowStep icon={CheckCircle} title="Emergency resolved — shift continues" description="The emergency is deactivated. All alerts stop. The worker's shift remains active and they can continue working." variant="success" />
+        <FlowStep icon={CheckCircle} title="Emergency resolved -  shift continues" description="The emergency is deactivated. All alerts stop. The worker's shift remains active and they can continue working." variant="success" />
       </div>
     </div>
   );
@@ -273,7 +273,7 @@ function ActivityFlowchart() {
                 rightLabel="Grace expires"
                 left={
                   <div className="flex flex-col items-center gap-0 w-full">
-                    <FlowStep icon={CheckCircle} title="'I'm OK — Need More Time'" description="The user taps to extend their session or completes the activity." variant="success" />
+                    <FlowStep icon={CheckCircle} title="'I'm OK -  Need More Time'" description="The user taps to extend their session or completes the activity." variant="success" />
                   </div>
                 }
                 right={

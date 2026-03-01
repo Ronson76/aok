@@ -207,7 +207,7 @@ function LiveLocationMap({ session }: { session: SessionWithUser }) {
           <Clock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           <div>
             <p className="text-muted-foreground">Last Updated</p>
-            <p className="font-medium">{updatedAgo || "—"}</p>
+            <p className="font-medium">{updatedAgo || " - "}</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 p-2 rounded border bg-muted/30">
@@ -1064,13 +1064,13 @@ export default function OrgLoneWorkerHub() {
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> Started: {s.startedAt ? format(new Date(s.startedAt), "HH:mm") : "—"}
+                          <Clock className="w-3 h-3" /> Started: {s.startedAt ? format(new Date(s.startedAt), "HH:mm") : " - "}
                         </div>
                         <div className="flex items-center gap-1">
                           <Radio className="w-3 h-3" /> Interval: {s.checkInIntervalMins}m
                         </div>
                         <div className="flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3" /> Last: {s.lastCheckInAt ? formatDistanceToNow(new Date(s.lastCheckInAt), { addSuffix: true }) : "—"}
+                          <CheckCircle className="w-3 h-3" /> Last: {s.lastCheckInAt ? formatDistanceToNow(new Date(s.lastCheckInAt), { addSuffix: true }) : " - "}
                         </div>
                         {s.userPhone && (
                           <div className="flex items-center gap-1">
@@ -1100,7 +1100,7 @@ export default function OrgLoneWorkerHub() {
                         <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-950 rounded text-sm text-orange-700 dark:text-orange-300 space-y-2">
                           <div className="flex items-center gap-2 flex-wrap">
                             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                            <span>{s.status === "panic" ? "Panic triggered" : "Missed check-in — staff member unresponsive"}</span>
+                            <span>{s.status === "panic" ? "Panic triggered" : "Missed check-in -  staff member unresponsive"}</span>
                             {s.lastLocationLat && s.lastLocationLng && (
                               <a
                                 href={`https://maps.google.com/?q=${s.lastLocationLat},${s.lastLocationLng}`}
@@ -1184,7 +1184,7 @@ export default function OrgLoneWorkerHub() {
                                 {s.jobDescription && <p className="text-xs text-muted-foreground">{s.jobDescription}</p>}
                               </div>
                               <div className="text-right text-xs text-muted-foreground">
-                                <p>{s.resolvedAt ? format(new Date(s.resolvedAt), "dd/MM/yyyy HH:mm") : "—"}</p>
+                                <p>{s.resolvedAt ? format(new Date(s.resolvedAt), "dd/MM/yyyy HH:mm") : " - "}</p>
                                 {s.outcome && <p className="capitalize">{s.outcome.replace(/_/g, " ")}</p>}
                               </div>
                             </div>
@@ -1308,7 +1308,7 @@ export default function OrgLoneWorkerHub() {
                                     <Radio className="h-3 w-3" />
                                     {JOB_LABELS[staffSession.jobType] || staffSession.jobType}
                                   </span>
-                                  <span>Started {staffSession.startedAt ? format(new Date(staffSession.startedAt), "HH:mm") : "—"}</span>
+                                  <span>Started {staffSession.startedAt ? format(new Date(staffSession.startedAt), "HH:mm") : " - "}</span>
                                   {staffSession.lastLocationAt && (
                                     <span>Location updated {formatDistanceToNow(new Date(staffSession.lastLocationAt), { addSuffix: true })}</span>
                                   )}

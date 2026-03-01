@@ -256,7 +256,7 @@ export function EmergencyConfirmOverlay({
           className="w-full h-16 text-xl font-bold bg-white text-red-600 hover:bg-red-100 mb-4 disabled:opacity-50"
           data-testid="button-send-emergency"
         >
-          {isPending || hasSent ? "SENDING..." : "YES – SEND EMERGENCY"}
+          {isPending || hasSent ? "SENDING..." : "YES - SEND EMERGENCY"}
         </Button>
 
         {biometricAvailable && (

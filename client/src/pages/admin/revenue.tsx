@@ -491,7 +491,7 @@ function PricingTabs({
             </Badge>
           ) : null;
         })}
-        {activeTabs.size === 0 && <span className="italic">No tiers selected — using default individual pricing</span>}
+        {activeTabs.size === 0 && <span className="italic">No tiers selected -  using default individual pricing</span>}
       </div>
     </div>
   );

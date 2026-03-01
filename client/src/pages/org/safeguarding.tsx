@@ -1977,9 +1977,9 @@ export default function OrgSafeguardingPage() {
                             <td className="py-2 px-2">
                               <Badge variant="outline">{check.dbsType === "basic" ? "Basic" : check.dbsType === "standard" ? "Standard" : check.dbsType === "enhanced" ? "Enhanced" : "Enhanced+"}</Badge>
                             </td>
-                            <td className="py-2 px-2 font-mono text-xs">{check.certificateNumber || "—"}</td>
-                            <td className="py-2 px-2">{check.issueDate ? format(new Date(check.issueDate), "dd/MM/yyyy") : "—"}</td>
-                            <td className="py-2 px-2">{check.expiryDate ? format(new Date(check.expiryDate), "dd/MM/yyyy") : "—"}</td>
+                            <td className="py-2 px-2 font-mono text-xs">{check.certificateNumber || " - "}</td>
+                            <td className="py-2 px-2">{check.issueDate ? format(new Date(check.issueDate), "dd/MM/yyyy") : " - "}</td>
+                            <td className="py-2 px-2">{check.expiryDate ? format(new Date(check.expiryDate), "dd/MM/yyyy") : " - "}</td>
                             <td className="py-2 px-2">
                               <Badge className={check.status === "valid" ? "bg-green-500 text-white" : check.status === "expired" ? "bg-red-500 text-white" : check.status === "renewal_due" ? "bg-amber-500 text-black" : "bg-gray-500 text-white"}>
                                 {check.status === "valid" ? "Valid" : check.status === "expired" ? "Expired" : check.status === "renewal_due" ? "Renewal Due" : "Pending"}
@@ -2041,9 +2041,9 @@ export default function OrgSafeguardingPage() {
                               {record.staffEmail && <p className="text-xs text-muted-foreground">{record.staffEmail}</p>}
                             </td>
                             <td className="py-2 px-2">{record.courseName}</td>
-                            <td className="py-2 px-2">{record.provider || "—"}</td>
-                            <td className="py-2 px-2">{record.completionDate ? format(new Date(record.completionDate), "dd/MM/yyyy") : "—"}</td>
-                            <td className="py-2 px-2">{record.expiryDate ? format(new Date(record.expiryDate), "dd/MM/yyyy") : "—"}</td>
+                            <td className="py-2 px-2">{record.provider || " - "}</td>
+                            <td className="py-2 px-2">{record.completionDate ? format(new Date(record.completionDate), "dd/MM/yyyy") : " - "}</td>
+                            <td className="py-2 px-2">{record.expiryDate ? format(new Date(record.expiryDate), "dd/MM/yyyy") : " - "}</td>
                             <td className="py-2 px-2">
                               <Badge className={record.status === "completed" ? "bg-green-500 text-white" : record.status === "expired" ? "bg-red-500 text-white" : record.status === "in_progress" ? "bg-blue-500 text-white" : "bg-gray-500 text-white"}>
                                 {record.status === "completed" ? "Completed" : record.status === "expired" ? "Expired" : record.status === "in_progress" ? "In Progress" : "Pending"}

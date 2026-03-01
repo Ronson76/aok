@@ -88,7 +88,7 @@ export default function Pricing() {
         { text: "Lone worker monitoring", icon: MapPin },
         { text: "Per-client feature toggles", icon: TrendingUp },
         { text: "Emergency alerts & missed check-in reports", icon: FileText },
-        { text: "Call Supervisor — clients ring their supervisor directly", icon: Phone },
+        { text: "Call Supervisor -  clients ring their supervisor directly", icon: Phone },
         { text: "In-dashboard help centre", icon: Headphones },
         { text: "Volume discounts on seat bundles", icon: TrendingUp },
       ],
@@ -329,7 +329,7 @@ export default function Pricing() {
               { q: "What payment methods do you accept?", a: "We accept all major debit and credit cards, Apple Pay, and Google Pay for quick and easy payment." },
               { q: "How does the organisation plan work?", a: "Organisations purchase bundles of seats and manage clients through a dedicated dashboard. Contact us for custom pricing based on your team size." },
               { q: "Is my data safe?", a: "Absolutely. We use encryption for all data, location is only shared during emergencies, AI conversations are never stored, and emergency contacts must give consent before receiving alerts. Our IP Ownership Agreement and NDA protect all confidential information. View our full legal documents including Privacy Policy, EULA, IP Ownership Agreement, and NDA from the footer links." },
-              { q: "How am I helping the environment by using aok?", a: "Every aok subscription contributes to verified tree planting and carbon offsetting through our partnership with Ecologi. For organisations, this means auditable environmental impact certificates suitable for board-level ESG reporting and funder submissions — demonstrating measurable progress towards net zero targets. It's a tangible way to show your commitment to sustainability while protecting your people." },
+              { q: "How am I helping the environment by using aok?", a: "Every aok subscription contributes to verified tree planting and carbon offsetting through our partnership with Ecologi. For organisations, this means auditable environmental impact certificates suitable for board-level ESG reporting and funder submissions -  demonstrating measurable progress towards net zero targets. It's a tangible way to show your commitment to sustainability while protecting your people." },
             ].map((faq, i) => (
               <Card key={i}>
                 <CardContent className="py-4">

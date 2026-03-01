@@ -14,7 +14,7 @@ export default function Security() {
     {
       icon: ShieldCheck,
       title: "ISO 27001 Certified Infrastructure",
-      description: "aok is built on Google Cloud Platform (GCP), which holds ISO 27001 certification — the international standard for information security management systems (ISMS).",
+      description: "aok is built on Google Cloud Platform (GCP), which holds ISO 27001 certification -  the international standard for information security management systems (ISMS).",
       status: "certified",
     },
     {
@@ -32,7 +32,7 @@ export default function Security() {
     {
       icon: Lock,
       title: "Cyber Essentials Ready",
-      description: "aok is actively pursuing Cyber Essentials certification — the UK government-backed scheme that helps organisations guard against the most common cyber threats.",
+      description: "aok is actively pursuing Cyber Essentials certification -  the UK government-backed scheme that helps organisations guard against the most common cyber threats.",
       status: "in-progress",
     },
     {
@@ -47,7 +47,7 @@ export default function Security() {
     {
       icon: Fingerprint,
       title: "Two-Factor Authentication (2FA)",
-      description: "TOTP-based two-factor authentication available for all account types — users, organisations, and administrators.",
+      description: "TOTP-based two-factor authentication available for all account types -  users, organisations, and administrators.",
     },
     {
       icon: Key,
@@ -62,7 +62,7 @@ export default function Security() {
     {
       icon: Eye,
       title: "AI Privacy",
-      description: "Wellbeing AI conversations are fully ephemeral — they are never stored, logged, or used for training.",
+      description: "Wellbeing AI conversations are fully ephemeral -  they are never stored, logged, or used for training.",
     },
     {
       icon: Server,
@@ -187,23 +187,23 @@ export default function Security() {
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span><strong>No case-file storage</strong> — aok does not store case files, detailed case notes, or sensitive care records. Only essential safety data is held.</span>
+                  <span><strong>No case-file storage</strong> -  aok does not store case files, detailed case notes, or sensitive care records. Only essential safety data is held.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span><strong>Data minimisation by design</strong> — we collect only what's needed for your safety. Nothing more.</span>
+                  <span><strong>Data minimisation by design</strong> -  we collect only what's needed for your safety. Nothing more.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span><strong>Automatic data retention</strong> — configurable retention policies ensure data isn't held longer than necessary, with expiration warnings.</span>
+                  <span><strong>Automatic data retention</strong> -  configurable retention policies ensure data isn't held longer than necessary, with expiration warnings.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span><strong>Self-service data rights</strong> — export your data or delete your account at any time from Settings, in full compliance with UK GDPR.</span>
+                  <span><strong>Self-service data rights</strong> -  export your data or delete your account at any time from Settings, in full compliance with UK GDPR.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span><strong>Emergency recordings auto-delete</strong> — encrypted recordings are automatically removed after 90 days.</span>
+                  <span><strong>Emergency recordings auto-delete</strong> -  encrypted recordings are automatically removed after 90 days.</span>
                 </li>
               </ul>
             </CardContent>
