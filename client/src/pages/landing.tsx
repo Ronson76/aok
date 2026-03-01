@@ -22,7 +22,7 @@ import {
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
   ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles,
   MessageCircle, MessageSquare, ArrowLeft, Home, TreeDeciduous, Leaf, Timer,
-  Map, HardHat, Flame, Moon, BatteryLow, FileCheck, ClipboardCheck
+  Map, HardHat, Flame, Moon, BatteryLow, FileCheck, ClipboardCheck, Eye, Handshake, GraduationCap
 } from "lucide-react";
 import { SiApple, SiGoogleplay } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
@@ -132,9 +132,9 @@ export default function Landing() {
           </div>
           <nav className="hidden lg:flex items-center gap-6">
             <Link href="/funder-ready" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-funder-ready">Funder Ready</Link>
-            <a href="#features" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-features">Features</a>
-            <a href="#how-it-works" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">How It Works</a>
-            <a href="#use-cases" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-use-cases">Who Uses aok</a>
+            <a href="#features" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-features">Challenges</a>
+            <a href="#how-it-works" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">Referral Pathway</a>
+            <a href="#use-cases" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-use-cases">Who We Work With</a>
             <a href="#pricing" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-pricing">Pricing</a>
             <a href="#faq" className="text-base font-semibold text-foreground/80 hover:text-foreground transition-colors" data-testid="link-nav-faq">FAQ</a>
           </nav>
@@ -176,13 +176,13 @@ export default function Landing() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
-                  <a href="#features" data-testid="link-nav-features-mobile">Features</a>
+                  <a href="#features" data-testid="link-nav-features-mobile">Challenges</a>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <a href="#how-it-works" data-testid="link-nav-how-it-works-mobile">How It Works</a>
+                  <a href="#how-it-works" data-testid="link-nav-how-it-works-mobile">Referral Pathway</a>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <a href="#use-cases" data-testid="link-nav-use-cases-mobile">Who Uses aok</a>
+                  <a href="#use-cases" data-testid="link-nav-use-cases-mobile">Who We Work With</a>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <a href="#pricing" data-testid="link-nav-pricing-mobile">Pricing</a>
@@ -227,14 +227,14 @@ export default function Landing() {
             <div className="text-center md:text-left">
               <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1 md:py-1.5 rounded-full bg-primary/10 text-primary text-sm md:text-lg font-medium mb-6">
                 <Shield className="h-4 w-4 md:h-5 md:w-5" />
-                Personal Wellbeing Made Simple
+                A Proactive Safeguarding & Wellbeing Partner
               </div>
               <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-                Where safeguarding becomes<br />
-                <span className="text-primary">measurable assurance.</span>
+                Working With<br />
+                <span className="text-primary">Organisations</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-lg mx-auto md:mx-0">
-                Continuous control monitoring, automated missed check-in alerts, and funder-ready audit trails — delivered on ISO 27001-compliant, UK GDPR-ready infrastructure. With real-time assurance for your GRC framework.
+                aok helps organisations move from reactive incident management to continuous, auditable safeguarding oversight. Real-time visibility, structured escalation, and a defensible audit trail — so you can demonstrate duty of care, reduce risk, and protect the people you support.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                 <a href="mailto:help@aok.care?subject=Organisation%20Enquiry">
@@ -361,21 +361,33 @@ export default function Landing() {
       <section id="features" className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything You Need to Stay Connected</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">The Challenges We Help Solve</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Comprehensive check-in and wellbeing tools designed to give you and your loved ones peace of mind.
+              Organisations come to aok when they need to move beyond reactive incident management.
             </p>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card className="border-0 shadow-lg">
               <CardContent className="pt-6">
-                <div className="rounded-full bg-blue-500/10 p-3 w-fit mb-4">
-                  <Clock className="h-6 w-6 text-blue-500" />
+                <div className="rounded-full bg-red-500/10 p-3 w-fit mb-4">
+                  <Shield className="h-6 w-6 text-red-500" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Flexible Check-In Timer</h3>
+                <h3 className="text-lg font-semibold mb-2">Prevent Safeguarding Incidents</h3>
                 <p className="text-muted-foreground text-sm">
-                  Set your check-in schedule from 1 hour to 48 hours. Perfect for any lifestyle or activity.
+                  Shift from responding to incidents after the fact to preventing them through continuous monitoring and early-warning alerts.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-blue-500/10 p-3 w-fit mb-4">
+                  <Building2 className="h-6 w-6 text-blue-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Maintain Stable Tenancies</h3>
+                <p className="text-muted-foreground text-sm">
+                  Support high-risk or vulnerable individuals safely with structured check-ins that maintain placement stability.
                 </p>
               </CardContent>
             </Card>
@@ -383,38 +395,23 @@ export default function Landing() {
             <Card className="border-0 shadow-lg">
               <CardContent className="pt-6">
                 <div className="rounded-full bg-green-500/10 p-3 w-fit mb-4">
-                  <Bell className="h-6 w-6 text-green-500" />
+                  <FileCheck className="h-6 w-6 text-green-500" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Multi-Channel Alerts</h3>
+                <h3 className="text-lg font-semibold mb-2">Evidence Wellbeing Oversight</h3>
                 <p className="text-muted-foreground text-sm">
-                  Your contacts receive alerts via email, SMS text messages, and automated phone calls.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-0 shadow-lg ring-2 ring-primary/20">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="rounded-full bg-red-500/10 p-3 w-fit">
-                    <Zap className="h-6 w-6 text-red-500" />
-                  </div>
-                  <Badge variant="secondary" className="bg-primary/10 text-primary border-0">Featured</Badge>
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Shake to Alert</h3>
-                <p className="text-muted-foreground text-sm">
-                  In danger? Just shake your phone to instantly trigger an emergency alert. No need to unlock or find the app - help is just a shake away.
+                  Demonstrate duty of care to commissioners and regulators with auditable, time-stamped safeguarding records.
                 </p>
               </CardContent>
             </Card>
             
             <Card className="border-0 shadow-lg">
               <CardContent className="pt-6">
-                <div className="rounded-full bg-red-500/10 p-3 w-fit mb-4">
-                  <AlertTriangle className="h-6 w-6 text-red-500" />
+                <div className="rounded-full bg-orange-500/10 p-3 w-fit mb-4">
+                  <ClipboardCheck className="h-6 w-6 text-orange-500" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Emergency Alert Button</h3>
+                <h3 className="text-lg font-semibold mb-2">Reduce Manual Record-Keeping</h3>
                 <p className="text-muted-foreground text-sm">
-                  Instantly alert all your contacts in an emergency with one tap. Your location is shared automatically.
+                  Replace fragmented notes and spreadsheets with automated, real-time safeguarding records that reduce human error.
                 </p>
               </CardContent>
             </Card>
@@ -422,161 +419,11 @@ export default function Landing() {
             <Card className="border-0 shadow-lg">
               <CardContent className="pt-6">
                 <div className="rounded-full bg-purple-500/10 p-3 w-fit mb-4">
-                  <MapPin className="h-6 w-6 text-purple-500" />
+                  <CheckCircle className="h-6 w-6 text-purple-500" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">GPS Location Sharing</h3>
+                <h3 className="text-lg font-semibold mb-2">Demonstrate Compliance</h3>
                 <p className="text-muted-foreground text-sm">
-                  Share your precise location using what3words addresses. Updated every 5 minutes during emergencies.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-orange-500/10 p-3 w-fit mb-4">
-                  <Phone className="h-6 w-6 text-orange-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Voice Call Alerts</h3>
-                <p className="text-muted-foreground text-sm">
-                  Automated phone calls to landline and mobile numbers ensure your message gets through.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-cyan-500/10 p-3 w-fit mb-4">
-                  <Smartphone className="h-6 w-6 text-cyan-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Push Notifications</h3>
-                <p className="text-muted-foreground text-sm">
-                  Never miss a check-in with persistent push notifications that work even when your phone is idle.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg ring-2 ring-primary/20">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="rounded-full bg-teal-500/10 p-3 w-fit">
-                    <MessageSquare className="h-6 w-6 text-teal-500" />
-                  </div>
-                  <Badge variant="secondary" className="bg-primary/10 text-primary border-0">Offline Safe</Badge>
-                </div>
-                <h3 className="text-lg font-semibold mb-2">SMS Check-In When Offline</h3>
-                <p className="text-muted-foreground text-sm">
-                  No internet? No problem. If you miss a check-in, we text you a reminder. Simply reply to confirm you're safe — no app or data connection needed.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-amber-500/10 p-3 w-fit mb-4">
-                  <Users className="h-6 w-6 text-amber-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Multiple Contacts</h3>
-                <p className="text-muted-foreground text-sm">
-                  Add family, friends, neighbours, or anyone you trust. Set a primary contact/carer for regular updates.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-pink-500/10 p-3 w-fit mb-4">
-                  <Lock className="h-6 w-6 text-pink-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Privacy Protected</h3>
-                <p className="text-muted-foreground text-sm">
-                  Screenshot protection on contacts and secure data handling.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Link href="/security">
-              <Card className="border-0 shadow-lg ring-2 ring-green-500/20 cursor-pointer hover:shadow-xl transition-shadow" data-testid="card-feature-iso">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <img src={isoBadgeImg} alt="ISO 27001" className="h-12 w-12 object-contain" />
-                    <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400 border-0">Verified</Badge>
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">ISO 27001 Infrastructure</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Built on ISO 27001-certified cloud infrastructure with SOC 2 Type 2 compliance. UK GDPR compliant with 2FA, encrypted data, and tamper-evident audit trails.
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-indigo-500/10 p-3 w-fit mb-4">
-                  <Building2 className="h-6 w-6 text-indigo-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Organisation Support</h3>
-                <p className="text-muted-foreground text-sm">
-                  Care homes and organisations can monitor multiple clients with dedicated dashboards and alerts.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-orange-500/10 p-3 w-fit mb-4">
-                  <Phone className="h-6 w-6 text-orange-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Call Supervisor</h3>
-                <p className="text-muted-foreground text-sm">
-                  Organisation clients can ring their supervisor directly from the app. No app needed on the other end — it's a normal phone call.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-emerald-500/10 p-3 w-fit mb-4">
-                  <TrendingUp className="h-6 w-6 text-emerald-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Wellness Tracking</h3>
-                <p className="text-muted-foreground text-sm">
-                  Log your mood after check-ins to track your wellbeing over time. Great for spotting patterns.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-rose-500/10 p-3 w-fit mb-4">
-                  <PawPrint className="h-6 w-6 text-rose-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Pet Protection</h3>
-                <p className="text-muted-foreground text-sm">
-                  Store pet profiles with vet info and care instructions. Your contacts can care for your pets if needed.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-slate-500/10 p-3 w-fit mb-4">
-                  <Scroll className="h-6 w-6 text-slate-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Important Documents</h3>
-                <p className="text-muted-foreground text-sm">
-                  Securely store travel insurance, wills, power of attorney, healthcare directives, and other important documents.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-red-500/10 p-3 w-fit mb-4">
-                  <Play className="h-6 w-6 text-red-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Emergency Recording</h3>
-                <p className="text-muted-foreground text-sm">
-                  Opt-in feature that activates your camera and microphone during emergencies. Recordings are encrypted, shared only with your contacts, and deleted after 90 days.
+                  Be inspection-ready at all times with exportable audit trails that show what was known, when, what action was taken, and by whom.
                 </p>
               </CardContent>
             </Card>
@@ -584,76 +431,133 @@ export default function Landing() {
             <Card className="border-0 shadow-lg">
               <CardContent className="pt-6">
                 <div className="rounded-full bg-teal-500/10 p-3 w-fit mb-4">
-                  <Timer className="h-6 w-6 text-teal-500" />
+                  <Users className="h-6 w-6 text-teal-500" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Activities Tracker</h3>
+                <h3 className="text-lg font-semibold mb-2">Coordinate Across Teams</h3>
                 <p className="text-muted-foreground text-sm">
-                  Log everyday activities like walking, shopping, or appointments with a built-in timer and grace period. If you don't check back in, your contacts are alerted.
+                  Multi-agency response support ensures the right people are informed at the right time across multiple teams and partner agencies.
                 </p>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </section>
 
-            <Card className="border-0 shadow-lg ring-2 ring-primary/20">
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Proactive Safeguarding Model</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              aok creates a live, organisation-level safeguarding timeline — moving safeguarding from reactive to preventative, assumed to evidenced, manual to automated.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-5 gap-6">
+            {[
+              { step: "1", title: "Early Visibility", description: "Structured check-ins confirm wellbeing, location, and activity in real time.", icon: Eye },
+              { step: "2", title: "Risk Identification", description: "Missed check-ins and behavioural changes are automatically flagged.", icon: AlertTriangle },
+              { step: "3", title: "Controlled Escalation", description: "Alerts follow a defined pathway — ensuring the right people are informed at the right time.", icon: Bell },
+              { step: "4", title: "Multi-Agency Response", description: "Authorised partners can be included in the safeguarding loop.", icon: Users },
+              { step: "5", title: "Full Audit Trail", description: "Every action is securely time-stamped and exportable.", icon: FileCheck },
+            ].map((item) => (
+              <div key={item.step} className="text-center">
+                <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+                  {item.step}
+                </div>
+                <item.icon className="h-6 w-6 text-primary mx-auto mb-3" />
+                <h3 className="text-base font-semibold mb-2">{item.title}</h3>
+                <p className="text-sm text-muted-foreground">{item.description}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 mt-12 max-w-3xl mx-auto">
+            <Card className="border-primary/20 bg-primary/5 text-center">
               <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="rounded-full bg-yellow-500/10 p-3 w-fit">
-                    <BatteryLow className="h-6 w-6 text-yellow-500" />
-                  </div>
-                  <Badge variant="secondary" className="bg-primary/10 text-primary border-0">New</Badge>
-                </div>
-                <h3 className="text-lg font-semibold mb-2" data-testid="text-feature-low-battery">Low Battery Alert</h3>
-                <p className="text-muted-foreground text-sm">
-                  If your phone battery drops below 20% during an active activity, your primary contacts/carers are automatically emailed so they know to keep a closer eye. Only fires once per session.
-                </p>
+                <p className="text-sm text-muted-foreground line-through mb-1">Reactive</p>
+                <p className="text-lg font-bold text-primary">Preventative</p>
               </CardContent>
             </Card>
+            <Card className="border-primary/20 bg-primary/5 text-center">
+              <CardContent className="pt-6">
+                <p className="text-sm text-muted-foreground line-through mb-1">Assumed</p>
+                <p className="text-lg font-bold text-primary">Evidenced</p>
+              </CardContent>
+            </Card>
+            <Card className="border-primary/20 bg-primary/5 text-center">
+              <CardContent className="pt-6">
+                <p className="text-sm text-muted-foreground line-through mb-1">Manual</p>
+                <p className="text-lg font-bold text-primary">Automated</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
 
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">What Your Organisation Can See</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              True operational oversight through the aok dashboard — not fragmented notes.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { title: "Real-Time Wellbeing Status", description: "Live status across all your service users or staff, updated continuously.", icon: Heart },
+              { title: "Missed Check-ins & Active Alerts", description: "Instant visibility into who needs attention right now.", icon: AlertTriangle },
+              { title: "Response & Resolution Timelines", description: "Track how quickly your team responds and resolves issues.", icon: Clock },
+              { title: "Engagement & Support Trends", description: "Identify patterns in user engagement and emerging support needs.", icon: TrendingUp },
+              { title: "Historical Safeguarding Records", description: "Complete, searchable history of every check-in, alert, and action taken.", icon: Scroll },
+              { title: "Exportable Reports", description: "Generate funder-ready PDF and CSV reports for commissioners, boards, and regulators.", icon: FileCheck },
+            ].map((item, i) => (
+              <Card key={i} className="border-0 shadow-lg">
+                <CardContent className="pt-6">
+                  <item.icon className="h-8 w-8 text-primary mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
+                  <p className="text-muted-foreground text-sm">{item.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Governance & Quality Assurance</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              aok is designed to support safeguarding accountability, inspection readiness, internal audit processes, risk management frameworks, and data protection.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-8">
             <Card className="border-0 shadow-lg">
               <CardContent className="pt-6">
-                <div className="rounded-full bg-violet-500/10 p-3 w-fit mb-4">
-                  <Sparkles className="h-6 w-6 text-violet-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Wellbeing AI</h3>
-                <p className="text-muted-foreground text-sm">
-                  Chat with your personal AI companion about how you're feeling. Get supportive responses, mood insights, and voice chat — all private and built into the app.
-                </p>
+                <h3 className="text-lg font-semibold mb-4">Every Interaction Is:</h3>
+                <ul className="space-y-3">
+                  {["Time-stamped", "Role-attributed", "Securely stored", "Exportable for review"].map((item) => (
+                    <li key={item} className="flex items-center gap-3">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                      <span className="text-sm">{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </CardContent>
             </Card>
-
-
             <Card className="border-0 shadow-lg">
               <CardContent className="pt-6">
-                <div className="rounded-full bg-amber-500/10 p-3 w-fit mb-4">
-                  <HardHat className="h-6 w-6 text-amber-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Lone Worker Protection</h3>
-                <p className="text-muted-foreground text-sm">
-                  Designed for people who work alone. Organisations can monitor lone worker sessions, set automatic check-in schedules, and receive real-time safety alerts.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-orange-500/10 p-3 w-fit mb-4">
-                  <Flame className="h-6 w-6 text-orange-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Check-in Streaks</h3>
-                <p className="text-muted-foreground text-sm">
-                  Build healthy habits by maintaining your check-in streak. Track how many consecutive check-ins you've completed on time and stay motivated.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-rose-500/10 p-3 w-fit mb-4">
-                  <Heart className="h-6 w-6 text-rose-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Primary Contact/Carer</h3>
-                <p className="text-muted-foreground text-sm">
-                  Designate a primary contact/carer who receives a notification for every successful check-in — giving them ongoing peace of mind that you're safe.
-                </p>
+                <h3 className="text-lg font-semibold mb-4">So You Can Evidence:</h3>
+                <ul className="space-y-3">
+                  {["What was known", "When it was known", "What action was taken", "Who took it"].map((item) => (
+                    <li key={item} className="flex items-center gap-3">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                      <span className="text-sm">{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </CardContent>
             </Card>
           </div>
@@ -663,9 +567,9 @@ export default function Landing() {
       <section id="how-it-works" className="py-20 px-4">
         <div className="container mx-auto max-w-5xl">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Referral Pathway</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              From onboarding to compliance reporting — we handle the setup so you can focus on safeguarding.
+              From initial conversation to scaled deployment — a structured, measured approach.
             </p>
           </div>
           
@@ -674,9 +578,9 @@ export default function Landing() {
               <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 1
               </div>
-              <h3 className="text-lg font-semibold mb-2">We Set Up Your Organisation</h3>
+              <h3 className="text-lg font-semibold mb-2">Initial Conversation</h3>
               <p className="text-sm text-muted-foreground">
-                The aok team creates your organisation account, configures your bundle allocation, and provides your login credentials.
+                We map your service model, risk profile, and safeguarding structure to understand your needs.
               </p>
             </div>
             
@@ -684,9 +588,9 @@ export default function Landing() {
               <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 2
               </div>
-              <h3 className="text-lg font-semibold mb-2">Add Clients &amp; Staff</h3>
+              <h3 className="text-lg font-semibold mb-2">Pilot Setup</h3>
               <p className="text-sm text-muted-foreground">
-                Register your clients with reference codes, set individual check-in schedules, assign emergency contacts, and invite staff members with role-based access.
+                A controlled rollout with agreed cohorts and measurable outcomes so you can evaluate impact before scaling.
               </p>
             </div>
             
@@ -694,9 +598,9 @@ export default function Landing() {
               <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 3
               </div>
-              <h3 className="text-lg font-semibold mb-2">Monitor &amp; Safeguard</h3>
+              <h3 className="text-lg font-semibold mb-2">Dashboard Activation</h3>
               <p className="text-sm text-muted-foreground">
-                Track check-ins in real time, receive automated escalation alerts for missed check-ins, log safeguarding incidents, and manage cases through the Safeguarding Hub.
+                Your organisation receives live oversight, real-time reporting, and full access to safeguarding tools.
               </p>
             </div>
             
@@ -704,9 +608,9 @@ export default function Landing() {
               <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 4
               </div>
-              <h3 className="text-lg font-semibold mb-2">Report &amp; Evidence</h3>
+              <h3 className="text-lg font-semibold mb-2">Review &amp; Scale</h3>
               <p className="text-sm text-muted-foreground">
-                Generate funder-ready reports, export tamper-evident audit trails as PDF or CSV, and demonstrate compliance with CQC, Ofsted, and safeguarding regulations.
+                Measured impact review and service expansion across your organisation based on demonstrated outcomes.
               </p>
             </div>
           </div>
@@ -716,9 +620,9 @@ export default function Landing() {
       <section className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Key Features in Motion</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">What Your Clients Experience</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              See aok in action — personal wellbeing and safety tools, all in one place.
+              See what your service users and staff interact with — simple, accessible tools that drive the data behind your dashboard.
             </p>
           </div>
           
@@ -877,7 +781,7 @@ export default function Landing() {
       <section id="use-cases" className="py-20 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Who Uses aok?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Who We Work With</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Organisations across the UK trust aok to safeguard their clients, residents, and staff.
             </p>
@@ -886,34 +790,34 @@ export default function Landing() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
-                title: "Care Homes & Residential",
-                description: "Monitor residents with automated check-ins and real-time alerts to ensure their safety around the clock.",
-                icon: Heart
+                title: "Local Authorities",
+                description: "Deliver duty-of-care obligations with measurable assurance, real-time monitoring dashboards, and defensible decision-making.",
+                icon: Shield
               },
               {
-                title: "Housing Associations",
-                description: "Support tenants living independently with configurable safety schedules and escalation workflows.",
+                title: "Housing Associations & Supported Housing",
+                description: "Support tenants and residents in supported housing with configurable safety schedules and structured escalation workflows.",
                 icon: Building2
               },
               {
                 title: "Charities & Third Sector",
-                description: "Safeguard vulnerable clients with funder-ready audit trails and compliance reporting.",
+                description: "Safeguard vulnerable clients with funder-ready audit trails, compliance reporting, and measurable outcomes for commissioners.",
                 icon: Users
               },
               {
-                title: "Local Authorities",
-                description: "Deliver duty-of-care obligations with measurable assurance and real-time monitoring dashboards.",
-                icon: Shield
+                title: "Universities & Student Accommodation",
+                description: "Protect students in independent living environments with automated wellbeing check-ins and early intervention alerts.",
+                icon: GraduationCap
               },
               {
-                title: "Schools & Education",
-                description: "Protect staff on home visits and lone working scenarios with automatic check-ins and GPS tracking.",
-                icon: Globe
+                title: "Care & Support Providers",
+                description: "Monitor service users across care homes, domiciliary care, and supported living with continuous, auditable safeguarding oversight.",
+                icon: Heart
               },
               {
-                title: "Domiciliary Care",
-                description: "Track care workers and ensure client welfare between visits with continuous monitoring tools.",
-                icon: MapPin
+                title: "Lone-Worker Employers & Community Services",
+                description: "Protect staff who work alone or in the community with automatic check-ins, GPS tracking, and real-time supervisor alerts.",
+                icon: HardHat
               }
             ].map((useCase, i) => (
               <Card key={i} className="border-0 shadow-lg">
@@ -925,6 +829,122 @@ export default function Landing() {
               </Card>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Who We Support</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              aok is suitable for a wide range of individuals across your services.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+            {[
+              "Vulnerable adults",
+              "Young people and care leavers",
+              "Residents in supported housing",
+              "Individuals in dispersed accommodation",
+              "Lone workers and community-based staff",
+              "Students and independent living environments"
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-3 p-4 rounded-lg bg-card border">
+                <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                <span className="text-sm font-medium">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Outcomes for Organisations</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Our partners use aok to deliver measurable improvements across their services.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { title: "Reduce Safeguarding Escalations", icon: Shield },
+              { title: "Prevent Crisis Situations", icon: AlertTriangle },
+              { title: "Strengthen Commissioning Confidence", icon: FileCheck },
+              { title: "Protect Organisational Reputation", icon: Building2 },
+              { title: "Improve Staff Efficiency", icon: TrendingUp },
+              { title: "Increase Service User Stability", icon: Heart },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-4 p-5 rounded-lg bg-card border shadow-sm">
+                <div className="rounded-full bg-primary/10 p-3">
+                  <item.icon className="h-5 w-5 text-primary" />
+                </div>
+                <span className="font-semibold">{item.title}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Partnership & Communication</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              We work as an extension of your safeguarding structure.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {[
+              "Defined implementation support",
+              "Clear escalation mapping aligned to your policies",
+              "Regular data insight reviews",
+              "Ongoing development in line with your service needs"
+            ].map((item, i) => (
+              <div key={i} className="flex items-start gap-3 p-4 rounded-lg bg-card border">
+                <Handshake className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                <span className="text-sm">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-4xl">
+          <Card className="border-primary/30 shadow-lg bg-gradient-to-br from-primary/5 to-transparent">
+            <CardContent className="pt-8 pb-8 text-center">
+              <h2 className="text-2xl md:text-3xl font-bold mb-4">Built for the Future of Commissioning</h2>
+              <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+                Funding and regulatory environments increasingly require demonstrable safeguarding oversight, measurable outcomes, real-time reporting, and defensible decision-making. aok provides the data structure that enables this.
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto mb-8">
+                {[
+                  "Demonstrable oversight",
+                  "Measurable outcomes",
+                  "Real-time reporting",
+                  "Defensible decisions"
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 justify-center p-3 rounded-lg bg-primary/10">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-xs font-medium">{item}</span>
+                  </div>
+                ))}
+              </div>
+              <a href="mailto:help@aok.care?subject=Pilot%20Discussion">
+                <Button size="lg" className="gap-2" data-testid="button-start-pilot">
+                  <Mail className="h-4 w-4" />
+                  Start a Pilot
+                </Button>
+              </a>
+              <p className="text-xs text-muted-foreground mt-3">
+                Contact us to discuss your service and pilot availability.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
@@ -1260,12 +1280,12 @@ export default function Landing() {
 
       <section className="py-20 px-4 bg-primary text-primary-foreground">
         <div className="container mx-auto max-w-3xl text-center">
-          <Heart className="h-12 w-12 mx-auto mb-6 opacity-80" />
+          <Shield className="h-12 w-12 mx-auto mb-6 opacity-80" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to Safeguard Your Organisation?
+            Start a Pilot
           </h2>
           <p className="text-lg opacity-90 mb-8 max-w-xl mx-auto">
-            Get in touch for a tailored package that fits your organisation's needs and budget.
+            We recommend beginning with a defined pilot so your organisation can measure risk reduction, evidence operational value, and demonstrate impact to commissioners and boards.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="mailto:help@aok.care?subject=Organisation%20Enquiry">
@@ -1294,8 +1314,8 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#features" className="hover:text-foreground transition-colors" data-testid="link-footer-features">Features</a></li>
-                <li><a href="#how-it-works" className="hover:text-foreground transition-colors" data-testid="link-footer-how-it-works">How It Works</a></li>
+                <li><a href="#features" className="hover:text-foreground transition-colors" data-testid="link-footer-features">Challenges</a></li>
+                <li><a href="#how-it-works" className="hover:text-foreground transition-colors" data-testid="link-footer-how-it-works">Referral Pathway</a></li>
                 <li><a href="#pricing" className="hover:text-foreground transition-colors" data-testid="link-footer-pricing">Pricing</a></li>
                 <li><a href="#faq" className="hover:text-foreground transition-colors" data-testid="link-footer-faq">FAQ</a></li>
                 <li><Link href="/guide"><span className="hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-guide">How-to Guide</span></Link></li>
