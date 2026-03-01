@@ -261,9 +261,15 @@ function getAuditActionBadge(action: string, entityType: string) {
 
 export default function OrgLoneWorkerHub() {
   const { toast } = useToast();
-  const { logout } = useAuth();
+  const { logout, user: authUser } = useAuth();
   const [, setLocation] = useLocation();
   const [mainTab, setMainTab] = useState("monitor");
+
+  useEffect(() => {
+    if (authUser && (!authUser.orgFeatureLoneWorker || (authUser.orgFeatureLoneWorkerExpiresAt && new Date(authUser.orgFeatureLoneWorkerExpiresAt) < new Date()))) {
+      setLocation("/org/dashboard");
+    }
+  }, [authUser, setLocation]);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [resendingInviteId, setResendingInviteId] = useState<string | null>(null);
