@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { OrgHelpButton } from "@/components/org-help-center";
+import { OrgGuidedTour } from "@/components/org-guided-tour";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -221,6 +222,7 @@ export default function OrganizationDashboard() {
   const [importBundleId, setImportBundleId] = useState("");
 
   const [showResendPasswordDialog, setShowResendPasswordDialog] = useState(false);
+  const [showGuidedTour, setShowGuidedTour] = useState(false);
   const [resendPasswordClientId, setResendPasswordClientId] = useState<string | null>(null);
   const [resendPasswordClientName, setResendPasswordClientName] = useState<string>("");
   const [resendPasswordIsRegistered, setResendPasswordIsRegistered] = useState(true);
@@ -1553,6 +1555,10 @@ export default function OrganizationDashboard() {
             <span className="text-2xl font-bold text-green-600">aok</span>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowGuidedTour(true)} data-testid="button-guided-tour">
+              <Play className="h-4 w-4 mr-1" />
+              Tour
+            </Button>
             <OrgHelpButton />
             <Button variant="outline" onClick={handleLogout} data-testid="button-org-logout">
               <LogOut className="h-4 w-4 mr-2" />
@@ -5100,6 +5106,7 @@ export default function OrganizationDashboard() {
         </DialogContent>
       </Dialog>
       </div>
+      <OrgGuidedTour isOpen={showGuidedTour} onClose={() => setShowGuidedTour(false)} />
     </div>
   );
 }
