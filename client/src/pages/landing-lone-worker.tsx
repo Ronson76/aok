@@ -698,7 +698,7 @@ export default function LandingLoneWorker() {
                 Can supervisors monitor multiple workers?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-6">
-                Yes. The organisation dashboard gives supervisors a real-time overview of all their lone workers. They can see who has checked in, who is overdue, and respond to escalations — all from one central screen.
+                Yes. The organisation dashboard gives supervisors a real-time overview of all their lone workers. They can see who has checked in, who is overdue, and respond to escalations -  all from one central screen.
               </AccordionContent>
             </AccordionItem>
 

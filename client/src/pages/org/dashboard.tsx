@@ -1492,7 +1492,7 @@ export default function OrganizationDashboard() {
       case "welfare_concern":
         text = entry.action === "create"
           ? `Raised welfare concern${data.type ? ` (${data.type})` : ""}${data.urgency ? ` [${data.urgency}]` : ""}`
-          : `Updated welfare concern${data.status ? ` — ${data.status}` : ""}`;
+          : `Updated welfare concern${data.status ? ` -  ${data.status}` : ""}`;
         break;
       case "case_file":
         text = entry.action === "create"
@@ -3241,7 +3241,7 @@ export default function OrganizationDashboard() {
                 {auditData.total > AUDIT_PAGE_SIZE && (
                   <div className="flex items-center justify-between pt-2">
                     <p className="text-xs text-muted-foreground">
-                      Showing {auditPage * AUDIT_PAGE_SIZE + 1}–{Math.min((auditPage + 1) * AUDIT_PAGE_SIZE, auditData.total)} of {auditData.total}
+                      Showing {auditPage * AUDIT_PAGE_SIZE + 1}-{Math.min((auditPage + 1) * AUDIT_PAGE_SIZE, auditData.total)} of {auditData.total}
                     </p>
                     <div className="flex gap-1">
                       <Button

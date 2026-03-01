@@ -145,7 +145,7 @@ export default function OrgLoneWorkerMonitor() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    Started: {s.startedAt ? format(new Date(s.startedAt), "HH:mm") : "—"}
+                    Started: {s.startedAt ? format(new Date(s.startedAt), "HH:mm") : " - "}
                   </div>
                   <div className="flex items-center gap-1">
                     <Radio className="w-3 h-3" />
@@ -153,7 +153,7 @@ export default function OrgLoneWorkerMonitor() {
                   </div>
                   <div className="flex items-center gap-1">
                     <CheckCircle className="w-3 h-3" />
-                    Last: {s.lastCheckInAt ? formatDistanceToNow(new Date(s.lastCheckInAt), { addSuffix: true }) : "—"}
+                    Last: {s.lastCheckInAt ? formatDistanceToNow(new Date(s.lastCheckInAt), { addSuffix: true }) : " - "}
                   </div>
                   {s.userPhone && (
                     <div className="flex items-center gap-1">
@@ -228,7 +228,7 @@ export default function OrgLoneWorkerMonitor() {
                             {s.jobDescription && <p className="text-xs text-muted-foreground">{s.jobDescription}</p>}
                           </div>
                           <div className="text-right text-xs text-muted-foreground">
-                            <p>{s.resolvedAt ? format(new Date(s.resolvedAt), "dd/MM/yyyy HH:mm") : "—"}</p>
+                            <p>{s.resolvedAt ? format(new Date(s.resolvedAt), "dd/MM/yyyy HH:mm") : " - "}</p>
                             {s.outcome && <p className="capitalize">{s.outcome.replace(/_/g, " ")}</p>}
                           </div>
                         </div>

@@ -210,7 +210,7 @@ export default function Landing() {
                 <span className="text-primary">Organisations</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-lg mx-auto md:mx-0">
-                aok helps organisations move from reactive incident management to continuous, auditable safeguarding oversight. Real-time visibility, structured escalation, and a defensible audit trail — so you can demonstrate duty of care, reduce risk, and protect the people you support.
+                aok helps organisations move from reactive incident management to continuous, auditable safeguarding oversight. Real-time visibility, structured escalation, and a defensible audit trail -  so you can demonstrate duty of care, reduce risk, and protect the people you support.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                 <a href="mailto:help@aok.care?subject=Organisation%20Enquiry">
@@ -424,7 +424,7 @@ export default function Landing() {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Proactive Safeguarding Model</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              aok creates a live, organisation-level safeguarding timeline — moving safeguarding from reactive to preventative, assumed to evidenced, manual to automated.
+              aok creates a live, organisation-level safeguarding timeline -  moving safeguarding from reactive to preventative, assumed to evidenced, manual to automated.
             </p>
           </div>
           
@@ -432,7 +432,7 @@ export default function Landing() {
             {[
               { step: "1", title: "Early Visibility", description: "Structured check-ins confirm wellbeing, location, and activity in real time.", icon: Eye },
               { step: "2", title: "Risk Identification", description: "Missed check-ins and behavioural changes are automatically flagged.", icon: AlertTriangle },
-              { step: "3", title: "Controlled Escalation", description: "Alerts follow a defined pathway — ensuring the right people are informed at the right time.", icon: Bell },
+              { step: "3", title: "Controlled Escalation", description: "Alerts follow a defined pathway -  ensuring the right people are informed at the right time.", icon: Bell },
               { step: "4", title: "Multi-Agency Response", description: "Authorised partners can be included in the safeguarding loop.", icon: Users },
               { step: "5", title: "Full Audit Trail", description: "Every action is securely time-stamped and exportable.", icon: FileCheck },
             ].map((item) => (
@@ -475,7 +475,7 @@ export default function Landing() {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">What Your Organisation Can See</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              True operational oversight through the aok dashboard — not fragmented notes.
+              True operational oversight through the aok dashboard -  not fragmented notes.
             </p>
           </div>
           
@@ -545,7 +545,7 @@ export default function Landing() {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Referral Pathway</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              From initial conversation to scaled deployment — a structured, measured approach.
+              From initial conversation to scaled deployment -  a structured, measured approach.
             </p>
           </div>
           
@@ -598,7 +598,7 @@ export default function Landing() {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">What Your Clients Experience</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              See what your service users and staff interact with — simple, accessible tools that drive the data behind your dashboard.
+              See what your service users and staff interact with -  simple, accessible tools that drive the data behind your dashboard.
             </p>
           </div>
           
@@ -1111,7 +1111,7 @@ export default function Landing() {
                 How much does aok cost for organisations?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-1">
-                Organisation pricing is tailored to your needs — it depends on the number of clients, staff members, 
+                Organisation pricing is tailored to your needs -  it depends on the number of clients, staff members, 
                 and features you require. Contact us at help@aok.care for a personalised quote.
               </AccordionContent>
             </AccordionItem>
@@ -1122,8 +1122,8 @@ export default function Landing() {
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-2">
                 Your organisation dashboard updates in real time. When a client misses a check-in, their status changes immediately 
-                and designated staff members are alerted via email. The client's location is shared through what3words — a simple 
-                three-word address that pinpoints their location to within 3 metres — so your team can respond quickly.
+                and designated staff members are alerted via email. The client's location is shared through what3words -  a simple 
+                three-word address that pinpoints their location to within 3 metres -  so your team can respond quickly.
               </AccordionContent>
             </AccordionItem>
             
@@ -1154,7 +1154,7 @@ export default function Landing() {
                 Can we customise check-in schedules per client?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-5">
-                Yes. Each client can have their own check-in schedule tailored to their needs — from every hour 
+                Yes. Each client can have their own check-in schedule tailored to their needs -  from every hour 
                 to every 48 hours. Your staff can set and adjust schedules directly from the organisation dashboard, 
                 so higher-risk clients can be monitored more frequently.
               </AccordionContent>
@@ -1247,7 +1247,7 @@ export default function Landing() {
                   </table>
                 </div>
                 
-                <p>This ensures key workers stay informed about their assigned clients, while broader staff are only alerted during genuine emergencies — reducing notification fatigue across your team.</p>
+                <p>This ensures key workers stay informed about their assigned clients, while broader staff are only alerted during genuine emergencies -  reducing notification fatigue across your team.</p>
               </AccordionContent>
             </AccordionItem>
           </Accordion>

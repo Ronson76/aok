@@ -39,8 +39,8 @@ function getBandLabel(band: string): string {
 }
 
 function getBandRange(band: string): string {
-  if (band === "short") return "0 – 2 km";
-  if (band === "medium") return "2 – 5 km";
+  if (band === "short") return "0 - 2 km";
+  if (band === "medium") return "2 - 5 km";
   return "5+ km";
 }
 
@@ -613,7 +613,7 @@ function RouteMap({
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
           <div className="bg-card/95 backdrop-blur-md px-4 py-2 rounded-full text-xs font-medium shadow-lg border border-border flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
-            {routePoints.length === 0 ? "Tap to place your first point" : `${routePoints.length} point${routePoints.length > 1 ? "s" : ""} — tap to add more`}
+            {routePoints.length === 0 ? "Tap to place your first point" : `${routePoints.length} point${routePoints.length > 1 ? "s" : ""} -  tap to add more`}
           </div>
         </div>
       )}
@@ -868,7 +868,7 @@ function RoutePlannerView({ initialRoute, onClearRepeat }: { initialRoute?: Plan
     } else {
       const minsBeforeSunset = Math.round((sunsetTime.getTime() - eta.getTime()) / 60000);
       if (minsBeforeSunset < 30) {
-        safetyCue = `Finishes close to sunset (${sunsetTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}) — plan accordingly`;
+        safetyCue = `Finishes close to sunset (${sunsetTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}) -  plan accordingly`;
       }
     }
   }

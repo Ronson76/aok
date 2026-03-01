@@ -724,11 +724,11 @@ export default function Register() {
                     <div className="space-y-3">
                       <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                         <span className="text-sm text-muted-foreground">Name</span>
-                        <span className="text-sm font-medium" data-testid="text-onboarding-name">{onboardingData?.name || "—"}</span>
+                        <span className="text-sm font-medium" data-testid="text-onboarding-name">{onboardingData?.name || " - "}</span>
                       </div>
                       <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                         <span className="text-sm text-muted-foreground">Email</span>
-                        <span className="text-sm font-medium break-all" data-testid="text-onboarding-email">{onboardingData?.email || "—"}</span>
+                        <span className="text-sm font-medium break-all" data-testid="text-onboarding-email">{onboardingData?.email || " - "}</span>
                       </div>
                       {onboardingData?.contacts && onboardingData.contacts.filter((c: any) => c.name?.trim()).length > 0 && (
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-1">

@@ -657,7 +657,7 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
               <Radio className="w-5 h-5" />
               <div>
                 <p className="text-sm font-medium">{JOB_TYPES.find(j => j.value === session.jobType)?.label || session.jobType}</p>
-                <p className="text-xs text-muted-foreground">Started {session.startedAt ? format(new Date(session.startedAt), "HH:mm") : "—"}</p>
+                <p className="text-xs text-muted-foreground">Started {session.startedAt ? format(new Date(session.startedAt), "HH:mm") : " - "}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -911,7 +911,7 @@ function ActiveSession({ session, onRefresh }: { session: LoneWorkerSession; onR
               )}
               <div>
                 <p className="text-muted-foreground">Started</p>
-                <p className="font-medium" data-testid="text-detail-started">{session.startedAt ? format(new Date(session.startedAt), "dd/MM/yyyy HH:mm") : "—"}</p>
+                <p className="font-medium" data-testid="text-detail-started">{session.startedAt ? format(new Date(session.startedAt), "dd/MM/yyyy HH:mm") : " - "}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Expected Duration</p>
@@ -1023,8 +1023,8 @@ function SessionHistory() {
               {getStatusBadge(s.status)}
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-              <div>Started: {s.startedAt ? format(new Date(s.startedAt), "dd/MM/yyyy HH:mm") : "—"}</div>
-              <div>Resolved: {s.resolvedAt ? format(new Date(s.resolvedAt), "dd/MM/yyyy HH:mm") : "—"}</div>
+              <div>Started: {s.startedAt ? format(new Date(s.startedAt), "dd/MM/yyyy HH:mm") : " - "}</div>
+              <div>Resolved: {s.resolvedAt ? format(new Date(s.resolvedAt), "dd/MM/yyyy HH:mm") : " - "}</div>
               {s.outcome && <div className="col-span-2">Outcome: {s.outcome.replace(/_/g, " ")}</div>}
               {s.outcomeNotes && <div className="col-span-2">Notes: {s.outcomeNotes}</div>}
             </div>

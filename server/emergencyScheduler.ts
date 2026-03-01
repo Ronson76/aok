@@ -74,7 +74,7 @@ async function processSmsCheckinReminders(): Promise<void> {
 
     for (const user of overdueUsers) {
       // Only send one SMS per check-in cycle:
-      // Compare the exact due timestamp — if we already notified for this due time, skip
+      // Compare the exact due timestamp -  if we already notified for this due time, skip
       if (user.lastSmsNotifiedDueAt && user.lastSmsNotifiedDueAt.getTime() === user.nextCheckInDue.getTime()) {
         continue;
       }
@@ -381,7 +381,7 @@ async function processOverdueLoneWorkerSessions(): Promise<void> {
     for (const session of graceExpired) {
       try {
         await storage.loneWorkerMarkUnresponsive(session.id);
-        console.log(`[LW SCHEDULER] Session ${session.id} marked as unresponsive — alerting supervisor`);
+        console.log(`[LW SCHEDULER] Session ${session.id} marked as unresponsive -  alerting supervisor`);
 
         const worker = await storage.getUserById(session.userId);
         if (!worker) {

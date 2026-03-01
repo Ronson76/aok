@@ -37,10 +37,10 @@ interface ObjectUploaderProps {
  * Features:
  * - Renders as a customizable button that opens a file upload modal
  * - Provides a modal interface for:
- *   - File selection
- *   - File preview
- *   - Upload progress tracking
- *   - Upload status display
+ *  - File selection
+ *  - File preview
+ *  - Upload progress tracking
+ *  - Upload status display
  *
  * The component uses Uppy v5 under the hood to handle all file upload functionality.
  * All file management features are automatically handled by the Uppy dashboard modal.

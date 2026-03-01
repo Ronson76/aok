@@ -1648,7 +1648,7 @@ export async function sendActivityOverdueAlert(
     }
 
     const mainContent = `
-      <p style="margin: 0 0 12px 0;"><strong>${identifier}</strong> started an activity — <strong>${activityLabel}</strong> — with an expected duration of <strong>${durationDisplay}</strong>, but has not checked back in.</p>
+      <p style="margin: 0 0 12px 0;"><strong>${identifier}</strong> started an activity -  <strong>${activityLabel}</strong> -  with an expected duration of <strong>${durationDisplay}</strong>, but has not checked back in.</p>
       <p style="margin: 0 0 12px 0;">The expected time plus a 10-minute grace period has now passed without a response. This may indicate they need assistance.</p>
       <p style="margin: 0; font-weight: 600; color: #DC2626;">Please try to contact them immediately.</p>
     `;
@@ -2117,7 +2117,7 @@ If you didn't request this, you can safely ignore this email.
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
   
   <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-    - The aok Team<br>
+   - The aok Team<br>
     Personal wellbeing tools
   </p>
 </body>

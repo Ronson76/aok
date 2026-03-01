@@ -45,7 +45,7 @@ export default function FunderReadyPage() {
                 Policies don't protect people. <span className="font-semibold text-foreground">Operational control does.</span>
               </p>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                AOK turns everyday safeguarding activity into real-time assurance data — giving boards, regulators and funders continuous proof that risk is being actively managed.
+                AOK turns everyday safeguarding activity into real-time assurance data -  giving boards, regulators and funders continuous proof that risk is being actively managed.
               </p>
             </div>
 
@@ -216,7 +216,7 @@ export default function FunderReadyPage() {
                 </div>
                 <div className="text-center mt-4">
                   <p className="text-muted-foreground italic">
-                    This is continuous safeguarding control monitoring — aligned to modern GRC expectations.
+                    This is continuous safeguarding control monitoring -  aligned to modern GRC expectations.
                   </p>
                 </div>
               </TabsContent>
@@ -347,7 +347,7 @@ export default function FunderReadyPage() {
                     <p className="text-muted-foreground">Organisations are no longer being asked:</p>
                     <p className="text-lg italic text-muted-foreground">"Do you have a safeguarding policy?"</p>
                     <p className="text-muted-foreground">They are being asked:</p>
-                    <p className="text-lg font-semibold">"Can you prove your safeguarding controls are effective — right now?"</p>
+                    <p className="text-lg font-semibold">"Can you prove your safeguarding controls are effective -  right now?"</p>
                   </div>
                   <div className="pt-6 border-t space-y-2">
                     <p className="font-bold text-xl">AOK Makes That Proof Immediate</p>
