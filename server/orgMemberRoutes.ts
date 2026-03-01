@@ -1,6 +1,6 @@
 import { Express, Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
-import { orgMemberStorage, adminStorage } from "./storage";
+import { orgMemberStorage, adminStorage, storage } from "./storage";
 import { z } from "zod";
 import { OrgMemberRole, OrgMemberProfile } from "@shared/schema";
 import { sendTeamMemberInviteEmail } from "./notifications";
@@ -122,6 +122,16 @@ export function registerOrgMemberRoutes(app: Express) {
       const isMatch = await bcrypt.compare(password, member.passwordHash);
       if (!isMatch) {
         return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      const orgUser = await storage.getUserById(member.organizationId);
+      if (orgUser?.orgSubscriptionExpiresAt) {
+        const expiresAt = new Date(orgUser.orgSubscriptionExpiresAt);
+        const now = new Date();
+        const daysSinceExpiry = Math.floor((now.getTime() - expiresAt.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysSinceExpiry > 7) {
+          return res.status(403).json({ error: "Your organisation's subscription has expired. Please contact your organisation administrator." });
+        }
       }
 
       const session = await orgMemberStorage.createMemberSession(member.id);

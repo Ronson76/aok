@@ -1567,12 +1567,17 @@ export default function OrganizationDashboard() {
         const now = new Date();
         const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         if (daysLeft <= 0) {
+          const daysOverdue = Math.abs(daysLeft);
+          const daysUntilLockout = Math.max(0, 7 - daysOverdue);
           return (
             <div className="bg-red-600 text-white px-4 py-3" data-testid="banner-subscription-expired">
               <div className="container mx-auto flex items-center gap-3">
                 <AlertTriangle className="h-5 w-5 flex-shrink-0" />
                 <p className="text-sm font-medium">
-                  Your subscription has expired. Please contact AOK to renew your subscription and avoid service interruption.
+                  Your subscription has expired. {daysUntilLockout > 0
+                    ? `You have ${daysUntilLockout} day${daysUntilLockout !== 1 ? "s" : ""} remaining before access is disabled.`
+                    : "Your access will be disabled imminently."
+                  } Please contact AOK to renew your subscription.
                 </p>
               </div>
             </div>
