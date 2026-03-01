@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/contexts/auth-context";
 import {
   ShieldCheck, ArrowLeft, Activity, AlertTriangle, CheckCircle2, Clock,
   Users, BarChart3, FileText, Download, TrendingUp, TrendingDown,
@@ -88,7 +89,15 @@ function RiskBadge({ level }: { level: "low" | "medium" | "high" }) {
 }
 
 export default function AssuranceDashboard() {
+  const { user: authUser } = useAuth();
+  const [, setLocation] = useLocation();
   const [activeScreen, setActiveScreen] = useState("overview");
+
+  useEffect(() => {
+    if (authUser && (!authUser.orgFeatureAssurance || (authUser.orgFeatureAssuranceExpiresAt && new Date(authUser.orgFeatureAssuranceExpiresAt) < new Date()))) {
+      setLocation("/org/dashboard");
+    }
+  }, [authUser, setLocation]);
 
   const { data: overview, isLoading: overviewLoading, error: overviewError } = useQuery<AssuranceOverview>({
     queryKey: ["/api/org/assurance/overview"],

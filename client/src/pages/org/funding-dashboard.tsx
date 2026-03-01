@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/contexts/auth-context";
 import {
   PoundSterling, ArrowLeft, Loader2, Plus, AlertTriangle, CheckCircle2,
   TrendingUp, TrendingDown, ShieldAlert, Download, Settings as SettingsIcon,
@@ -105,7 +106,15 @@ function formatDateTime(dateStr: string | null) {
 
 export default function FundingDashboard() {
   const { toast } = useToast();
+  const { user: authUser } = useAuth();
+  const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
+
+  useEffect(() => {
+    if (authUser && (!authUser.orgFeatureDashboard || (authUser.orgFeatureDashboardExpiresAt && new Date(authUser.orgFeatureDashboardExpiresAt) < new Date()))) {
+      setLocation("/org/dashboard");
+    }
+  }, [authUser, setLocation]);
 
   const [showAddSource, setShowAddSource] = useState(false);
   const [srcName, setSrcName] = useState("");
