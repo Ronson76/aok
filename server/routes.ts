@@ -971,6 +971,15 @@ export async function registerRoutes(
         return res.status(403).json({ error: "Your account has been disabled. Please contact support." });
       }
 
+      if (user.accountType === "organization" && user.orgSubscriptionExpiresAt) {
+        const expiresAt = new Date(user.orgSubscriptionExpiresAt);
+        const now = new Date();
+        const daysSinceExpiry = Math.floor((now.getTime() - expiresAt.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysSinceExpiry > 7) {
+          return res.status(403).json({ error: "Your organisation's subscription has expired. Please contact AOK to renew your subscription." });
+        }
+      }
+
       if (user.twoFactorEnabled && user.twoFactorSecret) {
         if (!totpCode) {
           return res.status(200).json({ requires2FA: true, email });
@@ -1141,6 +1150,15 @@ export async function registerRoutes(
 
       if (user.disabled) {
         return res.status(403).json({ error: "Your account has been disabled. Please contact support." });
+      }
+
+      if (user.orgSubscriptionExpiresAt) {
+        const expiresAt = new Date(user.orgSubscriptionExpiresAt);
+        const now = new Date();
+        const daysSinceExpiry = Math.floor((now.getTime() - expiresAt.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysSinceExpiry > 7) {
+          return res.status(403).json({ error: "Your organisation's subscription has expired. Please contact AOK to renew your subscription." });
+        }
       }
 
       const totpCode = req.body.totpCode as string | undefined;
