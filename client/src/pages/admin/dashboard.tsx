@@ -2147,6 +2147,7 @@ export default function AdminDashboard() {
                       { key: "orgFeatureAssurance", label: "Assurance / GRC", expiresKey: "orgFeatureAssuranceExpiresAt" },
                       { key: "orgFeatureApiAccess", label: "API Access", expiresKey: "orgFeatureApiAccessExpiresAt" },
                       { key: "orgFeatureDashboard", label: "Finance / Dashboard", expiresKey: "orgFeatureDashboardExpiresAt" },
+                      { key: "orgFeatureLoneWorker", label: "Lone Worker", expiresKey: "orgFeatureLoneWorkerExpiresAt" },
                     ] as const).map(({ key, label, expiresKey }) => (
                       <div key={key} className="space-y-1.5 py-1.5 px-2 rounded-md hover:bg-muted/50">
                         <div className="flex items-center justify-between">
