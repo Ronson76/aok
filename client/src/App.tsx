@@ -25,7 +25,6 @@ import { EmergencyConfirmOverlay } from "@/components/emergency-confirm-overlay"
 import { shakeDetector } from "@/lib/shake-detector";
 import Landing from "@/pages/landing";
 import EntrySelect from "@/pages/entry-select";
-import VideoIntro from "@/pages/video-intro";
 import LandingIndividual from "@/pages/landing-individual";
 import LandingLoneWorker from "@/pages/landing-lone-worker";
 import Login from "@/pages/login";
@@ -671,25 +670,11 @@ function Router() {
         </div>
       );
     }
-    const videoSeen = localStorage.getItem("aok_video_seen");
-    if (!videoSeen) {
-      return <VideoIntro onContinue={() => {
-        localStorage.setItem("aok_video_seen", "true");
-        setLocation("/");
-      }} />;
-    }
     const savedLanding = localStorage.getItem("aok_landing_type");
     if (savedLanding === "individual") return <LandingIndividual />;
     if (savedLanding === "organisations") return <Landing />;
     if (savedLanding === "lone-worker") return <LandingLoneWorker />;
     return <EntrySelect />;
-  }
-
-  if (location === "/video") {
-    return <VideoIntro onContinue={() => {
-      localStorage.setItem("aok_video_seen", "true");
-      setLocation("/");
-    }} />;
   }
 
   if (location === "/individual") {
