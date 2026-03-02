@@ -835,10 +835,10 @@ export default function DemoOTF() {
             Get in touch to arrange a live walkthrough tailored to Off The Fence's three programmes. We'll show you exactly how AOK can support your clients, protect your staff, and evidence your impact.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-3">
-            <a href="mailto:hello@aok.uk?subject=Off%20The%20Fence%20-%20AOK%20Demo%20Request">
+            <a href="mailto:hello@aok.uk?subject=Off%20The%20Fence%20-%20AOK%20Pilot%20Request">
               <Button size="lg" className="w-full sm:w-auto gap-2 bg-green-600" data-testid="button-contact-demo">
                 <Mail className="h-4 w-4" />
-                Request a Demo
+                Request a Pilot
               </Button>
             </a>
             <Link href="/organisations">
