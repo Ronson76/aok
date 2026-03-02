@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ShieldCheck, Bell, Users, Clock, CheckCircle, Heart, Mail,
   MapPin, Phone, AlertTriangle, Building2, User,
-  ChevronRight, Shield, Lock, TrendingUp,
+  ChevronRight, Shield, Lock, TrendingUp, ArrowRight,
   ArrowLeft, Map, HardHat, Eye, FileCheck,
   ClipboardCheck, BarChart3, Home, BookOpen,
   UserCheck, Siren, Activity, HandHeart,
@@ -20,7 +20,8 @@ type Programme = "gateway" | "schools" | "antifreeze";
 const GATEWAY_SCENARIOS = [
   {
     title: "Sarah arrives at Gateway",
-    description: "A new client is referred to Gateway Women's Centre in crisis. The support worker registers Sarah on AOK, assigns a key worker, and sets up regular check-ins.",
+    aokFeature: "Client Registration",
+    description: "A woman is referred to Gateway for one-to-one emotional and practical support. Her support worker registers her using AOK's Client Registration, assigns a key worker, and sets up a regular welfare schedule.",
     mockup: (
       <div className="flex flex-col h-full p-4 gap-3">
         <div className="flex items-center gap-2">
@@ -53,7 +54,8 @@ const GATEWAY_SCENARIOS = [
   },
   {
     title: "Daily welfare check-in",
-    description: "Sarah receives a daily check-in prompt. She confirms she's safe with one tap. If she doesn't respond, her key worker Emma is automatically notified.",
+    aokFeature: "Scheduled Check-ins",
+    description: "Gateway provides ongoing one-to-one support - in person, by phone, text, or Zoom. AOK's Scheduled Check-ins send Sarah a daily welfare prompt. If she doesn't respond, her key worker Emma is automatically notified via SMS and email.",
     mockup: (
       <div className="flex flex-col h-full p-4 gap-3">
         <div className="flex items-center gap-2">
@@ -79,7 +81,8 @@ const GATEWAY_SCENARIOS = [
   },
   {
     title: "Safeguarding concern logged",
-    description: "A support worker notices signs of domestic abuse. They log a safeguarding concern through AOK with full details, evidence, and escalation to the safeguarding lead.",
+    aokFeature: "Safeguarding Hub",
+    description: "Gateway staff provide advice, information, and referrals to specialist services. When a support worker identifies a safeguarding concern, they log it through AOK's Safeguarding Hub with full details, evidence, and escalation to the safeguarding lead.",
     mockup: (
       <div className="flex flex-col h-full p-4 gap-3">
         <div className="flex items-center gap-2">
@@ -114,7 +117,8 @@ const GATEWAY_SCENARIOS = [
   },
   {
     title: "Funder outcomes report",
-    description: "Gateway needs to report outcomes to funders. AOK generates compliance-ready reports showing client engagement, check-in rates, safeguarding actions, and impact metrics.",
+    aokFeature: "Funding Dashboard",
+    description: "Gateway needs to evidence the impact of their workshops on budgeting, financial literacy, employability, and healthy relationships. AOK's Funding Dashboard generates compliance-ready reports showing client engagement, check-in rates, safeguarding actions, and measurable outcomes.",
     mockup: (
       <div className="flex flex-col h-full p-4 gap-3">
         <div className="flex items-center gap-2">
@@ -152,8 +156,9 @@ const GATEWAY_SCENARIOS = [
 
 const SCHOOLS_SCENARIOS = [
   {
-    title: "Mentoring session tracking",
-    description: "A youth mentor registers a student for one-to-one mentoring. AOK tracks session attendance, progress notes, and flags any welfare concerns automatically.",
+    title: "One-to-one mentoring",
+    aokFeature: "Client Registration + Scheduled Check-ins",
+    description: "Off The Fence offers one-to-one mentoring to help students find positive ways of dealing with challenges in a non-judgmental and safe environment. AOK's Client Registration pairs each student with their mentor, and Scheduled Check-ins track ongoing engagement.",
     mockup: (
       <div className="flex flex-col h-full p-4 gap-3">
         <div className="flex items-center gap-2">
@@ -188,8 +193,9 @@ const SCHOOLS_SCENARIOS = [
     ),
   },
   {
-    title: "Safeguarding for young people",
-    description: "During a 'Where's Your Head At?' session, a student discloses self-harm. The facilitator logs an immediate safeguarding concern with full audit trail and school liaison.",
+    title: "Where's Your Head At? - disclosure",
+    aokFeature: "Safeguarding Hub",
+    description: "During one of the nine 'Where's Your Head At?' small group courses - covering anxiety, bereavement, anger, and self-esteem - a student discloses self-harm. The facilitator uses AOK's Safeguarding Hub to log the concern immediately with a full audit trail and DSL notification.",
     mockup: (
       <div className="flex flex-col h-full p-4 gap-3">
         <div className="flex items-center gap-2">
@@ -224,8 +230,9 @@ const SCHOOLS_SCENARIOS = [
     ),
   },
   {
-    title: "School partnership dashboard",
-    description: "Off The Fence shares anonymised engagement data with partner schools - session counts, student wellbeing trends, and programme impact without exposing personal details.",
+    title: "School partnership reporting",
+    aokFeature: "Analytics Dashboard + Funding Dashboard",
+    description: "Off The Fence works with schools to support SMSC and RE curricula through prayer and reflection spaces. AOK's Analytics Dashboard and Funding Dashboard share anonymised engagement data with partner schools - session counts, student wellbeing trends, and programme impact - without exposing personal details.",
     mockup: (
       <div className="flex flex-col h-full p-4 gap-3">
         <div className="flex items-center gap-2">
@@ -258,8 +265,9 @@ const SCHOOLS_SCENARIOS = [
     ),
   },
   {
-    title: "Transition mentoring check-in",
-    description: "Year 6 students being mentored through the primary-to-secondary transition receive gentle check-ins. Parents and the school are kept informed of engagement.",
+    title: "Transition mentoring",
+    aokFeature: "Scheduled Check-ins",
+    description: "Off The Fence offers transition mentoring to support students through the move from primary to secondary school. AOK's Scheduled Check-ins send gentle welfare prompts to students during this period, keeping parents and the school informed of engagement.",
     mockup: (
       <div className="flex flex-col h-full p-4 gap-3">
         <div className="flex items-center gap-2">
@@ -289,8 +297,9 @@ const SCHOOLS_SCENARIOS = [
 
 const ANTIFREEZE_SCENARIOS = [
   {
-    title: "Street outreach - lone worker",
-    description: "Outreach staff head out onto Brighton's streets in the evening. AOK's Lone Worker Hub monitors their safety with timed check-ins and GPS location tracking.",
+    title: "'On the streets' care - staff safety",
+    aokFeature: "Lone Worker Hub",
+    description: "Antifreeze regularly goes out onto the streets of Brighton and Hove to deliver hot food, drink, sleeping bags, and clothes. AOK's Lone Worker Hub monitors outreach staff safety with timed check-ins and GPS location tracking during these evening sessions.",
     mockup: (
       <div className="flex flex-col h-full p-4 gap-3">
         <div className="flex items-center gap-2">
@@ -328,8 +337,9 @@ const ANTIFREEZE_SCENARIOS = [
     ),
   },
   {
-    title: "Drop-in attendance tracking",
-    description: "Clients attending the Antifreeze drop-in are checked in on arrival. AOK tracks attendance patterns, helping identify those who stop engaging and may need outreach.",
+    title: "Drop-in sessions",
+    aokFeature: "Scheduled Check-ins + Overdue Alerts",
+    description: "Through drop-in sessions, Antifreeze clients receive meals, hot drinks, clothing, and sleeping bags. AOK's Scheduled Check-ins track attendance at each session, and Overdue Alerts automatically flag clients who stop attending so outreach workers can follow up.",
     mockup: (
       <div className="flex flex-col h-full p-4 gap-3">
         <div className="flex items-center gap-2">
@@ -354,8 +364,9 @@ const ANTIFREEZE_SCENARIOS = [
     ),
   },
   {
-    title: "Key worker case management",
-    description: "A key worker supports a client with housing applications and benefits. AOK tracks each interaction, creating an auditable record for funders and commissioners.",
+    title: "1-to-1 key worker support",
+    aokFeature: "Activity Log + Audit Trail",
+    description: "Antifreeze key workers help support clients with practical needs such as housing, financial, and welfare applications, and refer to specialist agencies. AOK's Activity Log captures every interaction, and the tamper-evident Audit Trail creates the evidence base funders and commissioners require.",
     mockup: (
       <div className="flex flex-col h-full p-4 gap-3">
         <div className="flex items-center gap-2">
@@ -387,8 +398,9 @@ const ANTIFREEZE_SCENARIOS = [
     ),
   },
   {
-    title: "Emergency alert on the streets",
-    description: "During evening outreach, a worker encounters a dangerous situation. One press of the SOS button alerts the team with their GPS location instantly.",
+    title: "Emergency on the streets",
+    aokFeature: "Emergency SOS",
+    description: "During evening street outreach delivering essential supplies, a worker encounters a dangerous situation. One press of AOK's Emergency SOS button alerts the entire team with the worker's GPS location instantly - no fumbling, no delays.",
     mockup: (
       <div className="flex flex-col h-full p-4 gap-2">
         <div className="flex items-center gap-2">
@@ -438,10 +450,16 @@ function ScenarioCard({ scenario, index }: { scenario: typeof GATEWAY_SCENARIOS[
     <div className={`flex flex-col md:flex-row items-center gap-8 py-8 ${index % 2 === 1 ? "md:flex-row-reverse" : ""}`}>
       <div className="flex-1 space-y-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold">
+          <div className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
             {index + 1}
           </div>
-          <h3 className="text-xl font-semibold" data-testid={`text-scenario-title-${index}`}>{scenario.title}</h3>
+          <div>
+            <h3 className="text-xl font-semibold" data-testid={`text-scenario-title-${index}`}>{scenario.title}</h3>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="text-xs text-muted-foreground">AOK feature:</span>
+              <Badge variant="secondary" className="text-[10px] font-medium" data-testid={`badge-aok-feature-${index}`}>{scenario.aokFeature}</Badge>
+            </div>
+          </div>
         </div>
         <p className="text-muted-foreground leading-relaxed">{scenario.description}</p>
       </div>
@@ -459,54 +477,54 @@ export default function DemoOTF() {
     gateway: {
       name: "Gateway Women's Centre",
       tagline: "Support for women, by women",
-      description: "Gateway is dedicated to empowering women facing crisis, emotional hardship, or practical difficulties. AOK provides the digital infrastructure to track welfare, manage safeguarding, and report outcomes to funders.",
+      description: "Gateway is dedicated to empowering women facing crisis, emotional hardship, or practical difficulties - offering one-to-one emotional, practical and spiritual support, an Essentials Hub for food, toiletries, and clothing, and workshops on budgeting, financial literacy, employability, and healthy relationships. AOK provides the digital backbone to track welfare, manage safeguarding, and report outcomes to funders.",
       color: "text-pink-600",
       bgColor: "bg-pink-50 dark:bg-pink-950",
       borderColor: "border-pink-200 dark:border-pink-800",
       icon: <HandHeart className="h-6 w-6 text-pink-600" />,
       features: [
-        { icon: <UserCheck className="h-5 w-5" />, title: "Client registration", desc: "Register women with assigned key workers and personalised check-in schedules" },
-        { icon: <Bell className="h-5 w-5" />, title: "Daily welfare check-ins", desc: "Automated prompts with escalation if a client doesn't respond" },
-        { icon: <Shield className="h-5 w-5" />, title: "Safeguarding Hub", desc: "Log concerns with full audit trail, evidence uploads, and escalation workflows" },
-        { icon: <Utensils className="h-5 w-5" />, title: "Essentials tracking", desc: "Track food, clothing, and toiletry provisions per client" },
-        { icon: <MessageCircle className="h-5 w-5" />, title: "1-to-1 session notes", desc: "Secure, encrypted notes for each support session" },
-        { icon: <BarChart3 className="h-5 w-5" />, title: "Funder reporting", desc: "Compliance-ready reports with engagement metrics and outcomes data" },
+        { icon: <UserCheck className="h-5 w-5" />, theirWord: "Referral and key worker assignment", aokName: "Client Registration", desc: "Register women with assigned key workers and personalised check-in schedules" },
+        { icon: <Bell className="h-5 w-5" />, theirWord: "Ongoing 1-to-1 welfare support", aokName: "Scheduled Check-ins", desc: "Automated daily prompts via SMS or app with escalation if a client doesn't respond" },
+        { icon: <Shield className="h-5 w-5" />, theirWord: "Safeguarding and specialist referrals", aokName: "Safeguarding Hub", desc: "Log concerns with full audit trail, evidence uploads, and escalation workflows" },
+        { icon: <Utensils className="h-5 w-5" />, theirWord: "Essentials Hub provisions", aokName: "Activity Log", desc: "Track food, clothing, toiletry, and cleaning supply provisions per client" },
+        { icon: <MessageCircle className="h-5 w-5" />, theirWord: "Emotional and practical support", aokName: "Audit Trail", desc: "Secure, encrypted records of every support session - in person, phone, text, or Zoom" },
+        { icon: <BarChart3 className="h-5 w-5" />, theirWord: "Impact reporting for funders", aokName: "Funding Dashboard", desc: "Compliance-ready reports showing workshop outcomes, engagement rates, and impact data" },
       ],
       scenarios: GATEWAY_SCENARIOS,
     },
     schools: {
       name: "Schools and Youth",
       tagline: "Standing by our young people",
-      description: "The Schools and Youth programme supports young people through mentoring, lunch clubs, and the 'Where's Your Head At?' courses. AOK adds safeguarding rigour, session tracking, and school partnership reporting.",
+      description: "The Schools and Youth programme supports young people's emotional, mental, and social development through one-to-one mentoring, safe and welcoming lunch clubs, nine 'Where's Your Head At?' courses tackling anxiety, bereavement, anger, and self-esteem, and interactive prayer and reflection spaces. AOK adds safeguarding rigour, session tracking, and school partnership reporting.",
       color: "text-indigo-600",
       bgColor: "bg-indigo-50 dark:bg-indigo-950",
       borderColor: "border-indigo-200 dark:border-indigo-800",
       icon: <GraduationCap className="h-6 w-6 text-indigo-600" />,
       features: [
-        { icon: <BookOpen className="h-5 w-5" />, title: "Mentoring tracker", desc: "Track one-to-one mentoring sessions, progress, and student engagement" },
-        { icon: <Shield className="h-5 w-5" />, title: "Child safeguarding", desc: "Immediate concern logging with DSL notification and tamper-evident records" },
-        { icon: <CalendarCheck className="h-5 w-5" />, title: "Session scheduling", desc: "Manage WYHA courses, lunch clubs, and reflection spaces across multiple schools" },
-        { icon: <GraduationCap className="h-5 w-5" />, title: "Transition support", desc: "Track Year 6 students through primary-to-secondary transition with gentle check-ins" },
-        { icon: <Eye className="h-5 w-5" />, title: "Anonymised reporting", desc: "Share engagement data with schools without exposing personal details" },
-        { icon: <ClipboardCheck className="h-5 w-5" />, title: "Compliance audit", desc: "Full audit trail for Ofsted, DBS compliance, and governance requirements" },
+        { icon: <BookOpen className="h-5 w-5" />, theirWord: "One-to-one mentoring", aokName: "Client Registration", desc: "Pair each student with their mentor and track sessions in a safe, non-judgmental record" },
+        { icon: <Shield className="h-5 w-5" />, theirWord: "Child protection and disclosures", aokName: "Safeguarding Hub", desc: "Immediate concern logging with DSL notification and tamper-evident records" },
+        { icon: <CalendarCheck className="h-5 w-5" />, theirWord: "WYHA courses and lunch clubs", aokName: "Scheduled Check-ins", desc: "Track the nine 'Where's Your Head At?' courses, lunch clubs, and reflection spaces" },
+        { icon: <GraduationCap className="h-5 w-5" />, theirWord: "Transition mentoring (Year 6)", aokName: "Scheduled Check-ins", desc: "Support students through primary-to-secondary transition with gentle welfare prompts" },
+        { icon: <Eye className="h-5 w-5" />, theirWord: "School partnership data sharing", aokName: "Analytics Dashboard", desc: "Share anonymised engagement data with partner schools without exposing personal details" },
+        { icon: <ClipboardCheck className="h-5 w-5" />, theirWord: "Governance and compliance", aokName: "Assurance Dashboard", desc: "Full audit trail for Ofsted, DBS compliance, and trustee governance requirements" },
       ],
       scenarios: SCHOOLS_SCENARIOS,
     },
     antifreeze: {
       name: "Antifreeze",
       tagline: "Supporting individuals out of homelessness",
-      description: "Since 1998, Antifreeze has been a safe space for people experiencing homelessness. AOK protects outreach workers with lone worker monitoring, tracks client engagement, and provides the evidence base funders and commissioners need.",
+      description: "Since 1998, Antifreeze has been a safe and warm space for individuals experiencing homelessness - going out onto the streets to deliver essential supplies, running drop-in sessions with meals, hot drinks, and clothing, providing shower and laundry facilities, and offering one-to-one key worker support for housing, benefits, and welfare. AOK protects outreach staff, tracks client engagement, and provides the evidence base funders and commissioners need.",
       color: "text-orange-600",
       bgColor: "bg-orange-50 dark:bg-orange-950",
       borderColor: "border-orange-200 dark:border-orange-800",
       icon: <Home className="h-6 w-6 text-orange-600" />,
       features: [
-        { icon: <HardHat className="h-5 w-5" />, title: "Lone Worker Hub", desc: "Real-time safety monitoring for staff doing evening street outreach" },
-        { icon: <Siren className="h-5 w-5" />, title: "Emergency SOS", desc: "One-tap emergency alert with GPS location for outreach workers" },
-        { icon: <Users className="h-5 w-5" />, title: "Drop-in tracking", desc: "Monitor attendance patterns and identify clients who stop engaging" },
-        { icon: <Briefcase className="h-5 w-5" />, title: "Key worker case notes", desc: "Track housing applications, benefits support, and referrals per client" },
-        { icon: <Activity className="h-5 w-5" />, title: "Engagement monitoring", desc: "Spot trends in client attendance and flag those at risk of falling through gaps" },
-        { icon: <FileCheck className="h-5 w-5" />, title: "Commissioner reports", desc: "Evidence-based outcomes reporting for local authority commissioners" },
+        { icon: <HardHat className="h-5 w-5" />, theirWord: "'On the streets' outreach safety", aokName: "Lone Worker Hub", desc: "Real-time safety monitoring for staff delivering supplies on Brighton's streets" },
+        { icon: <Siren className="h-5 w-5" />, theirWord: "Emergency during outreach", aokName: "Emergency SOS", desc: "One-tap alert with GPS location when outreach workers face danger" },
+        { icon: <Users className="h-5 w-5" />, theirWord: "Drop-in session attendance", aokName: "Scheduled Check-ins", desc: "Track who attends drop-in sessions and flag those who stop coming" },
+        { icon: <Briefcase className="h-5 w-5" />, theirWord: "Key worker practical support", aokName: "Activity Log", desc: "Record housing applications, benefits support, and specialist referrals per client" },
+        { icon: <Activity className="h-5 w-5" />, theirWord: "Meeting immediate need", aokName: "Overdue Alerts", desc: "Spot clients at risk of falling through the gaps when they stop engaging" },
+        { icon: <FileCheck className="h-5 w-5" />, theirWord: "Commissioner and funder evidence", aokName: "Funding Dashboard", desc: "Evidence-based outcomes reporting for local authority commissioners and grant funders" },
       ],
       scenarios: ANTIFREEZE_SCENARIOS,
     },
@@ -590,15 +608,19 @@ export default function DemoOTF() {
                   <h3 className="text-lg font-semibold mb-6 text-center">How AOK supports {prog.name}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {prog.features.map((feature, i) => (
-                      <Card key={i} className="border">
+                      <Card key={i} className="border" data-testid={`card-feature-${key}-${i}`}>
                         <CardContent className="pt-5 pb-4 px-4">
                           <div className="flex items-start gap-3">
                             <div className={`${prog.bgColor} p-2 rounded-lg flex-shrink-0`}>
                               {feature.icon}
                             </div>
                             <div>
-                              <h4 className="text-sm font-semibold">{feature.title}</h4>
-                              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{feature.desc}</p>
+                              <h4 className="text-sm font-semibold">{feature.theirWord}</h4>
+                              <div className="flex items-center gap-1.5 mt-1 mb-1.5">
+                                <ArrowRight className="h-3 w-3 text-green-600 flex-shrink-0" />
+                                <span className="text-xs font-medium text-green-700 dark:text-green-400">AOK: {feature.aokName}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground leading-relaxed">{feature.desc}</p>
                             </div>
                           </div>
                         </CardContent>
