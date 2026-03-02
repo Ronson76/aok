@@ -648,56 +648,128 @@ export default function DemoOTF() {
         <div className="container mx-auto max-w-4xl">
           <h2 className="text-2xl font-bold text-center mb-8" data-testid="text-unified-title">One Platform, Three Programmes</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="border-pink-200 dark:border-pink-800">
+            <Card className="border-pink-200 dark:border-pink-800" data-testid="card-summary-gateway">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                   <HandHeart className="h-5 w-5 text-pink-600" />
                   <CardTitle className="text-base">Gateway</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="text-sm text-muted-foreground space-y-2">
-                <p>Women's crisis support with daily welfare check-ins, safeguarding, and essentials tracking.</p>
-                <ul className="space-y-1">
-                  <li className="flex items-center gap-2"><CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" /> Client welfare monitoring</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" /> Key worker assignment</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" /> Safeguarding concerns</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" /> Funder outcome reports</li>
+              <CardContent className="text-sm text-muted-foreground space-y-3">
+                <p>Empowering women facing crisis with emotional, practical, and spiritual support.</p>
+                <ul className="space-y-2">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span>1-to-1 support and key worker assignment</span>
+                      <span className="flex items-center gap-1 mt-0.5"><ArrowRight className="h-2.5 w-2.5 text-green-600" /><span className="text-[10px] font-medium text-green-700 dark:text-green-400">Client Registration + Scheduled Check-ins</span></span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span>Safeguarding and specialist referrals</span>
+                      <span className="flex items-center gap-1 mt-0.5"><ArrowRight className="h-2.5 w-2.5 text-green-600" /><span className="text-[10px] font-medium text-green-700 dark:text-green-400">Safeguarding Hub</span></span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span>Essentials Hub provisions</span>
+                      <span className="flex items-center gap-1 mt-0.5"><ArrowRight className="h-2.5 w-2.5 text-green-600" /><span className="text-[10px] font-medium text-green-700 dark:text-green-400">Activity Log</span></span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span>Impact reporting for funders</span>
+                      <span className="flex items-center gap-1 mt-0.5"><ArrowRight className="h-2.5 w-2.5 text-green-600" /><span className="text-[10px] font-medium text-green-700 dark:text-green-400">Funding Dashboard</span></span>
+                    </div>
+                  </li>
                 </ul>
               </CardContent>
             </Card>
 
-            <Card className="border-indigo-200 dark:border-indigo-800">
+            <Card className="border-indigo-200 dark:border-indigo-800" data-testid="card-summary-schools">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                   <GraduationCap className="h-5 w-5 text-indigo-600" />
                   <CardTitle className="text-base">Schools and Youth</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="text-sm text-muted-foreground space-y-2">
-                <p>Student mentoring with child safeguarding, session tracking, and school partnership reporting.</p>
-                <ul className="space-y-1">
-                  <li className="flex items-center gap-2"><CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" /> Mentoring sessions</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" /> Child protection logging</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" /> WYHA course management</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" /> Anonymised school reports</li>
+              <CardContent className="text-sm text-muted-foreground space-y-3">
+                <p>Building resilience in young people through mentoring, courses, and safe spaces.</p>
+                <ul className="space-y-2">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span>One-to-one and transition mentoring</span>
+                      <span className="flex items-center gap-1 mt-0.5"><ArrowRight className="h-2.5 w-2.5 text-green-600" /><span className="text-[10px] font-medium text-green-700 dark:text-green-400">Client Registration + Scheduled Check-ins</span></span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span>Child protection and disclosures</span>
+                      <span className="flex items-center gap-1 mt-0.5"><ArrowRight className="h-2.5 w-2.5 text-green-600" /><span className="text-[10px] font-medium text-green-700 dark:text-green-400">Safeguarding Hub</span></span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span>WYHA courses and lunch clubs</span>
+                      <span className="flex items-center gap-1 mt-0.5"><ArrowRight className="h-2.5 w-2.5 text-green-600" /><span className="text-[10px] font-medium text-green-700 dark:text-green-400">Scheduled Check-ins + Activity Log</span></span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span>School partnership data sharing</span>
+                      <span className="flex items-center gap-1 mt-0.5"><ArrowRight className="h-2.5 w-2.5 text-green-600" /><span className="text-[10px] font-medium text-green-700 dark:text-green-400">Analytics Dashboard</span></span>
+                    </div>
+                  </li>
                 </ul>
               </CardContent>
             </Card>
 
-            <Card className="border-orange-200 dark:border-orange-800">
+            <Card className="border-orange-200 dark:border-orange-800" data-testid="card-summary-antifreeze">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                   <Home className="h-5 w-5 text-orange-600" />
                   <CardTitle className="text-base">Antifreeze</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="text-sm text-muted-foreground space-y-2">
-                <p>Rough sleeper support with outreach worker safety, drop-in tracking, and case management.</p>
-                <ul className="space-y-1">
-                  <li className="flex items-center gap-2"><CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" /> Lone worker monitoring</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" /> Emergency SOS alerts</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" /> Drop-in attendance</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" /> Commissioner reporting</li>
+              <CardContent className="text-sm text-muted-foreground space-y-3">
+                <p>A safe space for individuals experiencing homelessness since 1998.</p>
+                <ul className="space-y-2">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span>'On the streets' outreach safety</span>
+                      <span className="flex items-center gap-1 mt-0.5"><ArrowRight className="h-2.5 w-2.5 text-green-600" /><span className="text-[10px] font-medium text-green-700 dark:text-green-400">Lone Worker Hub + Emergency SOS</span></span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span>Drop-in session attendance</span>
+                      <span className="flex items-center gap-1 mt-0.5"><ArrowRight className="h-2.5 w-2.5 text-green-600" /><span className="text-[10px] font-medium text-green-700 dark:text-green-400">Scheduled Check-ins + Overdue Alerts</span></span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span>Key worker practical support</span>
+                      <span className="flex items-center gap-1 mt-0.5"><ArrowRight className="h-2.5 w-2.5 text-green-600" /><span className="text-[10px] font-medium text-green-700 dark:text-green-400">Activity Log + Audit Trail</span></span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span>Commissioner and funder evidence</span>
+                      <span className="flex items-center gap-1 mt-0.5"><ArrowRight className="h-2.5 w-2.5 text-green-600" /><span className="text-[10px] font-medium text-green-700 dark:text-green-400">Funding Dashboard</span></span>
+                    </div>
+                  </li>
                 </ul>
               </CardContent>
             </Card>
