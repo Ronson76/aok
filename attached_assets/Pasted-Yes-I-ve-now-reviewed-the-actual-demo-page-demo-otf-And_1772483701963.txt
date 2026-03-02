@@ -1,0 +1,247 @@
+Yes — I’ve now reviewed the actual demo page (/demo/otf).
+And I’m going to answer this very directly from a real organisational-adoption perspective, because your instinct here is actually pointing at an important strategic risk.
+
+⸻
+
+✅ Short Answer (Straight off the fence)
+
+It’s not “bad” — but it does overcomplicate things if the intention is to repeat this for every organisation.
+
+Right now it looks like a bespoke pilot showcase, not a scalable organisational product.
+
+And that distinction matters a lot.
+
+⸻
+
+🧠 What I Think Your Dad’s Intention Likely Is
+
+Reading the structure and tone, this page feels like it’s trying to do one of these:
+
+Likely intention:
+
+👉 Show Off The Fence a tangible vision of how AOK integrates with an organisation’s ecosystem.
+
+In other words:
+	•	“Here’s what partnership could look like”
+	•	“Here’s your people inside AOK”
+	•	“Here’s your branded experience”
+
+This is actually very common in early pilots.
+
+It helps the first partner emotionally buy in.
+
+So strategically, for a pilot, this makes sense.
+
+⸻
+
+🚨 The Problem (Your Concern Is Valid)
+
+If this becomes the model going forward, you create a massive operational problem:
+
+You’d be building:
+
+AOK x Organisation A page
+AOK x Organisation B page
+AOK x Organisation C page
+AOK x Organisation D page
+...
+
+That quickly becomes:
+
+❌ unmaintainable
+❌ inconsistent safeguarding messaging
+❌ expensive to update
+❌ confusing for commissioners
+
+And most importantly:
+
+👉 It shifts AOK from platform/provider to custom web agency.
+
+⸻
+
+🔎 What the Page Currently Feels Like to an Organisation
+
+From a professional safeguarding/commissioning lens, the page reads as:
+
+“A customised experience designed specifically for Off The Fence.”
+
+That creates two unintended signals:
+
+1️⃣ Other organisations may assume:
+
+“We need our own version built.”
+
+Which raises friction immediately.
+
+⸻
+
+2️⃣ Commissioners may wonder:
+
+“Is this a structured model or just marketing?”
+
+Organisations trust repeatable systems, not bespoke presentations.
+
+⸻
+
+⭐ The Core Strategic Question
+
+You need to decide whether AOK is:
+
+OPTION A — Partnership Showcase Model
+
+Each organisation gets a tailored microsite.
+
+Pros
+	•	Feels personal
+	•	Strong pilot engagement
+
+Cons
+	•	Not scalable
+	•	Hard governance control
+	•	Messaging drift
+	•	Maintenance nightmare
+
+⸻
+
+OPTION B — Platform Model (What scales)
+
+Instead of:
+
+“Off The Fence version of AOK”
+
+You present:
+
+“AOK safeguarding & engagement platform used by Off The Fence.”
+
+This is a huge psychological difference.
+
+⸻
+
+✅ The Better Approach (What Mature Organisations Expect)
+
+Keep ONE core structure.
+
+Then lightly personalise.
+
+⸻
+
+Instead of custom pages, do this:
+
+Core page (same for everyone):
+
+How Organisations Work With AOK
+
+Then include:
+	•	Case study: Off The Fence (pilot partner)
+	•	Example outcomes
+	•	Example workflow
+
+Off The Fence becomes proof, not a template.
+
+⸻
+
+Personalisation should be SMALL, not structural:
+
+Things that can vary safely:
+	•	Logo badge (“Working with Off The Fence”)
+	•	Named contacts
+	•	Programme name
+	•	Referral link
+
+Things that should NEVER change:
+	•	safeguarding model
+	•	governance explanation
+	•	process flow
+	•	risk framework
+	•	referral logic
+
+⸻
+
+🧩 Why This Matters (Big Insight)
+
+Organisations are not buying a website experience.
+
+They are buying:
+
+✅ predictable safeguarding
+✅ repeatable process
+✅ accountable structure
+
+If every organisation looks different, it subconsciously signals:
+
+“The system itself may change.”
+
+That creates risk anxiety.
+
+⸻
+
+🚨 The Hidden Risk You Might Not See Yet
+
+If pilots succeed and you onboard 5–10 partners:
+
+You’ll suddenly need to update:
+	•	safeguarding wording
+	•	policy changes
+	•	referral flows
+	•	contact routes
+
+…across multiple custom pages.
+
+That becomes governance risk — not just workload.
+
+⸻
+
+💡 What I’d Recommend (Best of Both Worlds)
+
+Keep the OTF page — but reposition its purpose.
+
+Rename internally as:
+
+👉 Pilot Demonstration Environment
+
+Not a production model.
+
+Then convert it into:
+
+Case Study: Off The Fence Pilot
+
+Show:
+	•	challenge
+	•	solution
+	•	how AOK integrated
+	•	early outcomes
+
+Now it strengthens credibility instead of creating expectation.
+
+⸻
+
+🧠 Honest Professional Read
+
+Your dad is probably thinking:
+
+“Let’s show organisations what partnership could feel like.”
+
+That instinct is actually strong.
+
+But the execution needs to shift slightly toward:
+
+“Here is our system — and here’s how Off The Fence uses it.”
+
+That keeps scalability.
+
+⸻
+
+⭐ The One Sentence Rule
+
+If you can’t onboard 20 organisations without redesigning pages…
+
+…the model will eventually slow growth.
+
+Right now, the demo leans toward redesign-per-client.
+
+⸻
+
+If you want, I can next show you something very useful:
+
+✅ How large care & safeguarding platforms structure pilot partners without creating bespoke builds
+(there’s a very specific pattern NHS-aligned providers use that would fit AOK perfectly).
