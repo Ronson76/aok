@@ -95,6 +95,7 @@ import WellbeingAI from "@/pages/wellbeing-ai";
 import LoneWorker from "@/pages/lone-worker";
 import Errands from "@/pages/errands";
 import Demo from "@/pages/demo";
+import DemoOTF from "@/pages/demo-otf";
 import Security from "@/pages/security";
 import FunderReady from "@/pages/funder-ready";
 import { TermsModal } from "@/components/terms-modal";
@@ -747,6 +748,10 @@ function Router() {
 
   if (location === "/demo") {
     return <Demo />;
+  }
+
+  if (location === "/demo/otf") {
+    return <DemoOTF />;
   }
 
   if (location === "/guide") {
