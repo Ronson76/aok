@@ -1729,7 +1729,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Get all incidents
   app.get("/api/org/safeguarding/incidents", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const [incidents, emergencyAlerts] = await Promise.all([
         storage.getIncidents(orgId),
         organizationStorage.getOrganizationEmergencyAlerts(orgId),
@@ -1766,7 +1766,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Create incident
   app.post("/api/org/safeguarding/incidents", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       
       // Validate request body
       const parseResult = insertIncidentSchema.safeParse(req.body);
@@ -1796,7 +1796,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Resolve incident
   app.patch("/api/org/safeguarding/incidents/:id/resolve", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const { resolution } = req.body;
       const incident = await storage.resolveIncident(orgId, req.params.id, resolution, orgId);
       
@@ -1823,7 +1823,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Get all welfare concerns
   app.get("/api/org/safeguarding/welfare-concerns", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const concerns = await storage.getWelfareConcerns(orgId);
       res.json(concerns);
     } catch (error) {
@@ -1835,7 +1835,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Create welfare concern
   app.post("/api/org/safeguarding/welfare-concerns", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const orgEmail = (req.user as any).email;
       const orgName = (req.user as any).name || "Organisation";
       
@@ -1915,7 +1915,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Resolve welfare concern
   app.patch("/api/org/safeguarding/welfare-concerns/:id/resolve", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const { notes } = req.body;
       const concern = await storage.resolveWelfareConcern(orgId, req.params.id, notes, orgId);
       
@@ -1942,7 +1942,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Get all case files
   app.get("/api/org/safeguarding/case-files", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const caseFiles = await storage.getCaseFiles(orgId);
       res.json(caseFiles);
     } catch (error) {
@@ -1954,7 +1954,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Get case file by ID
   app.get("/api/org/safeguarding/case-files/:id", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const caseFile = await storage.getCaseFile(orgId, req.params.id);
       
       if (!caseFile) {
@@ -1971,7 +1971,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Create case file for a client
   app.post("/api/org/safeguarding/case-files", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const { clientId } = req.body;
       
       // Check if case file already exists for this client
@@ -2001,7 +2001,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Update case file
   app.patch("/api/org/safeguarding/case-files/:id", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const caseFile = await storage.updateCaseFile(orgId, req.params.id, req.body);
       
       if (!caseFile) {
@@ -2038,7 +2038,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Add case note
   app.post("/api/org/safeguarding/case-files/:id/notes", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       
       // Validate request body
       const parseResult = insertCaseNoteSchema.safeParse(req.body);
@@ -2066,7 +2066,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Get escalation rules
   app.get("/api/org/safeguarding/escalation-rules", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const rules = await storage.getEscalationRules(orgId);
       res.json(rules);
     } catch (error) {
@@ -2078,7 +2078,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Create escalation rule
   app.post("/api/org/safeguarding/escalation-rules", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       
       // Validate request body
       const parseResult = insertEscalationRuleSchema.safeParse(req.body);
@@ -2107,7 +2107,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Update escalation rule
   app.patch("/api/org/safeguarding/escalation-rules/:id", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const rule = await storage.updateEscalationRule(orgId, req.params.id, req.body);
       
       if (!rule) {
@@ -2133,7 +2133,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Delete escalation rule
   app.delete("/api/org/safeguarding/escalation-rules/:id", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const deleted = await storage.deleteEscalationRule(orgId, req.params.id);
       
       if (!deleted) {
@@ -2158,7 +2158,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Get missed check-in escalations
   app.get("/api/org/safeguarding/missed-checkin-escalations", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const escalations = await storage.getMissedCheckInEscalations(orgId);
       res.json(escalations);
     } catch (error) {
@@ -2170,7 +2170,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Get audit trail (safeguarding page - legacy)
   app.get("/api/org/safeguarding/audit-trail", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const limit = parseInt(req.query.limit as string) || 100;
       const trail = await storage.getAuditTrail(orgId, limit);
       res.json(trail);
@@ -2186,7 +2186,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.get("/api/org/safeguarding/leads", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const leads = await db.select().from(safeguardingLeads).where(eq(safeguardingLeads.organizationId, orgId)).orderBy(desc(safeguardingLeads.createdAt));
       res.json(leads);
     } catch (error) {
@@ -2199,7 +2199,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.post("/api/org/safeguarding/leads", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const { name, role, email, phone, isPrimary } = req.body;
       if (!name || !role) return res.status(400).json({ error: "Name and role are required" });
       if (isPrimary) {
@@ -2217,7 +2217,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.patch("/api/org/safeguarding/leads/:id", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const { name, role, email, phone, isPrimary } = req.body;
       if (isPrimary) {
         await db.update(safeguardingLeads).set({ isPrimary: false, updatedAt: new Date() }).where(eq(safeguardingLeads.organizationId, orgId));
@@ -2235,7 +2235,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.delete("/api/org/safeguarding/leads/:id", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       await db.delete(safeguardingLeads).where(and(eq(safeguardingLeads.id, req.params.id), eq(safeguardingLeads.organizationId, orgId)));
       res.json({ success: true });
     } catch (error) {
@@ -2248,7 +2248,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.get("/api/org/safeguarding/dbs-checks", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const checks = await db.select().from(dbsChecks).where(eq(dbsChecks.organizationId, orgId)).orderBy(desc(dbsChecks.createdAt));
       res.json(checks);
     } catch (error) {
@@ -2261,7 +2261,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.post("/api/org/safeguarding/dbs-checks", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const { staffName, staffEmail, dbsType, certificateNumber, issueDate, expiryDate, status, notes } = req.body;
       if (!staffName || !dbsType) return res.status(400).json({ error: "Staff name and DBS type are required" });
       const [check] = await db.insert(dbsChecks).values({
@@ -2280,7 +2280,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.patch("/api/org/safeguarding/dbs-checks/:id", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const updates: any = { updatedAt: new Date() };
       const { staffName, staffEmail, dbsType, certificateNumber, issueDate, expiryDate, status, notes } = req.body;
       if (staffName) updates.staffName = staffName;
@@ -2304,7 +2304,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.delete("/api/org/safeguarding/dbs-checks/:id", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       await db.delete(dbsChecks).where(and(eq(dbsChecks.id, req.params.id), eq(dbsChecks.organizationId, orgId)));
       res.json({ success: true });
     } catch (error) {
@@ -2317,7 +2317,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.get("/api/org/safeguarding/training-records", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const records = await db.select().from(trainingRecords).where(eq(trainingRecords.organizationId, orgId)).orderBy(desc(trainingRecords.createdAt));
       res.json(records);
     } catch (error) {
@@ -2330,7 +2330,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.post("/api/org/safeguarding/training-records", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const { staffName, staffEmail, courseName, provider, completionDate, expiryDate, certificateRef, status, notes } = req.body;
       if (!staffName || !courseName) return res.status(400).json({ error: "Staff name and course name are required" });
       const [record] = await db.insert(trainingRecords).values({
@@ -2349,7 +2349,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.patch("/api/org/safeguarding/training-records/:id", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const updates: any = { updatedAt: new Date() };
       const { staffName, staffEmail, courseName, provider, completionDate, expiryDate, certificateRef, status, notes } = req.body;
       if (staffName) updates.staffName = staffName;
@@ -2374,7 +2374,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.delete("/api/org/safeguarding/training-records/:id", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       await db.delete(trainingRecords).where(and(eq(trainingRecords.id, req.params.id), eq(trainingRecords.organizationId, orgId)));
       res.json({ success: true });
     } catch (error) {
@@ -2387,7 +2387,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.get("/api/org/safeguarding/policy-summary", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const leads = await db.select().from(safeguardingLeads).where(eq(safeguardingLeads.organizationId, orgId));
       const checks = await db.select().from(dbsChecks).where(eq(dbsChecks.organizationId, orgId));
       const records = await db.select().from(trainingRecords).where(eq(trainingRecords.organizationId, orgId));
@@ -2426,7 +2426,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Get comprehensive filtered audit trail (dashboard)
   app.get("/api/org/audit-trail", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const filters: any = {};
       if (req.query.entityType) filters.entityType = req.query.entityType as string;
       if (req.query.action) filters.action = req.query.action as string;
@@ -2446,7 +2446,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Verify audit trail hash chain integrity
   app.get("/api/org/audit-trail/verify", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
       const result = await storage.verifyAuditChain(orgId, startDate, endDate);
@@ -2470,7 +2470,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Get risk reports
   app.get("/api/org/safeguarding/risk-reports", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const reports = await storage.getRiskReports(orgId);
       res.json(reports);
     } catch (error) {
@@ -2482,7 +2482,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Review risk report
   app.patch("/api/org/safeguarding/risk-reports/:id/review", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const { notes } = req.body;
       const report = await storage.reviewRiskReport(orgId, req.params.id, orgId, notes);
       
@@ -2509,7 +2509,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Get safeguarding summary/stats
   app.get("/api/org/safeguarding/summary", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       
       const [incidents, concerns, caseFiles, escalations, riskReports, emergencyAlerts] = await Promise.all([
         storage.getIncidents(orgId),
@@ -2573,7 +2573,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Get missed check-ins for organization's clients
   app.get("/api/org/missed-checkins", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const missedCheckIns = await organizationStorage.getOrganizationMissedCheckIns(orgId);
       res.json(missedCheckIns);
     } catch (error) {
@@ -2585,7 +2585,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Get emergency alerts for organization's clients
   app.get("/api/org/emergency-alerts", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const alerts = await organizationStorage.getOrganizationEmergencyAlerts(orgId);
       res.json(alerts);
     } catch (error) {
@@ -2597,7 +2597,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Get deactivation confirmations for organization's clients
   app.get("/api/org/safeguarding/deactivation-confirmations", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const confirmations = await organizationStorage.getOrganizationDeactivationConfirmations(orgId);
       res.json(confirmations);
     } catch (error) {
@@ -2625,7 +2625,7 @@ export function registerOrganizationRoutes(app: Express) {
 
   app.get("/api/org/staff/invites", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const invites = await organizationStorage.getStaffInvites(orgId);
       const safeInvites = invites.map(({ cancellationPinHash, ...rest }) => rest);
       res.json(safeInvites);
@@ -2637,7 +2637,7 @@ export function registerOrganizationRoutes(app: Express) {
 
   app.post("/api/org/staff/invite", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const orgUser = req.user as any;
 
       const parsed = staffInviteSchema.safeParse(req.body);
@@ -2729,7 +2729,7 @@ export function registerOrganizationRoutes(app: Express) {
       }
 
       const { staff, bundleId } = parsed.data;
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const orgUser = req.user as any;
 
       const stats = await organizationStorage.getOrganizationDashboardStats(orgId);
@@ -2822,7 +2822,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Update staff invite details (name, phone, email, supervisor)
   app.patch("/api/org/staff/invite/:inviteId/details", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const orgUser = req.user as any;
       const { inviteId } = req.params;
       const { staffName, staffPhone, staffEmail, supervisorName, supervisorPhone, supervisorEmail } = req.body || {};
@@ -2862,7 +2862,7 @@ export function registerOrganizationRoutes(app: Express) {
 
   app.post("/api/org/staff/invite/:inviteId/revoke", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const orgUser = req.user as any;
       const { inviteId } = req.params;
       const invites = await organizationStorage.getStaffInvites(orgId);
@@ -2889,7 +2889,7 @@ export function registerOrganizationRoutes(app: Express) {
 
   app.delete("/api/org/staff/invite/:inviteId", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const orgUser = req.user as any;
       const { inviteId } = req.params;
       const invites = await organizationStorage.getStaffInvites(orgId);
@@ -2916,7 +2916,7 @@ export function registerOrganizationRoutes(app: Express) {
 
   app.post("/api/org/staff/invite/:inviteId/resend", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const orgUser = req.user as any;
       const { inviteId } = req.params;
       const { staffName, staffPhone, staffEmail } = req.body || {};
@@ -2960,7 +2960,7 @@ export function registerOrganizationRoutes(app: Express) {
 
   app.get("/api/org/staff/stats", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const invites = await organizationStorage.getStaffInvites(orgId);
       const stats = await organizationStorage.getOrganizationDashboardStats(orgId);
 
@@ -2991,7 +2991,7 @@ export function registerOrganizationRoutes(app: Express) {
 
   app.get("/api/org/staff/audit-trail", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const limit = parseInt(req.query.limit as string) || 200;
       const allTrail = await storage.getAuditTrail(orgId, 500);
       const staffTrail = allTrail.filter(e => e.entityType === "staff_invite" || e.entityType === "lone_worker_session").slice(0, limit);
@@ -3283,7 +3283,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Get retention policy settings
   app.get("/api/org/settings/retention", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const org = await storage.getUser(orgId);
       if (!org) return res.status(404).json({ error: "Organisation not found" });
       res.json({ retentionPolicyDays: (org as any).retentionPolicyDays || 2190 });
@@ -3296,7 +3296,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Update retention policy settings
   app.post("/api/org/settings/retention", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const { retentionPolicyDays } = req.body;
 
       if (!retentionPolicyDays || retentionPolicyDays < 365 || retentionPolicyDays > 3650) {
@@ -3330,7 +3330,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Manual trigger for audit trail cleanup (applies retention policy)
   app.post("/api/org/audit-trail/cleanup", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const org = await storage.getUser(orgId);
       if (!org) return res.status(404).json({ error: "Organisation not found" });
 
@@ -3356,7 +3356,7 @@ export function registerOrganizationRoutes(app: Express) {
   // Get audit data expiration warning (notification if oldest data expires within 6 months)
   app.get("/api/org/audit-trail/expiration-warning", requireOrganization, async (req, res) => {
     try {
-      const orgId = (req.user as any).id;
+      const orgId = req.userId!;
       const org = await storage.getUser(orgId);
       if (!org) return res.status(404).json({ error: "Organisation not found" });
 
