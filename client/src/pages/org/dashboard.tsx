@@ -223,6 +223,13 @@ export default function OrganizationDashboard() {
 
   const [showResendPasswordDialog, setShowResendPasswordDialog] = useState(false);
   const [showGuidedTour, setShowGuidedTour] = useState(false);
+
+  // Birthday upgrade transition state
+  const [showBirthdayUpgradeDialog, setShowBirthdayUpgradeDialog] = useState(false);
+  const [birthdayUpgradeClient, setBirthdayUpgradeClient] = useState<{ orgClientId: string; clientName: string | null; dateOfBirth: string | null } | null>(null);
+  const [birthdayUpgradePhone, setBirthdayUpgradePhone] = useState("");
+  const [birthdayUpgradeCountryCode, setBirthdayUpgradeCountryCode] = useState("+44");
+
   const [resendPasswordClientId, setResendPasswordClientId] = useState<string | null>(null);
   const [resendPasswordClientName, setResendPasswordClientName] = useState<string>("");
   const [resendPasswordIsRegistered, setResendPasswordIsRegistered] = useState(true);
@@ -314,6 +321,19 @@ export default function OrganizationDashboard() {
     queryKey: ["/api/org/clients/archived"],
     refetchInterval: 5000,
   });
+
+  const { data: birthdayTransitions } = useQuery<{ transitions: Array<{ orgClientId: string; clientName: string | null; dateOfBirth: string | null }> }>({
+    queryKey: ["/api/org/clients/birthday-transitions"],
+    refetchInterval: 60000,
+  });
+
+  useEffect(() => {
+    if (birthdayTransitions?.transitions?.length && !showBirthdayUpgradeDialog && !birthdayUpgradeClient) {
+      const first = birthdayTransitions.transitions[0];
+      setBirthdayUpgradeClient(first);
+      setShowBirthdayUpgradeDialog(true);
+    }
+  }, [birthdayTransitions]);
 
   const { data: myRoleData } = useQuery<{ role: string }>({
     queryKey: ["/api/org/my-role"],
@@ -620,17 +640,26 @@ export default function OrganizationDashboard() {
     },
   });
 
+  const regClientAge = regClientDOB ? (() => {
+    const dob = new Date(regClientDOB);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
+    return age;
+  })() : null;
+  const regSeatType = regClientAge !== null && regClientAge < 16 ? "safeguarding" : "check_in";
+
   const registerClientMutation = useMutation({
     mutationFn: async () => {
-      // Combine country code with phone number
       const fullPhone = regClientPhone ? `${regCountryCode}${regClientPhone.replace(/\D/g, "")}` : "";
       const response = await apiRequest("POST", "/api/org/clients/register", {
         clientName: regClientName,
-        clientPhone: fullPhone,
-        dateOfBirth: regClientDOB || undefined,
+        clientPhone: regSeatType === "check_in" ? fullPhone : undefined,
+        dateOfBirth: regClientDOB,
         bundleId: regBundleId || undefined,
-        scheduleStartTime: regScheduleStart || undefined,
-        checkInIntervalHours: regIntervalHours,
+        scheduleStartTime: regSeatType === "check_in" ? (regScheduleStart || undefined) : undefined,
+        checkInIntervalHours: regSeatType === "check_in" ? regIntervalHours : 24,
         supervisorName: regSupervisorName || undefined,
         supervisorPhone: regSupervisorPhone ? `${regSupervisorCountryCode}${regSupervisorPhone.replace(/\D/g, "")}` : undefined,
         supervisorEmail: regSupervisorEmail || undefined,
@@ -643,14 +672,22 @@ export default function OrganizationDashboard() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients/birthday-transitions"] });
       setShowRegisterClientDialog(false);
       resetRegisterForm();
-      toast({
-        title: "Client registered",
-        description: data.smsSent 
-          ? `SMS sent to ${regClientPhone}. Reference code: ${data.referenceCode}`
-          : `Client registered. Reference code: ${data.referenceCode}. SMS could not be sent.`,
-      });
+      if (data.seatType === "safeguarding") {
+        toast({
+          title: "Safeguarding seat registered",
+          description: `${regClientName} has been added as a safeguarding seat (under 16). No SMS sent.`,
+        });
+      } else {
+        toast({
+          title: "Client registered",
+          description: data.smsSent 
+            ? `SMS sent to ${regClientPhone}. Reference code: ${data.referenceCode}`
+            : `Client registered. Reference code: ${data.referenceCode}. SMS could not be sent.`,
+        });
+      }
     },
     onError: (error: any) => {
       toast({
@@ -658,6 +695,42 @@ export default function OrganizationDashboard() {
         description: error.message || "Please try again.",
         variant: "destructive",
       });
+    },
+  });
+
+  const upgradeToChekinMutation = useMutation({
+    mutationFn: async ({ orgClientId, clientPhone }: { orgClientId: string; clientPhone: string }) => {
+      const response = await apiRequest("POST", `/api/org/clients/${orgClientId}/upgrade-to-checkin`, { clientPhone });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients/birthday-transitions"] });
+      setShowBirthdayUpgradeDialog(false);
+      setBirthdayUpgradeClient(null);
+      setBirthdayUpgradePhone("");
+      toast({
+        title: "Client upgraded to check-in seat",
+        description: data.smsSent ? "SMS link sent to their phone." : "Upgraded but SMS could not be sent.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to upgrade client",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const dismissBirthdayUpgradeMutation = useMutation({
+    mutationFn: async (orgClientId: string) => {
+      const response = await apiRequest("POST", `/api/org/clients/${orgClientId}/dismiss-birthday-upgrade`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients/birthday-transitions"] });
     },
   });
 
@@ -1814,9 +1887,30 @@ export default function OrganizationDashboard() {
           <DialogHeader>
             <DialogTitle>Register New Client</DialogTitle>
             <DialogDescription>
-              Enter client details. They will receive an SMS with a link to download the app and their unique reference code.
+              {regSeatType === "safeguarding"
+                ? "This person is under 16 and will be registered as a safeguarding seat. No SMS will be sent - they will be managed through the dashboard only."
+                : "Enter client details. They will receive an SMS with a link to download the app and their unique reference code."}
             </DialogDescription>
           </DialogHeader>
+          {regClientDOB && (
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+              regSeatType === "safeguarding"
+                ? "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+                : "bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800"
+            }`} data-testid="badge-seat-type">
+              {regSeatType === "safeguarding" ? (
+                <>
+                  <Shield className="h-4 w-4 flex-shrink-0" />
+                  <span>Safeguarding Seat (under 16) - dashboard only, no app access</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 flex-shrink-0" />
+                  <span>Check-in Seat (16+) - SMS link will be sent</span>
+                </>
+              )}
+            </div>
+          )}
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -1829,6 +1923,20 @@ export default function OrganizationDashboard() {
                   data-testid="input-reg-client-name"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="regClientDOB">Date of Birth *</Label>
+                <Input
+                  id="regClientDOB"
+                  type="date"
+                  value={regClientDOB}
+                  onChange={(e) => setRegClientDOB(e.target.value)}
+                  data-testid="input-reg-client-dob"
+                  max={new Date().toISOString().split("T")[0]}
+                />
+              </div>
+            </div>
+            {regSeatType === "check_in" && (
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="regClientPhone">Mobile Number *</Label>
                 <div className="flex gap-2">
@@ -1870,18 +1978,11 @@ export default function OrganizationDashboard() {
                 )}
               </div>
             </div>
-            
+            )}
+
+            {regSeatType === "check_in" && (
+            <>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="regClientDOB">Date of Birth</Label>
-                <Input
-                  id="regClientDOB"
-                  type="date"
-                  value={regClientDOB}
-                  onChange={(e) => setRegClientDOB(e.target.value)}
-                  data-testid="input-reg-client-dob"
-                />
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="regScheduleStart">Schedule Start Time</Label>
                 <Input
@@ -1892,9 +1993,6 @@ export default function OrganizationDashboard() {
                   data-testid="input-reg-schedule-start"
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="regIntervalHours">Check-in Interval (hours)</Label>
                 <Select 
@@ -1916,6 +2014,11 @@ export default function OrganizationDashboard() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            </>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
               {activeBundles.length > 0 && (
                 <div className="space-y-2">
                   <Label htmlFor="regBundleId">Bundle</Label>
@@ -2322,15 +2425,112 @@ export default function OrganizationDashboard() {
             </Button>
             <Button 
               onClick={() => registerClientMutation.mutate()}
-              disabled={!regClientName || !regClientPhone || !regSupervisorName || !regSupervisorEmail || !regSupervisorPhone || !supervisorSmsVerified || registerClientMutation.isPending}
+              disabled={
+                !regClientName || !regClientDOB || !regSupervisorName || !regSupervisorEmail || !regSupervisorPhone || !supervisorSmsVerified || registerClientMutation.isPending ||
+                (regSeatType === "check_in" && !regClientPhone)
+              }
               data-testid="button-confirm-register-client"
             >
               {registerClientMutation.isPending ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Registering...</>
               ) : !hasValidEmergencyContact ? (
                 "Add Emergency Contact First"
+              ) : regSeatType === "safeguarding" ? (
+                "Register Safeguarding Seat"
               ) : (
                 "Register & Send SMS"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Birthday Upgrade Dialog */}
+      <Dialog open={showBirthdayUpgradeDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowBirthdayUpgradeDialog(false);
+          setBirthdayUpgradeClient(null);
+          setBirthdayUpgradePhone("");
+          setBirthdayUpgradeCountryCode("+44");
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              Client Turned 16
+            </DialogTitle>
+            <DialogDescription>
+              {birthdayUpgradeClient?.clientName} has turned 16 and can now be upgraded from a safeguarding seat to a check-in seat with app access.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="upgradePhone">Mobile Number</Label>
+              <div className="flex gap-2">
+                <Select value={birthdayUpgradeCountryCode} onValueChange={setBirthdayUpgradeCountryCode}>
+                  <SelectTrigger className="w-24" data-testid="select-upgrade-country-code">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="+44">+44 UK</SelectItem>
+                    <SelectItem value="+1">+1 US</SelectItem>
+                    <SelectItem value="+353">+353 IE</SelectItem>
+                    <SelectItem value="+33">+33 FR</SelectItem>
+                    <SelectItem value="+49">+49 DE</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="flex-1">
+                  <Input
+                    id="upgradePhone"
+                    type="tel"
+                    placeholder="7XXX XXXXXX"
+                    value={birthdayUpgradePhone}
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/[^\d\s]/g, "");
+                      if (value.startsWith("0")) value = value.slice(1);
+                      setBirthdayUpgradePhone(value);
+                    }}
+                    data-testid="input-upgrade-phone"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                An SMS will be sent with a link to download the AOK app and their reference code.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (birthdayUpgradeClient) {
+                  dismissBirthdayUpgradeMutation.mutate(birthdayUpgradeClient.orgClientId);
+                }
+                setShowBirthdayUpgradeDialog(false);
+                setBirthdayUpgradeClient(null);
+                setBirthdayUpgradePhone("");
+              }}
+              data-testid="button-dismiss-birthday-upgrade"
+            >
+              Not Now
+            </Button>
+            <Button
+              onClick={() => {
+                if (birthdayUpgradeClient && birthdayUpgradePhone) {
+                  upgradeToChekinMutation.mutate({
+                    orgClientId: birthdayUpgradeClient.orgClientId,
+                    clientPhone: `${birthdayUpgradeCountryCode}${birthdayUpgradePhone.replace(/\s/g, "")}`,
+                  });
+                }
+              }}
+              disabled={!birthdayUpgradePhone || upgradeToChekinMutation.isPending}
+              data-testid="button-confirm-upgrade"
+            >
+              {upgradeToChekinMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Upgrading...</>
+              ) : (
+                "Upgrade & Send SMS"
               )}
             </Button>
           </DialogFooter>
@@ -3421,6 +3621,11 @@ export default function OrganizationDashboard() {
                           <span className="text-muted-foreground text-sm">({client.client.name})</span>
                         )}
                         {getClientStatusBadge(client.clientStatus)}
+                        {(client as any).seatType === "safeguarding" && (
+                          <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700">
+                            <Shield className="h-3 w-3 mr-1" />Safeguarding
+                          </Badge>
+                        )}
                         {client.registrationStatus && client.registrationStatus !== "registered" && (
                           <Badge variant="outline" className="text-xs">
                             {client.registrationStatus === "pending_sms" ? "SMS Pending" : "Awaiting Registration"}
