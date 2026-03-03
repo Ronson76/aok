@@ -3,7 +3,7 @@ import { organizationStorage, storage, orgMemberStorage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema, activeEmergencyAlerts, checkIns, organizationClients, organizationClientProfiles, users, safeguardingLeads, dbsChecks, trainingRecords, rolePermissions, OrgPermission, roleLabels, orgApiKeys, kioskCheckins, homelessInteractions, interactionProgrammes, interactionContactTypes, riskTiers, riskIndicators as riskIndicatorValues, interactionActions } from "@shared/schema";
-import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail, sendStaffInviteSMS, sendEmergencyContactConfirmationForStaffInvite } from "./notifications";
+import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail, sendStaffInviteSMS, sendEmergencyContactConfirmationForStaffInvite, sendDataCaptureLinkSMS, sendDataCaptureLinkEmail } from "./notifications";
 import { plantTreeForNewSubscriber } from "./ecologiService";
 import { ensureDb } from "./db";
 import { sql, eq, and, isNotNull, desc, gte, lte, isNull, asc, lt, count } from "drizzle-orm";
@@ -4479,6 +4479,44 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("[DATA CAPTURE] Clients list error:", error);
       res.status(500).json({ error: "Failed to load clients" });
+    }
+  });
+
+  app.post("/api/org/send-data-capture-link", requireOrganization, async (req, res) => {
+    try {
+      const { method, recipient } = z.object({
+        method: z.enum(["sms", "email"]),
+        recipient: z.string().min(1),
+      }).parse(req.body);
+
+      const org = await storage.getUserById(req.userId!);
+      if (!org) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+
+      const orgName = org.name || "Your Organisation";
+
+      if (method === "sms") {
+        const result = await sendDataCaptureLinkSMS(recipient, orgName);
+        if (!result.success) {
+          return res.status(500).json({ error: result.error || "Failed to send SMS" });
+        }
+        console.log(`[DATA CAPTURE LINK] SMS sent to ${recipient} by org ${orgName}`);
+        return res.json({ success: true, method: "sms" });
+      } else {
+        const result = await sendDataCaptureLinkEmail(recipient, orgName);
+        if (!result.sent) {
+          return res.status(500).json({ error: result.error || "Failed to send email" });
+        }
+        console.log(`[DATA CAPTURE LINK] Email sent to ${recipient} by org ${orgName}`);
+        return res.json({ success: true, method: "email" });
+      }
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Please provide a valid recipient and method" });
+      }
+      console.error("[DATA CAPTURE LINK] Send error:", error);
+      res.status(500).json({ error: "Failed to send link" });
     }
   });
 

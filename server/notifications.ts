@@ -2621,6 +2621,69 @@ Thank you,
   }
 }
 
+export async function sendDataCaptureLinkSMS(
+  phoneNumber: string,
+  organizationName: string
+): Promise<{ success: boolean; error?: string }> {
+  const dataCaptureUrl = `https://aok.care/org/data-capture`;
+  const message = `Hi from ${organizationName}. Use this link to access the aok Data Capture tool for logging safeguarding interactions:
+
+${dataCaptureUrl}
+
+Log in with your team credentials to start recording.`;
+
+  console.log(`[SMS DATA CAPTURE LINK] Sending data capture link to ${phoneNumber}`);
+  return await sendSMS(phoneNumber, message);
+}
+
+export async function sendDataCaptureLinkEmail(
+  email: string,
+  organizationName: string
+): Promise<{ sent: boolean; error?: string }> {
+  const dataCaptureUrl = `https://aok.care/org/data-capture`;
+  const subject = `aok Data Capture - ${organizationName}`;
+
+  const body = `Hi,
+
+${organizationName} has shared the aok Data Capture tool with you.
+
+Use this link to log safeguarding interactions:
+${dataCaptureUrl}
+
+Log in with your team credentials to start recording. If you don't have credentials yet, ask your manager to invite you.
+
+- The aok Team`;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h2 style="color: #2563eb;">aok Data Capture</h2>
+  <p>Hi,</p>
+  <p><strong>${organizationName}</strong> has shared the aok Data Capture tool with you.</p>
+  <p>Use this tool to log safeguarding interactions, track risk assessments, and manage follow-ups.</p>
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="${dataCaptureUrl}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Open Data Capture</a>
+  </div>
+  <p style="color: #6b7280; font-size: 13px;">Log in with your team credentials to start recording. If you don't have credentials yet, ask your manager to invite you.</p>
+  <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+  <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+    <a href="https://aok.care" style="color: #F97316; text-decoration: none;">aok.care</a> - Personal safety made simple
+  </p>
+</body>
+</html>`;
+
+  try {
+    await sendEmail(email, subject, body, html);
+    console.log(`[EMAIL DATA CAPTURE LINK] Sent data capture link to ${email}`);
+    return { sent: true };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : "Failed to send email";
+    console.error(`[EMAIL DATA CAPTURE LINK] Failed to send to ${email}: ${errorMsg}`);
+    return { sent: false, error: errorMsg };
+  }
+}
+
 // Send reference code reminder SMS to org-managed client
 export async function sendReferenceCodeSMS(
   phoneNumber: string,
