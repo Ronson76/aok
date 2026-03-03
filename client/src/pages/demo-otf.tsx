@@ -75,12 +75,17 @@ const PROGRAMMES: Record<Programme, ProgrammeData> = {
         description: "When staff identify a safeguarding concern during support sessions, they log it through AOK with full details, categorisation, and escalation. Every action is recorded in a tamper-evident audit trail.",
       },
       {
+        label: "Real-time data capture during outreach and home visits",
+        aokFeature: "Data Capture App",
+        description: "All support workers have access to AOK's real-time data capture app for outreach work. When visiting clients in the community or at home, staff record observations, risk indicators, and actions taken directly from their phone. Everything is automatically pushed through to the safeguarding dashboard in real time - giving managers full visibility and a complete audit trail with no manual re-entry required.",
+      },
+      {
         label: "Evidencing impact for funders",
         aokFeature: "Funding Dashboard",
         description: "Gateway needs to evidence engagement and outcomes to funders. AOK's Funding Dashboard generates compliance-ready reports showing check-in rates, client engagement, and safeguarding actions taken.",
       },
     ],
-    honestNote: "Gateway is a direct fit for AOK. Women 16+ receiving ongoing support benefit from structured welfare monitoring, and staff benefit from auditable safeguarding records that satisfy funder and governance requirements.",
+    honestNote: "Gateway is a direct fit for AOK. Women 16+ receiving ongoing support benefit from structured welfare monitoring, and staff benefit from auditable safeguarding records that satisfy funder and governance requirements. Support workers visiting clients in the community use AOK's real-time data capture app to record observations and actions during visits - everything syncs automatically to the safeguarding dashboard for full audit trail compliance.",
     scenarios: [
       {
         title: "A woman is referred to Gateway",
@@ -215,6 +220,11 @@ const PROGRAMMES: Record<Programme, ProgrammeData> = {
         label: "Evidencing staff engagement and programme delivery",
         aokFeature: "Activity Log + Audit Trail",
         description: "AOK records when staff check in, what sessions were delivered, and what safeguarding actions were taken. This gives Off The Fence the governance evidence that their Schools and Youth programme is being delivered properly.",
+      },
+      {
+        label: "Real-time data capture during outreach sessions",
+        aokFeature: "Data Capture App",
+        description: "When mentors and facilitators visit schools or run sessions in the community, they use AOK's real-time data capture app on their phone to record session notes, welfare observations, and any concerns. All data is automatically pushed through to the safeguarding dashboard - giving managers and the safeguarding lead instant visibility and a complete, tamper-evident audit trail.",
       },
       {
         label: "Reporting outcomes to schools and funders",

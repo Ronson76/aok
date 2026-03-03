@@ -415,6 +415,18 @@ export default function Landing() {
                 </p>
               </CardContent>
             </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-cyan-500/10 p-3 w-fit mb-4">
+                  <Smartphone className="h-6 w-6 text-cyan-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Real-Time Data Capture for Outreach</h3>
+                <p className="text-muted-foreground text-sm">
+                  Every support worker has a real-time data capture app for outreach work. Record observations, risk assessments, and actions taken during client visits directly from a phone or tablet - automatically pushed through to your safeguarding dashboard for full audit trail compliance.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -428,13 +440,14 @@ export default function Landing() {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-5 gap-6">
+          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-6">
             {[
               { step: "1", title: "Early Visibility", description: "Structured check-ins confirm wellbeing, location, and activity in real time.", icon: Eye },
               { step: "2", title: "Risk Identification", description: "Missed check-ins and behavioural changes are automatically flagged.", icon: AlertTriangle },
               { step: "3", title: "Controlled Escalation", description: "Alerts follow a defined pathway -  ensuring the right people are informed at the right time.", icon: Bell },
               { step: "4", title: "Multi-Agency Response", description: "Authorised partners can be included in the safeguarding loop.", icon: Users },
-              { step: "5", title: "Full Audit Trail", description: "Every action is securely time-stamped and exportable.", icon: FileCheck },
+              { step: "5", title: "Real-Time Outreach Capture", description: "Support workers record data in real time during client visits - automatically synced to your safeguarding dashboard.", icon: Smartphone },
+              { step: "6", title: "Full Audit Trail", description: "Every action is securely time-stamped and exportable.", icon: FileCheck },
             ].map((item) => (
               <div key={item.step} className="text-center">
                 <div className="rounded-full bg-primary text-primary-foreground w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
@@ -486,6 +499,7 @@ export default function Landing() {
               { title: "Response & Resolution Timelines", description: "Track how quickly your team responds and resolves issues.", icon: Clock },
               { title: "Engagement & Support Trends", description: "Identify patterns in user engagement and emerging support needs.", icon: TrendingUp },
               { title: "Historical Safeguarding Records", description: "Complete, searchable history of every check-in, alert, and action taken.", icon: Scroll },
+              { title: "Live Outreach Data", description: "Data captured by support workers during client visits is pushed through in real time - no manual re-entry, no gaps in the record.", icon: Smartphone },
               { title: "Exportable Reports", description: "Generate funder-ready PDF and CSV reports for commissioners, boards, and regulators.", icon: FileCheck },
             ].map((item, i) => (
               <Card key={i} className="border-0 shadow-lg">
@@ -787,12 +801,12 @@ export default function Landing() {
               },
               {
                 title: "Care & Support Providers",
-                description: "Monitor service users across care homes, domiciliary care, and supported living with continuous, auditable safeguarding oversight.",
+                description: "Monitor service users across care homes, domiciliary care, and supported living. Support workers use the real-time data capture app during outreach visits - all observations and actions are automatically pushed to your safeguarding dashboard for full audit trail compliance.",
                 icon: Heart
               },
               {
                 title: "Lone-Worker Employers & Community Services",
-                description: "Protect staff who work alone or in the community with automatic check-ins, GPS tracking, and real-time supervisor alerts.",
+                description: "Protect staff who work alone or in the community with automatic check-ins, GPS tracking, real-time supervisor alerts, and a data capture app that lets workers record client interactions on the go.",
                 icon: HardHat
               }
             ].map((useCase, i) => (
