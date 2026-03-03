@@ -463,18 +463,17 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/stripe/create-subscription-checkout", async (req, res) => {
+  app.post("/api/stripe/create-subscription-checkout", authMiddleware, async (req, res) => {
     try {
-      const { priceId, email, successUrl, cancelUrl, trialDays = 7 } = req.body;
+      const { priceId, successUrl, cancelUrl, trialDays = 7 } = req.body;
       
-      console.log("[STRIPE CHECKOUT] Request received:", { priceId, email, successUrl, cancelUrl, trialDays });
+      const user = await storage.getUserById(req.userId!);
+      const email = user?.email;
       
       if (!priceId || !email) {
-        console.log("[STRIPE CHECKOUT] Missing required fields");
-        return res.status(400).json({ error: "priceId and email are required" });
+        return res.status(400).json({ error: "priceId is required and user must have an email" });
       }
 
-      console.log("[STRIPE CHECKOUT] Creating checkout session...");
       const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
       const session = await stripeService.createSubscriptionCheckoutSession(
         null,
@@ -485,11 +484,10 @@ export async function registerRoutes(
         trialDays
       );
 
-      console.log("[STRIPE CHECKOUT] Session created successfully:", { url: session.url, sessionId: session.id });
       res.json({ url: session.url, sessionId: session.id });
     } catch (error: any) {
-      console.error("[STRIPE CHECKOUT] Failed to create checkout session:", error.message, error.stack);
-      res.status(500).json({ error: error.message || "Failed to create checkout session" });
+      console.error("[STRIPE CHECKOUT] Failed to create checkout session:", error.message);
+      res.status(500).json({ error: "Failed to create checkout session" });
     }
   });
 
@@ -499,7 +497,7 @@ export async function registerRoutes(
       res.json({ clientSecret: setupIntent.client_secret });
     } catch (error: any) {
       console.error("Failed to create setup intent:", error);
-      res.status(500).json({ error: error.message || "Failed to create setup intent" });
+      res.status(500).json({ error: "Failed to create setup intent" });
     }
   });
 
@@ -3025,18 +3023,24 @@ export async function registerRoutes(
     }
   });
 
-  // Diagnose Twilio credentials (no SMS sent)
-  app.get("/api/diagnose-twilio", async (req, res) => {
+  // Diagnose Twilio credentials (no SMS sent) - admin only
+  app.get("/api/diagnose-twilio", authMiddleware, async (req, res) => {
+    if ((req.user as any)?.accountType !== "organization") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
     try {
       const result = await diagnoseTwilioCredentials();
       res.json(result);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: "Failed to diagnose Twilio credentials" });
     }
   });
 
-  // Test SMS endpoint - requires phone number
-  app.post("/api/test-sms", async (req, res) => {
+  // Test SMS endpoint - admin only
+  app.post("/api/test-sms", authMiddleware, async (req, res) => {
+    if ((req.user as any)?.accountType !== "organization") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
     try {
       const { phoneNumber } = req.body;
       if (!phoneNumber) {
@@ -3059,12 +3063,15 @@ export async function registerRoutes(
       }
     } catch (error: any) {
       console.error('[TEST SMS ENDPOINT] Error:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: "Failed to send test SMS" });
     }
   });
 
-  // Test email endpoint
-  app.post("/api/test-email", async (req, res) => {
+  // Test email endpoint - admin only
+  app.post("/api/test-email", authMiddleware, async (req, res) => {
+    if ((req.user as any)?.accountType !== "organization") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
     try {
       const { email } = req.body;
       if (!email) {
@@ -3081,7 +3088,7 @@ export async function registerRoutes(
       }
     } catch (error: any) {
       console.error('[TEST EMAIL ENDPOINT] Error:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: "Failed to send test email" });
     }
   });
 

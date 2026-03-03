@@ -5,15 +5,17 @@ import { moodEntries, users } from "@shared/schema";
 import { eq, desc, gte, and } from "drizzle-orm";
 import { storage } from "./storage";
 
-// Helper to get authenticated userId from session cookie
-async function getAuthenticatedUserId(req: Request): Promise<string | null> {
+async function wellbeingAuthMiddleware(req: Request, res: import("express").Response, next: import("express").NextFunction) {
   const sessionId = (req as any).cookies?.session;
-  if (!sessionId) return null;
-  
+  if (!sessionId) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
   const session = await storage.getSession(sessionId);
-  if (!session) return null;
-  
-  return session.userId;
+  if (!session) {
+    return res.status(401).json({ error: "Invalid or expired session" });
+  }
+  (req as any).userId = session.userId;
+  next();
 }
 
 const aiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "";
@@ -136,14 +138,8 @@ Start by acknowledging their feelings and asking how you can support them today.
 }
 
 export function registerWellbeingAIRoutes(app: Express): void {
-  // Text-to-Speech endpoint - converts AI text to speech
-  app.post("/api/wellbeing-ai/tts", async (req: Request, res: Response) => {
+  app.post("/api/wellbeing-ai/tts", wellbeingAuthMiddleware, async (req: Request, res: Response) => {
     try {
-      const userId = await getAuthenticatedUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { text } = req.body;
       if (!text || typeof text !== "string") {
         return res.status(400).json({ error: "Text is required" });
@@ -170,15 +166,10 @@ export function registerWellbeingAIRoutes(app: Express): void {
     }
   });
 
-  // Speech-to-Text endpoint - transcribes user voice to text
-  app.post("/api/wellbeing-ai/stt", async (req: Request, res: Response) => {
+  app.post("/api/wellbeing-ai/stt", wellbeingAuthMiddleware, async (req: Request, res: Response) => {
     console.log("[STT] Received speech-to-text request");
     try {
-      const userId = await getAuthenticatedUserId(req);
-      if (!userId) {
-        console.log("[STT] User not authenticated");
-        return res.status(401).json({ error: "Not authenticated" });
-      }
+      const userId = (req as any).userId;
       console.log("[STT] User authenticated:", userId);
 
       // Handle raw audio data with size limit (10MB max)
@@ -231,15 +222,8 @@ export function registerWellbeingAIRoutes(app: Express): void {
           res.json({ text: transcription.text });
         } catch (error: any) {
           console.error("[STT] Error transcribing audio:", error.message || error);
-          console.error("[STT] Full error:", JSON.stringify(error, null, 2));
           if (!res.headersSent) {
-            // Return more details for debugging
-            const errorMessage = error.message || "Failed to transcribe audio";
-            const errorCode = error.code || error.status || "unknown";
-            res.status(500).json({ 
-              error: `Transcription error: ${errorMessage}`,
-              code: errorCode
-            });
+            res.status(500).json({ error: "Failed to transcribe audio" });
           }
         }
       });
@@ -249,13 +233,9 @@ export function registerWellbeingAIRoutes(app: Express): void {
     }
   });
 
-  app.get("/api/wellbeing-ai/mood-check", async (req: Request, res: Response) => {
+  app.get("/api/wellbeing-ai/mood-check", wellbeingAuthMiddleware, async (req: Request, res: Response) => {
     try {
-      const userId = await getAuthenticatedUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
+      const userId = (req as any).userId;
       const moodPattern = await analyzeMoodPatterns(userId);
       
       res.json({
@@ -273,15 +253,12 @@ export function registerWellbeingAIRoutes(app: Express): void {
     }
   });
 
-  app.post("/api/wellbeing-ai/chat", async (req: Request, res: Response) => {
+  app.post("/api/wellbeing-ai/chat", wellbeingAuthMiddleware, async (req: Request, res: Response) => {
     try {
-      const userId = await getAuthenticatedUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
+      const userId = (req as any).userId;
 
       const { message, conversationHistory = [] } = req.body;
-      if (!message) {
+      if (!message || typeof message !== "string") {
         return res.status(400).json({ error: "Message is required" });
       }
 
