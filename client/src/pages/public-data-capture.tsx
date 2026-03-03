@@ -118,6 +118,10 @@ function calculateAge(dob: string): number {
 
 export default function PublicDataCapturePage({ token }: { token: string }) {
   const { toast } = useToast();
+  const [authenticated, setAuthenticated] = useState(false);
+  const [loginPassword, setLoginPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("log");
   const [step, setStep] = useState<PageStep>("identify");
   const [showFollowUpDialog, setShowFollowUpDialog] = useState(false);
@@ -153,39 +157,56 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
 
   const apiPrefix = `/api/dc/${token}`;
 
-  const { data: verifyData, isLoading: verifyLoading, isError: verifyError } = useQuery<{ valid: boolean; organizationName: string }>({
+  const { data: verifyData, isLoading: verifyLoading, isError: verifyError } = useQuery<{ valid: boolean; organizationName: string; requiresPassword: boolean }>({
     queryKey: [`${apiPrefix}/verify`],
     retry: false,
   });
 
+  const authenticateMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `${apiPrefix}/authenticate`, { password: loginPassword });
+      return response.json();
+    },
+    onSuccess: () => {
+      setAuthenticated(true);
+      setLoginError("");
+      queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/verify`] });
+    },
+    onError: (error: any) => {
+      setLoginError(error.message || "Incorrect password");
+    },
+  });
+
+  const needsPassword = verifyData?.valid && verifyData.requiresPassword && !authenticated;
+
   const { data: clientsData } = useQuery<{ clients: ClientOption[] }>({
     queryKey: [`${apiPrefix}/clients-list`],
     refetchInterval: 5000,
-    enabled: !!verifyData?.valid,
+    enabled: !!verifyData?.valid && !needsPassword,
   });
 
   const { data: statsData } = useQuery<Stats>({
     queryKey: [`${apiPrefix}/interactions/stats`],
     refetchInterval: 5000,
-    enabled: !!verifyData?.valid,
+    enabled: !!verifyData?.valid && !needsPassword,
   });
 
   const { data: recentData, isLoading: recentLoading } = useQuery<{ interactions: InteractionWithClient[] }>({
     queryKey: [`${apiPrefix}/interactions`],
     refetchInterval: 5000,
-    enabled: !!verifyData?.valid,
+    enabled: !!verifyData?.valid && !needsPassword,
   });
 
   const { data: overdueData, isLoading: overdueLoading } = useQuery<{ overdue: InteractionWithClient[] }>({
     queryKey: [`${apiPrefix}/interactions/overdue-followups`],
     refetchInterval: 5000,
-    enabled: !!verifyData?.valid,
+    enabled: !!verifyData?.valid && !needsPassword,
   });
 
   const { data: lostData, isLoading: lostLoading } = useQuery<{ lostContacts: LostContact[] }>({
     queryKey: [`${apiPrefix}/interactions/lost-contacts`],
     refetchInterval: 5000,
-    enabled: !!verifyData?.valid,
+    enabled: !!verifyData?.valid && !needsPassword,
   });
 
   const lookupMutation = useMutation({
@@ -402,6 +423,70 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
             <h2 className="text-xl font-bold">Invalid Link</h2>
             <p className="text-sm text-muted-foreground">
               This Data Capture link is invalid or has been deactivated. Please contact your organisation manager for a new link.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (needsPassword) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4" data-testid="dc-password-landing">
+        <Card className="max-w-sm w-full">
+          <CardContent className="pt-6 space-y-6">
+            <div className="text-center space-y-2">
+              <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <Shield className="h-7 w-7 text-primary" />
+              </div>
+              <h1 className="text-xl font-bold">Data Capture</h1>
+              <p className="text-sm text-muted-foreground">{verifyData.organizationName}</p>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Enter Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter access password"
+                  value={loginPassword}
+                  onChange={(e) => { setLoginPassword(e.target.value); setLoginError(""); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && loginPassword) authenticateMutation.mutate(); }}
+                  className="pl-10 pr-10"
+                  autoFocus
+                  data-testid="input-dc-login-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  data-testid="button-toggle-password"
+                >
+                  <Eye className="h-4 w-4" />
+                </button>
+              </div>
+              {loginError && (
+                <p className="text-sm text-destructive" data-testid="text-login-error">{loginError}</p>
+              )}
+            </div>
+
+            <Button
+              className="w-full py-5"
+              disabled={!loginPassword || authenticateMutation.isPending}
+              onClick={() => authenticateMutation.mutate()}
+              data-testid="button-dc-login"
+            >
+              {authenticateMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Lock className="h-4 w-4 mr-2" />
+              )}
+              Open Data Capture
+            </Button>
+
+            <p className="text-xs text-center text-muted-foreground">
+              Your organisation manager should have shared the password with you separately from this link.
             </p>
           </CardContent>
         </Card>
