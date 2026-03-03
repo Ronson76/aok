@@ -587,8 +587,8 @@ export default function OrgSafeguardingPage() {
 
   const getClientName = (clientId?: string) => {
     if (!clientId) return "Unknown";
-    const client = clients?.find(c => c.clientId === clientId);
-    return client?.nickname || client?.client?.name || client?.client?.email || "Unknown Client";
+    const client = clients?.find(c => c.clientId === clientId || c.id === clientId);
+    return client?.nickname || client?.clientName || client?.client?.name || client?.client?.email || "Unknown Client";
   };
 
   // Date filtering helper
@@ -1371,6 +1371,9 @@ export default function OrgSafeguardingPage() {
                         <p className="text-sm">{concern.description}</p>
                         {concern.clientId && (
                           <p className="text-sm text-muted-foreground">Client: {getClientName(concern.clientId)}</p>
+                        )}
+                        {concern.reportedByName && (
+                          <p className="text-sm text-muted-foreground">Reported by: {concern.reportedByName}</p>
                         )}
                         {concern.observedBehaviours && toStringArray(concern.observedBehaviours).length > 0 && (
                           <div className="flex items-center gap-1 flex-wrap">

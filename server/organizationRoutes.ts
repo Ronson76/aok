@@ -75,11 +75,13 @@ const ACTION_LABELS: Record<string, string> = {
 async function autoCreateWelfareConcern(opts: {
   organizationId: string;
   orgClientId: string;
+  clientName?: string | null;
   staffName: string;
   riskTier: string;
   riskIndicators: string[];
   actionTaken: string;
   referralAgency?: string | null;
+  notes?: string | null;
   interactionId: string;
 }) {
   const indicatorLabels = (opts.riskIndicators || [])
@@ -103,6 +105,9 @@ async function autoCreateWelfareConcern(opts: {
   }
   if (opts.referralAgency) {
     descParts.push(`Referral Agency: ${opts.referralAgency}.`);
+  }
+  if (opts.notes) {
+    descParts.push(`Staff Notes: ${opts.notes}`);
   }
 
   const concern = await storage.createWelfareConcern(opts.organizationId, {
@@ -4309,11 +4314,13 @@ export function registerOrganizationRoutes(app: Express) {
           welfareConcern = await autoCreateWelfareConcern({
             organizationId: req.userId!,
             orgClientId: data.orgClientId,
+            clientName: client.clientName,
             staffName: data.staffName,
             riskTier: data.riskTier,
             riskIndicators: data.riskIndicators || [],
             actionTaken: data.actionTaken,
             referralAgency: data.referralAgency,
+            notes: data.notes,
             interactionId: interaction.id,
           });
         } catch (wcError) {
@@ -5237,7 +5244,7 @@ export function registerOrganizationRoutes(app: Express) {
         notes: z.string().optional(),
       }).parse(req.body);
 
-      const [client] = await db.select({ id: organizationClients.id })
+      const [client] = await db.select({ id: organizationClients.id, clientName: organizationClients.clientName })
         .from(organizationClients)
         .where(and(
           eq(organizationClients.id, data.orgClientId),
@@ -5276,11 +5283,13 @@ export function registerOrganizationRoutes(app: Express) {
           welfareConcern = await autoCreateWelfareConcern({
             organizationId: orgId,
             orgClientId: data.orgClientId,
+            clientName: client.clientName,
             staffName: data.staffName,
             riskTier: data.riskTier,
             riskIndicators: data.riskIndicators || [],
             actionTaken: data.actionTaken,
             referralAgency: data.referralAgency,
+            notes: data.notes,
             interactionId: interaction.id,
           });
         } catch (wcError) {
