@@ -2234,5 +2234,69 @@ export const insertKioskCheckinSchema = createInsertSchema(kioskCheckins).omit({
 export type InsertKioskCheckin = z.infer<typeof insertKioskCheckinSchema>;
 export type KioskCheckin = typeof kioskCheckins.$inferSelect;
 
+export const interactionProgrammes = ["outreach", "hostel", "drop_in"] as const;
+export type InteractionProgramme = typeof interactionProgrammes[number];
+
+export const interactionContactTypes = [
+  "outreach_visit", "shelter_checkin", "drop_in_meeting",
+  "phone_contact", "multi_agency_discussion"
+] as const;
+export type InteractionContactType = typeof interactionContactTypes[number];
+
+export const riskTiers = ["high", "medium", "low"] as const;
+export type RiskTier = typeof riskTiers[number];
+
+export const riskIndicators = [
+  "rough_sleeping", "exploitation_risk", "domestic_abuse",
+  "substance_misuse", "mental_health", "violence_risk",
+  "self_harm", "missing_contact"
+] as const;
+export type RiskIndicator = typeof riskIndicators[number];
+
+export const interactionActions = [
+  "advice_provided", "referral_made", "emergency_accommodation",
+  "dsl_informed", "safeguarding_referral", "no_action_required",
+  "follow_up_planned"
+] as const;
+export type InteractionAction = typeof interactionActions[number];
+
+export const homelessInteractions = pgTable("homeless_interactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  orgClientId: varchar("org_client_id").notNull().references(() => organizationClients.id, { onDelete: "cascade" }),
+  staffName: text("staff_name").notNull(),
+  programme: text("programme").notNull().$type<InteractionProgramme>(),
+  contactType: text("contact_type").notNull().$type<InteractionContactType>(),
+  riskTier: text("risk_tier").notNull().$type<RiskTier>(),
+  riskIndicators: text("risk_indicators").array().notNull().default(sql`'{}'::text[]`),
+  actionTaken: text("action_taken").notNull().$type<InteractionAction>(),
+  referralAgency: text("referral_agency"),
+  noActionRationale: text("no_action_rationale"),
+  escalationTriggered: boolean("escalation_triggered").notNull().default(false),
+  followUpRequired: boolean("follow_up_required").notNull().default(false),
+  followUpDate: date("follow_up_date"),
+  followUpStaffName: text("follow_up_staff_name"),
+  followUpCompleted: boolean("follow_up_completed").notNull().default(false),
+  followUpCompletedAt: timestamp("follow_up_completed_at"),
+  followUpNotes: text("follow_up_notes"),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
+  notes: text("notes"),
+  archived: boolean("archived").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertHomelessInteractionSchema = createInsertSchema(homelessInteractions).omit({
+  id: true,
+  createdAt: true,
+  archived: true,
+  escalationTriggered: true,
+  followUpCompleted: true,
+  followUpCompletedAt: true,
+  followUpNotes: true,
+});
+export type InsertHomelessInteraction = z.infer<typeof insertHomelessInteractionSchema>;
+export type HomelessInteraction = typeof homelessInteractions.$inferSelect;
+
 // Re-export chat models for AI integrations (used by integration storage)
 export * from "./models/chat";

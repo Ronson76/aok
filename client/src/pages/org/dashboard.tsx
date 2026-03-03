@@ -1776,6 +1776,12 @@ export default function OrganizationDashboard() {
                 </Button>
               </Link>
             )}
+            <Link href="/org/data-capture">
+              <Button variant="outline" size="sm" data-testid="button-data-capture">
+                <ClipboardList className="h-4 w-4 mr-2" />
+                Data Capture
+              </Button>
+            </Link>
             <Link href="/org/kiosk">
               <Button variant="outline" size="sm" data-testid="button-kiosk-mode">
                 <Camera className="h-4 w-4 mr-2" />

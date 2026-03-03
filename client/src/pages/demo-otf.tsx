@@ -337,12 +337,17 @@ const PROGRAMMES: Record<Programme, ProgrammeData> = {
         description: "Not everyone has a phone. AOK's Kiosk Mode runs on a tablet at reception - clients check in by entering their reference code or name and date of birth, and a photo is taken as proof of attendance. This records a full AOK check-in, so key workers see who showed up and who didn't.",
       },
       {
+        label: "Structured data capture during outreach and drop-ins",
+        aokFeature: "Data Capture",
+        description: "Every interaction with a client is logged through AOK's Data Capture tool - risk tier, contact type, safeguarding indicators, and actions taken. Staff use it on their phone during outreach or on a tablet at shelters. It tracks overdue follow-ups, flags lost contacts based on risk tier, and creates a tamper-evident audit trail for every decision made.",
+      },
+      {
         label: "Evidencing engagement for commissioners",
         aokFeature: "Funding Dashboard",
         description: "Local authority commissioners need evidence that Antifreeze is delivering outcomes. AOK captures engagement data and safeguarding compliance, generating the reports commissioners require.",
       },
     ],
-    honestNote: "AOK is not a homelessness case management system, but it does more than just protect staff. Homeless adults supported by Antifreeze can be registered as AOK clients with full Check-in Seats - receiving SMS welfare check-ins, with missed check-in alerts going to their key worker. For those without phones, AOK's Kiosk Mode lets clients physically check in at shelters and drop-in sessions using a tablet at reception - entering their reference code or name and date of birth with a photo for verification. This gives Off The Fence a way to monitor the wellbeing of rough sleepers and vulnerable adults whether they have a phone or not. On top of that, AOK protects the staff doing outreach (Lone Worker Hub and Emergency SOS), digitally audits safeguarding actions taken by key workers, and generates the evidence commissioners and funders need.",
+    honestNote: "AOK is not a homelessness case management system, but it does more than just protect staff. Homeless adults supported by Antifreeze can be registered as AOK clients with full Check-in Seats - receiving SMS welfare check-ins, with missed check-in alerts going to their key worker. For those without phones, AOK's Kiosk Mode lets clients physically check in at shelters and drop-in sessions using a tablet at reception. AOK's Data Capture tool gives outreach workers a structured way to log every interaction - risk tier, safeguarding indicators, actions taken, and follow-ups required. Lost contacts are flagged automatically based on risk tier (high risk = 2 days, medium = 7, low = 14). Every record is tamper-evident with full audit trail. On top of that, AOK protects the staff doing outreach (Lone Worker Hub and Emergency SOS), digitally audits safeguarding actions taken by key workers, and generates the evidence commissioners and funders need.",
     scenarios: [
       {
         title: "Evening street outreach",

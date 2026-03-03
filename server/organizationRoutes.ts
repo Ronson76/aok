@@ -2,11 +2,11 @@ import { Express, Request, Response, NextFunction } from "express";
 import { organizationStorage, storage, orgMemberStorage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema, activeEmergencyAlerts, checkIns, organizationClients, organizationClientProfiles, users, safeguardingLeads, dbsChecks, trainingRecords, rolePermissions, OrgPermission, roleLabels, orgApiKeys, kioskCheckins } from "@shared/schema";
+import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema, activeEmergencyAlerts, checkIns, organizationClients, organizationClientProfiles, users, safeguardingLeads, dbsChecks, trainingRecords, rolePermissions, OrgPermission, roleLabels, orgApiKeys, kioskCheckins, homelessInteractions, interactionProgrammes, interactionContactTypes, riskTiers, riskIndicators as riskIndicatorValues, interactionActions } from "@shared/schema";
 import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail, sendStaffInviteSMS, sendEmergencyContactConfirmationForStaffInvite } from "./notifications";
 import { plantTreeForNewSubscriber } from "./ecologiService";
 import { ensureDb } from "./db";
-import { sql, eq, and, isNotNull, desc } from "drizzle-orm";
+import { sql, eq, and, isNotNull, desc, gte, lte, isNull, asc, lt, count } from "drizzle-orm";
 import { loginRateLimiter, passwordResetRateLimiter } from "./security";
 import { getPeakTimes, getAlertHeatmap, getActiveSOSAlerts } from "./services/analyticsService";
 import { createHash, randomBytes } from "crypto";
@@ -4157,6 +4157,349 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("[KIOSK] Check-in error:", error);
       res.status(500).json({ error: "Failed to record check-in" });
+    }
+  });
+
+  const interactionSchema = z.object({
+    orgClientId: z.string().min(1),
+    staffName: z.string().min(1),
+    programme: z.enum(interactionProgrammes),
+    contactType: z.enum(interactionContactTypes),
+    riskTier: z.enum(riskTiers),
+    riskIndicators: z.array(z.enum(riskIndicatorValues)).default([]),
+    actionTaken: z.enum(interactionActions),
+    referralAgency: z.string().optional(),
+    noActionRationale: z.string().optional(),
+    followUpRequired: z.boolean().default(false),
+    followUpDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Follow-up date must be YYYY-MM-DD").optional(),
+    followUpStaffName: z.string().optional(),
+    latitude: z.string().optional(),
+    longitude: z.string().optional(),
+    notes: z.string().optional(),
+  }).refine(
+    (data) => !data.followUpRequired || (data.followUpDate && data.followUpStaffName),
+    { message: "Follow-up date and staff name are required when follow-up is required" }
+  ).refine(
+    (data) => data.actionTaken !== "referral_made" || data.referralAgency,
+    { message: "Referral agency is required when action is referral made" }
+  );
+
+  app.post("/api/org/interactions", requireOrganization, async (req, res) => {
+    try {
+      const data = interactionSchema.parse(req.body);
+      const db = ensureDb();
+
+      const [client] = await db.select().from(organizationClients)
+        .where(and(
+          eq(organizationClients.id, data.orgClientId),
+          eq(organizationClients.organizationId, req.userId!)
+        ));
+      if (!client) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      const escalationTriggered = data.actionTaken === "safeguarding_referral" || data.actionTaken === "dsl_informed";
+
+      if (data.riskTier === "high" && data.actionTaken === "no_action_required" && !data.noActionRationale) {
+        return res.status(400).json({ error: "Rationale required when no action taken for high-risk cases" });
+      }
+
+      const [interaction] = await db.insert(homelessInteractions).values({
+        organizationId: req.userId!,
+        orgClientId: data.orgClientId,
+        staffName: data.staffName,
+        programme: data.programme,
+        contactType: data.contactType,
+        riskTier: data.riskTier,
+        riskIndicators: data.riskIndicators,
+        actionTaken: data.actionTaken,
+        referralAgency: data.referralAgency || null,
+        noActionRationale: data.noActionRationale || null,
+        escalationTriggered,
+        followUpRequired: data.followUpRequired,
+        followUpDate: data.followUpDate || null,
+        followUpStaffName: data.followUpStaffName || null,
+        latitude: data.latitude || null,
+        longitude: data.longitude || null,
+        notes: data.notes || null,
+      }).returning();
+
+      console.log(`[DATA CAPTURE] Interaction logged for client ${data.orgClientId} by ${data.staffName}`);
+      res.json({ interaction });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("[DATA CAPTURE] Error:", error);
+      res.status(500).json({ error: "Failed to log interaction" });
+    }
+  });
+
+  app.get("/api/org/interactions", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const { clientId, limit: limitParam } = req.query;
+      const resultLimit = Math.min(parseInt(limitParam as string) || 50, 200);
+
+      let conditions = [
+        eq(homelessInteractions.organizationId, req.userId!),
+        eq(homelessInteractions.archived, false),
+      ];
+      if (clientId) {
+        conditions.push(eq(homelessInteractions.orgClientId, clientId as string));
+      }
+
+      const interactions = await db.select({
+        interaction: homelessInteractions,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+      })
+        .from(homelessInteractions)
+        .innerJoin(organizationClients, eq(homelessInteractions.orgClientId, organizationClients.id))
+        .where(and(...conditions))
+        .orderBy(desc(homelessInteractions.createdAt))
+        .limit(resultLimit);
+
+      res.json({ interactions });
+    } catch (error) {
+      console.error("[DATA CAPTURE] List error:", error);
+      res.status(500).json({ error: "Failed to load interactions" });
+    }
+  });
+
+  app.get("/api/org/interactions/overdue-followups", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const today = new Date().toISOString().split("T")[0];
+
+      const overdue = await db.select({
+        interaction: homelessInteractions,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+      })
+        .from(homelessInteractions)
+        .innerJoin(organizationClients, eq(homelessInteractions.orgClientId, organizationClients.id))
+        .where(and(
+          eq(homelessInteractions.organizationId, req.userId!),
+          eq(homelessInteractions.followUpRequired, true),
+          eq(homelessInteractions.followUpCompleted, false),
+          eq(homelessInteractions.archived, false),
+          isNotNull(homelessInteractions.followUpDate),
+          lte(homelessInteractions.followUpDate, today)
+        ))
+        .orderBy(asc(homelessInteractions.followUpDate));
+
+      res.json({ overdue });
+    } catch (error) {
+      console.error("[DATA CAPTURE] Overdue followups error:", error);
+      res.status(500).json({ error: "Failed to load overdue follow-ups" });
+    }
+  });
+
+  app.get("/api/org/interactions/lost-contacts", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const now = new Date();
+
+      const clients = await db.select({
+        id: organizationClients.id,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+        status: organizationClients.status,
+      })
+        .from(organizationClients)
+        .where(and(
+          eq(organizationClients.organizationId, req.userId!),
+          eq(organizationClients.status, "active")
+        ));
+
+      const allLatest = await db.execute(sql`
+        SELECT DISTINCT ON (org_client_id)
+          org_client_id, risk_tier, created_at
+        FROM homeless_interactions
+        WHERE organization_id = ${req.userId!} AND archived = false
+        ORDER BY org_client_id, created_at DESC
+      `);
+
+      const latestByClient = new Map<string, { riskTier: string; createdAt: Date }>();
+      for (const row of allLatest.rows) {
+        latestByClient.set(row.org_client_id as string, {
+          riskTier: row.risk_tier as string,
+          createdAt: new Date(row.created_at as string),
+        });
+      }
+
+      const lostContacts = [];
+      for (const client of clients) {
+        const latest = latestByClient.get(client.id);
+
+        if (!latest) {
+          lostContacts.push({
+            ...client,
+            lastRiskTier: null,
+            lastContactAt: null,
+            daysSinceContact: null,
+            expectedFrequencyDays: null,
+          });
+          continue;
+        }
+
+        const expectedDays = latest.riskTier === "high" ? 2 : latest.riskTier === "medium" ? 7 : 14;
+        const daysSince = Math.floor((now.getTime() - latest.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (daysSince > expectedDays) {
+          lostContacts.push({
+            ...client,
+            lastRiskTier: latest.riskTier,
+            lastContactAt: latest.createdAt,
+            daysSinceContact: daysSince,
+            expectedFrequencyDays: expectedDays,
+          });
+        }
+      }
+
+      res.json({ lostContacts });
+    } catch (error) {
+      console.error("[DATA CAPTURE] Lost contacts error:", error);
+      res.status(500).json({ error: "Failed to load lost contacts" });
+    }
+  });
+
+  app.get("/api/org/interactions/stats", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+
+      const [totalResult] = await db.select({ count: count() })
+        .from(homelessInteractions)
+        .where(and(
+          eq(homelessInteractions.organizationId, req.userId!),
+          eq(homelessInteractions.archived, false)
+        ));
+
+      const [escalationResult] = await db.select({ count: count() })
+        .from(homelessInteractions)
+        .where(and(
+          eq(homelessInteractions.organizationId, req.userId!),
+          eq(homelessInteractions.escalationTriggered, true),
+          eq(homelessInteractions.archived, false)
+        ));
+
+      const today = new Date().toISOString().split("T")[0];
+      const [overdueResult] = await db.select({ count: count() })
+        .from(homelessInteractions)
+        .where(and(
+          eq(homelessInteractions.organizationId, req.userId!),
+          eq(homelessInteractions.followUpRequired, true),
+          eq(homelessInteractions.followUpCompleted, false),
+          eq(homelessInteractions.archived, false),
+          isNotNull(homelessInteractions.followUpDate),
+          lte(homelessInteractions.followUpDate, today)
+        ));
+
+      const [highRiskResult] = await db.select({ count: count() })
+        .from(homelessInteractions)
+        .where(and(
+          eq(homelessInteractions.organizationId, req.userId!),
+          eq(homelessInteractions.riskTier, "high"),
+          eq(homelessInteractions.archived, false)
+        ));
+
+      res.json({
+        totalInteractions: totalResult?.count || 0,
+        escalations: escalationResult?.count || 0,
+        overdueFollowUps: overdueResult?.count || 0,
+        highRiskInteractions: highRiskResult?.count || 0,
+      });
+    } catch (error) {
+      console.error("[DATA CAPTURE] Stats error:", error);
+      res.status(500).json({ error: "Failed to load stats" });
+    }
+  });
+
+  app.post("/api/org/interactions/:interactionId/complete-followup", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const { interactionId } = req.params;
+      const { notes } = req.body;
+
+      const [interaction] = await db.select().from(homelessInteractions)
+        .where(and(
+          eq(homelessInteractions.id, interactionId),
+          eq(homelessInteractions.organizationId, req.userId!)
+        ));
+
+      if (!interaction) {
+        return res.status(404).json({ error: "Interaction not found" });
+      }
+
+      const [updated] = await db.update(homelessInteractions)
+        .set({
+          followUpCompleted: true,
+          followUpCompletedAt: new Date(),
+          followUpNotes: notes || null,
+        })
+        .where(eq(homelessInteractions.id, interactionId))
+        .returning();
+
+      res.json({ interaction: updated });
+    } catch (error) {
+      console.error("[DATA CAPTURE] Complete follow-up error:", error);
+      res.status(500).json({ error: "Failed to complete follow-up" });
+    }
+  });
+
+  app.get("/api/org/interactions/clients-list", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const clients = await db.select({
+        id: organizationClients.id,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+        status: organizationClients.status,
+      })
+        .from(organizationClients)
+        .where(and(
+          eq(organizationClients.organizationId, req.userId!),
+          eq(organizationClients.status, "active")
+        ))
+        .orderBy(asc(organizationClients.clientName));
+
+      res.json({ clients });
+    } catch (error) {
+      console.error("[DATA CAPTURE] Clients list error:", error);
+      res.status(500).json({ error: "Failed to load clients" });
+    }
+  });
+
+  app.post("/api/org/interactions/:interactionId/archive", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const { interactionId } = req.params;
+
+      const [interaction] = await db.select().from(homelessInteractions)
+        .where(and(
+          eq(homelessInteractions.id, interactionId),
+          eq(homelessInteractions.organizationId, req.userId!)
+        ));
+
+      if (!interaction) {
+        return res.status(404).json({ error: "Interaction not found" });
+      }
+
+      if (interaction.archived) {
+        return res.status(400).json({ error: "Interaction is already archived" });
+      }
+
+      const [updated] = await db.update(homelessInteractions)
+        .set({ archived: true })
+        .where(eq(homelessInteractions.id, interactionId))
+        .returning();
+
+      console.log(`[DATA CAPTURE] Interaction ${interactionId} archived by org ${req.userId}`);
+      res.json({ interaction: updated });
+    } catch (error) {
+      console.error("[DATA CAPTURE] Archive error:", error);
+      res.status(500).json({ error: "Failed to archive interaction" });
     }
   });
 

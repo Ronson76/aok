@@ -70,6 +70,7 @@ import AssuranceDashboard from "@/pages/org/assurance-dashboard";
 import OrgApiAccess from "@/pages/org/api-access";
 import FundingDashboard from "@/pages/org/funding-dashboard";
 import OrgKiosk from "@/pages/org/kiosk";
+import OrgDataCapture from "@/pages/org/data-capture";
 import AdminTeam from "@/pages/admin/team";
 import AdminInvite from "@/pages/admin/invite";
 import AdminArchitecture from "@/pages/admin/architecture";
@@ -249,6 +250,7 @@ function AppRoutes() {
       <Route path="/org/api-access" component={() => <ProtectedRoute component={OrgApiAccess} />} />
       <Route path="/org/funding" component={() => <ProtectedRoute component={FundingDashboard} />} />
       <Route path="/org/kiosk" component={() => <ProtectedRoute component={OrgKiosk} />} />
+      <Route path="/org/data-capture" component={() => <ProtectedRoute component={OrgDataCapture} />} />
       <Route path="/org/missed-checkins" component={() => <ProtectedRoute component={OrgMissedCheckInsReport} />} />
       <Route path="/org/emergency-alerts" component={() => <ProtectedRoute component={OrgEmergencyAlertsReport} />} />
       <Route path="/app/contacts" component={() => <ProtectedRoute component={Contacts} />} />
