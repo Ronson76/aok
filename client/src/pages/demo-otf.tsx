@@ -337,7 +337,7 @@ const PROGRAMMES: Record<Programme, ProgrammeData> = {
         description: "Local authority commissioners need evidence that Antifreeze is delivering outcomes. AOK captures engagement data and safeguarding compliance, generating the reports commissioners require.",
       },
     ],
-    honestNote: "AOK is not a homelessness case management system. Where it fits is in protecting the staff who do the outreach work (Lone Worker Hub and Emergency SOS), digitally auditing safeguarding actions taken by key workers, and generating the evidence commissioners and funders need.",
+    honestNote: "AOK is not a homelessness case management system, but it does more than just protect staff. Homeless adults supported by Antifreeze can be registered as AOK clients with full Check-in Seats - receiving SMS welfare check-ins, with missed check-in alerts going to their key worker. This gives Off The Fence a way to monitor the wellbeing of rough sleepers and vulnerable adults between outreach visits. On top of that, AOK protects the staff doing outreach (Lone Worker Hub and Emergency SOS), digitally audits safeguarding actions taken by key workers, and generates the evidence commissioners and funders need.",
     scenarios: [
       {
         title: "Evening street outreach",
