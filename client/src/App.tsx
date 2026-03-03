@@ -748,12 +748,12 @@ function Router() {
     return <OrgTeamInvite />;
   }
 
-  if (location === "/demo") {
-    return <Demo />;
-  }
-
   if (location === "/demo/otf") {
     return <DemoOTF />;
+  }
+
+  if (location === "/demo") {
+    return <Demo />;
   }
 
   if (location === "/guide") {
