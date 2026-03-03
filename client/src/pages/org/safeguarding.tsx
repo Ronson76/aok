@@ -1145,6 +1145,9 @@ export default function OrgSafeguardingPage() {
                                   )}
                                 </div>
                                 <p className="text-sm text-muted-foreground line-clamp-2">{concern.description}</p>
+                                {((concern as any).clientName || concern.clientId) && (
+                                  <p className="text-xs text-muted-foreground">Client: {(concern as any).clientName || getClientName(concern.clientId)}</p>
+                                )}
                                 <p className="text-xs text-muted-foreground">
                                   {format(new Date(concern.createdAt), "dd/MM/yyyy HH:mm")}
                                 </p>
@@ -1369,8 +1372,8 @@ export default function OrgSafeguardingPage() {
                           </p>
                         </div>
                         <p className="text-sm">{concern.description}</p>
-                        {concern.clientId && (
-                          <p className="text-sm text-muted-foreground">Client: {getClientName(concern.clientId)}</p>
+                        {(concern.clientId || (concern as any).clientName) && (
+                          <p className="text-sm text-muted-foreground">Client: {(concern as any).clientName || getClientName(concern.clientId)}</p>
                         )}
                         {concern.reportedByName && (
                           <p className="text-sm text-muted-foreground">Reported by: {concern.reportedByName}</p>

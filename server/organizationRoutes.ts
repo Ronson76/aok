@@ -1825,7 +1825,18 @@ export function registerOrganizationRoutes(app: Express) {
     try {
       const orgId = req.userId!;
       const concerns = await storage.getWelfareConcerns(orgId);
-      res.json(concerns);
+      const db = ensureDb();
+      const enriched = await Promise.all(concerns.map(async (concern) => {
+        let clientName: string | null = null;
+        if (concern.clientId) {
+          const [orgClient] = await db.select({ clientName: organizationClients.clientName })
+            .from(organizationClients)
+            .where(eq(organizationClients.id, concern.clientId));
+          clientName = orgClient?.clientName || null;
+        }
+        return { ...concern, clientName };
+      }));
+      res.json(enriched);
     } catch (error) {
       console.error("Error fetching welfare concerns:", error);
       res.status(500).json({ error: "Failed to fetch welfare concerns" });
@@ -2510,6 +2521,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.get("/api/org/safeguarding/summary", requireOrganization, async (req, res) => {
     try {
       const orgId = req.userId!;
+      const db = ensureDb();
       
       const [incidents, concerns, caseFiles, escalations, riskReports, emergencyAlerts] = await Promise.all([
         storage.getIncidents(orgId),
@@ -2562,7 +2574,16 @@ export function registerOrganizationRoutes(app: Express) {
         highRiskCases,
         amberRiskCases,
         recentIncidents: allIncidents.slice(0, 5),
-        recentConcerns: concerns.slice(0, 5),
+        recentConcerns: await Promise.all(concerns.slice(0, 5).map(async (concern) => {
+          let clientName: string | null = null;
+          if (concern.clientId) {
+            const [orgClient] = await db.select({ clientName: organizationClients.clientName })
+              .from(organizationClients)
+              .where(eq(organizationClients.id, concern.clientId));
+            clientName = orgClient?.clientName || null;
+          }
+          return { ...concern, clientName };
+        })),
       });
     } catch (error) {
       console.error("Error fetching safeguarding summary:", error);
@@ -4252,6 +4273,7 @@ export function registerOrganizationRoutes(app: Express) {
     riskTier: z.enum(riskTiers),
     riskIndicators: z.array(z.enum(riskIndicatorValues)).default([]),
     actionTaken: z.enum(interactionActions),
+    actionTakenOther: z.string().optional(),
     referralAgency: z.string().optional(),
     noActionRationale: z.string().optional(),
     followUpRequired: z.boolean().default(false),
@@ -4297,6 +4319,7 @@ export function registerOrganizationRoutes(app: Express) {
         riskTier: data.riskTier,
         riskIndicators: data.riskIndicators,
         actionTaken: data.actionTaken,
+        actionTakenOther: data.actionTaken === "other" ? (data.actionTakenOther || null) : null,
         referralAgency: data.referralAgency || null,
         noActionRationale: data.noActionRationale || null,
         escalationTriggered,
@@ -5233,7 +5256,8 @@ export function registerOrganizationRoutes(app: Express) {
         contactType: z.enum(["outreach_visit", "shelter_checkin", "drop_in_meeting", "phone_contact", "multi_agency_discussion"]),
         riskTier: z.enum(["high", "medium", "low"]),
         riskIndicators: z.array(z.string()).optional(),
-        actionTaken: z.enum(["advice_provided", "referral_made", "emergency_accommodation", "dsl_informed", "safeguarding_referral", "no_action_required", "follow_up_planned"]),
+        actionTaken: z.enum(["advice_provided", "referral_made", "emergency_accommodation", "dsl_informed", "safeguarding_referral", "no_action_required", "follow_up_planned", "other"]),
+        actionTakenOther: z.string().optional(),
         referralAgency: z.string().optional(),
         noActionRationale: z.string().optional(),
         followUpRequired: z.boolean().optional(),
@@ -5266,6 +5290,7 @@ export function registerOrganizationRoutes(app: Express) {
         riskTier: data.riskTier,
         riskIndicators: data.riskIndicators || [],
         actionTaken: data.actionTaken,
+        actionTakenOther: data.actionTaken === "other" ? (data.actionTakenOther || null) : null,
         referralAgency: data.referralAgency || null,
         noActionRationale: data.noActionRationale || null,
         escalationTriggered: isEscalation,
