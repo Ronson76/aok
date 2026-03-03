@@ -224,6 +224,11 @@ export default function OrganizationDashboard() {
   const [showResendPasswordDialog, setShowResendPasswordDialog] = useState(false);
   const [showGuidedTour, setShowGuidedTour] = useState(false);
 
+  const [showSendDataCaptureDialog, setShowSendDataCaptureDialog] = useState(false);
+  const [dataCaptureMethod, setDataCaptureMethod] = useState<"sms" | "email">("sms");
+  const [dataCaptureRecipient, setDataCaptureRecipient] = useState("");
+  const [dataCaptureCountryCode, setDataCaptureCountryCode] = useState("+44");
+
   // Birthday upgrade transition state
   const [showBirthdayUpgradeDialog, setShowBirthdayUpgradeDialog] = useState(false);
   const [birthdayUpgradeClient, setBirthdayUpgradeClient] = useState<{ orgClientId: string; clientName: string | null; dateOfBirth: string | null } | null>(null);
@@ -731,6 +736,34 @@ export default function OrganizationDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/org/clients/birthday-transitions"] });
+    },
+  });
+
+  const sendDataCaptureLinkMutation = useMutation({
+    mutationFn: async () => {
+      const recipient = dataCaptureMethod === "sms"
+        ? `${dataCaptureCountryCode}${dataCaptureRecipient}`
+        : dataCaptureRecipient;
+      const response = await apiRequest("POST", "/api/org/send-data-capture-link", {
+        method: dataCaptureMethod,
+        recipient,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Link Sent",
+        description: `Data Capture link sent via ${dataCaptureMethod === "sms" ? "SMS" : "email"}`,
+      });
+      setShowSendDataCaptureDialog(false);
+      setDataCaptureRecipient("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Send",
+        description: error.message || "Could not send the link",
+        variant: "destructive",
+      });
     },
   });
 
@@ -1776,12 +1809,15 @@ export default function OrganizationDashboard() {
                 </Button>
               </Link>
             )}
-            <Link href="/org/data-capture">
-              <Button variant="outline" size="sm" data-testid="button-data-capture">
-                <ClipboardList className="h-4 w-4 mr-2" />
-                Data Capture
-              </Button>
-            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSendDataCaptureDialog(true)}
+              data-testid="button-data-capture"
+            >
+              <ClipboardList className="h-4 w-4 mr-2" />
+              Data Capture
+            </Button>
             <Link href="/org/kiosk">
               <Button variant="outline" size="sm" data-testid="button-kiosk-mode">
                 <Camera className="h-4 w-4 mr-2" />
@@ -2458,6 +2494,104 @@ export default function OrganizationDashboard() {
       </Dialog>
 
       {/* Birthday Upgrade Dialog */}
+      <Dialog open={showSendDataCaptureDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowSendDataCaptureDialog(false);
+          setDataCaptureRecipient("");
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-primary" />
+              Data Capture
+            </DialogTitle>
+            <DialogDescription>
+              Send the Data Capture link to a team member via SMS or email, or open it directly.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="flex gap-2">
+              <Button
+                variant={dataCaptureMethod === "sms" ? "default" : "outline"}
+                size="sm"
+                className="flex-1"
+                onClick={() => setDataCaptureMethod("sms")}
+                data-testid="button-dc-method-sms"
+              >
+                <Phone className="h-4 w-4 mr-1" /> SMS
+              </Button>
+              <Button
+                variant={dataCaptureMethod === "email" ? "default" : "outline"}
+                size="sm"
+                className="flex-1"
+                onClick={() => setDataCaptureMethod("email")}
+                data-testid="button-dc-method-email"
+              >
+                <Mail className="h-4 w-4 mr-1" /> Email
+              </Button>
+            </div>
+
+            {dataCaptureMethod === "sms" ? (
+              <div className="space-y-2">
+                <Label>Mobile Number</Label>
+                <div className="flex gap-2">
+                  <Select value={dataCaptureCountryCode} onValueChange={setDataCaptureCountryCode}>
+                    <SelectTrigger className="w-24" data-testid="select-dc-country-code">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="+44">+44 UK</SelectItem>
+                      <SelectItem value="+353">+353 IE</SelectItem>
+                      <SelectItem value="+1">+1 US</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="tel"
+                    placeholder="7XXX XXXXXX"
+                    value={dataCaptureRecipient}
+                    onChange={(e) => setDataCaptureRecipient(e.target.value.replace(/[^0-9]/g, ""))}
+                    data-testid="input-dc-phone"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Email Address</Label>
+                <Input
+                  type="email"
+                  placeholder="staff@example.com"
+                  value={dataCaptureRecipient}
+                  onChange={(e) => setDataCaptureRecipient(e.target.value)}
+                  data-testid="input-dc-email"
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter className="flex-col gap-2 sm:flex-col">
+            <Button
+              className="w-full"
+              disabled={!dataCaptureRecipient || (dataCaptureMethod === "sms" && dataCaptureRecipient.length < 7) || sendDataCaptureLinkMutation.isPending}
+              onClick={() => sendDataCaptureLinkMutation.mutate()}
+              data-testid="button-send-dc-link"
+            >
+              {sendDataCaptureLinkMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Share2 className="h-4 w-4 mr-2" />
+              )}
+              Send Link
+            </Button>
+            <Link href="/org/data-capture" className="w-full">
+              <Button variant="outline" className="w-full" data-testid="button-open-dc-direct">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open Data Capture
+              </Button>
+            </Link>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showBirthdayUpgradeDialog} onOpenChange={(open) => {
         if (!open) {
           setShowBirthdayUpgradeDialog(false);
