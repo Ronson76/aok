@@ -1,0 +1,212 @@
+Good. Clean reset.
+
+You want a **standalone data capture app for homelessness services** that:
+
+* Feeds into AOK
+* Meets safeguarding requirements
+* Is audit-ready
+* Doesn’t overcomplicate
+* Works in outreach + shelter environments
+
+No dashboards right now. No funding fluff. Just the capture layer.
+
+Here it is.
+
+---
+
+# 🧱 AOK Homeless Data Capture App (Lean + Compliant)
+
+This is staff-led. Not service-user dependent.
+
+---
+
+# 1️⃣ Core Structure (One Interaction = One Record)
+
+Every time staff engage with a person, they log a structured record.
+
+### Section A – Identity
+
+* Individual ID / Name
+* Programme (Outreach / Hostel / Drop-in)
+* Assigned Worker
+
+---
+
+### Section B – Contact Type
+
+* Outreach visit
+* Shelter check-in (staff confirmed)
+* Drop-in meeting
+* Phone contact
+* Multi-agency discussion
+
+Timestamp auto-logged.
+Location auto-logged (if device-enabled).
+
+---
+
+### Section C – Safeguarding Risk Status
+
+Risk Tier (mandatory):
+
+* High
+* Medium
+* Low
+
+Risk Indicators (tick-box only):
+
+* Rough sleeping
+* Exploitation risk
+* Domestic abuse
+* Substance misuse
+* Mental health concern
+* Violence risk
+* Self-harm concern
+* Missing contact pattern
+
+No free-text essays unless necessary.
+
+Structured data > narratives.
+
+---
+
+### Section D – Action Taken
+
+Mandatory selection:
+
+* Advice provided
+* Referral made (select agency)
+* Emergency accommodation arranged
+* DSL informed
+* Safeguarding referral submitted
+* No action required
+* Follow-up planned
+
+If “Safeguarding referral submitted” selected → escalation log triggered.
+
+---
+
+### Section E – Follow-Up Requirement
+
+* Follow-up required? (Yes / No)
+* Review date
+* Responsible staff member
+
+System automatically tracks overdue follow-ups.
+
+---
+
+# 2️⃣ Safeguarding Compliance Layer (Built In)
+
+To meet safeguarding expectations:
+
+The app must automatically:
+
+* Time-stamp every entry
+* Record staff identity
+* Prevent deletion (archive only)
+* Maintain full audit trail
+* Log escalation decisions
+* Record rationale for “no action” in high-risk cases
+
+No silent edits.
+No missing accountability.
+
+That’s what inspectors look for.
+
+---
+
+# 3️⃣ Shelter Tablet Version (Simplified Input)
+
+If used at shelter:
+
+Two modes:
+
+### Mode 1 – Staff Assisted
+
+Staff logs full structured interaction (as above).
+
+### Mode 2 – Self Check-In (Minimal)
+
+Service user enters:
+
+* Name / ID
+* “Request to see worker?” Yes / No
+
+That creates a “contact logged” entry.
+
+But risk tier is not updated automatically.
+
+Only staff update risk.
+
+That keeps safeguarding clean.
+
+---
+
+# 4️⃣ Lost Contact Flagging Logic
+
+At intake:
+
+Risk tier determines expected contact frequency.
+
+If no interaction logged within timeframe:
+
+* Flag appears in staff dashboard
+* Outreach attempt required
+* Attempt must be logged
+
+This creates documented safeguarding oversight.
+
+---
+
+# 5️⃣ What This App Is NOT
+
+It is not:
+
+* A crisis line
+* A live monitoring tool
+* A predictive AI engine
+* A replacement for statutory systems
+
+It is:
+
+**Structured safeguarding interaction capture with compliance integrity.**
+
+---
+
+# 6️⃣ What Makes It Legally Safer
+
+To protect AOK and the organisation:
+
+* Clear disclaimer: Not emergency monitoring
+* Clear escalation responsibility sits with organisation
+* Role-based permissions (worker / manager / DSL)
+* Data retention controls aligned to policy
+* Secure login per staff member
+
+That’s governance-ready.
+
+---
+
+# Final Shape
+
+You now have:
+
+✔ Staff-led structured logging
+✔ Risk-tier control
+✔ Escalation documentation
+✔ Follow-up enforcement
+✔ Shelter check-in integration
+✔ Audit trail integrity
+
+That’s a serious safeguarding data capture system.
+
+Not bloated. Not gimmicky.
+
+If you want next, I’ll outline:
+
+* The exact MVP build order (what to build first vs later)
+* Or the minimum technical architecture to make this secure and scalable
+* Or the safeguarding policy wording to sit behind this
+
+Pick.
