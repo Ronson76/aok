@@ -3650,7 +3650,7 @@ export async function registerRoutes(
       res.json(session);
     } catch (error: any) {
       console.error("[LONE WORKER] Error starting session:", error);
-      res.status(400).json({ error: error.message || "Failed to start session" });
+      res.status(400).json({ error: "Failed to start session" });
     }
   });
 
@@ -3695,7 +3695,7 @@ export async function registerRoutes(
       res.json(checkIn);
     } catch (error: any) {
       console.error("[LONE WORKER] Check-in error:", error);
-      res.status(400).json({ error: error.message || "Failed to check in" });
+      res.status(400).json({ error: "Failed to check in" });
     }
   });
 
@@ -4746,7 +4746,8 @@ export async function registerRoutes(
       await db.execute(sql`DELETE FROM lone_worker_sessions WHERE status IN ('resolved', 'unresponsive')`);
       res.json({ success: true, message: `Cleared ${testIds.length} test/archived users and all associated data` });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      console.error("[CLEANUP] Error:", error);
+      res.status(500).json({ error: "Failed to clear test data" });
     }
   });
 
