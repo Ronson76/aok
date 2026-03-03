@@ -2220,5 +2220,19 @@ export const fundingAuditEvents = pgTable("funding_audit_events", {
 
 export type FundingAuditEvent = typeof fundingAuditEvents.$inferSelect;
 
+export const kioskCheckins = pgTable("kiosk_checkins", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  orgClientId: varchar("org_client_id").notNull().references(() => organizationClients.id, { onDelete: "cascade" }),
+  photoPath: text("photo_path"),
+  lookupMethod: text("lookup_method").notNull().$type<"reference_code" | "name_dob">(),
+  checkedInAt: timestamp("checked_in_at").notNull().defaultNow(),
+  checkedInBy: varchar("checked_in_by"),
+});
+
+export const insertKioskCheckinSchema = createInsertSchema(kioskCheckins).omit({ id: true, checkedInAt: true });
+export type InsertKioskCheckin = z.infer<typeof insertKioskCheckinSchema>;
+export type KioskCheckin = typeof kioskCheckins.$inferSelect;
+
 // Re-export chat models for AI integrations (used by integration storage)
 export * from "./models/chat";
