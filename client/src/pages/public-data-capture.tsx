@@ -310,8 +310,12 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
       });
       return response.json();
     },
-    onSuccess: () => {
-      toast({ title: "Interaction Logged", description: "Record saved to audit trail and synced to org dashboard" });
+    onSuccess: (data) => {
+      if (data.welfareConcernCreated) {
+        toast({ title: "Interaction Logged + Welfare Concern Created", description: "Escalation detected - a welfare concern has been automatically added to the Safeguarding Hub" });
+      } else {
+        toast({ title: "Interaction Logged", description: "Record saved to audit trail and synced to org dashboard" });
+      }
       resetForm();
       queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions`] });
       queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions/stats`] });

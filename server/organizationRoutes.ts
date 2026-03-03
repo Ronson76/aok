@@ -82,54 +82,52 @@ async function autoCreateWelfareConcern(opts: {
   referralAgency?: string | null;
   interactionId: string;
 }) {
-  try {
-    const indicatorLabels = (opts.riskIndicators || [])
-      .map(i => RISK_INDICATOR_LABELS[i] || i)
-      .join(", ");
+  const indicatorLabels = (opts.riskIndicators || [])
+    .map(i => RISK_INDICATOR_LABELS[i] || i)
+    .join(", ");
 
-    const actionLabel = ACTION_LABELS[opts.actionTaken] || opts.actionTaken;
+  const actionLabel = ACTION_LABELS[opts.actionTaken] || opts.actionTaken;
 
-    let concernType = "welfare_concern";
-    if (opts.actionTaken === "safeguarding_referral") {
-      concernType = "safeguarding_referral";
-    } else if (opts.actionTaken === "dsl_informed") {
-      concernType = "dsl_informed";
-    }
-
-    const descParts: string[] = [];
-    descParts.push(`Auto-generated from Data Capture interaction.`);
-    descParts.push(`Action: ${actionLabel}.`);
-    descParts.push(`Risk Tier: ${opts.riskTier.charAt(0).toUpperCase() + opts.riskTier.slice(1)}.`);
-    if (indicatorLabels) {
-      descParts.push(`Risk Indicators: ${indicatorLabels}.`);
-    }
-    if (opts.referralAgency) {
-      descParts.push(`Referral Agency: ${opts.referralAgency}.`);
-    }
-
-    await storage.createWelfareConcern(opts.organizationId, {
-      clientId: opts.orgClientId,
-      reportedByName: opts.staffName,
-      concernType,
-      description: descParts.join(" "),
-      observedBehaviours: indicatorLabels || null,
-      isAnonymous: false,
-      status: "open",
-    });
-
-    await storage.createAuditEntry(opts.organizationId, {
-      userEmail: opts.staffName,
-      userRole: "staff",
-      action: "create",
-      entityType: "welfare_concern",
-      entityId: opts.interactionId,
-      newData: { source: "data_capture_auto", actionTaken: opts.actionTaken, riskTier: opts.riskTier },
-    });
-
-    console.log(`[SAFEGUARDING] Auto-created welfare concern from interaction ${opts.interactionId} for client ${opts.orgClientId}`);
-  } catch (error) {
-    console.error("[SAFEGUARDING] Failed to auto-create welfare concern:", error);
+  let concernType = "welfare_concern";
+  if (opts.actionTaken === "safeguarding_referral") {
+    concernType = "safeguarding_referral";
+  } else if (opts.actionTaken === "dsl_informed") {
+    concernType = "dsl_informed";
   }
+
+  const descParts: string[] = [];
+  descParts.push(`Action: ${actionLabel}.`);
+  descParts.push(`Risk Tier: ${opts.riskTier.charAt(0).toUpperCase() + opts.riskTier.slice(1)}.`);
+  if (indicatorLabels) {
+    descParts.push(`Risk Indicators: ${indicatorLabels}.`);
+  }
+  if (opts.referralAgency) {
+    descParts.push(`Referral Agency: ${opts.referralAgency}.`);
+  }
+
+  const concern = await storage.createWelfareConcern(opts.organizationId, {
+    clientId: opts.orgClientId,
+    reportedByName: opts.staffName,
+    concernType,
+    description: descParts.join(" "),
+    observedBehaviours: indicatorLabels || null,
+    isAnonymous: false,
+    status: "open",
+    source: "data_capture",
+    sourceInteractionId: opts.interactionId,
+  });
+
+  await storage.createAuditEntry(opts.organizationId, {
+    userEmail: opts.staffName,
+    userRole: "staff",
+    action: "create",
+    entityType: "welfare_concern",
+    entityId: concern.id,
+    newData: { source: "data_capture", interactionId: opts.interactionId, actionTaken: opts.actionTaken, riskTier: opts.riskTier },
+  });
+
+  console.log(`[SAFEGUARDING] Auto-created welfare concern ${concern.id} from interaction ${opts.interactionId} for client ${opts.orgClientId}`);
+  return concern;
 }
 
 async function requireOrganization(req: Request, res: Response, next: NextFunction) {
@@ -4305,21 +4303,26 @@ export function registerOrganizationRoutes(app: Express) {
         notes: data.notes || null,
       }).returning();
 
+      let welfareConcern = null;
       if (escalationTriggered) {
-        autoCreateWelfareConcern({
-          organizationId: req.userId!,
-          orgClientId: data.orgClientId,
-          staffName: data.staffName,
-          riskTier: data.riskTier,
-          riskIndicators: data.riskIndicators || [],
-          actionTaken: data.actionTaken,
-          referralAgency: data.referralAgency,
-          interactionId: interaction.id,
-        });
+        try {
+          welfareConcern = await autoCreateWelfareConcern({
+            organizationId: req.userId!,
+            orgClientId: data.orgClientId,
+            staffName: data.staffName,
+            riskTier: data.riskTier,
+            riskIndicators: data.riskIndicators || [],
+            actionTaken: data.actionTaken,
+            referralAgency: data.referralAgency,
+            interactionId: interaction.id,
+          });
+        } catch (wcError) {
+          console.error("[DATA CAPTURE] Failed to auto-create welfare concern:", wcError);
+        }
       }
 
       console.log(`[DATA CAPTURE] Interaction logged for client ${data.orgClientId} by ${data.staffName}`);
-      res.json({ interaction });
+      res.json({ interaction, welfareConcernCreated: !!welfareConcern });
     } catch (error: any) {
       if (error.name === "ZodError") {
         return res.status(400).json({ error: "Invalid data", details: error.errors });
@@ -5267,21 +5270,26 @@ export function registerOrganizationRoutes(app: Express) {
         notes: data.notes || null,
       }).returning();
 
+      let welfareConcern = null;
       if (isEscalation) {
-        autoCreateWelfareConcern({
-          organizationId: orgId,
-          orgClientId: data.orgClientId,
-          staffName: data.staffName,
-          riskTier: data.riskTier,
-          riskIndicators: data.riskIndicators || [],
-          actionTaken: data.actionTaken,
-          referralAgency: data.referralAgency,
-          interactionId: interaction.id,
-        });
+        try {
+          welfareConcern = await autoCreateWelfareConcern({
+            organizationId: orgId,
+            orgClientId: data.orgClientId,
+            staffName: data.staffName,
+            riskTier: data.riskTier,
+            riskIndicators: data.riskIndicators || [],
+            actionTaken: data.actionTaken,
+            referralAgency: data.referralAgency,
+            interactionId: interaction.id,
+          });
+        } catch (wcError) {
+          console.error("[PUBLIC DC] Failed to auto-create welfare concern:", wcError);
+        }
       }
 
       console.log(`[PUBLIC DC] Interaction logged for client ${data.orgClientId} by ${data.staffName}`);
-      res.json({ interaction });
+      res.json({ interaction, welfareConcernCreated: !!welfareConcern });
     } catch (error: any) {
       if (error.name === "ZodError") {
         return res.status(400).json({ error: "Invalid interaction data", details: error.errors });
