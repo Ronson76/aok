@@ -5147,6 +5147,80 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
+  app.post("/api/dc/:token/self-checkin", resolveDataCaptureToken, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req as any).dcOrgId;
+
+      const data = z.object({
+        nameOrReference: z.string().min(1, "Name or reference code is required"),
+        requestWorker: z.boolean(),
+      }).parse(req.body);
+
+      const searchTerm = data.nameOrReference.trim();
+      let client: any = null;
+
+      const allClients = await db.select({
+        id: organizationClients.id,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+      })
+        .from(organizationClients)
+        .where(and(
+          eq(organizationClients.organizationId, orgId),
+          eq(organizationClients.status, "active"),
+          isNull(organizationClients.archivedAt)
+        ));
+
+      client = allClients.find((c) =>
+        c.referenceCode?.toLowerCase() === searchTerm.toLowerCase() ||
+        c.clientName?.toLowerCase() === searchTerm.toLowerCase()
+      );
+
+      if (!client) {
+        client = allClients.find((c) =>
+          c.clientName?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+
+      if (!client) {
+        return res.status(404).json({ error: "No matching individual found. Please check your name or reference code and try again." });
+      }
+
+      const [interaction] = await db.insert(homelessInteractions).values({
+        organizationId: orgId,
+        orgClientId: client.id,
+        staffName: "Self Check-in",
+        programme: "drop_in",
+        contactType: "shelter_checkin",
+        riskTier: "low",
+        riskIndicators: [],
+        actionTaken: data.requestWorker ? "follow_up_planned" : "no_action_required",
+        escalationTriggered: false,
+        followUpRequired: data.requestWorker,
+        followUpDate: data.requestWorker ? new Date().toISOString().split("T")[0] : null,
+        followUpStaffName: data.requestWorker ? "Unassigned" : null,
+        notes: data.requestWorker
+          ? "Self check-in: Requested to see a worker"
+          : "Self check-in: No worker requested",
+      }).returning();
+
+      console.log(`[PUBLIC DC] Self check-in by ${client.clientName} (${client.referenceCode}), worker requested: ${data.requestWorker}`);
+      res.json({
+        success: true,
+        clientName: client.clientName,
+        referenceCode: client.referenceCode,
+        workerRequested: data.requestWorker,
+      });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Please enter your name or reference code" });
+      }
+      console.error("[PUBLIC DC] Self check-in error:", error);
+      res.status(500).json({ error: "Check-in failed. Please ask a staff member for help." });
+    }
+  });
+
   app.get("/api/dc/:token/interactions/stats", resolveDataCaptureToken, async (req, res) => {
     try {
       const db = ensureDb();
