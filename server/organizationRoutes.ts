@@ -4630,6 +4630,7 @@ export function registerOrganizationRoutes(app: Express) {
   app.post("/api/org/send-data-capture-link", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
+      console.log("[DATA CAPTURE LINK] Request body keys:", Object.keys(req.body || {}), "method:", req.body?.method, "recipient length:", req.body?.recipient?.length, "password length:", req.body?.password?.length);
       const { method, recipient, password } = z.object({
         method: z.enum(["sms", "email"]),
         recipient: z.string().min(1),
@@ -4687,7 +4688,10 @@ export function registerOrganizationRoutes(app: Express) {
       }
     } catch (error: any) {
       if (error.name === "ZodError") {
-        return res.status(400).json({ error: "Please provide a valid recipient and method" });
+        const issues = error.issues || [];
+        const fields = issues.map((i: any) => i.path?.join(".") || i.message).join(", ");
+        console.error("[DATA CAPTURE LINK] Validation error:", JSON.stringify(issues));
+        return res.status(400).json({ error: `Validation failed: ${fields || "invalid input"}` });
       }
       console.error("[DATA CAPTURE LINK] Send error:", error);
       res.status(500).json({ error: "Failed to send link" });
