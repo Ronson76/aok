@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Camera, CheckCircle, User, Hash, Calendar, ArrowLeft,
-  Loader2, X, RefreshCw, Shield, Clock, LogOut
+  Loader2, RefreshCw, Shield, LogOut
 } from "lucide-react";
 
 type LookupMethod = "reference_code" | "name_dob";
@@ -22,16 +22,6 @@ interface FoundClient {
   referenceCode: string | null;
   seatType: string;
   status: string;
-}
-
-interface RecentCheckin {
-  id: string;
-  orgClientId: string;
-  photoPath: string | null;
-  lookupMethod: string;
-  checkedInAt: string;
-  clientName: string | null;
-  referenceCode: string | null;
 }
 
 export default function KioskPage() {
@@ -50,11 +40,6 @@ export default function KioskPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const autoResetTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  const { data: recentData } = useQuery<{ checkins: RecentCheckin[] }>({
-    queryKey: ["/api/kiosk/recent"],
-    refetchInterval: 30000,
-  });
 
   const lookupMutation = useMutation({
     mutationFn: async () => {
@@ -91,7 +76,8 @@ export default function KioskPage() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/kiosk/recent"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
       setStep("success");
       autoResetTimerRef.current = setTimeout(() => {
         resetKiosk();
@@ -186,21 +172,6 @@ export default function KioskPage() {
     };
   }, []);
 
-  const formatTime = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-  };
-
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    const today = new Date();
-    if (d.toDateString() === today.toDateString()) return "Today";
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
-    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col" data-testid="kiosk-page">
       <div className="bg-slate-800/80 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
@@ -228,7 +199,10 @@ export default function KioskPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/org/dashboard")}
+            onClick={async () => {
+              await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+              navigate("/org/login");
+            }}
             className="text-slate-400 hover:text-white"
             data-testid="button-kiosk-exit"
           >
@@ -518,46 +492,6 @@ export default function KioskPage() {
               </CardContent>
             </Card>
           )}
-        </div>
-
-        <div className="w-80 bg-slate-800/50 border-l border-slate-700 p-4 hidden lg:block">
-          <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-            <Clock className="h-4 w-4" /> Recent Check-ins
-          </h3>
-          <div className="space-y-2">
-            {recentData?.checkins && recentData.checkins.length > 0 ? (
-              recentData.checkins.map((checkin) => (
-                <div
-                  key={checkin.id}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-slate-700/30"
-                  data-testid={`recent-checkin-${checkin.id}`}
-                >
-                  {checkin.photoPath ? (
-                    <img
-                      src={checkin.photoPath}
-                      alt=""
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center">
-                      <User className="h-5 w-5 text-slate-400" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
-                      {checkin.clientName || "Unknown"}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {formatDate(checkin.checkedInAt)} at {formatTime(checkin.checkedInAt)}
-                    </p>
-                  </div>
-                  <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-slate-500 text-center py-8">No check-ins yet today</p>
-            )}
-          </div>
         </div>
       </div>
     </div>

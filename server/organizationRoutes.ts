@@ -4160,28 +4160,4 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
-  app.get("/api/kiosk/recent", requireOrganization, async (req, res) => {
-    try {
-      const db = ensureDb();
-      const recent = await db.select({
-        id: kioskCheckins.id,
-        orgClientId: kioskCheckins.orgClientId,
-        photoPath: kioskCheckins.photoPath,
-        lookupMethod: kioskCheckins.lookupMethod,
-        checkedInAt: kioskCheckins.checkedInAt,
-        clientName: organizationClients.clientName,
-        referenceCode: organizationClients.referenceCode,
-      })
-        .from(kioskCheckins)
-        .innerJoin(organizationClients, eq(kioskCheckins.orgClientId, organizationClients.id))
-        .where(eq(kioskCheckins.organizationId, req.userId!))
-        .orderBy(desc(kioskCheckins.checkedInAt))
-        .limit(20);
-
-      res.json({ checkins: recent });
-    } catch (error) {
-      console.error("[KIOSK] Recent check-ins error:", error);
-      res.status(500).json({ error: "Failed to load recent check-ins" });
-    }
-  });
 }
