@@ -51,6 +51,87 @@ export function parseScheduleTime(timeStr: string): Date | null {
   return null;
 }
 
+const RISK_INDICATOR_LABELS: Record<string, string> = {
+  rough_sleeping: "Rough Sleeping",
+  exploitation_risk: "Exploitation Risk",
+  domestic_abuse: "Domestic Abuse",
+  substance_misuse: "Substance Misuse",
+  mental_health: "Mental Health Concern",
+  violence_risk: "Violence Risk",
+  self_harm: "Self-Harm Concern",
+  missing_contact: "Missing Contact Pattern",
+};
+
+const ACTION_LABELS: Record<string, string> = {
+  advice_provided: "Advice Provided",
+  referral_made: "Referral Made",
+  emergency_accommodation: "Emergency Accommodation Arranged",
+  dsl_informed: "DSL Informed",
+  safeguarding_referral: "Safeguarding Referral Submitted",
+  no_action_required: "No Action Required",
+  follow_up_planned: "Follow-up Planned",
+};
+
+async function autoCreateWelfareConcern(opts: {
+  organizationId: string;
+  orgClientId: string;
+  staffName: string;
+  riskTier: string;
+  riskIndicators: string[];
+  actionTaken: string;
+  referralAgency?: string | null;
+  interactionId: string;
+}) {
+  try {
+    const indicatorLabels = (opts.riskIndicators || [])
+      .map(i => RISK_INDICATOR_LABELS[i] || i)
+      .join(", ");
+
+    const actionLabel = ACTION_LABELS[opts.actionTaken] || opts.actionTaken;
+
+    let concernType = "welfare_concern";
+    if (opts.actionTaken === "safeguarding_referral") {
+      concernType = "safeguarding_referral";
+    } else if (opts.actionTaken === "dsl_informed") {
+      concernType = "dsl_informed";
+    }
+
+    const descParts: string[] = [];
+    descParts.push(`Auto-generated from Data Capture interaction.`);
+    descParts.push(`Action: ${actionLabel}.`);
+    descParts.push(`Risk Tier: ${opts.riskTier.charAt(0).toUpperCase() + opts.riskTier.slice(1)}.`);
+    if (indicatorLabels) {
+      descParts.push(`Risk Indicators: ${indicatorLabels}.`);
+    }
+    if (opts.referralAgency) {
+      descParts.push(`Referral Agency: ${opts.referralAgency}.`);
+    }
+
+    await storage.createWelfareConcern(opts.organizationId, {
+      clientId: opts.orgClientId,
+      reportedByName: opts.staffName,
+      concernType,
+      description: descParts.join(" "),
+      observedBehaviours: indicatorLabels || null,
+      isAnonymous: false,
+      status: "open",
+    });
+
+    await storage.createAuditEntry(opts.organizationId, {
+      userEmail: opts.staffName,
+      userRole: "staff",
+      action: "create",
+      entityType: "welfare_concern",
+      entityId: opts.interactionId,
+      newData: { source: "data_capture_auto", actionTaken: opts.actionTaken, riskTier: opts.riskTier },
+    });
+
+    console.log(`[SAFEGUARDING] Auto-created welfare concern from interaction ${opts.interactionId} for client ${opts.orgClientId}`);
+  } catch (error) {
+    console.error("[SAFEGUARDING] Failed to auto-create welfare concern:", error);
+  }
+}
+
 async function requireOrganization(req: Request, res: Response, next: NextFunction) {
   const orgMemberSessionId = req.cookies?.org_member_session;
   if (orgMemberSessionId) {
@@ -4224,6 +4305,19 @@ export function registerOrganizationRoutes(app: Express) {
         notes: data.notes || null,
       }).returning();
 
+      if (escalationTriggered) {
+        autoCreateWelfareConcern({
+          organizationId: req.userId!,
+          orgClientId: data.orgClientId,
+          staffName: data.staffName,
+          riskTier: data.riskTier,
+          riskIndicators: data.riskIndicators || [],
+          actionTaken: data.actionTaken,
+          referralAgency: data.referralAgency,
+          interactionId: interaction.id,
+        });
+      }
+
       console.log(`[DATA CAPTURE] Interaction logged for client ${data.orgClientId} by ${data.staffName}`);
       res.json({ interaction });
     } catch (error: any) {
@@ -5172,6 +5266,19 @@ export function registerOrganizationRoutes(app: Express) {
         longitude: data.longitude || null,
         notes: data.notes || null,
       }).returning();
+
+      if (isEscalation) {
+        autoCreateWelfareConcern({
+          organizationId: orgId,
+          orgClientId: data.orgClientId,
+          staffName: data.staffName,
+          riskTier: data.riskTier,
+          riskIndicators: data.riskIndicators || [],
+          actionTaken: data.actionTaken,
+          referralAgency: data.referralAgency,
+          interactionId: interaction.id,
+        });
+      }
 
       console.log(`[PUBLIC DC] Interaction logged for client ${data.orgClientId} by ${data.staffName}`);
       res.json({ interaction });
