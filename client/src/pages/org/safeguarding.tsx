@@ -1136,8 +1136,11 @@ export default function OrgSafeguardingPage() {
                             <div key={concern.id} className="flex items-start justify-between gap-2 p-3 rounded-lg border">
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium capitalize">{concern.concernType}</span>
+                                  <span className="text-sm font-medium capitalize">{concern.concernType?.replace(/_/g, " ")}</span>
                                   {concern.isAnonymous && <Badge variant="outline" className="text-xs">Anonymous</Badge>}
+                                  {concern.description?.startsWith("Auto-generated from Data Capture") && (
+                                    <Badge variant="outline" className="text-xs border-blue-500 text-blue-500">From Data Capture</Badge>
+                                  )}
                                 </div>
                                 <p className="text-sm text-muted-foreground line-clamp-2">{concern.description}</p>
                                 <p className="text-xs text-muted-foreground">
@@ -1352,9 +1355,12 @@ export default function OrgSafeguardingPage() {
                       <div key={concern.id} className="p-4 rounded-lg border space-y-2">
                         <div className="flex items-start justify-between gap-2 flex-wrap">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium capitalize">{concern.concernType}</span>
+                            <span className="font-medium capitalize">{concern.concernType?.replace(/_/g, " ")}</span>
                             {getStatusBadge(concern.status)}
                             {concern.isAnonymous && <Badge variant="outline">Anonymous</Badge>}
+                            {concern.description?.startsWith("Auto-generated from Data Capture") && (
+                              <Badge variant="outline" className="text-xs border-blue-500 text-blue-500">From Data Capture</Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {format(new Date(concern.createdAt), "dd/MM/yyyy HH:mm")}
