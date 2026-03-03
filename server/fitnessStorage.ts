@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { eq, and, or, desc, inArray, gte, lte, sql } from "drizzle-orm";
+import { eq, and, or, desc, inArray, gte, lte, ne, ilike } from "drizzle-orm";
 import {
   fitnessActivities, follows, activityLikes, activityComments,
   users, plannedRoutes, activityMemories,
@@ -246,8 +246,8 @@ export const fitnessStorage = {
     return db.select({ id: users.id, name: users.name })
       .from(users)
       .where(and(
-        sql`lower(${users.name}) LIKE lower(${`%${query}%`})`,
-        sql`${users.id} != ${currentUserId}`,
+        ilike(users.name, `%${query}%`),
+        ne(users.id, currentUserId),
         eq(users.accountType, "individual"),
       ))
       .limit(20);

@@ -16,14 +16,13 @@ async function getAuthenticatedUserId(req: Request): Promise<string | null> {
   return session.userId;
 }
 
-// Main OpenAI client for chat (uses Replit AI integration with fallback)
-const aiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "sk-placeholder";
+const aiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "";
 const openai = new OpenAI({
   apiKey: aiKey,
   ...(process.env.AI_INTEGRATIONS_OPENAI_BASE_URL ? { baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL } : {}),
 });
 
-const whisperKey = process.env.OPENAI_API_KEY || "sk-placeholder";
+const whisperKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "";
 const openaiWhisper = new OpenAI({
   apiKey: whisperKey,
 });

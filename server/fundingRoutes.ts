@@ -10,7 +10,7 @@ import {
   fundingAuditEvents,
   users,
 } from "@shared/schema";
-import { eq, and, isNull, desc, sql, sum } from "drizzle-orm";
+import { eq, and, isNull, desc, gte, lte, sum } from "drizzle-orm";
 
 async function requireOrganization(req: Request, res: Response, next: NextFunction) {
   const orgMemberSessionId = req.cookies?.org_member_session;
@@ -687,8 +687,8 @@ export function registerFundingRoutes(app: Express) {
       const { startDate, endDate } = req.query;
 
       const conditions: any[] = [eq(fundingAuditEvents.organisationId, orgId)];
-      if (startDate) conditions.push(sql`${fundingAuditEvents.createdAt} >= ${new Date(startDate as string)}`);
-      if (endDate) conditions.push(sql`${fundingAuditEvents.createdAt} <= ${new Date(endDate as string)}`);
+      if (startDate) conditions.push(gte(fundingAuditEvents.createdAt, new Date(startDate as string)));
+      if (endDate) conditions.push(lte(fundingAuditEvents.createdAt, new Date(endDate as string)));
 
       const events = await getDb()
         .select()
