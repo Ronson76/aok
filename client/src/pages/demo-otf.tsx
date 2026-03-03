@@ -222,7 +222,7 @@ const PROGRAMMES: Record<Programme, ProgrammeData> = {
         description: "Schools and funders want to see programme impact. AOK's Funding Dashboard generates reports showing engagement data, safeguarding compliance, and programme delivery metrics.",
       },
     ],
-    honestNote: "AOK now supports under-16s through dedicated Safeguarding Seats - dashboard-only profiles where staff register young people with their date of birth, log welfare concerns, and maintain auditable records without sending SMS or app access. When a young person turns 16, AOK prompts staff to upgrade them to a full Check-in Seat with SMS welfare monitoring. This means AOK helps both by tracking the young people through safeguarding records and by digitally auditing the actions taken by Off The Fence staff - logging disclosures, evidencing governance, and generating the compliance records schools, Ofsted, and trustees need.",
+    honestNote: "Although AOK is a 16+ platform due to safeguarding best practices, we also cater for under-16s through dedicated Safeguarding Seats. These are dashboard-only profiles where staff register young people with their date of birth, log welfare concerns, and maintain auditable records - all without sending SMS or giving app access. When a young person turns 16, AOK automatically prompts staff to upgrade them to a full Check-in Seat with SMS welfare monitoring. This means AOK helps both by tracking the young people through safeguarding records and by digitally auditing the actions taken by Off The Fence staff - logging disclosures, evidencing governance, and generating the compliance records schools, Ofsted, and trustees need.",
     scenarios: [
       {
         title: "A disclosure during a WYHA session",
