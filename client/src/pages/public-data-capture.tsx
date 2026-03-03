@@ -14,7 +14,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import {
   ClipboardList, AlertTriangle, Clock, Users, ArrowLeft,
   MapPin, CheckCircle, Shield, Plus, Loader2, Search,
-  User, AlertOctagon, UserPlus, Phone, Lock, Eye
+  User, AlertOctagon, UserPlus, Phone, Lock, Eye,
+  Tablet, UserCheck, HandHelping, Info, ArrowRight
 } from "lucide-react";
 import type { InteractionProgramme, InteractionContactType, RiskTier, RiskIndicator, InteractionAction } from "@shared/schema";
 
@@ -105,6 +106,7 @@ interface LookupResult {
   recentInteractions: any[];
 }
 
+type AppMode = "select" | "staff" | "self_checkin";
 type PageStep = "identify" | "register" | "interaction";
 
 function calculateAge(dob: string): number {
@@ -122,6 +124,10 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
   const [loginPassword, setLoginPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [appMode, setAppMode] = useState<AppMode>("select");
+  const [selfCheckinName, setSelfCheckinName] = useState("");
+  const [selfCheckinWorker, setSelfCheckinWorker] = useState(false);
+  const [selfCheckinSuccess, setSelfCheckinSuccess] = useState<{ clientName: string; workerRequested: boolean } | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("log");
   const [step, setStep] = useState<PageStep>("identify");
   const [showFollowUpDialog, setShowFollowUpDialog] = useState(false);
@@ -313,6 +319,26 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
     },
   });
 
+  const selfCheckinMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `${apiPrefix}/self-checkin`, {
+        nameOrReference: selfCheckinName.trim(),
+        requestWorker: selfCheckinWorker,
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setSelfCheckinSuccess({ clientName: data.clientName, workerRequested: data.workerRequested });
+      setSelfCheckinName("");
+      setSelfCheckinWorker(false);
+      queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions`] });
+      queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions/stats`] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Check-in Failed", description: error.message || "Could not check in. Please ask a staff member for help.", variant: "destructive" });
+    },
+  });
+
   const completeFollowUpMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", `${apiPrefix}/interactions/${followUpInteractionId}/complete-followup`, {
@@ -494,25 +520,222 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
     );
   }
 
+  if (appMode === "select") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4" data-testid="dc-mode-select">
+        <div className="max-w-md w-full space-y-4">
+          <div className="text-center space-y-2 mb-6">
+            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <Shield className="h-7 w-7 text-primary" />
+            </div>
+            <h1 className="text-xl font-bold">Data Capture</h1>
+            <p className="text-sm text-muted-foreground">{verifyData.organizationName}</p>
+          </div>
+
+          <Card
+            className="cursor-pointer border-2 hover:border-primary transition-colors"
+            onClick={() => setAppMode("staff")}
+            data-testid="button-mode-staff"
+          >
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <ClipboardList className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h2 className="font-bold text-base">Staff Assisted</h2>
+                <p className="text-xs text-muted-foreground">Full structured interaction logging with risk assessment, actions, follow-ups, and client registration</p>
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer border-2 hover:border-green-500 transition-colors"
+            onClick={() => setAppMode("self_checkin")}
+            data-testid="button-mode-self-checkin"
+          >
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                <Tablet className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h2 className="font-bold text-base">Self Check-In</h2>
+                <p className="text-xs text-muted-foreground">Simplified tablet mode for service users to check in at shelters and drop-ins</p>
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            </CardContent>
+          </Card>
+
+          <div className="mt-6 p-3 bg-muted/50 rounded-lg border">
+            <div className="flex items-start gap-2">
+              <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div className="text-[11px] text-muted-foreground space-y-1">
+                <p><strong>This is not an emergency monitoring tool.</strong> AOK Data Capture is a structured safeguarding interaction logging system. It does not provide real-time crisis monitoring.</p>
+                <p>Escalation responsibility sits with the organisation. All records are time-stamped, tamper-evident, and maintained in a full audit trail.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (appMode === "self_checkin") {
+    return (
+      <div className="min-h-screen bg-background flex flex-col" data-testid="dc-self-checkin">
+        <div className="bg-card border-b px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+          <div className="flex items-center gap-2">
+            <button onClick={() => { setAppMode("select"); setSelfCheckinSuccess(null); }} className="text-muted-foreground hover:text-foreground" data-testid="button-back-mode">
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <h1 className="text-lg font-bold flex items-center gap-2">
+                <Tablet className="h-5 w-5 text-green-600" />
+                Self Check-In
+              </h1>
+              <p className="text-xs text-muted-foreground">{verifyData.organizationName}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="max-w-sm w-full">
+            {selfCheckinSuccess ? (
+              <Card className="border-green-500/50">
+                <CardContent className="pt-6 text-center space-y-4">
+                  <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h2 className="text-xl font-bold">Checked In</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Welcome, <strong>{selfCheckinSuccess.clientName}</strong>
+                  </p>
+                  {selfCheckinSuccess.workerRequested && (
+                    <div className="p-3 bg-primary/10 rounded-lg">
+                      <p className="text-sm font-medium">A worker has been notified and will see you shortly.</p>
+                    </div>
+                  )}
+                  <Button
+                    className="w-full py-5 mt-4"
+                    onClick={() => setSelfCheckinSuccess(null)}
+                    data-testid="button-another-checkin"
+                  >
+                    <UserCheck className="h-4 w-4 mr-2" />
+                    Next Person
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="pt-6 space-y-6">
+                  <div className="text-center space-y-2">
+                    <UserCheck className="h-10 w-10 mx-auto text-green-600" />
+                    <h2 className="text-xl font-bold">Check In</h2>
+                    <p className="text-sm text-muted-foreground">Enter your name or reference code to check in</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">Your Name or Reference Code</Label>
+                    <Input
+                      placeholder="e.g. John Smith or AOK-1234"
+                      value={selfCheckinName}
+                      onChange={(e) => setSelfCheckinName(e.target.value)}
+                      className="text-lg py-6"
+                      autoFocus
+                      data-testid="input-self-checkin-name"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">Would you like to see a worker?</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setSelfCheckinWorker(true)}
+                        className={`py-4 rounded-lg text-sm font-bold transition-all border-2 flex flex-col items-center gap-1 ${
+                          selfCheckinWorker
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-card text-muted-foreground hover:border-primary/50"
+                        }`}
+                        data-testid="button-worker-yes"
+                      >
+                        <HandHelping className="h-5 w-5" />
+                        Yes please
+                      </button>
+                      <button
+                        onClick={() => setSelfCheckinWorker(false)}
+                        className={`py-4 rounded-lg text-sm font-bold transition-all border-2 flex flex-col items-center gap-1 ${
+                          !selfCheckinWorker
+                            ? "border-green-500 bg-green-500 text-white"
+                            : "border-border bg-card text-muted-foreground hover:border-green-500/50"
+                        }`}
+                        data-testid="button-worker-no"
+                      >
+                        <CheckCircle className="h-5 w-5" />
+                        No thanks
+                      </button>
+                    </div>
+                  </div>
+
+                  <Button
+                    className="w-full py-6 text-lg"
+                    size="lg"
+                    disabled={!selfCheckinName.trim() || selfCheckinMutation.isPending}
+                    onClick={() => selfCheckinMutation.mutate()}
+                    data-testid="button-self-checkin-submit"
+                  >
+                    {selfCheckinMutation.isPending ? (
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    ) : (
+                      <CheckCircle className="h-5 w-5 mr-2" />
+                    )}
+                    Check In
+                  </Button>
+
+                  <p className="text-[10px] text-center text-muted-foreground">
+                    This creates a contact record only. Risk assessments are completed by staff.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+
+        <div className="p-3 border-t bg-muted/30">
+          <div className="flex items-start gap-2 max-w-sm mx-auto">
+            <Info className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+            <p className="text-[10px] text-muted-foreground">
+              This is not an emergency service. If you need immediate help, please speak to a member of staff or call 999.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col" data-testid="public-data-capture-page">
       <div className="bg-card border-b px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-        <div>
-          <h1 className="text-lg font-bold flex items-center gap-2" data-testid="text-dc-title">
-            <Shield className="h-5 w-5 text-primary" />
-            Data Capture
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            {verifyData.organizationName}
-            <span className="ml-2">
-              Syncs every 5s
-              {gpsLocation && (
-                <span className="ml-1 inline-flex items-center gap-0.5">
-                  <MapPin className="h-3 w-3 inline" /> GPS
-                </span>
-              )}
-            </span>
-          </p>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setAppMode("select")} className="text-muted-foreground hover:text-foreground" data-testid="button-back-mode-staff">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div>
+            <h1 className="text-lg font-bold flex items-center gap-2" data-testid="text-dc-title">
+              <Shield className="h-5 w-5 text-primary" />
+              Staff Data Capture
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              {verifyData.organizationName}
+              <span className="ml-2">
+                Syncs every 5s
+                {gpsLocation && (
+                  <span className="ml-1 inline-flex items-center gap-0.5">
+                    <MapPin className="h-3 w-3 inline" /> GPS
+                  </span>
+                )}
+              </span>
+            </p>
+          </div>
         </div>
         <Badge variant="outline" className="text-xs gap-1 animate-pulse" data-testid="badge-live">
           <span className="h-2 w-2 rounded-full bg-green-500 inline-block" /> Live
@@ -1153,6 +1376,16 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
             )}
           </div>
         )}
+      </div>
+
+      <div className="p-3 border-t bg-muted/30">
+        <div className="flex items-start gap-2 max-w-lg mx-auto">
+          <Info className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div className="text-[10px] text-muted-foreground space-y-0.5">
+            <p><strong>This is not an emergency monitoring tool.</strong> AOK Data Capture provides structured safeguarding interaction logging. Escalation responsibility sits with the organisation.</p>
+            <p>All entries are time-stamped, staff-attributed, and maintained in a tamper-evident audit trail. Records cannot be deleted, only archived.</p>
+          </div>
+        </div>
       </div>
 
       <Dialog open={showFollowUpDialog} onOpenChange={setShowFollowUpDialog}>
