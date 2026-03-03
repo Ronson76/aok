@@ -4703,10 +4703,10 @@ export function registerOrganizationRoutes(app: Express) {
       const db = ensureDb();
       const { clientName, dateOfBirth } = z.object({
         clientName: z.string().min(1),
-        dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        dateOfBirth: z.string().optional(),
       }).parse(req.body);
 
-      const existingClients = await db.select({
+      const allClients = await db.select({
         id: organizationClients.id,
         clientName: organizationClients.clientName,
         referenceCode: organizationClients.referenceCode,
@@ -4714,16 +4714,33 @@ export function registerOrganizationRoutes(app: Express) {
         seatType: organizationClients.seatType,
       })
         .from(organizationClients)
-        .innerJoin(organizationClientProfiles, eq(organizationClientProfiles.organizationClientId, organizationClients.id))
-        .where(and(
-          eq(organizationClients.organizationId, req.userId!),
-          eq(organizationClientProfiles.dateOfBirth, dateOfBirth)
-        ));
+        .where(eq(organizationClients.organizationId, req.userId!));
 
       const nameNorm = clientName.trim().toLowerCase();
-      const matched = existingClients.find((c) =>
+      const nameMatches = allClients.filter((c) =>
         c.clientName?.trim().toLowerCase() === nameNorm
       );
+
+      let matched;
+      if (nameMatches.length === 0) {
+        matched = undefined;
+      } else if (nameMatches.length === 1) {
+        matched = nameMatches[0];
+      } else {
+        if (!dateOfBirth) {
+          return res.json({ found: false, duplicates: true, count: nameMatches.length });
+        }
+        for (const candidate of nameMatches) {
+          const [profile] = await db.select({ dateOfBirth: organizationClientProfiles.dateOfBirth })
+            .from(organizationClientProfiles)
+            .where(eq(organizationClientProfiles.organizationClientId, candidate.id))
+            .limit(1);
+          if (profile && profile.dateOfBirth === dateOfBirth) {
+            matched = candidate;
+            break;
+          }
+        }
+      }
 
       if (matched) {
         const [profile] = await db.select()
@@ -4763,7 +4780,7 @@ export function registerOrganizationRoutes(app: Express) {
       res.json({ found: false });
     } catch (error: any) {
       if (error.name === "ZodError") {
-        return res.status(400).json({ error: "Name and date of birth are required" });
+        return res.status(400).json({ error: "Name is required" });
       }
       console.error("[DATA CAPTURE] Lookup error:", error);
       res.status(500).json({ error: "Failed to look up client" });
@@ -4974,7 +4991,7 @@ export function registerOrganizationRoutes(app: Express) {
       const orgId = (req as any).dcOrgId;
       const { clientName, dateOfBirth } = z.object({
         clientName: z.string().min(1),
-        dateOfBirth: z.string().min(1),
+        dateOfBirth: z.string().optional(),
       }).parse(req.body);
 
       const allClients = await db.select({
@@ -4989,11 +5006,31 @@ export function registerOrganizationRoutes(app: Express) {
           eq(organizationClients.status, "active")
         ));
 
-      const matchedClient = allClients.find((c) => {
-        const cName = (c.clientName || "").trim().toLowerCase();
-        const qName = clientName.trim().toLowerCase();
-        return cName === qName;
-      });
+      const nameNorm = clientName.trim().toLowerCase();
+      const nameMatches = allClients.filter((c) =>
+        (c.clientName || "").trim().toLowerCase() === nameNorm
+      );
+
+      let matchedClient;
+      if (nameMatches.length === 0) {
+        return res.json({ found: false });
+      } else if (nameMatches.length === 1) {
+        matchedClient = nameMatches[0];
+      } else {
+        if (!dateOfBirth) {
+          return res.json({ found: false, duplicates: true, count: nameMatches.length });
+        }
+        for (const candidate of nameMatches) {
+          const [profile] = await db.select({ dateOfBirth: organizationClientProfiles.dateOfBirth })
+            .from(organizationClientProfiles)
+            .where(eq(organizationClientProfiles.organizationClientId, candidate.id))
+            .limit(1);
+          if (profile && profile.dateOfBirth === dateOfBirth) {
+            matchedClient = candidate;
+            break;
+          }
+        }
+      }
 
       if (!matchedClient) {
         return res.json({ found: false });
@@ -5003,10 +5040,6 @@ export function registerOrganizationRoutes(app: Express) {
         .from(organizationClientProfiles)
         .where(eq(organizationClientProfiles.organizationClientId, matchedClient.id))
         .limit(1);
-
-      if (!profile || profile.dateOfBirth !== dateOfBirth) {
-        return res.json({ found: false });
-      }
 
       const recentInteractions = await db.select()
         .from(homelessInteractions)
@@ -5019,13 +5052,13 @@ export function registerOrganizationRoutes(app: Express) {
 
       res.json({
         found: true,
-        client: { ...matchedClient, dateOfBirth: profile.dateOfBirth },
-        profile: { dateOfBirth: profile.dateOfBirth },
+        client: { ...matchedClient, dateOfBirth: profile?.dateOfBirth },
+        profile: { dateOfBirth: profile?.dateOfBirth },
         recentInteractions,
       });
     } catch (error: any) {
       if (error.name === "ZodError") {
-        return res.status(400).json({ error: "Name and date of birth are required" });
+        return res.status(400).json({ error: "Name is required" });
       }
       console.error("[PUBLIC DC] Lookup error:", error);
       res.status(500).json({ error: "Lookup failed" });
