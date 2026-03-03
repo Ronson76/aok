@@ -4132,7 +4132,7 @@ export function registerOrganizationRoutes(app: Express) {
   const kioskCheckinSchema = z.object({
     orgClientId: z.string().min(1),
     lookupMethod: z.enum(["reference_code", "name_dob"]).optional(),
-    photoData: z.string().max(5 * 1024 * 1024).optional(),
+    photoData: z.string().max(5 * 1024 * 1024).nullable().optional(),
   });
 
   app.post("/api/kiosk/lookup", requireOrganization, async (req, res) => {
