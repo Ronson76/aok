@@ -573,7 +573,14 @@ function RouteMap({
           iconAnchor: [6, 6],
         });
         const popupContent = document.createElement("div");
-        popupContent.innerHTML = `<div style="font-size:13px;font-weight:600">${poi.name}</div><div style="font-size:11px;color:#666;text-transform:capitalize;margin-bottom:6px">${poi.type}</div>`;
+        const nameDiv = document.createElement("div");
+        nameDiv.style.cssText = "font-size:13px;font-weight:600";
+        nameDiv.textContent = poi.name;
+        const typeDiv = document.createElement("div");
+        typeDiv.style.cssText = "font-size:11px;color:#666;text-transform:capitalize;margin-bottom:6px";
+        typeDiv.textContent = poi.type;
+        popupContent.appendChild(nameDiv);
+        popupContent.appendChild(typeDiv);
         const btn = document.createElement("button");
         btn.textContent = "Add as stopover";
         btn.setAttribute("data-testid", `button-stopover-poi-${poi.id}`);
