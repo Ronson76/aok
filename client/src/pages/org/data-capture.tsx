@@ -566,9 +566,8 @@ export default function DataCapturePage() {
               )}
               {canWrite ? (
                 <span>
-                  Syncs every 5s
                   {gpsLocation && (
-                    <span className="ml-1 inline-flex items-center gap-0.5">
+                    <span className="inline-flex items-center gap-0.5">
                       <MapPin className="h-3 w-3 inline" /> GPS
                     </span>
                   )}
