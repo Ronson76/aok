@@ -1209,12 +1209,14 @@ export const welfareConcerns = pgTable("welfare_concerns", {
   clientId: varchar("client_id").references(() => organizationClients.id, { onDelete: "set null" }),
   reportedById: varchar("reported_by_id"),
   reportedByName: text("reported_by_name"),
-  concernType: text("concern_type").notNull(), // "welfare_concern", "pattern_based", "gut_instinct"
+  concernType: text("concern_type").notNull(), // "welfare_concern", "pattern_based", "gut_instinct", "safeguarding_referral", "dsl_informed"
   description: text("description").notNull(),
   observedBehaviours: text("observed_behaviours"), // withdrawal, behaviour change, etc.
   isAnonymous: boolean("is_anonymous").notNull().default(false),
   status: text("status").notNull().default("open").$type<CaseStatus>(),
   followUpNotes: text("follow_up_notes"),
+  source: text("source").notNull().default("manual"), // "manual" | "data_capture"
+  sourceInteractionId: varchar("source_interaction_id"),
   resolvedAt: timestamp("resolved_at"),
   resolvedById: varchar("resolved_by_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

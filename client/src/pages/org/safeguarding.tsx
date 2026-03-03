@@ -73,6 +73,8 @@ interface WelfareConcern {
   isAnonymous: boolean;
   status: string;
   followUpNotes?: string;
+  source?: string;
+  sourceInteractionId?: string;
   resolvedById?: string;
   resolvedAt?: string;
   createdAt: string;
@@ -1138,7 +1140,7 @@ export default function OrgSafeguardingPage() {
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-medium capitalize">{concern.concernType?.replace(/_/g, " ")}</span>
                                   {concern.isAnonymous && <Badge variant="outline" className="text-xs">Anonymous</Badge>}
-                                  {concern.description?.startsWith("Auto-generated from Data Capture") && (
+                                  {concern.source === "data_capture" && (
                                     <Badge variant="outline" className="text-xs border-blue-500 text-blue-500">From Data Capture</Badge>
                                   )}
                                 </div>
@@ -1358,7 +1360,7 @@ export default function OrgSafeguardingPage() {
                             <span className="font-medium capitalize">{concern.concernType?.replace(/_/g, " ")}</span>
                             {getStatusBadge(concern.status)}
                             {concern.isAnonymous && <Badge variant="outline">Anonymous</Badge>}
-                            {concern.description?.startsWith("Auto-generated from Data Capture") && (
+                            {concern.source === "data_capture" && (
                               <Badge variant="outline" className="text-xs border-blue-500 text-blue-500">From Data Capture</Badge>
                             )}
                           </div>

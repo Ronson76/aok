@@ -1737,6 +1737,8 @@ class DatabaseStorage implements IStorage {
         isAnonymous: data.isAnonymous ?? false,
         status: (data.status || "open") as CaseStatus,
         followUpNotes: data.followUpNotes,
+        source: data.source || "manual",
+        sourceInteractionId: data.sourceInteractionId || null,
       })
       .returning();
     return result[0];

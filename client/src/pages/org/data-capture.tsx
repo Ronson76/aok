@@ -331,14 +331,19 @@ export default function DataCapturePage() {
       });
       return response.json();
     },
-    onSuccess: () => {
-      toast({ title: "Interaction Logged", description: "Record saved to audit trail and synced to org dashboard" });
+    onSuccess: (data) => {
+      if (data.welfareConcernCreated) {
+        toast({ title: "Interaction Logged + Welfare Concern Created", description: "Escalation detected - a welfare concern has been automatically added to the Safeguarding Hub" });
+      } else {
+        toast({ title: "Interaction Logged", description: "Record saved to audit trail and synced to org dashboard" });
+      }
       resetForm();
       queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions`] });
       queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions/stats`] });
       queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions/overdue-followups`] });
       queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions/lost-contacts`] });
       queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/safeguarding/welfare-concerns"] });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message || "Failed to log interaction", variant: "destructive" });
