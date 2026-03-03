@@ -2273,6 +2273,7 @@ export const dataCaptureLinks = pgTable("data_capture_links", {
   organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   token: varchar("token", { length: 64 }).notNull().unique(),
   label: text("label"),
+  passwordHash: text("password_hash"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

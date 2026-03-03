@@ -228,6 +228,7 @@ export default function OrganizationDashboard() {
   const [dataCaptureMethod, setDataCaptureMethod] = useState<"sms" | "email">("sms");
   const [dataCaptureRecipient, setDataCaptureRecipient] = useState("");
   const [dataCaptureCountryCode, setDataCaptureCountryCode] = useState("+44");
+  const [dataCapturePassword, setDataCapturePassword] = useState("");
 
   // Birthday upgrade transition state
   const [showBirthdayUpgradeDialog, setShowBirthdayUpgradeDialog] = useState(false);
@@ -747,16 +748,18 @@ export default function OrganizationDashboard() {
       const response = await apiRequest("POST", "/api/org/send-data-capture-link", {
         method: dataCaptureMethod,
         recipient,
+        password: dataCapturePassword,
       });
       return response.json();
     },
     onSuccess: () => {
       toast({
         title: "Link Sent",
-        description: `Data Capture link sent via ${dataCaptureMethod === "sms" ? "SMS" : "email"}`,
+        description: `Data Capture link sent via ${dataCaptureMethod === "sms" ? "SMS" : "email"}. Share the password separately.`,
       });
       setShowSendDataCaptureDialog(false);
       setDataCaptureRecipient("");
+      setDataCapturePassword("");
     },
     onError: (error: any) => {
       toast({
@@ -2498,6 +2501,7 @@ export default function OrganizationDashboard() {
         if (!open) {
           setShowSendDataCaptureDialog(false);
           setDataCaptureRecipient("");
+          setDataCapturePassword("");
         }
       }}>
         <DialogContent className="max-w-md">
@@ -2567,11 +2571,23 @@ export default function OrganizationDashboard() {
                 />
               </div>
             )}
+
+            <div className="space-y-2">
+              <Label>Access Password</Label>
+              <p className="text-xs text-muted-foreground">The recipient will need this password to open the Data Capture page. Share it separately from the link for security.</p>
+              <Input
+                type="text"
+                placeholder="Enter a password (min 4 characters)"
+                value={dataCapturePassword}
+                onChange={(e) => setDataCapturePassword(e.target.value)}
+                data-testid="input-dc-password"
+              />
+            </div>
           </div>
           <DialogFooter className="flex-col gap-2 sm:flex-col">
             <Button
               className="w-full"
-              disabled={!dataCaptureRecipient || (dataCaptureMethod === "sms" && dataCaptureRecipient.length < 7) || sendDataCaptureLinkMutation.isPending}
+              disabled={!dataCaptureRecipient || dataCapturePassword.length < 4 || (dataCaptureMethod === "sms" && dataCaptureRecipient.length < 7) || sendDataCaptureLinkMutation.isPending}
               onClick={() => sendDataCaptureLinkMutation.mutate()}
               data-testid="button-send-dc-link"
             >

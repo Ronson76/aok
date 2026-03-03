@@ -9,7 +9,7 @@ import { ensureDb } from "./db";
 import { sql, eq, and, isNotNull, desc, gte, lte, isNull, asc, lt, count } from "drizzle-orm";
 import { loginRateLimiter, passwordResetRateLimiter } from "./security";
 import { getPeakTimes, getAlertHeatmap, getActiveSOSAlerts } from "./services/analyticsService";
-import { createHash, randomBytes } from "crypto";
+import { createHash, createHmac, randomBytes } from "crypto";
 
 export function calculateAgeFromDOB(dateOfBirth: string): number {
   const dob = new Date(dateOfBirth);
@@ -4630,9 +4630,10 @@ export function registerOrganizationRoutes(app: Express) {
   app.post("/api/org/send-data-capture-link", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
-      const { method, recipient } = z.object({
+      const { method, recipient, password } = z.object({
         method: z.enum(["sms", "email"]),
         recipient: z.string().min(1),
+        password: z.string().min(4, "Password must be at least 4 characters"),
       }).parse(req.body);
 
       const org = await storage.getUserById(req.userId!);
@@ -4641,6 +4642,7 @@ export function registerOrganizationRoutes(app: Express) {
       }
 
       const orgName = org.name || "Your Organisation";
+      const hashedPassword = await bcrypt.hash(password, 10);
 
       const [existingLink] = await db.select()
         .from(dataCaptureLinks)
@@ -4653,12 +4655,16 @@ export function registerOrganizationRoutes(app: Express) {
       let token: string;
       if (existingLink) {
         token = existingLink.token;
+        await db.update(dataCaptureLinks)
+          .set({ passwordHash: hashedPassword })
+          .where(eq(dataCaptureLinks.id, existingLink.id));
       } else {
         token = randomBytes(32).toString("hex");
         await db.insert(dataCaptureLinks).values({
           organizationId: req.userId!,
           token,
           label: `Data Capture Link`,
+          passwordHash: hashedPassword,
         });
       }
 
@@ -4796,6 +4802,17 @@ export function registerOrganizationRoutes(app: Express) {
   // PUBLIC DATA CAPTURE ENDPOINTS (token-based, no login required)
   // =============================================
 
+  const DC_SESSION_SECRET = process.env.SESSION_SECRET || "aok-dc-session-fallback-key";
+
+  function signDcSession(token: string): string {
+    return createHmac("sha256", DC_SESSION_SECRET).update(token).digest("hex");
+  }
+
+  function verifyDcSession(token: string, signature: string): boolean {
+    const expected = signDcSession(token);
+    return signature === expected;
+  }
+
   const resolveDataCaptureToken = async (req: Request, res: Response, next: NextFunction) => {
     const { token } = req.params;
     if (!token) {
@@ -4814,21 +4831,100 @@ export function registerOrganizationRoutes(app: Express) {
       return res.status(404).json({ error: "Invalid or expired link" });
     }
 
+    if (link.passwordHash) {
+      const sessionCookie = req.cookies?.[`dc_session_${token.slice(0, 8)}`];
+      if (!sessionCookie || !verifyDcSession(token, sessionCookie)) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+    }
+
     (req as any).dcOrgId = link.organizationId;
     next();
   };
 
-  app.get("/api/dc/:token/verify", resolveDataCaptureToken, async (req, res) => {
+  app.get("/api/dc/:token/verify", async (req, res) => {
     try {
-      const orgId = (req as any).dcOrgId;
-      const org = await storage.getUserById(orgId);
+      const db = ensureDb();
+      const { token } = req.params;
+      const [link] = await db.select({
+        organizationId: dataCaptureLinks.organizationId,
+        passwordHash: dataCaptureLinks.passwordHash,
+      })
+        .from(dataCaptureLinks)
+        .where(and(
+          eq(dataCaptureLinks.token, token),
+          eq(dataCaptureLinks.isActive, true)
+        ))
+        .limit(1);
+
+      if (!link) {
+        return res.json({ valid: false });
+      }
+
+      const org = await storage.getUserById(link.organizationId);
+
+      const hasSession = link.passwordHash
+        ? verifyDcSession(token, req.cookies?.[`dc_session_${token.slice(0, 8)}`] || "")
+        : true;
+
       res.json({
         valid: true,
         organizationName: org?.name || "Organisation",
+        requiresPassword: !!link.passwordHash && !hasSession,
       });
     } catch (error) {
       console.error("[PUBLIC DC] Verify error:", error);
       res.status(500).json({ error: "Failed to verify link" });
+    }
+  });
+
+  app.post("/api/dc/:token/authenticate", async (req, res) => {
+    try {
+      const db = ensureDb();
+      const { token } = req.params;
+      const { password } = z.object({ password: z.string().min(1) }).parse(req.body);
+
+      const [link] = await db.select({
+        passwordHash: dataCaptureLinks.passwordHash,
+        isActive: dataCaptureLinks.isActive,
+      })
+        .from(dataCaptureLinks)
+        .where(and(
+          eq(dataCaptureLinks.token, token),
+          eq(dataCaptureLinks.isActive, true)
+        ))
+        .limit(1);
+
+      if (!link) {
+        return res.status(404).json({ error: "Invalid or expired link" });
+      }
+
+      if (!link.passwordHash) {
+        return res.json({ authenticated: true });
+      }
+
+      const valid = await bcrypt.compare(password, link.passwordHash);
+      if (!valid) {
+        return res.status(401).json({ error: "Incorrect password" });
+      }
+
+      const sessionSig = signDcSession(token);
+      const cookieName = `dc_session_${token.slice(0, 8)}`;
+      res.cookie(cookieName, sessionSig, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 24 * 60 * 60 * 1000,
+        path: `/api/dc/${token}`,
+      });
+
+      res.json({ authenticated: true });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Password is required" });
+      }
+      console.error("[PUBLIC DC] Authenticate error:", error);
+      res.status(500).json({ error: "Authentication failed" });
     }
   });
 
