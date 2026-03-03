@@ -226,6 +226,7 @@ export default function OrgSafeguardingPage() {
   const [resolutionText, setResolutionText] = useState("");
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [selectedConcernId, setSelectedConcernId] = useState<string | null>(null);
+  const [concernSearchTerm, setConcernSearchTerm] = useState("");
   
   // Expanded client groups for recent incidents
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
@@ -1144,9 +1145,12 @@ export default function OrgSafeguardingPage() {
                                     <Badge variant="outline" className="text-xs border-blue-500 text-blue-500">From Data Capture</Badge>
                                   )}
                                 </div>
-                                <p className="text-sm text-muted-foreground line-clamp-2">{concern.description}</p>
+                                <p className="text-sm text-muted-foreground">{concern.description}</p>
                                 {((concern as any).clientName || concern.clientId) && (
                                   <p className="text-xs text-muted-foreground">Client: {(concern as any).clientName || getClientName(concern.clientId)}</p>
+                                )}
+                                {concern.reportedByName && (
+                                  <p className="text-xs text-muted-foreground">Reported by: {concern.reportedByName}</p>
                                 )}
                                 <p className="text-xs text-muted-foreground">
                                   {format(new Date(concern.createdAt), "dd/MM/yyyy HH:mm")}
@@ -1350,13 +1354,38 @@ export default function OrgSafeguardingPage() {
                 </div>
               </CardHeader>
               <CardContent>
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search by client name, type, date, or description..."
+                    value={concernSearchTerm}
+                    onChange={(e) => setConcernSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 rounded-md border bg-background text-sm"
+                    data-testid="input-concern-search"
+                  />
+                </div>
                 {concernsLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin" />
                   </div>
-                ) : concerns && concerns.length > 0 ? (
+                ) : concerns && concerns.length > 0 ? (() => {
+                  const searchLower = concernSearchTerm.trim().toLowerCase();
+                  const filtered = concerns.filter((c) => {
+                    if (!searchLower) return true;
+                    const clientName = ((c as any).clientName || getClientName(c.clientId) || "").toLowerCase();
+                    const type = (c.concernType || "").replace(/_/g, " ").toLowerCase();
+                    const desc = (c.description || "").toLowerCase();
+                    const date = format(new Date(c.createdAt), "dd/MM/yyyy");
+                    const reporter = (c.reportedByName || "").toLowerCase();
+                    return clientName.includes(searchLower) || type.includes(searchLower) || desc.includes(searchLower) || date.includes(searchLower) || reporter.includes(searchLower);
+                  });
+                  if (filtered.length === 0) {
+                    return <p className="text-center text-muted-foreground py-8">{concernSearchTerm ? "No matching concerns" : "No welfare concerns reported yet"}</p>;
+                  }
+                  return (
                   <div className="space-y-3">
-                    {concerns.map((concern) => (
+                    {filtered.map((concern) => (
                       <div key={concern.id} className="p-4 rounded-lg border space-y-2">
                         <div className="flex items-start justify-between gap-2 flex-wrap">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -1424,7 +1453,8 @@ export default function OrgSafeguardingPage() {
                       </div>
                     ))}
                   </div>
-                ) : (
+                  );
+                })() : (
                   <p className="text-center text-muted-foreground py-8">No welfare concerns reported yet</p>
                 )}
               </CardContent>
