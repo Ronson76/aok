@@ -141,6 +141,7 @@ export default function DataCapturePage() {
 
   const [lookupName, setLookupName] = useState("");
   const [lookupDob, setLookupDob] = useState("");
+  const [showDobField, setShowDobField] = useState(false);
   const [resolvedClient, setResolvedClient] = useState<LookupResult | null>(null);
   const [selectedClient, setSelectedClient] = useState("");
 
@@ -229,10 +230,9 @@ export default function DataCapturePage() {
 
   const lookupMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", `${apiPrefix}/interactions/lookup`, {
-        clientName: lookupName.trim(),
-        dateOfBirth: lookupDob,
-      });
+      const body: any = { clientName: lookupName.trim() };
+      if (lookupDob) body.dateOfBirth = lookupDob;
+      const response = await apiRequest("POST", `${apiPrefix}/interactions/lookup`, body);
       return response.json();
     },
     onSuccess: (data) => {
@@ -247,7 +247,11 @@ export default function DataCapturePage() {
           }
         }
         toast({ title: "Client Found", description: `${data.client.clientName} - ${data.client.referenceCode}` });
+        setShowDobField(false);
         setStep("interaction");
+      } else if (data.duplicates) {
+        setShowDobField(true);
+        toast({ title: "Multiple Matches", description: `${data.count} clients share this name. Please enter date of birth to identify.`, variant: "destructive" });
       } else {
         if (!canWrite) {
           toast({ title: "Not Found", description: "This individual is not registered. Contact a manager to register new clients.", variant: "destructive" });
@@ -361,6 +365,7 @@ export default function DataCapturePage() {
   const resetForm = () => {
     setLookupName("");
     setLookupDob("");
+    setShowDobField(false);
     setResolvedClient(null);
     setSelectedClient("");
     setStep("identify");
@@ -416,7 +421,7 @@ export default function DataCapturePage() {
     ).slice(0, 5);
   }, [lookupName, clientsData]);
 
-  const canLookup = lookupName.trim().length >= 2 && lookupDob;
+  const canLookup = lookupName.trim().length >= 2 && (!showDobField || lookupDob);
 
   const canRegister = regSupervisorName && regSupervisorEmail && regSupervisorPhone.length >= 7 &&
     (isUnder16 || regPhone.length >= 7);
@@ -669,7 +674,7 @@ export default function DataCapturePage() {
                   <div className="text-center mb-2">
                     <User className="h-8 w-8 mx-auto mb-1 text-primary" />
                     <h2 className="text-base font-bold">Identify Individual</h2>
-                    <p className="text-xs text-muted-foreground">Enter name and date of birth. If they exist in the system, their data will be pulled from the org dashboard. If new, you will be asked to register them.</p>
+                    <p className="text-xs text-muted-foreground">Enter the individual's name. If they exist in the system, their data will be pulled from the org dashboard. If new, you will be asked to register them.</p>
                   </div>
 
                   <div className="space-y-2">
@@ -677,17 +682,16 @@ export default function DataCapturePage() {
                     <Input
                       placeholder="Enter full name"
                       value={lookupName}
-                      onChange={(e) => setLookupName(e.target.value)}
+                      onChange={(e) => { setLookupName(e.target.value); if (showDobField) { setShowDobField(false); setLookupDob(""); } }}
                       data-testid="input-lookup-name"
                     />
-                    {lookupName.trim().length >= 2 && !lookupDob && clientMatches().length > 0 && (
+                    {lookupName.trim().length >= 2 && !showDobField && clientMatches().length > 0 && (
                       <div className="border rounded-lg overflow-hidden">
                         {clientMatches().map((c) => (
                           <button
                             key={c.id}
                             onClick={() => {
                               setLookupName(c.clientName || "");
-                              if (c.dateOfBirth) setLookupDob(c.dateOfBirth);
                             }}
                             className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center justify-between border-b last:border-b-0"
                             data-testid={`suggest-client-${c.id}`}
@@ -700,15 +704,18 @@ export default function DataCapturePage() {
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold">Date of Birth</Label>
-                    <Input
-                      type="date"
-                      value={lookupDob}
-                      onChange={(e) => setLookupDob(e.target.value)}
-                      data-testid="input-lookup-dob"
-                    />
-                  </div>
+                  {showDobField && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Date of Birth</Label>
+                      <p className="text-xs text-muted-foreground">Multiple clients share this name. Enter date of birth to identify the correct person.</p>
+                      <Input
+                        type="date"
+                        value={lookupDob}
+                        onChange={(e) => setLookupDob(e.target.value)}
+                        data-testid="input-lookup-dob"
+                      />
+                    </div>
+                  )}
 
                   <Button
                     className="w-full py-5"
