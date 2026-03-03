@@ -2,7 +2,7 @@ import { Express, Request, Response, NextFunction } from "express";
 import { organizationStorage, storage, orgMemberStorage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema, activeEmergencyAlerts, checkIns, organizationClients, organizationClientProfiles, users, safeguardingLeads, dbsChecks, trainingRecords, rolePermissions, OrgPermission, roleLabels, orgApiKeys } from "@shared/schema";
+import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema, activeEmergencyAlerts, checkIns, organizationClients, organizationClientProfiles, users, safeguardingLeads, dbsChecks, trainingRecords, rolePermissions, OrgPermission, roleLabels, orgApiKeys, kioskCheckins } from "@shared/schema";
 import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail, sendStaffInviteSMS, sendEmergencyContactConfirmationForStaffInvite } from "./notifications";
 import { plantTreeForNewSubscriber } from "./ecologiService";
 import { ensureDb } from "./db";
@@ -3998,6 +3998,190 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("[EXT-API] Timeline error:", error);
       res.status(500).json({ error: "Failed to load incident timeline" });
+    }
+  });
+
+  // ===== KIOSK CHECK-IN ROUTES =====
+
+  const kioskLookupSchema = z.object({
+    method: z.enum(["reference_code", "name_dob"]),
+    referenceCode: z.string().optional(),
+    clientName: z.string().optional(),
+    dateOfBirth: z.string().optional(),
+  });
+
+  const kioskCheckinSchema = z.object({
+    orgClientId: z.string().min(1),
+    lookupMethod: z.enum(["reference_code", "name_dob"]).optional(),
+    photoData: z.string().max(5 * 1024 * 1024).optional(),
+  });
+
+  app.post("/api/kiosk/lookup", requireOrganization, async (req, res) => {
+    try {
+      const parsed = kioskLookupSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request data" });
+      }
+      const { method, referenceCode, clientName, dateOfBirth } = parsed.data;
+      const db = ensureDb();
+
+      if (method === "reference_code") {
+        if (!referenceCode) {
+          return res.status(400).json({ error: "Reference code is required" });
+        }
+        const [client] = await db.select().from(organizationClients)
+          .where(and(
+            eq(organizationClients.organizationId, req.userId!),
+            eq(organizationClients.referenceCode, referenceCode.toUpperCase().trim())
+          ));
+        if (!client) {
+          return res.status(404).json({ error: "No client found with that reference code" });
+        }
+        return res.json({
+          client: {
+            id: client.id,
+            clientName: client.clientName,
+            referenceCode: client.referenceCode,
+            seatType: client.seatType,
+            status: client.status,
+          }
+        });
+      } else if (method === "name_dob") {
+        if (!clientName || !dateOfBirth) {
+          return res.status(400).json({ error: "Name and date of birth are required" });
+        }
+        const allClients = await db.select().from(organizationClients)
+          .where(eq(organizationClients.organizationId, req.userId!));
+
+        let matchedClient = null;
+        for (const client of allClients) {
+          const nameMatch = client.clientName?.toLowerCase().trim() === clientName.toLowerCase().trim();
+          if (!nameMatch) continue;
+
+          const [profile] = await db.select().from(organizationClientProfiles)
+            .where(eq(organizationClientProfiles.organizationClientId, client.id));
+          if (profile?.dateOfBirth === dateOfBirth) {
+            matchedClient = client;
+            break;
+          }
+        }
+
+        if (!matchedClient) {
+          return res.status(404).json({ error: "No client found matching that name and date of birth" });
+        }
+        return res.json({
+          client: {
+            id: matchedClient.id,
+            clientName: matchedClient.clientName,
+            referenceCode: matchedClient.referenceCode,
+            seatType: matchedClient.seatType,
+            status: matchedClient.status,
+          }
+        });
+      } else {
+        return res.status(400).json({ error: "Invalid lookup method" });
+      }
+    } catch (error) {
+      console.error("[KIOSK] Lookup error:", error);
+      res.status(500).json({ error: "Failed to look up client" });
+    }
+  });
+
+  app.post("/api/kiosk/checkin", requireOrganization, async (req, res) => {
+    try {
+      const parsed = kioskCheckinSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request data" });
+      }
+      const { orgClientId, lookupMethod, photoData } = parsed.data;
+
+      const db = ensureDb();
+
+      const [client] = await db.select().from(organizationClients)
+        .where(and(
+          eq(organizationClients.id, orgClientId),
+          eq(organizationClients.organizationId, req.userId!)
+        ));
+
+      if (!client) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      let photoPath: string | null = null;
+
+      if (photoData) {
+        try {
+          const { ObjectStorageService } = await import("./replit_integrations/object_storage/objectStorage");
+          const objectStorage = new ObjectStorageService();
+          const uploadURL = await objectStorage.getObjectEntityUploadURL();
+
+          const base64Data = photoData.replace(/^data:image\/\w+;base64,/, "");
+          const buffer = Buffer.from(base64Data, "base64");
+
+          const response = await fetch(uploadURL, {
+            method: "PUT",
+            headers: { "Content-Type": "image/jpeg" },
+            body: buffer,
+          });
+
+          if (response.ok) {
+            photoPath = objectStorage.normalizeObjectEntityPath(uploadURL);
+          }
+        } catch (uploadErr) {
+          console.error("[KIOSK] Photo upload error:", uploadErr);
+        }
+      }
+
+      if (client.clientId) {
+        try {
+          await storage.createCheckIn(client.clientId);
+        } catch (err) {
+          console.error("[KIOSK] Check-in creation error (non-fatal):", err);
+        }
+      }
+
+      const [kioskRecord] = await db.insert(kioskCheckins).values({
+        organizationId: req.userId!,
+        orgClientId,
+        photoPath,
+        lookupMethod: lookupMethod || "reference_code",
+        checkedInBy: req.userId!,
+      }).returning();
+
+      res.json({
+        success: true,
+        checkinId: kioskRecord.id,
+        clientName: client.clientName,
+        photoSaved: !!photoPath,
+      });
+    } catch (error) {
+      console.error("[KIOSK] Check-in error:", error);
+      res.status(500).json({ error: "Failed to record check-in" });
+    }
+  });
+
+  app.get("/api/kiosk/recent", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const recent = await db.select({
+        id: kioskCheckins.id,
+        orgClientId: kioskCheckins.orgClientId,
+        photoPath: kioskCheckins.photoPath,
+        lookupMethod: kioskCheckins.lookupMethod,
+        checkedInAt: kioskCheckins.checkedInAt,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+      })
+        .from(kioskCheckins)
+        .innerJoin(organizationClients, eq(kioskCheckins.orgClientId, organizationClients.id))
+        .where(eq(kioskCheckins.organizationId, req.userId!))
+        .orderBy(desc(kioskCheckins.checkedInAt))
+        .limit(20);
+
+      res.json({ checkins: recent });
+    } catch (error) {
+      console.error("[KIOSK] Recent check-ins error:", error);
+      res.status(500).json({ error: "Failed to load recent check-ins" });
     }
   });
 }
