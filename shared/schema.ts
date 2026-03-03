@@ -1642,6 +1642,8 @@ export const orgPermissions = [
   "lone_worker.manage",
   "lone_worker.view",
   "assurance.view",
+  "data_capture.read",
+  "data_capture.write",
 ] as const;
 export type OrgPermission = typeof orgPermissions[number];
 
@@ -1656,6 +1658,7 @@ export const rolePermissions: Record<OrgMemberRole, readonly OrgPermission[]> = 
     "reports.view", "reports.export",
     "analytics.view", "lone_worker.view",
     "assurance.view", "members.view",
+    "data_capture.read", "data_capture.write",
   ],
   service_manager: [
     "clients.manage", "clients.view",
@@ -1664,6 +1667,7 @@ export const rolePermissions: Record<OrgMemberRole, readonly OrgPermission[]> = 
     "reports.view", "analytics.view",
     "lone_worker.manage", "lone_worker.view",
     "members.view",
+    "data_capture.read", "data_capture.write",
   ],
   manager: [
     "clients.manage", "clients.view",
@@ -1671,19 +1675,23 @@ export const rolePermissions: Record<OrgMemberRole, readonly OrgPermission[]> = 
     "incidents.view", "audit.view",
     "reports.view", "lone_worker.manage",
     "lone_worker.view", "members.view",
+    "data_capture.read", "data_capture.write",
   ],
   staff: [
     "clients.view", "alerts.view",
     "incidents.view", "lone_worker.view",
+    "data_capture.read", "data_capture.write",
   ],
   trustee: [
     "assurance.view", "reports.view",
     "reports.export", "analytics.view",
     "audit.view", "safeguarding.view",
+    "data_capture.read",
   ],
   viewer: [
     "assurance.view", "reports.view",
     "analytics.view",
+    "data_capture.read",
   ],
 };
 
@@ -2265,6 +2273,7 @@ export const homelessInteractions = pgTable("homeless_interactions", {
   organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   orgClientId: varchar("org_client_id").notNull().references(() => organizationClients.id, { onDelete: "cascade" }),
   staffName: text("staff_name").notNull(),
+  loggedByMemberId: varchar("logged_by_member_id").references(() => organizationMembers.id, { onDelete: "set null" }),
   programme: text("programme").notNull().$type<InteractionProgramme>(),
   contactType: text("contact_type").notNull().$type<InteractionContactType>(),
   riskTier: text("risk_tier").notNull().$type<RiskTier>(),
@@ -2294,6 +2303,7 @@ export const insertHomelessInteractionSchema = createInsertSchema(homelessIntera
   followUpCompleted: true,
   followUpCompletedAt: true,
   followUpNotes: true,
+  loggedByMemberId: true,
 });
 export type InsertHomelessInteraction = z.infer<typeof insertHomelessInteractionSchema>;
 export type HomelessInteraction = typeof homelessInteractions.$inferSelect;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import {
   ClipboardList, AlertTriangle, Clock, Users, ArrowLeft,
   MapPin, CheckCircle, Shield, Plus, Loader2, Search,
-  User, AlertOctagon, UserPlus, Phone
+  User, AlertOctagon, UserPlus, Phone, Lock, Eye
 } from "lucide-react";
 import type { HomelessInteraction, InteractionProgramme, InteractionContactType, RiskTier, RiskIndicator, InteractionAction, OrganizationBundle } from "@shared/schema";
 
@@ -106,6 +106,16 @@ interface LookupResult {
   recentInteractions: any[];
 }
 
+interface MemberInfo {
+  member: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+  permissions: Record<string, boolean>;
+}
+
 type PageStep = "identify" | "register" | "interaction";
 
 function calculateAge(dob: string): number {
@@ -156,33 +166,52 @@ export default function DataCapturePage() {
   const [notes, setNotes] = useState("");
   const [gpsLocation, setGpsLocation] = useState<{ lat: string; lng: string } | null>(null);
 
+  const { data: memberData } = useQuery<MemberInfo>({
+    queryKey: ["/api/org-member/me"],
+    retry: false,
+  });
+
+  const isMember = !!memberData?.member;
+  const canWrite = isMember ? !!memberData?.permissions?.["data_capture:write"] : true;
+  const memberRole = memberData?.member?.role || "";
+  const memberName = memberData?.member?.name || "";
+
+  const apiPrefix = isMember ? "/api/org-member" : "/api/org";
+
+  useEffect(() => {
+    if (isMember && memberName && !staffName) {
+      setStaffName(memberName);
+    }
+  }, [isMember, memberName, staffName]);
+
   const { data: clientsData } = useQuery<{ clients: ClientOption[] }>({
-    queryKey: ["/api/org/interactions/clients-list"],
+    queryKey: [`${apiPrefix}/interactions/clients-list`],
     refetchInterval: 5000,
   });
 
   const { data: dashData } = useQuery<{ bundles: OrganizationBundle[] }>({
     queryKey: ["/api/org/dashboard"],
     refetchInterval: 5000,
+    enabled: !isMember,
   });
 
   const { data: statsData } = useQuery<Stats>({
-    queryKey: ["/api/org/interactions/stats"],
+    queryKey: [`${apiPrefix}/interactions/stats`],
     refetchInterval: 5000,
   });
 
   const { data: recentData, isLoading: recentLoading } = useQuery<{ interactions: InteractionWithClient[] }>({
-    queryKey: ["/api/org/interactions"],
+    queryKey: [`${apiPrefix}/interactions`],
     refetchInterval: 5000,
   });
 
   const { data: overdueData, isLoading: overdueLoading } = useQuery<{ overdue: InteractionWithClient[] }>({
-    queryKey: ["/api/org/interactions/overdue-followups"],
+    queryKey: [`${apiPrefix}/interactions/overdue-followups`],
     refetchInterval: 5000,
   });
 
   const { data: lostData, isLoading: lostLoading } = useQuery<{ lostContacts: LostContact[] }>({
-    queryKey: ["/api/org/interactions/lost-contacts"],
+    queryKey: [`${apiPrefix}/interactions/lost-contacts`],
     refetchInterval: 5000,
   });
 
@@ -190,7 +219,7 @@ export default function DataCapturePage() {
 
   const lookupMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/org/interactions/lookup", {
+      const response = await apiRequest("POST", `${apiPrefix}/interactions/lookup`, {
         clientName: lookupName.trim(),
         dateOfBirth: lookupDob,
       });
@@ -210,6 +239,10 @@ export default function DataCapturePage() {
         toast({ title: "Client Found", description: `${data.client.clientName} - ${data.client.referenceCode}` });
         setStep("interaction");
       } else {
+        if (!canWrite) {
+          toast({ title: "Not Found", description: "This individual is not registered. Contact a manager to register new clients.", variant: "destructive" });
+          return;
+        }
         toast({ title: "New Individual", description: "Not found in system. Please complete registration." });
         setStep("register");
       }
@@ -224,7 +257,7 @@ export default function DataCapturePage() {
   const registerMutation = useMutation({
     mutationFn: async () => {
       const clientPhone = isUnder16 ? undefined : `${regCountryCode}${regPhone}`;
-      const response = await apiRequest("POST", "/api/org/clients/register", {
+      const response = await apiRequest("POST", `${apiPrefix}/clients/register`, {
         clientName: lookupName.trim(),
         clientPhone,
         dateOfBirth: lookupDob,
@@ -253,7 +286,7 @@ export default function DataCapturePage() {
         profile: { dateOfBirth: lookupDob },
         recentInteractions: [],
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/org/interactions/clients-list"] });
+      queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions/clients-list`] });
       queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
       setStep("interaction");
@@ -265,7 +298,7 @@ export default function DataCapturePage() {
 
   const submitMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/org/interactions", {
+      const response = await apiRequest("POST", `${apiPrefix}/interactions`, {
         orgClientId: selectedClient,
         staffName,
         programme,
@@ -287,10 +320,10 @@ export default function DataCapturePage() {
     onSuccess: () => {
       toast({ title: "Interaction Logged", description: "Record saved to audit trail and synced to org dashboard" });
       resetForm();
-      queryClient.invalidateQueries({ queryKey: ["/api/org/interactions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/org/interactions/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/org/interactions/overdue-followups"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/org/interactions/lost-contacts"] });
+      queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions`] });
+      queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions/stats`] });
+      queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions/overdue-followups`] });
+      queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions/lost-contacts`] });
       queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
     },
     onError: (error: any) => {
@@ -300,7 +333,7 @@ export default function DataCapturePage() {
 
   const completeFollowUpMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", `/api/org/interactions/${followUpInteractionId}/complete-followup`, {
+      const response = await apiRequest("POST", `${apiPrefix}/interactions/${followUpInteractionId}/complete-followup`, {
         notes: followUpNotes,
       });
       return response.json();
@@ -310,8 +343,8 @@ export default function DataCapturePage() {
       setShowFollowUpDialog(false);
       setFollowUpInteractionId(null);
       setFollowUpNotes("");
-      queryClient.invalidateQueries({ queryKey: ["/api/org/interactions/overdue-followups"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/org/interactions/stats"] });
+      queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions/overdue-followups`] });
+      queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions/stats`] });
     },
   });
 
@@ -385,11 +418,17 @@ export default function DataCapturePage() {
     !(followUpRequired && !followUpDate);
 
   const tabs: { key: Tab; label: string; icon: any; badge?: number }[] = [
-    { key: "log", label: "Log", icon: Plus },
+    ...(canWrite ? [{ key: "log" as Tab, label: "Log", icon: Plus }] : []),
     { key: "recent", label: "Recent", icon: ClipboardList },
     { key: "overdue", label: "Overdue", icon: AlertTriangle, badge: statsData?.overdueFollowUps },
     { key: "lost", label: "Lost Contact", icon: AlertOctagon },
   ];
+
+  useEffect(() => {
+    if (!canWrite && activeTab === "log") {
+      setActiveTab("recent");
+    }
+  }, [canWrite, activeTab]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col" data-testid="data-capture-page">
@@ -398,7 +437,7 @@ export default function DataCapturePage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/org/dashboard")}
+            onClick={() => navigate(isMember ? "/org/staff-portal" : "/org/dashboard")}
             data-testid="button-back-dashboard"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -409,18 +448,41 @@ export default function DataCapturePage() {
               Data Capture
             </h1>
             <p className="text-xs text-muted-foreground">
-              Syncs with org dashboard every 5s
-              {gpsLocation && (
-                <span className="ml-2 inline-flex items-center gap-1">
-                  <MapPin className="h-3 w-3 inline" /> GPS locked
+              {isMember && (
+                <span className="mr-2">
+                  Signed in as {memberName}
+                  <Badge variant="outline" className="ml-1 text-[10px] py-0 px-1">
+                    {memberRole}
+                  </Badge>
+                </span>
+              )}
+              {canWrite ? (
+                <span>
+                  Syncs every 5s
+                  {gpsLocation && (
+                    <span className="ml-1 inline-flex items-center gap-0.5">
+                      <MapPin className="h-3 w-3 inline" /> GPS
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1">
+                  <Eye className="h-3 w-3" /> Read-only access
                 </span>
               )}
             </p>
           </div>
         </div>
-        <Badge variant="outline" className="text-xs gap-1 animate-pulse" data-testid="badge-live">
-          <span className="h-2 w-2 rounded-full bg-green-500 inline-block" /> Live
-        </Badge>
+        <div className="flex items-center gap-2">
+          {!canWrite && (
+            <Badge variant="secondary" className="text-xs gap-1" data-testid="badge-readonly">
+              <Lock className="h-3 w-3" /> View Only
+            </Badge>
+          )}
+          <Badge variant="outline" className="text-xs gap-1 animate-pulse" data-testid="badge-live">
+            <span className="h-2 w-2 rounded-full bg-green-500 inline-block" /> Live
+          </Badge>
+        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-2 p-3">
@@ -472,7 +534,7 @@ export default function DataCapturePage() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
-        {activeTab === "log" && (
+        {activeTab === "log" && canWrite && (
           <div className="space-y-4 max-w-lg mx-auto pb-20">
             {step === "identify" && (
               <Card className="border-primary/30">
@@ -538,7 +600,7 @@ export default function DataCapturePage() {
               </Card>
             )}
 
-            {step === "register" && (
+            {step === "register" && canWrite && (
               <Card className="border-green-500/50">
                 <CardContent className="p-4 space-y-4">
                   <div className="text-center mb-2">
@@ -771,8 +833,13 @@ export default function DataCapturePage() {
                     placeholder="Enter your name"
                     value={staffName}
                     onChange={(e) => setStaffName(e.target.value)}
+                    disabled={isMember}
+                    className={isMember ? "bg-muted" : ""}
                     data-testid="input-staff-name"
                   />
+                  {isMember && (
+                    <p className="text-[10px] text-muted-foreground">Auto-filled from your team account</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -958,6 +1025,7 @@ export default function DataCapturePage() {
 
                 <p className="text-[10px] text-center text-muted-foreground">
                   This record is tamper-evident. Once submitted, it cannot be deleted or silently edited.
+                  {isMember && ` Logged by: ${memberName} (${memberRole})`}
                 </p>
               </>
             )}
@@ -1031,18 +1099,20 @@ export default function DataCapturePage() {
                     <p className="text-xs text-muted-foreground mb-3">
                       Original: {ACTION_LABELS[interaction.actionTaken as InteractionAction] || interaction.actionTaken} - {CONTACT_TYPE_LABELS[interaction.contactType as InteractionContactType] || interaction.contactType}
                     </p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setFollowUpInteractionId(interaction.id);
-                        setFollowUpNotes("");
-                        setShowFollowUpDialog(true);
-                      }}
-                      data-testid={`button-complete-followup-${interaction.id}`}
-                    >
-                      <CheckCircle className="h-3 w-3 mr-1" /> Mark Complete
-                    </Button>
+                    {canWrite && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setFollowUpInteractionId(interaction.id);
+                          setFollowUpNotes("");
+                          setShowFollowUpDialog(true);
+                        }}
+                        data-testid={`button-complete-followup-${interaction.id}`}
+                      >
+                        <CheckCircle className="h-3 w-3 mr-1" /> Mark Complete
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ))
@@ -1094,20 +1164,22 @@ export default function DataCapturePage() {
                         <p>Last contact: {new Date(contact.lastContactAt).toLocaleDateString("en-GB")}</p>
                       )}
                     </div>
-                    <Button
-                      size="sm"
-                      className="mt-3"
-                      onClick={() => {
-                        setLookupName(contact.clientName || "");
-                        setResolvedClient(null);
-                        setSelectedClient("");
-                        setStep("identify");
-                        setActiveTab("log");
-                      }}
-                      data-testid={`button-log-contact-${contact.id}`}
-                    >
-                      <Plus className="h-3 w-3 mr-1" /> Log Interaction
-                    </Button>
+                    {canWrite && (
+                      <Button
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => {
+                          setLookupName(contact.clientName || "");
+                          setResolvedClient(null);
+                          setSelectedClient("");
+                          setStep("identify");
+                          setActiveTab("log");
+                        }}
+                        data-testid={`button-log-contact-${contact.id}`}
+                      >
+                        <Plus className="h-3 w-3 mr-1" /> Log Interaction
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ))
@@ -1121,7 +1193,7 @@ export default function DataCapturePage() {
         )}
       </div>
 
-      <Dialog open={showFollowUpDialog} onOpenChange={setShowFollowUpDialog}>
+      <Dialog open={showFollowUpDialog && canWrite} onOpenChange={setShowFollowUpDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Complete Follow-up</DialogTitle>

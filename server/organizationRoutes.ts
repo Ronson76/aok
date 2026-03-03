@@ -11,7 +11,7 @@ import { loginRateLimiter, passwordResetRateLimiter } from "./security";
 import { getPeakTimes, getAlertHeatmap, getActiveSOSAlerts } from "./services/analyticsService";
 import { createHash, randomBytes } from "crypto";
 
-function calculateAgeFromDOB(dateOfBirth: string): number {
+export function calculateAgeFromDOB(dateOfBirth: string): number {
   const dob = new Date(dateOfBirth);
   const today = new Date();
   let age = today.getFullYear() - dob.getFullYear();
@@ -22,7 +22,7 @@ function calculateAgeFromDOB(dateOfBirth: string): number {
   return age;
 }
 
-function generateReferenceCode(): string {
+export function generateReferenceCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
   for (let i = 0; i < 6; i++) {
@@ -31,7 +31,7 @@ function generateReferenceCode(): string {
   return code;
 }
 
-function parseScheduleTime(timeStr: string): Date | null {
+export function parseScheduleTime(timeStr: string): Date | null {
   if (!timeStr) return null;
   
   const match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
