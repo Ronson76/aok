@@ -8,14 +8,15 @@ function getCsrfToken(): string | null {
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
+    let message = text;
     try {
       const json = JSON.parse(text);
       if (json.error) {
-        throw new Error(json.error);
+        message = json.error;
       }
     } catch {
     }
-    throw new Error(text || res.statusText);
+    throw new Error(message || res.statusText);
   }
 }
 
