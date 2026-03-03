@@ -1828,13 +1828,20 @@ export function registerOrganizationRoutes(app: Express) {
       const db = ensureDb();
       const enriched = await Promise.all(concerns.map(async (concern) => {
         let clientName: string | null = null;
+        let sourceInteractionNotes: string | null = null;
         if (concern.clientId) {
           const [orgClient] = await db.select({ clientName: organizationClients.clientName })
             .from(organizationClients)
             .where(eq(organizationClients.id, concern.clientId));
           clientName = orgClient?.clientName || null;
         }
-        return { ...concern, clientName };
+        if (concern.sourceInteractionId) {
+          const [interaction] = await db.select({ notes: homelessInteractions.notes })
+            .from(homelessInteractions)
+            .where(eq(homelessInteractions.id, concern.sourceInteractionId));
+          sourceInteractionNotes = interaction?.notes || null;
+        }
+        return { ...concern, clientName, sourceInteractionNotes };
       }));
       res.json(enriched);
     } catch (error) {
@@ -2576,13 +2583,20 @@ export function registerOrganizationRoutes(app: Express) {
         recentIncidents: allIncidents.slice(0, 5),
         recentConcerns: await Promise.all(concerns.slice(0, 5).map(async (concern) => {
           let clientName: string | null = null;
+          let sourceInteractionNotes: string | null = null;
           if (concern.clientId) {
             const [orgClient] = await db.select({ clientName: organizationClients.clientName })
               .from(organizationClients)
               .where(eq(organizationClients.id, concern.clientId));
             clientName = orgClient?.clientName || null;
           }
-          return { ...concern, clientName };
+          if (concern.sourceInteractionId) {
+            const [interaction] = await db.select({ notes: homelessInteractions.notes })
+              .from(homelessInteractions)
+              .where(eq(homelessInteractions.id, concern.sourceInteractionId));
+            sourceInteractionNotes = interaction?.notes || null;
+          }
+          return { ...concern, clientName, sourceInteractionNotes };
         })),
       });
     } catch (error) {
