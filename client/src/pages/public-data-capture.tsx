@@ -836,7 +836,7 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
                             data-testid={`suggest-client-${c.id}`}
                           >
                             <span>{c.clientName}</span>
-                            <span className="text-xs text-muted-foreground">{c.referenceCode}</span>
+                            <span className="text-xs text-muted-foreground uppercase">{c.referenceCode}</span>
                           </button>
                         ))}
                       </div>
@@ -1025,7 +1025,7 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <p className="font-bold text-sm" data-testid="text-resolved-name">{resolvedClient.client.clientName}</p>
-                        <p className="text-xs text-muted-foreground">Ref: {resolvedClient.client.referenceCode}</p>
+                        <p className="text-xs text-muted-foreground uppercase">Ref: {resolvedClient.client.referenceCode}</p>
                       </div>
                       <Badge variant="outline" className="text-xs">
                         {resolvedClient.client.seatType === "safeguarding" ? "Safeguarding" : "Check-in"} Seat

@@ -3734,7 +3734,7 @@ export default function OrganizationDashboard() {
                       <div className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
                         <span>{client.client?.email || client.clientPhone || "No contact info"}</span>
                         {client.referenceCode && (
-                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded" title="Reference code">
+                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded uppercase" title="Reference code">
                             {client.referenceCode}
                           </span>
                         )}
@@ -3968,7 +3968,7 @@ export default function OrganizationDashboard() {
               {selectedClient?.referenceCode && (
                 <>
                   <KeyRound className="h-3 w-3 ml-2" />
-                  <span className="font-mono font-medium">{selectedClient.referenceCode}</span>
+                  <span className="font-mono font-medium uppercase">{selectedClient.referenceCode}</span>
                 </>
               )}
             </DialogDescription>
@@ -3995,7 +3995,7 @@ export default function OrganizationDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Reference Code</p>
-                        <p className="text-2xl font-mono font-bold tracking-wider" data-testid="text-client-reference-code">
+                        <p className="text-2xl font-mono font-bold tracking-wider uppercase" data-testid="text-client-reference-code">
                           {selectedClient.referenceCode}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -4006,7 +4006,7 @@ export default function OrganizationDashboard() {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          navigator.clipboard.writeText(selectedClient.referenceCode!);
+                          navigator.clipboard.writeText(selectedClient.referenceCode!.toUpperCase());
                           toast({
                             title: "Copied",
                             description: "Reference code copied to clipboard",
