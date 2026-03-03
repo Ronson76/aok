@@ -1170,7 +1170,7 @@ export default function OrgSafeguardingPage() {
                                       )}
                                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                         {concern.reportedByName && <span>Reported by: {concern.reportedByName}</span>}
-                                        <span>{format(new Date(concern.createdAt), "HH:mm")}</span>
+                                        <span>{format(new Date(concern.createdAt), "dd/MM/yyyy HH:mm")}</span>
                                       </div>
                                     </div>
                                   ))}
@@ -1426,7 +1426,7 @@ export default function OrgSafeguardingPage() {
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {format(new Date(concern.createdAt), "HH:mm")}
+                            {format(new Date(concern.createdAt), "dd/MM/yyyy HH:mm")}
                           </p>
                         </div>
                         {(concern.clientId || (concern as any).clientName) && (
