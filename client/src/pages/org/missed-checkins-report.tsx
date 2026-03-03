@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { OrgHelpButton } from "@/components/org-help-center";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ interface MissedCheckIn {
 }
 
 export default function OrgMissedCheckInsReport() {
+  useInactivityLogout();
   const [searchQuery, setSearchQuery] = useState("");
   const [showPdfDialog, setShowPdfDialog] = useState(false);
   const [pdfDateRange, setPdfDateRange] = useState<"all" | "month" | "year" | "custom">("all");

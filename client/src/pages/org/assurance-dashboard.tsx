@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import {
   ShieldCheck, ArrowLeft, Activity, AlertTriangle, CheckCircle2, Clock,
   Users, BarChart3, FileText, Download, TrendingUp, TrendingDown,
@@ -91,6 +92,7 @@ function RiskBadge({ level }: { level: "low" | "medium" | "high" }) {
 export default function AssuranceDashboard() {
   const { user: authUser } = useAuth();
   const [, setLocation] = useLocation();
+  useInactivityLogout();
   const [activeScreen, setActiveScreen] = useState("overview");
 
   useEffect(() => {

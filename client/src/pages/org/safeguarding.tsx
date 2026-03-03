@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { OrgHelpButton } from "@/components/org-help-center";
 import { Shield, ArrowLeft, AlertTriangle, FileWarning, Folder, Scale, Clock, ChevronDown, ChevronUp, ChevronRight, Plus, Eye, Check, X, Search, Filter, AlertCircle, FileText, Users, User, Activity, TrendingUp, Loader2, MessageSquare, Download, Calendar } from "lucide-react";
 import jsPDF from "jspdf";
@@ -171,6 +172,7 @@ export default function OrgSafeguardingPage() {
   const { toast } = useToast();
   const { user: authUser } = useAuth();
   const [, setLocation] = useLocation();
+  useInactivityLogout();
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {

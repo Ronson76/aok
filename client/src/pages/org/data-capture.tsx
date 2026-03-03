@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -131,6 +132,7 @@ function calculateAge(dob: string): number {
 export default function DataCapturePage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  useInactivityLogout();
   const [activeTab, setActiveTab] = useState<Tab>("log");
   const [step, setStep] = useState<PageStep>("identify");
   const [showFollowUpDialog, setShowFollowUpDialog] = useState(false);

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { OrgHelpButton } from "@/components/org-help-center";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ interface EmergencyAlert {
 type GroupBy = "none" | "date" | "name";
 
 export default function OrgEmergencyAlertsReport() {
+  useInactivityLogout();
   const [searchQuery, setSearchQuery] = useState("");
   const [groupBy, setGroupBy] = useState<GroupBy>("date");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());

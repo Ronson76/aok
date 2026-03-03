@@ -4,6 +4,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import {
   PoundSterling, ArrowLeft, Loader2, Plus, AlertTriangle, CheckCircle2,
   TrendingUp, TrendingDown, ShieldAlert, Download, Settings as SettingsIcon,
@@ -108,6 +109,7 @@ export default function FundingDashboard() {
   const { toast } = useToast();
   const { user: authUser } = useAuth();
   const [, setLocation] = useLocation();
+  useInactivityLogout();
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
