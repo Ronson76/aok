@@ -149,6 +149,8 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
   const [regSupervisorPhone, setRegSupervisorPhone] = useState("");
   const [regEmergencyNotes, setRegEmergencyNotes] = useState("");
 
+  const [recentSearch, setRecentSearch] = useState("");
+
   const [staffName, setStaffName] = useState("");
   const [programme, setProgramme] = useState<InteractionProgramme | "">("");
   const [contactType, setContactType] = useState<InteractionContactType | "">("");
@@ -1258,38 +1260,78 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
 
         {activeTab === "recent" && (
           <div className="space-y-3 max-w-lg mx-auto pb-20">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, date, or reference..."
+                value={recentSearch}
+                onChange={(e) => setRecentSearch(e.target.value)}
+                className="pl-9"
+                data-testid="input-recent-search"
+              />
+            </div>
             {recentLoading ? (
               <div className="text-center py-12"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
-            ) : recentData?.interactions && recentData.interactions.length > 0 ? (
-              recentData.interactions.map((item) => (
-                <Card key={item.interaction.id}>
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-sm">{item.clientName}</span>
-                      <Badge className={`${RISK_TIER_LABELS[item.interaction.riskTier as RiskTier]?.color} text-[10px] py-0`}>
-                        {RISK_TIER_LABELS[item.interaction.riskTier as RiskTier]?.label}
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-muted-foreground space-y-0.5">
-                      <p>{CONTACT_TYPE_LABELS[item.interaction.contactType as InteractionContactType] || item.interaction.contactType} - {PROGRAMME_LABELS[item.interaction.programme as InteractionProgramme] || item.interaction.programme}</p>
-                      <p>Action: {item.interaction.actionTaken === "other" && item.interaction.actionTakenOther ? `Other: ${item.interaction.actionTakenOther}` : (ACTION_LABELS[item.interaction.actionTaken as InteractionAction] || item.interaction.actionTaken)}</p>
-                      <p>Staff: {item.interaction.staffName} - {new Date(item.interaction.createdAt).toLocaleDateString("en-GB")} {new Date(item.interaction.createdAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</p>
-                      {item.interaction.escalationTriggered && (
-                        <Badge variant="destructive" className="text-[10px] mt-1">Escalation</Badge>
-                      )}
-                      {item.interaction.notes && (
-                        <p className="mt-1 italic">{item.interaction.notes}</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No interactions recorded yet</p>
-              </div>
-            )}
+            ) : (() => {
+              const searchTerm = recentSearch.trim().toLowerCase();
+              const filtered = (recentData?.interactions || []).filter((item) => {
+                if (!searchTerm) return true;
+                const name = (item.clientName || "").toLowerCase();
+                const ref = (item.referenceCode || "").toLowerCase();
+                const date = new Date(item.interaction.createdAt).toLocaleDateString("en-GB");
+                const staff = (item.interaction.staffName || "").toLowerCase();
+                return name.includes(searchTerm) || ref.includes(searchTerm) || date.includes(searchTerm) || staff.includes(searchTerm);
+              });
+              if (filtered.length === 0) {
+                return (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">{recentSearch ? "No matching interactions" : "No interactions recorded yet"}</p>
+                  </div>
+                );
+              }
+              const grouped: Record<string, typeof filtered> = {};
+              for (const item of filtered) {
+                const dateKey = new Date(item.interaction.createdAt).toLocaleDateString("en-GB", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+                if (!grouped[dateKey]) grouped[dateKey] = [];
+                grouped[dateKey].push(item);
+              }
+              return Object.entries(grouped).map(([dateLabel, items]) => (
+                <div key={dateLabel}>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 mt-2">{dateLabel}</p>
+                  <div className="space-y-2">
+                    {items.map((item) => (
+                      <Card key={item.interaction.id}>
+                        <CardContent className="p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <div>
+                              <span className="font-semibold text-sm">{item.clientName}</span>
+                              {item.referenceCode && (
+                                <span className="ml-2 text-xs text-muted-foreground font-mono uppercase">{item.referenceCode}</span>
+                              )}
+                            </div>
+                            <Badge className={`${RISK_TIER_LABELS[item.interaction.riskTier as RiskTier]?.color} text-[10px] py-0`}>
+                              {RISK_TIER_LABELS[item.interaction.riskTier as RiskTier]?.label}
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground space-y-0.5">
+                            <p>{CONTACT_TYPE_LABELS[item.interaction.contactType as InteractionContactType] || item.interaction.contactType} - {PROGRAMME_LABELS[item.interaction.programme as InteractionProgramme] || item.interaction.programme}</p>
+                            <p>Action: {item.interaction.actionTaken === "other" && item.interaction.actionTakenOther ? `Other: ${item.interaction.actionTakenOther}` : (ACTION_LABELS[item.interaction.actionTaken as InteractionAction] || item.interaction.actionTaken)}</p>
+                            <p>Staff: {item.interaction.staffName} - {new Date(item.interaction.createdAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</p>
+                            {item.interaction.escalationTriggered && (
+                              <Badge variant="destructive" className="text-[10px] mt-1">Escalation Logged</Badge>
+                            )}
+                            {item.interaction.notes && (
+                              <p className="mt-1 italic">{item.interaction.notes}</p>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ));
+            })()}
           </div>
         )}
 
