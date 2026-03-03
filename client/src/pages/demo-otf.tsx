@@ -332,12 +332,17 @@ const PROGRAMMES: Record<Programme, ProgrammeData> = {
         description: "Key workers encounter safeguarding concerns while supporting clients with housing and welfare. AOK provides the digital audit trail - logging what was identified, what action was taken, and when.",
       },
       {
+        label: "Physical check-in at shelters and drop-ins",
+        aokFeature: "Kiosk Check-in",
+        description: "Not everyone has a phone. AOK's Kiosk Mode runs on a tablet at reception - clients check in by entering their reference code or name and date of birth, and a photo is taken as proof of attendance. This records a full AOK check-in, so key workers see who showed up and who didn't.",
+      },
+      {
         label: "Evidencing engagement for commissioners",
         aokFeature: "Funding Dashboard",
         description: "Local authority commissioners need evidence that Antifreeze is delivering outcomes. AOK captures engagement data and safeguarding compliance, generating the reports commissioners require.",
       },
     ],
-    honestNote: "AOK is not a homelessness case management system, but it does more than just protect staff. Homeless adults supported by Antifreeze can be registered as AOK clients with full Check-in Seats - receiving SMS welfare check-ins, with missed check-in alerts going to their key worker. This gives Off The Fence a way to monitor the wellbeing of rough sleepers and vulnerable adults between outreach visits. On top of that, AOK protects the staff doing outreach (Lone Worker Hub and Emergency SOS), digitally audits safeguarding actions taken by key workers, and generates the evidence commissioners and funders need.",
+    honestNote: "AOK is not a homelessness case management system, but it does more than just protect staff. Homeless adults supported by Antifreeze can be registered as AOK clients with full Check-in Seats - receiving SMS welfare check-ins, with missed check-in alerts going to their key worker. For those without phones, AOK's Kiosk Mode lets clients physically check in at shelters and drop-in sessions using a tablet at reception - entering their reference code or name and date of birth with a photo for verification. This gives Off The Fence a way to monitor the wellbeing of rough sleepers and vulnerable adults whether they have a phone or not. On top of that, AOK protects the staff doing outreach (Lone Worker Hub and Emergency SOS), digitally audits safeguarding actions taken by key workers, and generates the evidence commissioners and funders need.",
     scenarios: [
       {
         title: "Evening street outreach",
