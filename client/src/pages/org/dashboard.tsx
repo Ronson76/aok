@@ -2455,7 +2455,7 @@ export default function OrganizationDashboard() {
                 variant={dataCaptureMethod === "sms" ? "default" : "outline"}
                 size="sm"
                 className="flex-1"
-                onClick={() => setDataCaptureMethod("sms")}
+                onClick={() => { setDataCaptureMethod("sms"); setDataCaptureRecipient(""); }}
                 data-testid="button-dc-method-sms"
               >
                 <Phone className="h-4 w-4 mr-1" /> SMS
@@ -2464,7 +2464,7 @@ export default function OrganizationDashboard() {
                 variant={dataCaptureMethod === "email" ? "default" : "outline"}
                 size="sm"
                 className="flex-1"
-                onClick={() => setDataCaptureMethod("email")}
+                onClick={() => { setDataCaptureMethod("email"); setDataCaptureRecipient(""); }}
                 data-testid="button-dc-method-email"
               >
                 <Mail className="h-4 w-4 mr-1" /> Email
@@ -2487,6 +2487,8 @@ export default function OrganizationDashboard() {
                   </Select>
                   <Input
                     type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="7XXX XXXXXX"
                     value={dataCaptureRecipient}
                     onChange={(e) => setDataCaptureRecipient(e.target.value.replace(/[^0-9]/g, ""))}
