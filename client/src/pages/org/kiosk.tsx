@@ -256,6 +256,7 @@ export default function KioskPage() {
                         maxLength={8}
                         data-testid="input-kiosk-reference"
                         autoFocus
+                        autoComplete="off"
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && referenceCode.length >= 4) {
                             lookupMutation.mutate();
@@ -276,6 +277,7 @@ export default function KioskPage() {
                         className="bg-slate-700 border-slate-600 text-white h-12 placeholder:text-slate-500"
                         data-testid="input-kiosk-name"
                         autoFocus
+                        autoComplete="off"
                       />
                     </div>
                     <div className="space-y-2">
@@ -287,6 +289,7 @@ export default function KioskPage() {
                         onChange={(e) => setDateOfBirth(e.target.value)}
                         className="bg-slate-700 border-slate-600 text-white h-12"
                         data-testid="input-kiosk-dob"
+                        autoComplete="off"
                         max={new Date().toISOString().split("T")[0]}
                       />
                     </div>
