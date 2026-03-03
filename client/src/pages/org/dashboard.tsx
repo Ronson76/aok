@@ -22,6 +22,7 @@ import { formatDistanceToNow, format } from "date-fns";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from "wouter";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { ActiveSOSPanel } from "@/components/active-sos-panel";
 
 function getStatusIcon(status: "safe" | "pending" | "overdue", size: "sm" | "md" = "sm") {
@@ -58,8 +59,6 @@ function getClientStatusBadge(status: OrgClientStatus) {
   }
 }
 
-const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
-
 export default function OrganizationDashboard() {
   const { toast } = useToast();
   const { logout, user: authUser } = useAuth();
@@ -86,73 +85,9 @@ export default function OrganizationDashboard() {
   const [emergencyContactsClient, setEmergencyContactsClient] = useState<OrganizationClientWithDetails | null>(null);
   const [emergencyContacts, setEmergencyContacts] = useState<{ name: string; email: string; phone: string; relationship?: string }[]>([]);
   
-  // Inactivity timeout for security
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const logoutRef = useRef(logout);
-  const toastRef = useRef(toast);
-  const setLocationRef = useRef(setLocation);
-  
-  // Keep refs updated
-  useEffect(() => {
-    logoutRef.current = logout;
-    toastRef.current = toast;
-    setLocationRef.current = setLocation;
-  }, [logout, toast, setLocation]);
-  
-  const resetInactivityTimer = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    timeoutRef.current = setTimeout(async () => {
-      try {
-        await fetch("/api/org-member/logout", { method: "POST", credentials: "include" });
-      } catch (e) {}
-      try {
-        await logoutRef.current();
-      } catch (e) {}
-      queryClient.clear();
-      setLocationRef.current("/org/staff-login?sessionExpired=true");
-    }, SESSION_TIMEOUT_MS);
-  }, []);
-  
-  useEffect(() => {
-    // Only track low-frequency user interaction events
-    const events = ["mousedown", "keydown", "touchstart"];
-    
-    const handleActivity = () => {
-      resetInactivityTimer();
-    };
-    
-    events.forEach(event => {
-      document.addEventListener(event, handleActivity);
-    });
-    
-    resetInactivityTimer();
-    
-    return () => {
-      events.forEach(event => {
-        document.removeEventListener(event, handleActivity);
-      });
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [resetInactivityTimer]);
-  
-  // Auto-logout when navigating away from org pages entirely
-  useEffect(() => {
-    return () => {
-      const currentPath = window.location.pathname;
-      if (!currentPath.startsWith("/org/")) {
-        logoutRef.current();
-      }
-    };
-  }, []);
+  useInactivityLogout();
   
   const handleLogout = async () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
     try {
       await fetch("/api/org-member/logout", { method: "POST", credentials: "include" });
     } catch (e) {}

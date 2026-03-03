@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useLocation } from "wouter";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { OrgHelpButton } from "@/components/org-help-center";
 import {
   Users, ArrowLeft, UserPlus, Loader2, Shield, ShieldCheck, LogOut,
@@ -80,6 +81,7 @@ export default function OrgTeam() {
   const { toast } = useToast();
   const { logout } = useAuth();
   const [, setLocation] = useLocation();
+  useInactivityLogout();
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");

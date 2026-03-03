@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { OrgHelpButton } from "@/components/org-help-center";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +49,7 @@ function statusPriority(status: string): number {
 
 export default function OrgLoneWorkerMonitor() {
   const { user } = useAuth();
+  useInactivityLogout();
   const [expandedHistoryUsers, setExpandedHistoryUsers] = useState<Set<string>>(new Set());
 
   const toggleHistoryUser = (name: string) => {

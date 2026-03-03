@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { OrgHelpButton } from "@/components/org-help-center";
 import {
   Key, ArrowLeft, Plus, Loader2, Copy, Check, Trash2,
@@ -53,6 +54,7 @@ export default function OrgApiAccess() {
   const { toast } = useToast();
   const { user: authUser } = useAuth();
   const [, setLocation] = useLocation();
+  useInactivityLogout();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   useEffect(() => {

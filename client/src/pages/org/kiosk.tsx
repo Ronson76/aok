@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,7 @@ interface FoundClient {
 export default function KioskPage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  useInactivityLogout();
   const [step, setStep] = useState<KioskStep>("identify");
   const [lookupMethod, setLookupMethod] = useState<LookupMethod>("reference_code");
   const [referenceCode, setReferenceCode] = useState("");

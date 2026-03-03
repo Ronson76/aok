@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { OrgHelpButton } from "@/components/org-help-center";
 import {
   Users, ArrowLeft, Plus, Loader2, Send, XCircle, Clock, CheckCircle,
@@ -263,6 +264,7 @@ export default function OrgLoneWorkerHub() {
   const { toast } = useToast();
   const { logout, user: authUser } = useAuth();
   const [, setLocation] = useLocation();
+  useInactivityLogout();
   const [mainTab, setMainTab] = useState("monitor");
 
   useEffect(() => {

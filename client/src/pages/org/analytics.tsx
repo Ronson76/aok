@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { OrgHelpButton } from "@/components/org-help-center";
 import { ArrowLeft, BarChart3, MapPin, AlertTriangle, Clock, Phone, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -406,6 +407,7 @@ function ActiveSOSSection() {
 export default function OrgAnalyticsPage() {
   const { user: authUser } = useAuth();
   const [, setLocation] = useLocation();
+  useInactivityLogout();
   const [activeTab, setActiveTab] = useState("peak-times");
 
   useEffect(() => {
