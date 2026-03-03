@@ -703,6 +703,12 @@ export async function registerRoutes(
     }
     return authMiddleware(req, res, next);
   });
+  app.use("/api/kiosk", (req, res, next) => {
+    if (req.cookies?.org_member_session) {
+      return next();
+    }
+    return authMiddleware(req, res, next);
+  });
   registerOrganizationRoutes(app);
   registerReportingRoutes(app);
   registerFundingRoutes(app);
