@@ -2,7 +2,7 @@ import { Express, Request, Response, NextFunction } from "express";
 import { organizationStorage, storage, orgMemberStorage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema, activeEmergencyAlerts, checkIns, organizationClients, organizationClientProfiles, users, safeguardingLeads, dbsChecks, trainingRecords, rolePermissions, OrgPermission, roleLabels, orgApiKeys, kioskCheckins, homelessInteractions, interactionProgrammes, interactionContactTypes, riskTiers, riskIndicators as riskIndicatorValues, interactionActions } from "@shared/schema";
+import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema, activeEmergencyAlerts, checkIns, organizationClients, organizationClientProfiles, users, safeguardingLeads, dbsChecks, trainingRecords, rolePermissions, OrgPermission, roleLabels, orgApiKeys, kioskCheckins, homelessInteractions, interactionProgrammes, interactionContactTypes, riskTiers, riskIndicators as riskIndicatorValues, interactionActions, dataCaptureLinks } from "@shared/schema";
 import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail, sendStaffInviteSMS, sendEmergencyContactConfirmationForStaffInvite, sendDataCaptureLinkSMS, sendDataCaptureLinkEmail } from "./notifications";
 import { plantTreeForNewSubscriber } from "./ecologiService";
 import { ensureDb } from "./db";
@@ -4629,6 +4629,7 @@ export function registerOrganizationRoutes(app: Express) {
 
   app.post("/api/org/send-data-capture-link", requireOrganization, async (req, res) => {
     try {
+      const db = ensureDb();
       const { method, recipient } = z.object({
         method: z.enum(["sms", "email"]),
         recipient: z.string().min(1),
@@ -4641,20 +4642,42 @@ export function registerOrganizationRoutes(app: Express) {
 
       const orgName = org.name || "Your Organisation";
 
+      const [existingLink] = await db.select()
+        .from(dataCaptureLinks)
+        .where(and(
+          eq(dataCaptureLinks.organizationId, req.userId!),
+          eq(dataCaptureLinks.isActive, true)
+        ))
+        .limit(1);
+
+      let token: string;
+      if (existingLink) {
+        token = existingLink.token;
+      } else {
+        token = randomBytes(32).toString("hex");
+        await db.insert(dataCaptureLinks).values({
+          organizationId: req.userId!,
+          token,
+          label: `Data Capture Link`,
+        });
+      }
+
+      const dataCaptureUrl = `https://aok.care/data-capture/${token}`;
+
       if (method === "sms") {
-        const result = await sendDataCaptureLinkSMS(recipient, orgName);
+        const result = await sendDataCaptureLinkSMS(recipient, orgName, dataCaptureUrl);
         if (!result.success) {
           return res.status(500).json({ error: result.error || "Failed to send SMS" });
         }
         console.log(`[DATA CAPTURE LINK] SMS sent to ${recipient} by org ${orgName}`);
-        return res.json({ success: true, method: "sms" });
+        return res.json({ success: true, method: "sms", token });
       } else {
-        const result = await sendDataCaptureLinkEmail(recipient, orgName);
+        const result = await sendDataCaptureLinkEmail(recipient, orgName, dataCaptureUrl);
         if (!result.sent) {
           return res.status(500).json({ error: result.error || "Failed to send email" });
         }
         console.log(`[DATA CAPTURE LINK] Email sent to ${recipient} by org ${orgName}`);
-        return res.json({ success: true, method: "email" });
+        return res.json({ success: true, method: "email", token });
       }
     } catch (error: any) {
       if (error.name === "ZodError") {
@@ -4766,6 +4789,457 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error) {
       console.error("[DATA CAPTURE] Archive error:", error);
       res.status(500).json({ error: "Failed to archive interaction" });
+    }
+  });
+
+  // =============================================
+  // PUBLIC DATA CAPTURE ENDPOINTS (token-based, no login required)
+  // =============================================
+
+  const resolveDataCaptureToken = async (req: Request, res: Response, next: NextFunction) => {
+    const { token } = req.params;
+    if (!token) {
+      return res.status(400).json({ error: "Missing token" });
+    }
+    const db = ensureDb();
+    const [link] = await db.select()
+      .from(dataCaptureLinks)
+      .where(and(
+        eq(dataCaptureLinks.token, token),
+        eq(dataCaptureLinks.isActive, true)
+      ))
+      .limit(1);
+
+    if (!link) {
+      return res.status(404).json({ error: "Invalid or expired link" });
+    }
+
+    (req as any).dcOrgId = link.organizationId;
+    next();
+  };
+
+  app.get("/api/dc/:token/verify", resolveDataCaptureToken, async (req, res) => {
+    try {
+      const orgId = (req as any).dcOrgId;
+      const org = await storage.getUserById(orgId);
+      res.json({
+        valid: true,
+        organizationName: org?.name || "Organisation",
+      });
+    } catch (error) {
+      console.error("[PUBLIC DC] Verify error:", error);
+      res.status(500).json({ error: "Failed to verify link" });
+    }
+  });
+
+  app.get("/api/dc/:token/clients-list", resolveDataCaptureToken, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req as any).dcOrgId;
+
+      const clients = await db.select({
+        id: organizationClients.id,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+        status: organizationClients.status,
+        seatType: organizationClients.seatType,
+      })
+        .from(organizationClients)
+        .where(and(
+          eq(organizationClients.organizationId, orgId),
+          eq(organizationClients.status, "active")
+        ))
+        .orderBy(asc(organizationClients.clientName));
+
+      const clientsWithDob = await Promise.all(
+        clients.map(async (c) => {
+          const [profile] = await db.select({ dateOfBirth: organizationClientProfiles.dateOfBirth })
+            .from(organizationClientProfiles)
+            .where(eq(organizationClientProfiles.organizationClientId, c.id))
+            .limit(1);
+          return { ...c, dateOfBirth: profile?.dateOfBirth || null };
+        })
+      );
+
+      res.json({ clients: clientsWithDob });
+    } catch (error) {
+      console.error("[PUBLIC DC] Clients list error:", error);
+      res.status(500).json({ error: "Failed to load clients" });
+    }
+  });
+
+  app.post("/api/dc/:token/interactions/lookup", resolveDataCaptureToken, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req as any).dcOrgId;
+      const { clientName, dateOfBirth } = z.object({
+        clientName: z.string().min(1),
+        dateOfBirth: z.string().min(1),
+      }).parse(req.body);
+
+      const allClients = await db.select({
+        id: organizationClients.id,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+        seatType: organizationClients.seatType,
+      })
+        .from(organizationClients)
+        .where(and(
+          eq(organizationClients.organizationId, orgId),
+          eq(organizationClients.status, "active")
+        ));
+
+      const matchedClient = allClients.find((c) => {
+        const cName = (c.clientName || "").trim().toLowerCase();
+        const qName = clientName.trim().toLowerCase();
+        return cName === qName;
+      });
+
+      if (!matchedClient) {
+        return res.json({ found: false });
+      }
+
+      const [profile] = await db.select({ dateOfBirth: organizationClientProfiles.dateOfBirth })
+        .from(organizationClientProfiles)
+        .where(eq(organizationClientProfiles.organizationClientId, matchedClient.id))
+        .limit(1);
+
+      if (!profile || profile.dateOfBirth !== dateOfBirth) {
+        return res.json({ found: false });
+      }
+
+      const recentInteractions = await db.select()
+        .from(homelessInteractions)
+        .where(and(
+          eq(homelessInteractions.orgClientId, matchedClient.id),
+          eq(homelessInteractions.archived, false)
+        ))
+        .orderBy(desc(homelessInteractions.createdAt))
+        .limit(3);
+
+      res.json({
+        found: true,
+        client: { ...matchedClient, dateOfBirth: profile.dateOfBirth },
+        profile: { dateOfBirth: profile.dateOfBirth },
+        recentInteractions,
+      });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Name and date of birth are required" });
+      }
+      console.error("[PUBLIC DC] Lookup error:", error);
+      res.status(500).json({ error: "Lookup failed" });
+    }
+  });
+
+  app.post("/api/dc/:token/clients/register", resolveDataCaptureToken, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req as any).dcOrgId;
+
+      const parsed = registerOrgClientSchema.parse(req.body);
+
+      const clientAge = calculateAgeFromDOB(parsed.dateOfBirth);
+      const seatType = clientAge < 16 ? "safeguarding" : "check_in";
+
+      const referenceCode = generateReferenceCode();
+
+      const [orgClient] = await db.insert(organizationClients).values({
+        organizationId: orgId,
+        clientName: parsed.clientName,
+        clientPhone: seatType === "safeguarding" ? null : (parsed.clientPhone || null),
+        referenceCode,
+        seatType,
+        status: "active",
+      }).returning();
+
+      await db.insert(organizationClientProfiles).values({
+        organizationClientId: orgClient.id,
+        dateOfBirth: parsed.dateOfBirth,
+        emergencyNotes: parsed.emergencyNotes || null,
+      });
+
+      if (seatType === "check_in" && parsed.clientPhone) {
+        try {
+          const org = await storage.getUserById(orgId);
+          const orgName = org?.name || "Organisation";
+          await sendAppInviteSMS(parsed.clientPhone, orgName, referenceCode);
+        } catch (err) {
+          console.error("[PUBLIC DC] SMS send failed:", err);
+        }
+      }
+
+      console.log(`[PUBLIC DC] Client registered: ${parsed.clientName} as ${seatType} seat`);
+      res.json({
+        orgClient,
+        referenceCode,
+        seatType,
+      });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Invalid registration data", details: error.errors });
+      }
+      console.error("[PUBLIC DC] Register error:", error);
+      res.status(500).json({ error: "Registration failed" });
+    }
+  });
+
+  app.post("/api/dc/:token/interactions", resolveDataCaptureToken, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req as any).dcOrgId;
+
+      const data = z.object({
+        orgClientId: z.string().min(1),
+        staffName: z.string().min(1),
+        programme: z.enum(["outreach", "hostel", "drop_in"]),
+        contactType: z.enum(["outreach_visit", "shelter_checkin", "drop_in_meeting", "phone_contact", "multi_agency_discussion"]),
+        riskTier: z.enum(["high", "medium", "low"]),
+        riskIndicators: z.array(z.string()).optional(),
+        actionTaken: z.enum(["advice_provided", "referral_made", "emergency_accommodation", "dsl_informed", "safeguarding_referral", "no_action_required", "follow_up_planned"]),
+        referralAgency: z.string().optional(),
+        noActionRationale: z.string().optional(),
+        followUpRequired: z.boolean().optional(),
+        followUpDate: z.string().optional(),
+        followUpStaffName: z.string().optional(),
+        latitude: z.string().optional(),
+        longitude: z.string().optional(),
+        notes: z.string().optional(),
+      }).parse(req.body);
+
+      const [client] = await db.select({ id: organizationClients.id })
+        .from(organizationClients)
+        .where(and(
+          eq(organizationClients.id, data.orgClientId),
+          eq(organizationClients.organizationId, orgId)
+        ));
+
+      if (!client) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      const isEscalation = data.actionTaken === "safeguarding_referral" || data.actionTaken === "dsl_informed" || data.riskTier === "high";
+
+      const [interaction] = await db.insert(homelessInteractions).values({
+        organizationId: orgId,
+        orgClientId: data.orgClientId,
+        staffName: data.staffName,
+        programme: data.programme,
+        contactType: data.contactType,
+        riskTier: data.riskTier,
+        riskIndicators: data.riskIndicators || [],
+        actionTaken: data.actionTaken,
+        referralAgency: data.referralAgency || null,
+        noActionRationale: data.noActionRationale || null,
+        escalationTriggered: isEscalation,
+        followUpRequired: data.followUpRequired || false,
+        followUpDate: data.followUpRequired && data.followUpDate ? data.followUpDate : null,
+        followUpStaffName: data.followUpRequired && data.followUpStaffName ? data.followUpStaffName : null,
+        latitude: data.latitude || null,
+        longitude: data.longitude || null,
+        notes: data.notes || null,
+      }).returning();
+
+      console.log(`[PUBLIC DC] Interaction logged for client ${data.orgClientId} by ${data.staffName}`);
+      res.json({ interaction });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Invalid interaction data", details: error.errors });
+      }
+      console.error("[PUBLIC DC] Submit error:", error);
+      res.status(500).json({ error: "Failed to log interaction" });
+    }
+  });
+
+  app.get("/api/dc/:token/interactions/stats", resolveDataCaptureToken, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req as any).dcOrgId;
+
+      const [totalResult] = await db.select({ count: count() })
+        .from(homelessInteractions)
+        .where(and(eq(homelessInteractions.organizationId, orgId), eq(homelessInteractions.archived, false)));
+
+      const [escalationResult] = await db.select({ count: count() })
+        .from(homelessInteractions)
+        .where(and(eq(homelessInteractions.organizationId, orgId), eq(homelessInteractions.escalationTriggered, true), eq(homelessInteractions.archived, false)));
+
+      const today = new Date().toISOString().split("T")[0];
+      const [overdueResult] = await db.select({ count: count() })
+        .from(homelessInteractions)
+        .where(and(
+          eq(homelessInteractions.organizationId, orgId),
+          eq(homelessInteractions.followUpRequired, true),
+          eq(homelessInteractions.followUpCompleted, false),
+          eq(homelessInteractions.archived, false),
+          isNotNull(homelessInteractions.followUpDate),
+          lte(homelessInteractions.followUpDate, today)
+        ));
+
+      const [highRiskResult] = await db.select({ count: count() })
+        .from(homelessInteractions)
+        .where(and(eq(homelessInteractions.organizationId, orgId), eq(homelessInteractions.riskTier, "high"), eq(homelessInteractions.archived, false)));
+
+      res.json({
+        totalInteractions: totalResult?.count || 0,
+        escalations: escalationResult?.count || 0,
+        overdueFollowUps: overdueResult?.count || 0,
+        highRiskInteractions: highRiskResult?.count || 0,
+      });
+    } catch (error) {
+      console.error("[PUBLIC DC] Stats error:", error);
+      res.status(500).json({ error: "Failed to load stats" });
+    }
+  });
+
+  app.get("/api/dc/:token/interactions", resolveDataCaptureToken, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req as any).dcOrgId;
+      const resultLimit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+
+      const interactions = await db.select({
+        interaction: homelessInteractions,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+      })
+        .from(homelessInteractions)
+        .innerJoin(organizationClients, eq(homelessInteractions.orgClientId, organizationClients.id))
+        .where(and(
+          eq(homelessInteractions.organizationId, orgId),
+          eq(homelessInteractions.archived, false)
+        ))
+        .orderBy(desc(homelessInteractions.createdAt))
+        .limit(resultLimit);
+
+      res.json({ interactions });
+    } catch (error) {
+      console.error("[PUBLIC DC] List error:", error);
+      res.status(500).json({ error: "Failed to load interactions" });
+    }
+  });
+
+  app.get("/api/dc/:token/interactions/overdue-followups", resolveDataCaptureToken, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req as any).dcOrgId;
+      const today = new Date().toISOString().split("T")[0];
+
+      const overdue = await db.select({
+        interaction: homelessInteractions,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+      })
+        .from(homelessInteractions)
+        .innerJoin(organizationClients, eq(homelessInteractions.orgClientId, organizationClients.id))
+        .where(and(
+          eq(homelessInteractions.organizationId, orgId),
+          eq(homelessInteractions.followUpRequired, true),
+          eq(homelessInteractions.followUpCompleted, false),
+          eq(homelessInteractions.archived, false),
+          isNotNull(homelessInteractions.followUpDate),
+          lte(homelessInteractions.followUpDate, today)
+        ))
+        .orderBy(asc(homelessInteractions.followUpDate));
+
+      res.json({ overdue });
+    } catch (error) {
+      console.error("[PUBLIC DC] Overdue followups error:", error);
+      res.status(500).json({ error: "Failed to load overdue follow-ups" });
+    }
+  });
+
+  app.get("/api/dc/:token/interactions/lost-contacts", resolveDataCaptureToken, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req as any).dcOrgId;
+
+      const activeClients = await db.select({
+        id: organizationClients.id,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+      })
+        .from(organizationClients)
+        .where(and(
+          eq(organizationClients.organizationId, orgId),
+          eq(organizationClients.status, "active")
+        ));
+
+      const lostContacts = [];
+      const now = new Date();
+      for (const client of activeClients) {
+        const [lastInteraction] = await db.select()
+          .from(homelessInteractions)
+          .where(and(
+            eq(homelessInteractions.orgClientId, client.id),
+            eq(homelessInteractions.archived, false)
+          ))
+          .orderBy(desc(homelessInteractions.createdAt))
+          .limit(1);
+
+        if (!lastInteraction) {
+          lostContacts.push({
+            ...client,
+            lastRiskTier: null,
+            lastContactAt: null,
+            daysSinceContact: null,
+            expectedFrequencyDays: 14,
+          });
+          continue;
+        }
+
+        const lastDate = new Date(lastInteraction.createdAt);
+        const daysSince = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+        const threshold = lastInteraction.riskTier === "high" ? 2 : lastInteraction.riskTier === "medium" ? 7 : 14;
+
+        if (daysSince > threshold) {
+          lostContacts.push({
+            ...client,
+            lastRiskTier: lastInteraction.riskTier,
+            lastContactAt: lastInteraction.createdAt.toISOString(),
+            daysSinceContact: daysSince,
+            expectedFrequencyDays: threshold,
+          });
+        }
+      }
+
+      res.json({ lostContacts });
+    } catch (error) {
+      console.error("[PUBLIC DC] Lost contacts error:", error);
+      res.status(500).json({ error: "Failed to load lost contacts" });
+    }
+  });
+
+  app.post("/api/dc/:token/interactions/:interactionId/complete-followup", resolveDataCaptureToken, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = (req as any).dcOrgId;
+      const { interactionId } = req.params;
+      const { notes } = req.body;
+
+      const [interaction] = await db.select().from(homelessInteractions)
+        .where(and(
+          eq(homelessInteractions.id, interactionId),
+          eq(homelessInteractions.organizationId, orgId)
+        ));
+
+      if (!interaction) {
+        return res.status(404).json({ error: "Interaction not found" });
+      }
+
+      const [updated] = await db.update(homelessInteractions)
+        .set({
+          followUpCompleted: true,
+          followUpCompletedAt: new Date(),
+          followUpNotes: notes || null,
+        })
+        .where(eq(homelessInteractions.id, interactionId))
+        .returning();
+
+      res.json({ interaction: updated });
+    } catch (error) {
+      console.error("[PUBLIC DC] Complete follow-up error:", error);
+      res.status(500).json({ error: "Failed to complete follow-up" });
     }
   });
 
