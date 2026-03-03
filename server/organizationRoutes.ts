@@ -4482,6 +4482,151 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
+  app.get("/api/org/interactions/export", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+
+      const interactions = await db.select({
+        interaction: homelessInteractions,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+      })
+        .from(homelessInteractions)
+        .innerJoin(organizationClients, eq(homelessInteractions.orgClientId, organizationClients.id))
+        .where(and(
+          eq(homelessInteractions.organizationId, req.userId!),
+          eq(homelessInteractions.archived, false)
+        ))
+        .orderBy(desc(homelessInteractions.createdAt));
+
+      const headers = [
+        "Reference Code", "Client Name", "Staff Name", "Programme", "Contact Type",
+        "Risk Tier", "Risk Indicators", "Action Taken", "Referral Agency",
+        "No Action Rationale", "Escalation Triggered", "Follow-up Required",
+        "Follow-up Date", "Follow-up Staff", "Follow-up Completed", "Follow-up Notes",
+        "Latitude", "Longitude", "Notes", "Date"
+      ];
+
+      const escCsv = (val: any) => {
+        if (val === null || val === undefined) return "";
+        const s = String(val);
+        if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+          return `"${s.replace(/"/g, '""')}"`;
+        }
+        return s;
+      };
+
+      const rows = interactions.map((row) => {
+        const i = row.interaction;
+        return [
+          escCsv(row.referenceCode), escCsv(row.clientName), escCsv(i.staffName),
+          escCsv(i.programme), escCsv(i.contactType), escCsv(i.riskTier),
+          escCsv((i.riskIndicators || []).join("; ")), escCsv(i.actionTaken),
+          escCsv(i.referralAgency), escCsv(i.noActionRationale),
+          escCsv(i.escalationTriggered ? "Yes" : "No"),
+          escCsv(i.followUpRequired ? "Yes" : "No"), escCsv(i.followUpDate),
+          escCsv(i.followUpStaffName), escCsv(i.followUpCompleted ? "Yes" : "No"),
+          escCsv(i.followUpNotes), escCsv(i.latitude), escCsv(i.longitude),
+          escCsv(i.notes), escCsv(i.createdAt ? new Date(i.createdAt).toISOString() : ""),
+        ].join(",");
+      });
+
+      const csv = [headers.join(","), ...rows].join("\n");
+      const filename = `data-capture-export-${new Date().toISOString().split("T")[0]}.csv`;
+
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.send(csv);
+    } catch (error) {
+      console.error("[DATA CAPTURE] Export error:", error);
+      res.status(500).json({ error: "Failed to export interactions" });
+    }
+  });
+
+  app.post("/api/org/interactions/import", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const { rows } = z.object({
+        rows: z.array(z.object({
+          referenceCode: z.string().min(1),
+          staffName: z.string().min(1),
+          programme: z.enum(["outreach", "hostel", "drop_in"]),
+          contactType: z.enum(["outreach_visit", "shelter_checkin", "drop_in_meeting", "phone_contact", "multi_agency_discussion"]),
+          riskTier: z.enum(["high", "medium", "low"]),
+          riskIndicators: z.string().optional(),
+          actionTaken: z.enum(["advice_provided", "referral_made", "emergency_accommodation", "dsl_informed", "safeguarding_referral", "no_action_required", "follow_up_planned"]),
+          referralAgency: z.string().optional(),
+          noActionRationale: z.string().optional(),
+          followUpRequired: z.string().optional(),
+          followUpDate: z.string().optional(),
+          followUpStaffName: z.string().optional(),
+          notes: z.string().optional(),
+        }))
+      }).parse(req.body);
+
+      const results: Array<{ row: number; referenceCode: string; success: boolean; error?: string }> = [];
+
+      for (let idx = 0; idx < rows.length; idx++) {
+        const row = rows[idx];
+        try {
+          const [client] = await db.select({ id: organizationClients.id })
+            .from(organizationClients)
+            .where(and(
+              eq(organizationClients.organizationId, req.userId!),
+              eq(organizationClients.referenceCode, row.referenceCode),
+              eq(organizationClients.status, "active")
+            ))
+            .limit(1);
+
+          if (!client) {
+            results.push({ row: idx + 1, referenceCode: row.referenceCode, success: false, error: "Client not found" });
+            continue;
+          }
+
+          const indicators = row.riskIndicators
+            ? row.riskIndicators.split(";").map((s: string) => s.trim()).filter(Boolean)
+            : [];
+
+          const followUp = row.followUpRequired?.toLowerCase() === "yes" || row.followUpRequired === "true";
+          const isHighRisk = row.riskTier === "high";
+
+          await db.insert(homelessInteractions).values({
+            organizationId: req.userId!,
+            orgClientId: client.id,
+            staffName: row.staffName,
+            programme: row.programme,
+            contactType: row.contactType,
+            riskTier: row.riskTier,
+            riskIndicators: indicators,
+            actionTaken: row.actionTaken,
+            referralAgency: row.referralAgency || null,
+            noActionRationale: row.noActionRationale || null,
+            escalationTriggered: isHighRisk,
+            followUpRequired: followUp,
+            followUpDate: followUp && row.followUpDate ? row.followUpDate : null,
+            followUpStaffName: followUp && row.followUpStaffName ? row.followUpStaffName : null,
+            notes: row.notes || null,
+          });
+
+          results.push({ row: idx + 1, referenceCode: row.referenceCode, success: true });
+        } catch (err: any) {
+          results.push({ row: idx + 1, referenceCode: row.referenceCode, success: false, error: err.message });
+        }
+      }
+
+      const succeeded = results.filter((r) => r.success).length;
+      const failed = results.filter((r) => !r.success).length;
+      console.log(`[DATA CAPTURE] Import: ${succeeded} succeeded, ${failed} failed for org ${req.userId}`);
+      res.json({ results, succeeded, failed });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Invalid CSV data format", details: error.errors });
+      }
+      console.error("[DATA CAPTURE] Import error:", error);
+      res.status(500).json({ error: "Failed to import interactions" });
+    }
+  });
+
   app.post("/api/org/send-data-capture-link", requireOrganization, async (req, res) => {
     try {
       const { method, recipient } = z.object({

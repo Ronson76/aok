@@ -15,7 +15,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import {
   ClipboardList, AlertTriangle, Clock, Users, ArrowLeft,
   MapPin, CheckCircle, Shield, Plus, Loader2, Search,
-  User, AlertOctagon, UserPlus, Phone, Lock, Eye
+  User, AlertOctagon, UserPlus, Phone, Lock, Eye,
+  Upload, Download
 } from "lucide-react";
 import type { HomelessInteraction, InteractionProgramme, InteractionContactType, RiskTier, RiskIndicator, InteractionAction, OrganizationBundle } from "@shared/schema";
 
@@ -165,6 +166,13 @@ export default function DataCapturePage() {
   const [followUpStaffName, setFollowUpStaffName] = useState("");
   const [notes, setNotes] = useState("");
   const [gpsLocation, setGpsLocation] = useState<{ lat: string; lng: string } | null>(null);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResults, setImportResults] = useState<Array<{ row: number; referenceCode: string; success: boolean; error?: string }>>([]);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useCallback((node: HTMLInputElement | null) => {
+    if (node) node.value = "";
+  }, []);
 
   const { data: memberData } = useQuery<MemberInfo>({
     queryKey: ["/api/org-member/me"],
@@ -430,6 +438,104 @@ export default function DataCapturePage() {
     }
   }, [canWrite, activeTab]);
 
+  const handleExport = () => {
+    window.open(`${apiPrefix}/interactions/export`, "_blank");
+  };
+
+  const handleImportFile = async () => {
+    if (!importFile) return;
+    setIsImporting(true);
+    setImportResults([]);
+    try {
+      const text = await importFile.text();
+      const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").filter((l) => l.trim());
+      if (lines.length < 2) {
+        toast({ title: "Empty File", description: "CSV must have a header row and at least one data row", variant: "destructive" });
+        setIsImporting(false);
+        return;
+      }
+
+      const headerLine = lines[0];
+      const headerParts = headerLine.split(",").map((h) => h.trim().toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, ""));
+
+      const colMap: Record<string, number> = {};
+      headerParts.forEach((h, i) => { colMap[h] = i; });
+
+      const parseCsvLine = (line: string): string[] => {
+        const result: string[] = [];
+        let current = "";
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (inQuotes) {
+            if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
+            else if (ch === '"') { inQuotes = false; }
+            else { current += ch; }
+          } else {
+            if (ch === '"') { inQuotes = true; }
+            else if (ch === ",") { result.push(current.trim()); current = ""; }
+            else { current += ch; }
+          }
+        }
+        result.push(current.trim());
+        return result;
+      };
+
+      const getCol = (cols: string[], name: string) => {
+        const idx = colMap[name];
+        return idx !== undefined ? (cols[idx] || "") : "";
+      };
+
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = parseCsvLine(lines[i]);
+        const refCode = getCol(cols, "reference_code");
+        const staff = getCol(cols, "staff_name");
+        const prog = getCol(cols, "programme");
+        const ct = getCol(cols, "contact_type");
+        const rt = getCol(cols, "risk_tier");
+
+        if (!refCode || !staff || !prog || !ct || !rt) continue;
+
+        rows.push({
+          referenceCode: refCode,
+          staffName: staff,
+          programme: prog,
+          contactType: ct,
+          riskTier: rt,
+          riskIndicators: getCol(cols, "risk_indicators"),
+          actionTaken: getCol(cols, "action_taken") || "no_action_required",
+          referralAgency: getCol(cols, "referral_agency"),
+          noActionRationale: getCol(cols, "no_action_rationale"),
+          followUpRequired: getCol(cols, "follow_up_required"),
+          followUpDate: getCol(cols, "follow_up_date"),
+          followUpStaffName: getCol(cols, "follow_up_staff"),
+          notes: getCol(cols, "notes"),
+        });
+      }
+
+      if (rows.length === 0) {
+        toast({ title: "No Valid Rows", description: "Could not parse any valid interaction rows from the CSV", variant: "destructive" });
+        setIsImporting(false);
+        return;
+      }
+
+      const response = await apiRequest("POST", `${apiPrefix}/interactions/import`, { rows });
+      const data = await response.json();
+      setImportResults(data.results || []);
+      queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions`] });
+      queryClient.invalidateQueries({ queryKey: [`${apiPrefix}/interactions/stats`] });
+      toast({
+        title: "Import Complete",
+        description: `${data.succeeded} imported, ${data.failed} failed`,
+        variant: data.failed > 0 ? "destructive" : "default",
+      });
+    } catch (err: any) {
+      toast({ title: "Import Failed", description: err.message || "Could not import CSV", variant: "destructive" });
+    }
+    setIsImporting(false);
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col" data-testid="data-capture-page">
       <div className="bg-card border-b px-4 py-3 flex items-center justify-between sticky top-0 z-10">
@@ -474,6 +580,26 @@ export default function DataCapturePage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleExport}
+            title="Download CSV"
+            data-testid="button-export-csv"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+          {canWrite && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setShowImportDialog(true); setImportFile(null); setImportResults([]); }}
+              title="Upload CSV"
+              data-testid="button-import-csv"
+            >
+              <Upload className="h-4 w-4" />
+            </Button>
+          )}
           {!canWrite && (
             <Badge variant="secondary" className="text-xs gap-1" data-testid="badge-readonly">
               <Lock className="h-3 w-3" /> View Only
@@ -1224,6 +1350,58 @@ export default function DataCapturePage() {
                 <CheckCircle className="h-4 w-4 mr-1" />
               )}
               Complete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5 text-primary" />
+              Import Interactions
+            </DialogTitle>
+            <DialogDescription>
+              Upload a CSV file to bulk-import interaction records. The CSV must include columns: Reference Code, Staff Name, Programme, Contact Type, Risk Tier. Download an export first to see the expected format.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>CSV File</Label>
+              <Input
+                type="file"
+                accept=".csv"
+                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                data-testid="input-import-file"
+              />
+            </div>
+            {importResults.length > 0 && (
+              <div className="max-h-40 overflow-auto border rounded p-2 text-xs space-y-1">
+                {importResults.map((r) => (
+                  <div key={r.row} className={`flex justify-between ${r.success ? "text-green-600" : "text-red-500"}`}>
+                    <span>Row {r.row}: {r.referenceCode}</span>
+                    <span>{r.success ? "OK" : r.error}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={handleExport} data-testid="button-download-template">
+              <Download className="h-4 w-4 mr-1" /> Download Template
+            </Button>
+            <Button
+              disabled={!importFile || isImporting}
+              onClick={handleImportFile}
+              data-testid="button-confirm-import"
+            >
+              {isImporting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              ) : (
+                <Upload className="h-4 w-4 mr-1" />
+              )}
+              Import
             </Button>
           </DialogFooter>
         </DialogContent>
