@@ -75,6 +75,11 @@ const PROGRAMMES: Record<Programme, ProgrammeData> = {
         description: "When staff identify a safeguarding concern during support sessions, they log it through AOK with full details, categorisation, and escalation. Every action is recorded in a tamper-evident audit trail.",
       },
       {
+        label: "Kiosk check-in at drop-in sessions",
+        aokFeature: "Kiosk Check-in",
+        description: "Not everyone has a phone. AOK's Kiosk Mode runs on a tablet at reception during drop-in sessions at Gateway. Women check in using their reference code or name and date of birth, with a photo taken as proof of attendance. Key workers see exactly who showed up, and every check-in is recorded in the safeguarding dashboard.",
+      },
+      {
         label: "Real-time data capture during outreach and home visits",
         aokFeature: "Data Capture App",
         description: "All support workers have access to AOK's real-time data capture app for outreach work. When visiting clients in the community or at home, staff record observations, risk indicators, and actions taken directly from their phone. Everything is automatically pushed through to the safeguarding dashboard in real time - giving managers full visibility and a complete audit trail with no manual re-entry required.",
@@ -85,7 +90,7 @@ const PROGRAMMES: Record<Programme, ProgrammeData> = {
         description: "Gateway needs to evidence engagement and outcomes to funders. AOK's Funding Dashboard generates compliance-ready reports showing check-in rates, client engagement, and safeguarding actions taken.",
       },
     ],
-    honestNote: "Gateway is a direct fit for AOK. Women 16+ receiving ongoing support benefit from structured welfare monitoring, and staff benefit from auditable safeguarding records that satisfy funder and governance requirements. Support workers visiting clients in the community use AOK's real-time data capture app to record observations and actions during visits - everything syncs automatically to the safeguarding dashboard for full audit trail compliance.",
+    honestNote: "Gateway is a direct fit for AOK. Women 16+ receiving ongoing support benefit from structured welfare monitoring, and staff benefit from auditable safeguarding records that satisfy funder and governance requirements. For walk-in sessions, AOK's Kiosk Mode lets women check in on a tablet at reception - no phone needed. Support workers visiting clients in the community use AOK's real-time data capture app to record observations and actions during visits - everything syncs automatically to the safeguarding dashboard for full audit trail compliance.",
     scenarios: [
       {
         title: "A woman is referred to Gateway",
@@ -220,6 +225,11 @@ const PROGRAMMES: Record<Programme, ProgrammeData> = {
         label: "Evidencing staff engagement and programme delivery",
         aokFeature: "Activity Log + Audit Trail",
         description: "AOK records when staff check in, what sessions were delivered, and what safeguarding actions were taken. This gives Off The Fence the governance evidence that their Schools and Youth programme is being delivered properly.",
+      },
+      {
+        label: "Kiosk check-in at lunch clubs and group sessions",
+        aokFeature: "Kiosk Check-in",
+        description: "At lunch clubs and group sessions, a tablet running AOK's Kiosk Mode sits at the entrance. Students check in using their name and date of birth, and a photo is taken as proof of attendance. Staff see exactly who attended each session, and every check-in feeds into the safeguarding dashboard and funding reports.",
       },
       {
         label: "Real-time data capture during outreach sessions",
@@ -428,6 +438,76 @@ const PROGRAMMES: Record<Programme, ProgrammeData> = {
             </div>
             <div className="h-8 rounded-md bg-red-600 flex items-center justify-center mt-auto">
               <span className="text-xs text-white font-medium">Call 999</span>
+            </div>
+          </div>
+        ),
+      },
+      {
+        title: "Kiosk check-in at the drop-in",
+        aokFeature: "Kiosk Check-in",
+        theirContext: "Clients arrive at the Antifreeze drop-in for a hot meal, shower, and clean clothes. Many don't have a phone.",
+        howAokHelps: "A tablet running AOK's Kiosk Mode sits at reception. Clients check in using their reference code or name and date of birth, and a photo is taken as proof of attendance. Key workers see exactly who showed up, and anyone who stops attending is flagged automatically based on their risk tier.",
+        mockup: (
+          <div className="flex flex-col h-full p-4 gap-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-green-600" />
+              <span className="text-sm font-bold text-green-600">aok</span>
+              <Badge variant="outline" className="ml-auto text-[10px]">Kiosk</Badge>
+            </div>
+            <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-3 text-center">
+              <p className="text-sm font-medium text-orange-700 dark:text-orange-400">Welcome to Antifreeze</p>
+              <p className="text-xs text-muted-foreground mt-1">Please check in below</p>
+            </div>
+            <div className="space-y-2">
+              <div className="h-7 rounded-md bg-muted border px-2 flex items-center">
+                <span className="text-xs text-muted-foreground">Reference code or name</span>
+              </div>
+              <div className="h-7 rounded-md bg-muted border px-2 flex items-center">
+                <span className="text-xs text-muted-foreground">Date of birth</span>
+              </div>
+            </div>
+            <div className="h-8 rounded-md bg-green-600 flex items-center justify-center mt-auto">
+              <span className="text-xs text-white font-medium">Check In</span>
+            </div>
+          </div>
+        ),
+      },
+      {
+        title: "Data capture during street outreach",
+        aokFeature: "Data Capture",
+        theirContext: "An outreach worker meets a rough sleeper they've been supporting. They need to record the interaction, update the client's risk tier, and log any safeguarding concerns.",
+        howAokHelps: "The outreach worker opens AOK's Data Capture tool on their phone. They log the contact type, risk tier, safeguarding indicators, and actions taken. Everything is pushed through to the safeguarding dashboard in real time - managers and commissioners can see the full audit trail without waiting for paperwork.",
+        mockup: (
+          <div className="flex flex-col h-full p-4 gap-3">
+            <div className="flex items-center gap-2">
+              <ClipboardCheck className="h-5 w-5 text-orange-600" />
+              <span className="text-sm font-bold">Data Capture</span>
+              <Badge className="bg-green-600 text-white text-[10px] ml-auto">LIVE</Badge>
+            </div>
+            <div className="space-y-2">
+              <div className="h-7 rounded-md bg-muted border px-2 flex items-center justify-between gap-2">
+                <span className="text-xs text-muted-foreground">Client</span>
+                <span className="text-xs">Dave T. (AF-0089)</span>
+              </div>
+              <div className="h-7 rounded-md bg-muted border px-2 flex items-center justify-between gap-2">
+                <span className="text-xs text-muted-foreground">Contact type</span>
+                <span className="text-xs">Street outreach</span>
+              </div>
+              <div className="h-7 rounded-md bg-muted border px-2 flex items-center justify-between gap-2">
+                <span className="text-xs text-muted-foreground">Risk tier</span>
+                <span className="text-xs text-red-600 font-medium">HIGH</span>
+              </div>
+              <div className="h-7 rounded-md bg-muted border px-2 flex items-center justify-between gap-2">
+                <span className="text-xs text-muted-foreground">Action</span>
+                <span className="text-xs">Referral to housing</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <Lock className="h-3 w-3" />
+              <span>Auto-synced to safeguarding dashboard</span>
+            </div>
+            <div className="h-8 rounded-md bg-orange-600 flex items-center justify-center">
+              <span className="text-xs text-white font-medium">Save Record</span>
             </div>
           </div>
         ),

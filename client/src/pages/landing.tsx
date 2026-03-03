@@ -22,7 +22,7 @@ import {
   Smartphone, MapPin, Phone, AlertTriangle, Play, Building2, User, 
   ChevronRight, Shield, Zap, Globe, Lock, Share2, Plus, TrendingUp, PawPrint, Scroll, Check, LogOut, Sparkles,
   MessageCircle, MessageSquare, ArrowLeft, Home, TreeDeciduous, Leaf, Timer,
-  Map, HardHat, Flame, Moon, BatteryLow, FileCheck, ClipboardCheck, Eye, Handshake, GraduationCap
+  Map, HardHat, Flame, Moon, BatteryLow, FileCheck, ClipboardCheck, Eye, Handshake, GraduationCap, Tablet
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
@@ -418,6 +418,18 @@ export default function Landing() {
 
             <Card className="border-0 shadow-lg">
               <CardContent className="pt-6">
+                <div className="rounded-full bg-indigo-500/10 p-3 w-fit mb-4">
+                  <Tablet className="h-6 w-6 text-indigo-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Kiosk Check-In for Walk-In Services</h3>
+                <p className="text-muted-foreground text-sm">
+                  Not everyone has a phone. AOK's Kiosk Mode runs on a tablet at reception - clients check in using their reference code or name and date of birth, with a photo taken as proof of attendance. Key workers see exactly who showed up and who didn't, with every check-in recorded in the safeguarding dashboard.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
                 <div className="rounded-full bg-cyan-500/10 p-3 w-fit mb-4">
                   <Smartphone className="h-6 w-6 text-cyan-500" />
                 </div>
@@ -500,6 +512,7 @@ export default function Landing() {
               { title: "Engagement & Support Trends", description: "Identify patterns in user engagement and emerging support needs.", icon: TrendingUp },
               { title: "Historical Safeguarding Records", description: "Complete, searchable history of every check-in, alert, and action taken.", icon: Scroll },
               { title: "Live Outreach Data", description: "Data captured by support workers during client visits is pushed through in real time - no manual re-entry, no gaps in the record.", icon: Smartphone },
+              { title: "Kiosk Check-In Attendance", description: "See who physically checked in at your drop-in sessions, shelters, or reception desks - with timestamped photo evidence and full audit trail.", icon: Tablet },
               { title: "Exportable Reports", description: "Generate funder-ready PDF and CSV reports for commissioners, boards, and regulators.", icon: FileCheck },
             ].map((item, i) => (
               <Card key={i} className="border-0 shadow-lg">
