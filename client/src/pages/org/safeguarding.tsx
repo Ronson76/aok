@@ -1133,34 +1133,53 @@ export default function OrgSafeguardingPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {summary?.recentConcerns && summary.recentConcerns.length > 0 ? (
-                        <div className="space-y-3">
-                          {summary.recentConcerns.map((concern) => (
-                            <div key={concern.id} className="flex items-start justify-between gap-2 p-3 rounded-lg border">
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium capitalize">{concern.concernType?.replace(/_/g, " ")}</span>
-                                  {concern.isAnonymous && <Badge variant="outline" className="text-xs">Anonymous</Badge>}
-                                  {concern.source === "data_capture" && (
-                                    <Badge variant="outline" className="text-xs border-blue-500 text-blue-500">From Data Capture</Badge>
-                                  )}
+                      {summary?.recentConcerns && summary.recentConcerns.length > 0 ? (() => {
+                        const grouped: Record<string, typeof summary.recentConcerns> = {};
+                        for (const concern of summary.recentConcerns) {
+                          const dateKey = format(new Date(concern.createdAt), "EEEE, dd MMMM yyyy");
+                          if (!grouped[dateKey]) grouped[dateKey] = [];
+                          grouped[dateKey].push(concern);
+                        }
+                        return (
+                          <div className="space-y-4">
+                            {Object.entries(grouped).map(([dateLabel, items]) => (
+                              <div key={dateLabel}>
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{dateLabel}</p>
+                                <div className="space-y-2">
+                                  {items.map((concern) => (
+                                    <div key={concern.id} className="p-3 rounded-lg border space-y-1.5">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className="text-sm font-medium capitalize">{concern.concernType?.replace(/_/g, " ")}</span>
+                                          {concern.isAnonymous && <Badge variant="outline" className="text-xs">Anonymous</Badge>}
+                                          {concern.source === "data_capture" && (
+                                            <Badge variant="outline" className="text-xs border-blue-500 text-blue-500">From Data Capture</Badge>
+                                          )}
+                                        </div>
+                                        {getStatusBadge(concern.status)}
+                                      </div>
+                                      {((concern as any).clientName || concern.clientId) && (
+                                        <p className="text-sm font-medium">Client: {(concern as any).clientName || getClientName(concern.clientId)}</p>
+                                      )}
+                                      <p className="text-sm text-muted-foreground">{concern.description}</p>
+                                      {(concern as any).sourceInteractionNotes && (
+                                        <div className="bg-muted/50 rounded p-2">
+                                          <p className="text-xs font-medium text-muted-foreground mb-0.5">Staff Notes:</p>
+                                          <p className="text-sm">{(concern as any).sourceInteractionNotes}</p>
+                                        </div>
+                                      )}
+                                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                        {concern.reportedByName && <span>Reported by: {concern.reportedByName}</span>}
+                                        <span>{format(new Date(concern.createdAt), "HH:mm")}</span>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
-                                <p className="text-sm text-muted-foreground">{concern.description}</p>
-                                {((concern as any).clientName || concern.clientId) && (
-                                  <p className="text-xs text-muted-foreground">Client: {(concern as any).clientName || getClientName(concern.clientId)}</p>
-                                )}
-                                {concern.reportedByName && (
-                                  <p className="text-xs text-muted-foreground">Reported by: {concern.reportedByName}</p>
-                                )}
-                                <p className="text-xs text-muted-foreground">
-                                  {format(new Date(concern.createdAt), "dd/MM/yyyy HH:mm")}
-                                </p>
                               </div>
-                              {getStatusBadge(concern.status)}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
+                            ))}
+                          </div>
+                        );
+                      })() : (
                         <p className="text-sm text-muted-foreground text-center py-4">No recent concerns</p>
                       )}
                     </CardContent>
@@ -1383,9 +1402,19 @@ export default function OrgSafeguardingPage() {
                   if (filtered.length === 0) {
                     return <p className="text-center text-muted-foreground py-8">{concernSearchTerm ? "No matching concerns" : "No welfare concerns reported yet"}</p>;
                   }
+                  const grouped: Record<string, typeof filtered> = {};
+                  for (const c of filtered) {
+                    const dateKey = format(new Date(c.createdAt), "EEEE, dd MMMM yyyy");
+                    if (!grouped[dateKey]) grouped[dateKey] = [];
+                    grouped[dateKey].push(c);
+                  }
                   return (
-                  <div className="space-y-3">
-                    {filtered.map((concern) => (
+                  <div className="space-y-5">
+                    {Object.entries(grouped).map(([dateLabel, items]) => (
+                      <div key={dateLabel}>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">{dateLabel}</p>
+                        <div className="space-y-3">
+                    {items.map((concern) => (
                       <div key={concern.id} className="p-4 rounded-lg border space-y-2">
                         <div className="flex items-start justify-between gap-2 flex-wrap">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -1397,12 +1426,18 @@ export default function OrgSafeguardingPage() {
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {format(new Date(concern.createdAt), "dd/MM/yyyy HH:mm")}
+                            {format(new Date(concern.createdAt), "HH:mm")}
                           </p>
                         </div>
-                        <p className="text-sm">{concern.description}</p>
                         {(concern.clientId || (concern as any).clientName) && (
-                          <p className="text-sm text-muted-foreground">Client: {(concern as any).clientName || getClientName(concern.clientId)}</p>
+                          <p className="text-sm font-medium">Client: {(concern as any).clientName || getClientName(concern.clientId)}</p>
+                        )}
+                        <p className="text-sm">{concern.description}</p>
+                        {(concern as any).sourceInteractionNotes && (
+                          <div className="bg-muted/50 rounded p-2">
+                            <p className="text-xs font-medium text-muted-foreground mb-0.5">Staff Notes:</p>
+                            <p className="text-sm">{(concern as any).sourceInteractionNotes}</p>
+                          </div>
                         )}
                         {concern.reportedByName && (
                           <p className="text-sm text-muted-foreground">Reported by: {concern.reportedByName}</p>
@@ -1450,6 +1485,9 @@ export default function OrgSafeguardingPage() {
                             </p>
                           </div>
                         )}
+                      </div>
+                    ))}
+                        </div>
                       </div>
                     ))}
                   </div>
