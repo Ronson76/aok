@@ -60,6 +60,7 @@ const ACTION_LABELS: Record<InteractionAction, string> = {
   safeguarding_referral: "Safeguarding Referral Submitted",
   no_action_required: "No Action Required",
   follow_up_planned: "Follow-up Planned",
+  other: "Other",
 };
 
 const COUNTRY_CODES = [
@@ -162,6 +163,7 @@ export default function DataCapturePage() {
   const [riskTier, setRiskTier] = useState<RiskTier | "">("");
   const [selectedIndicators, setSelectedIndicators] = useState<RiskIndicator[]>([]);
   const [actionTaken, setActionTaken] = useState<InteractionAction | "">("");
+  const [actionTakenOther, setActionTakenOther] = useState("");
   const [referralAgency, setReferralAgency] = useState("");
   const [noActionRationale, setNoActionRationale] = useState("");
   const [followUpRequired, setFollowUpRequired] = useState(false);
@@ -320,6 +322,7 @@ export default function DataCapturePage() {
         riskTier,
         riskIndicators: selectedIndicators,
         actionTaken,
+        actionTakenOther: actionTaken === "other" ? actionTakenOther : undefined,
         referralAgency: actionTaken === "referral_made" ? referralAgency : undefined,
         noActionRationale: riskTier === "high" && actionTaken === "no_action_required" ? noActionRationale : undefined,
         followUpRequired,
@@ -387,6 +390,7 @@ export default function DataCapturePage() {
     setRiskTier("");
     setSelectedIndicators([]);
     setActionTaken("");
+    setActionTakenOther("");
     setReferralAgency("");
     setNoActionRationale("");
     setFollowUpRequired(false);
@@ -433,6 +437,7 @@ export default function DataCapturePage() {
 
   const canSubmit =
     selectedClient && staffName && programme && contactType && riskTier && actionTaken &&
+    !(actionTaken === "other" && !actionTakenOther.trim()) &&
     !(actionTaken === "referral_made" && !referralAgency) &&
     !(riskTier === "high" && actionTaken === "no_action_required" && !noActionRationale) &&
     !(followUpRequired && !followUpDate);
@@ -517,6 +522,7 @@ export default function DataCapturePage() {
           riskTier: rt,
           riskIndicators: getCol(cols, "risk_indicators"),
           actionTaken: getCol(cols, "action_taken") || "no_action_required",
+          actionTakenOther: getCol(cols, "action_taken_other"),
           referralAgency: getCol(cols, "referral_agency"),
           noActionRationale: getCol(cols, "no_action_rationale"),
           followUpRequired: getCol(cols, "follow_up_required"),
@@ -949,7 +955,7 @@ export default function DataCapturePage() {
                               {RISK_TIER_LABELS[resolvedClient.recentInteractions[0].riskTier as RiskTier]?.label}
                             </Badge>
                           </span>
-                          <span className="mr-2">{ACTION_LABELS[resolvedClient.recentInteractions[0].actionTaken as InteractionAction] || resolvedClient.recentInteractions[0].actionTaken}</span>
+                          <span className="mr-2">{resolvedClient.recentInteractions[0].actionTaken === "other" && resolvedClient.recentInteractions[0].actionTakenOther ? `Other: ${resolvedClient.recentInteractions[0].actionTakenOther}` : (ACTION_LABELS[resolvedClient.recentInteractions[0].actionTaken as InteractionAction] || resolvedClient.recentInteractions[0].actionTaken)}</span>
                           <span>{new Date(resolvedClient.recentInteractions[0].createdAt).toLocaleDateString("en-GB")}</span>
                         </div>
                       </div>
@@ -1067,6 +1073,18 @@ export default function DataCapturePage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {actionTaken === "other" && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">Please specify</Label>
+                    <Input
+                      placeholder="Describe the action taken"
+                      value={actionTakenOther}
+                      onChange={(e) => setActionTakenOther(e.target.value)}
+                      data-testid="input-action-other"
+                    />
+                  </div>
+                )}
 
                 {actionTaken === "referral_made" && (
                   <div className="space-y-2">
@@ -1193,7 +1211,7 @@ export default function DataCapturePage() {
                     <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
                       <span>{CONTACT_TYPE_LABELS[interaction.contactType as InteractionContactType] || interaction.contactType}</span>
                       <span>{PROGRAMME_LABELS[interaction.programme as InteractionProgramme] || interaction.programme}</span>
-                      <span>{ACTION_LABELS[interaction.actionTaken as InteractionAction] || interaction.actionTaken}</span>
+                      <span>{interaction.actionTaken === "other" && interaction.actionTakenOther ? `Other: ${interaction.actionTakenOther}` : (ACTION_LABELS[interaction.actionTaken as InteractionAction] || interaction.actionTaken)}</span>
                       <span>{new Date(interaction.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
                     {interaction.escalationTriggered && (
@@ -1236,7 +1254,7 @@ export default function DataCapturePage() {
                       Assigned to: {interaction.followUpStaffName || "Not assigned"}
                     </p>
                     <p className="text-xs text-muted-foreground mb-3">
-                      Original: {ACTION_LABELS[interaction.actionTaken as InteractionAction] || interaction.actionTaken} - {CONTACT_TYPE_LABELS[interaction.contactType as InteractionContactType] || interaction.contactType}
+                      Original: {interaction.actionTaken === "other" && interaction.actionTakenOther ? `Other: ${interaction.actionTakenOther}` : (ACTION_LABELS[interaction.actionTaken as InteractionAction] || interaction.actionTaken)} - {CONTACT_TYPE_LABELS[interaction.contactType as InteractionContactType] || interaction.contactType}
                     </p>
                     {canWrite && (
                       <Button

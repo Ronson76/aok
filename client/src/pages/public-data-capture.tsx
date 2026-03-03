@@ -58,6 +58,7 @@ const ACTION_LABELS: Record<InteractionAction, string> = {
   safeguarding_referral: "Safeguarding Referral Submitted",
   no_action_required: "No Action Required",
   follow_up_planned: "Follow-up Planned",
+  other: "Other",
 };
 
 const COUNTRY_CODES = [
@@ -154,6 +155,7 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
   const [riskTier, setRiskTier] = useState<RiskTier | "">("");
   const [selectedIndicators, setSelectedIndicators] = useState<RiskIndicator[]>([]);
   const [actionTaken, setActionTaken] = useState<InteractionAction | "">("");
+  const [actionTakenOther, setActionTakenOther] = useState("");
   const [referralAgency, setReferralAgency] = useState("");
   const [noActionRationale, setNoActionRationale] = useState("");
   const [followUpRequired, setFollowUpRequired] = useState(false);
@@ -299,6 +301,7 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
         riskTier,
         riskIndicators: selectedIndicators,
         actionTaken,
+        actionTakenOther: actionTaken === "other" ? actionTakenOther : undefined,
         referralAgency: actionTaken === "referral_made" ? referralAgency : undefined,
         noActionRationale: riskTier === "high" && actionTaken === "no_action_required" ? noActionRationale : undefined,
         followUpRequired,
@@ -381,6 +384,7 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
     setRiskTier("");
     setSelectedIndicators([]);
     setActionTaken("");
+    setActionTakenOther("");
     setReferralAgency("");
     setNoActionRationale("");
     setFollowUpRequired(false);
@@ -427,6 +431,7 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
 
   const canSubmit =
     selectedClient && staffName && programme && contactType && riskTier && actionTaken &&
+    !(actionTaken === "other" && !actionTakenOther.trim()) &&
     !(actionTaken === "referral_made" && !referralAgency) &&
     !(riskTier === "high" && actionTaken === "no_action_required" && !noActionRationale) &&
     !(followUpRequired && !followUpDate);
@@ -1035,7 +1040,7 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
                               {RISK_TIER_LABELS[resolvedClient.recentInteractions[0].riskTier as RiskTier]?.label}
                             </Badge>
                           </span>
-                          <span className="mr-2">{ACTION_LABELS[resolvedClient.recentInteractions[0].actionTaken as InteractionAction] || resolvedClient.recentInteractions[0].actionTaken}</span>
+                          <span className="mr-2">{resolvedClient.recentInteractions[0].actionTaken === "other" && resolvedClient.recentInteractions[0].actionTakenOther ? `Other: ${resolvedClient.recentInteractions[0].actionTakenOther}` : (ACTION_LABELS[resolvedClient.recentInteractions[0].actionTaken as InteractionAction] || resolvedClient.recentInteractions[0].actionTaken)}</span>
                           <span>{new Date(resolvedClient.recentInteractions[0].createdAt).toLocaleDateString("en-GB")}</span>
                         </div>
                       </div>
@@ -1148,6 +1153,18 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {actionTaken === "other" && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">Please specify</Label>
+                    <Input
+                      placeholder="Describe the action taken"
+                      value={actionTakenOther}
+                      onChange={(e) => setActionTakenOther(e.target.value)}
+                      data-testid="input-action-other"
+                    />
+                  </div>
+                )}
 
                 {actionTaken === "referral_made" && (
                   <div className="space-y-2">
@@ -1271,7 +1288,7 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
                     </div>
                     <div className="text-xs text-muted-foreground space-y-0.5">
                       <p>{CONTACT_TYPE_LABELS[item.interaction.contactType as InteractionContactType] || item.interaction.contactType} - {PROGRAMME_LABELS[item.interaction.programme as InteractionProgramme] || item.interaction.programme}</p>
-                      <p>Action: {ACTION_LABELS[item.interaction.actionTaken as InteractionAction] || item.interaction.actionTaken}</p>
+                      <p>Action: {item.interaction.actionTaken === "other" && item.interaction.actionTakenOther ? `Other: ${item.interaction.actionTakenOther}` : (ACTION_LABELS[item.interaction.actionTaken as InteractionAction] || item.interaction.actionTaken)}</p>
                       <p>Staff: {item.interaction.staffName} - {new Date(item.interaction.createdAt).toLocaleDateString("en-GB")} {new Date(item.interaction.createdAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</p>
                       {item.interaction.escalationTriggered && (
                         <Badge variant="destructive" className="text-[10px] mt-1">Escalation</Badge>
@@ -1308,7 +1325,7 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
                     </div>
                     <div className="text-xs text-muted-foreground">
                       <p>Assigned to: {item.interaction.followUpStaffName || "Unassigned"}</p>
-                      <p>Original: {ACTION_LABELS[item.interaction.actionTaken as InteractionAction] || item.interaction.actionTaken}</p>
+                      <p>Original: {item.interaction.actionTaken === "other" && item.interaction.actionTakenOther ? `Other: ${item.interaction.actionTakenOther}` : (ACTION_LABELS[item.interaction.actionTaken as InteractionAction] || item.interaction.actionTaken)}</p>
                     </div>
                     <Button
                       size="sm"

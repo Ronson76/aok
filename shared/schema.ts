@@ -2266,7 +2266,7 @@ export type RiskIndicator = typeof riskIndicators[number];
 export const interactionActions = [
   "advice_provided", "referral_made", "emergency_accommodation",
   "dsl_informed", "safeguarding_referral", "no_action_required",
-  "follow_up_planned"
+  "follow_up_planned", "other"
 ] as const;
 export type InteractionAction = typeof interactionActions[number];
 
@@ -2292,6 +2292,7 @@ export const homelessInteractions = pgTable("homeless_interactions", {
   riskTier: text("risk_tier").notNull().$type<RiskTier>(),
   riskIndicators: text("risk_indicators").array().notNull().default(sql`'{}'::text[]`),
   actionTaken: text("action_taken").notNull().$type<InteractionAction>(),
+  actionTakenOther: text("action_taken_other"),
   referralAgency: text("referral_agency"),
   noActionRationale: text("no_action_rationale"),
   escalationTriggered: boolean("escalation_triggered").notNull().default(false),
