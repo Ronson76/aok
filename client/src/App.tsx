@@ -853,7 +853,7 @@ function Router() {
   }
 
   // Org pages have their own layout/header, don't use AppLayout
-  if (location.startsWith("/org/dashboard") || location.startsWith("/org/safeguarding") || location.startsWith("/org/lone-worker") || location.startsWith("/org/team") || location.startsWith("/org/analytics") || location.startsWith("/org/assurance") || location.startsWith("/org/api-access") || location.startsWith("/org/missed-checkins") || location.startsWith("/org/emergency-alerts")) {
+  if (location.startsWith("/org/dashboard") || location.startsWith("/org/safeguarding") || location.startsWith("/org/lone-worker") || location.startsWith("/org/team") || location.startsWith("/org/analytics") || location.startsWith("/org/assurance") || location.startsWith("/org/api-access") || location.startsWith("/org/missed-checkins") || location.startsWith("/org/emergency-alerts") || location.startsWith("/org/data-capture") || location.startsWith("/org/kiosk") || location.startsWith("/org/funding")) {
     return <AppRoutes />;
   }
 
