@@ -740,20 +740,10 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
             </h1>
             <p className="text-xs text-muted-foreground">
               {verifyData.organizationName}
-              <span className="ml-2">
-                Syncs every 5s
-                {gpsLocation && (
-                  <span className="ml-1 inline-flex items-center gap-0.5">
-                    <MapPin className="h-3 w-3 inline" /> GPS
-                  </span>
-                )}
-              </span>
             </p>
           </div>
         </div>
-        <Badge variant="outline" className="text-xs gap-1 animate-pulse" data-testid="badge-live">
-          <span className="h-2 w-2 rounded-full bg-green-500 inline-block" /> Live
-        </Badge>
+        <div />
       </div>
 
       <div className="grid grid-cols-4 gap-2 p-3">
@@ -1246,12 +1236,6 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
                   />
                 </div>
 
-                {gpsLocation && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <MapPin className="h-3 w-3" />
-                    <span>GPS: {gpsLocation.lat}, {gpsLocation.lng}</span>
-                  </div>
-                )}
 
                 <Button
                   className="w-full py-5"
@@ -1406,15 +1390,6 @@ export default function PublicDataCapturePage({ token }: { token: string }) {
         )}
       </div>
 
-      <div className="p-3 border-t bg-muted/30">
-        <div className="flex items-start gap-2 max-w-lg mx-auto">
-          <Info className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
-          <div className="text-[10px] text-muted-foreground space-y-0.5">
-            <p><strong>This is not an emergency monitoring tool.</strong> AOK Data Capture provides structured safeguarding interaction logging. Escalation responsibility sits with the organisation.</p>
-            <p>All entries are time-stamped, staff-attributed, and maintained in a tamper-evident audit trail. Records cannot be deleted, only archived.</p>
-          </div>
-        </div>
-      </div>
 
       <Dialog open={showFollowUpDialog} onOpenChange={setShowFollowUpDialog}>
         <DialogContent>
