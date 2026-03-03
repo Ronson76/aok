@@ -4482,7 +4482,7 @@ export function registerOrganizationRoutes(app: Express) {
     }
   });
 
-  app.post("/api/org/interactions/lookup-or-create", requireOrganization, async (req, res) => {
+  app.post("/api/org/interactions/lookup", requireOrganization, async (req, res) => {
     try {
       const db = ensureDb();
       const { clientName, dateOfBirth } = z.object({
@@ -4538,63 +4538,19 @@ export function registerOrganizationRoutes(app: Express) {
 
         return res.json({
           found: true,
-          isNew: false,
           client: matched,
           profile: profile || null,
           recentInteractions: interactions,
         });
       }
 
-      const age = calculateAgeFromDOB(dateOfBirth);
-      const seatType = age >= 16 ? "check_in" : "safeguarding";
-
-      let referenceCode = generateReferenceCode();
-      let attempts = 0;
-      while (await organizationStorage.getClientByReferenceCode(referenceCode) && attempts < 10) {
-        referenceCode = generateReferenceCode();
-        attempts++;
-      }
-
-      const orgClient = await organizationStorage.createPendingClient({
-        organizationId: req.userId!,
-        bundleId: null,
-        clientName: clientName.trim(),
-        clientPhone: null,
-        referenceCode,
-        seatType,
-        scheduleStartTime: null,
-        checkInIntervalHours: null,
-        supervisorName: null,
-        supervisorPhone: null,
-        supervisorEmail: null,
-      });
-
-      await db.insert(organizationClientProfiles).values({
-        organizationClientId: orgClient.id,
-        dateOfBirth,
-      });
-
-      console.log(`[DATA CAPTURE] Auto-registered new client "${clientName}" (${seatType} seat, ref: ${referenceCode})`);
-
-      res.json({
-        found: true,
-        isNew: true,
-        client: {
-          id: orgClient.id,
-          clientName: orgClient.clientName,
-          referenceCode: orgClient.referenceCode,
-          status: orgClient.status,
-          seatType: orgClient.seatType,
-        },
-        profile: { dateOfBirth },
-        recentInteractions: [],
-      });
+      res.json({ found: false });
     } catch (error: any) {
       if (error.name === "ZodError") {
         return res.status(400).json({ error: "Name and date of birth are required" });
       }
-      console.error("[DATA CAPTURE] Lookup/create error:", error);
-      res.status(500).json({ error: "Failed to look up or create client" });
+      console.error("[DATA CAPTURE] Lookup error:", error);
+      res.status(500).json({ error: "Failed to look up client" });
     }
   });
 
