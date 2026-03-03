@@ -2623,14 +2623,12 @@ Thank you,
 
 export async function sendDataCaptureLinkSMS(
   phoneNumber: string,
-  organizationName: string
+  organizationName: string,
+  dataCaptureUrl: string
 ): Promise<{ success: boolean; error?: string }> {
-  const dataCaptureUrl = `https://aok.care/org/data-capture`;
-  const message = `Hi from ${organizationName}. Use this link to access the aok Data Capture tool for logging safeguarding interactions:
+  const message = `Hi from ${organizationName}. Use this link to open the aok Data Capture tool. No login required - just tap and start recording:
 
-${dataCaptureUrl}
-
-Log in with your team credentials to start recording.`;
+${dataCaptureUrl}`;
 
   console.log(`[SMS DATA CAPTURE LINK] Sending data capture link to ${phoneNumber}`);
   return await sendSMS(phoneNumber, message);
@@ -2638,19 +2636,17 @@ Log in with your team credentials to start recording.`;
 
 export async function sendDataCaptureLinkEmail(
   email: string,
-  organizationName: string
+  organizationName: string,
+  dataCaptureUrl: string
 ): Promise<{ sent: boolean; error?: string }> {
-  const dataCaptureUrl = `https://aok.care/org/data-capture`;
   const subject = `aok Data Capture - ${organizationName}`;
 
   const body = `Hi,
 
 ${organizationName} has shared the aok Data Capture tool with you.
 
-Use this link to log safeguarding interactions:
+Use this link to start recording - no login required:
 ${dataCaptureUrl}
-
-Log in with your team credentials to start recording. If you don't have credentials yet, ask your manager to invite you.
 
 - The aok Team`;
 
@@ -2661,11 +2657,11 @@ Log in with your team credentials to start recording. If you don't have credenti
   <h2 style="color: #2563eb;">aok Data Capture</h2>
   <p>Hi,</p>
   <p><strong>${organizationName}</strong> has shared the aok Data Capture tool with you.</p>
-  <p>Use this tool to log safeguarding interactions, track risk assessments, and manage follow-ups.</p>
+  <p>Use this tool to log safeguarding interactions, track risk assessments, and manage follow-ups. No login required.</p>
   <div style="text-align: center; margin: 30px 0;">
     <a href="${dataCaptureUrl}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Open Data Capture</a>
   </div>
-  <p style="color: #6b7280; font-size: 13px;">Log in with your team credentials to start recording. If you don't have credentials yet, ask your manager to invite you.</p>
+  <p style="color: #6b7280; font-size: 13px;">This is a secure link for your organisation's data capture. Bookmark it for quick access.</p>
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
   <p style="color: #9ca3af; font-size: 12px; text-align: center;">
     <a href="https://aok.care" style="color: #F97316; text-decoration: none;">aok.care</a> - Personal safety made simple

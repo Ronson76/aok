@@ -2268,6 +2268,16 @@ export const interactionActions = [
 ] as const;
 export type InteractionAction = typeof interactionActions[number];
 
+export const dataCaptureLinks = pgTable("data_capture_links", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  label: text("label"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+export type DataCaptureLink = typeof dataCaptureLinks.$inferSelect;
+
 export const homelessInteractions = pgTable("homeless_interactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),

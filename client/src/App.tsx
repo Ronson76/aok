@@ -71,6 +71,7 @@ import OrgApiAccess from "@/pages/org/api-access";
 import FundingDashboard from "@/pages/org/funding-dashboard";
 import OrgKiosk from "@/pages/org/kiosk";
 import OrgDataCapture from "@/pages/org/data-capture";
+import PublicDataCapture from "@/pages/public-data-capture";
 import AdminTeam from "@/pages/admin/team";
 import AdminInvite from "@/pages/admin/invite";
 import AdminArchitecture from "@/pages/admin/architecture";
@@ -816,6 +817,11 @@ function Router() {
 
   if (location.startsWith("/confirm-contact")) {
     return <ConfirmContact />;
+  }
+
+  if (location.startsWith("/data-capture/")) {
+    const token = location.replace("/data-capture/", "").split("?")[0];
+    return <PublicDataCapture token={token} />;
   }
 
   if (location === "/admin/login") {
