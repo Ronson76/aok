@@ -2,7 +2,7 @@ import { Express, Request, Response, NextFunction } from "express";
 import { organizationStorage, storage, orgMemberStorage } from "./storage";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema, activeEmergencyAlerts, checkIns, organizationClients, users, safeguardingLeads, dbsChecks, trainingRecords, rolePermissions, OrgPermission, roleLabels, orgApiKeys } from "@shared/schema";
+import { updateOrganizationClientProfileSchema, orgClientStatuses, registerOrgClientSchema, updateClientFeaturesSchema, forgotPasswordSchema, resetPasswordSchema, insertIncidentSchema, insertWelfareConcernSchema, insertCaseNoteSchema, insertEscalationRuleSchema, passwordSchema, activeEmergencyAlerts, checkIns, organizationClients, organizationClientProfiles, users, safeguardingLeads, dbsChecks, trainingRecords, rolePermissions, OrgPermission, roleLabels, orgApiKeys } from "@shared/schema";
 import { sendAppInviteSMS, sendPasswordResetEmail, sendReferenceCodeSMS, sendContactConfirmationEmail, sendStaffInviteSMS, sendEmergencyContactConfirmationForStaffInvite } from "./notifications";
 import { plantTreeForNewSubscriber } from "./ecologiService";
 import { ensureDb } from "./db";
@@ -10,6 +10,17 @@ import { sql, eq, and, isNotNull, desc } from "drizzle-orm";
 import { loginRateLimiter, passwordResetRateLimiter } from "./security";
 import { getPeakTimes, getAlertHeatmap, getActiveSOSAlerts } from "./services/analyticsService";
 import { createHash, randomBytes } from "crypto";
+
+function calculateAgeFromDOB(dateOfBirth: string): number {
+  const dob = new Date(dateOfBirth);
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  return age;
+}
 
 function generateReferenceCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -202,6 +213,18 @@ export function registerOrganizationRoutes(app: Express) {
 
       const { clientName, clientPhone, dateOfBirth, bundleId, scheduleStartTime, checkInIntervalHours, emergencyContacts, emergencyNotes, features, supervisorName, supervisorPhone, supervisorEmail } = parsed.data;
 
+      const dobDate = new Date(dateOfBirth);
+      if (isNaN(dobDate.getTime())) {
+        return res.status(400).json({ error: "Invalid date of birth" });
+      }
+
+      const age = calculateAgeFromDOB(dateOfBirth);
+      const seatType = age >= 16 ? "check_in" : "safeguarding";
+
+      if (seatType === "check_in" && (!clientPhone || clientPhone.length < 10)) {
+        return res.status(400).json({ error: "Phone number is required for check-in clients (16+)" });
+      }
+
       // Get the organization details
       const org = await storage.getUserById(req.userId!);
       if (!org) {
@@ -225,10 +248,11 @@ export function registerOrganizationRoutes(app: Express) {
         organizationId: req.userId!,
         bundleId: bundleId || null,
         clientName,
-        clientPhone,
+        clientPhone: seatType === "check_in" ? clientPhone : null,
         referenceCode,
-        scheduleStartTime: scheduleStartTime ? parseScheduleTime(scheduleStartTime) : null,
-        checkInIntervalHours: checkInIntervalHours || 24,
+        seatType,
+        scheduleStartTime: seatType === "check_in" && scheduleStartTime ? parseScheduleTime(scheduleStartTime) : null,
+        checkInIntervalHours: seatType === "check_in" ? (checkInIntervalHours || 24) : null,
         supervisorName: supervisorName || null,
         supervisorPhone: supervisorPhone || null,
         supervisorEmail: supervisorEmail || null,
@@ -243,12 +267,10 @@ export function registerOrganizationRoutes(app: Express) {
       });
 
       // Create the client profile with date of birth
-      if (dateOfBirth) {
-        await organizationStorage.createOrUpdateClientProfile(orgClient.id, {
-          organizationClientId: orgClient.id,
-          dateOfBirth: dateOfBirth,
-        });
-      }
+      await organizationStorage.createOrUpdateClientProfile(orgClient.id, {
+        organizationClientId: orgClient.id,
+        dateOfBirth: dateOfBirth,
+      });
 
       // Add supervisor as a primary contact (gets missed check-in alerts)
       if (supervisorName && supervisorEmail) {
@@ -272,25 +294,34 @@ export function registerOrganizationRoutes(app: Express) {
         }
       }
 
-      // Send SMS with app download link and reference code
-      const smsResult = await sendAppInviteSMS(clientPhone, referenceCode, org.name, supervisorName);
-      
-      // Update registration status based on SMS result
-      if (smsResult.success) {
-        await organizationStorage.updateClientRegistrationStatus(orgClient.id, "pending_registration");
-      }
+      let smsSent = false;
+      let smsError: string | undefined;
 
-      // Plant a tree for every person we onboard
-      plantTreeForNewSubscriber(clientPhone).catch(err => {
-        console.error("[ECOLOGI] Failed to plant tree for new client:", err);
-      });
+      // Only send SMS for check-in seats (16+)
+      if (seatType === "check_in" && clientPhone) {
+        const smsResult = await sendAppInviteSMS(clientPhone, referenceCode, org.name, supervisorName);
+        smsSent = smsResult.success;
+        smsError = smsResult.error;
+
+        if (smsResult.success) {
+          await organizationStorage.updateClientRegistrationStatus(orgClient.id, "pending_registration");
+        }
+
+        plantTreeForNewSubscriber(clientPhone).catch(err => {
+          console.error("[ECOLOGI] Failed to plant tree for new client:", err);
+        });
+      } else {
+        // Safeguarding seats are "registered" immediately (no app link needed)
+        await organizationStorage.updateClientRegistrationStatus(orgClient.id, "registered");
+      }
 
       res.status(201).json({
         success: true,
         orgClientId: orgClient.id,
         referenceCode,
-        smsSent: smsResult.success,
-        smsError: smsResult.error,
+        seatType,
+        smsSent,
+        smsError,
       });
     } catch (error: any) {
       console.error("[ORG] Failed to register client:", error);
@@ -302,9 +333,9 @@ export function registerOrganizationRoutes(app: Express) {
   const bulkImportClientSchema = z.object({
     clients: z.array(z.object({
       clientName: z.string().min(1, "Client name is required"),
-      clientPhone: z.string().min(10, "Valid phone number is required"),
+      clientPhone: z.string().optional().or(z.literal("")),
       clientEmail: z.string().email("Valid email is required").optional().or(z.literal("")),
-      dateOfBirth: z.string().optional().or(z.literal("")),
+      dateOfBirth: z.string().min(1, "Date of birth is required"),
       specialNeeds: z.string().optional().or(z.literal("")),
       medicalNotes: z.string().optional().or(z.literal("")),
       emergencyInstructions: z.string().optional().or(z.literal("")),
@@ -349,14 +380,31 @@ export function registerOrganizationRoutes(app: Express) {
             continue;
           }
 
+          let clientAge = 18;
+          if (client.dateOfBirth) {
+            const dobCheck = new Date(client.dateOfBirth);
+            if (isNaN(dobCheck.getTime())) {
+              results.push({ row: i + 1, clientName: client.clientName, success: false, error: "Invalid date of birth" });
+              continue;
+            }
+            clientAge = calculateAgeFromDOB(client.dateOfBirth);
+          }
+          const clientSeatType = clientAge >= 16 ? "check_in" : "safeguarding";
+
+          if (clientSeatType === "check_in" && (!client.clientPhone || client.clientPhone.length < 10)) {
+            results.push({ row: i + 1, clientName: client.clientName, success: false, error: "Phone number is required for check-in clients (16+)" });
+            continue;
+          }
+
           const orgClient = await organizationStorage.createPendingClient({
             organizationId: req.userId!,
             bundleId: bundleId || null,
             clientName: client.clientName,
-            clientPhone: client.clientPhone,
+            clientPhone: clientSeatType === "check_in" ? (client.clientPhone || null) : null,
             referenceCode,
+            seatType: clientSeatType,
             scheduleStartTime: null,
-            checkInIntervalHours: client.checkInIntervalHours || 24,
+            checkInIntervalHours: clientSeatType === "check_in" ? (client.checkInIntervalHours || 24) : null,
             features: {
               featureWellbeingAi: true,
               featureShakeToAlert: true,
@@ -367,18 +415,16 @@ export function registerOrganizationRoutes(app: Express) {
             },
           });
 
-          if (client.dateOfBirth || client.specialNeeds || client.medicalNotes || client.emergencyInstructions) {
-            await organizationStorage.createOrUpdateClientProfile(orgClient.id, {
-              organizationClientId: orgClient.id,
-              dateOfBirth: client.dateOfBirth || undefined,
+          await organizationStorage.createOrUpdateClientProfile(orgClient.id, {
+            organizationClientId: orgClient.id,
+            dateOfBirth: client.dateOfBirth || undefined,
+          });
+          if (client.specialNeeds || client.medicalNotes || client.emergencyInstructions) {
+            await organizationStorage.updateClientProfile(orgClient.id, {
+              vulnerabilities: client.specialNeeds || null,
+              medicalNotes: client.medicalNotes || null,
+              emergencyInstructions: client.emergencyInstructions || null,
             });
-            if (client.specialNeeds || client.medicalNotes || client.emergencyInstructions) {
-              await organizationStorage.updateClientProfile(orgClient.id, {
-                vulnerabilities: client.specialNeeds || null,
-                medicalNotes: client.medicalNotes || null,
-                emergencyInstructions: client.emergencyInstructions || null,
-              });
-            }
           }
 
           if (client.emergencyContacts && client.emergencyContacts.length > 0) {
@@ -394,9 +440,13 @@ export function registerOrganizationRoutes(app: Express) {
             }
           }
 
-          const smsResult = await sendAppInviteSMS(client.clientPhone, referenceCode, org.name);
-          if (smsResult.success) {
-            await organizationStorage.updateClientRegistrationStatus(orgClient.id, "pending_registration");
+          if (clientSeatType === "check_in" && client.clientPhone) {
+            const smsResult = await sendAppInviteSMS(client.clientPhone, referenceCode, org.name);
+            if (smsResult.success) {
+              await organizationStorage.updateClientRegistrationStatus(orgClient.id, "pending_registration");
+            }
+          } else {
+            await organizationStorage.updateClientRegistrationStatus(orgClient.id, "registered");
           }
 
           plantTreeForNewSubscriber(client.clientPhone).catch(err => {
@@ -422,6 +472,122 @@ export function registerOrganizationRoutes(app: Express) {
     } catch (error: any) {
       console.error("[ORG] Bulk import failed:", error);
       res.status(400).json({ error: error.message || "Bulk import failed" });
+    }
+  });
+
+  // Get safeguarding clients who have turned 16 (birthday transitions)
+  app.get("/api/org/clients/birthday-transitions", requireOrganization, async (req, res) => {
+    try {
+      const db = await ensureDb();
+      const allClients = await db.select()
+        .from(organizationClients)
+        .where(
+          and(
+            eq(organizationClients.organizationId, req.userId!),
+            eq(organizationClients.seatType, "safeguarding"),
+            eq(organizationClients.birthdayUpgradeDismissed, false),
+            eq(organizationClients.status, "active"),
+          )
+        );
+
+      const transitions: Array<{ orgClientId: string; clientName: string | null; dateOfBirth: string | null }> = [];
+
+      for (const client of allClients) {
+        const profiles = await db.select()
+          .from(organizationClientProfiles)
+          .where(eq(organizationClientProfiles.organizationClientId, client.id));
+
+        const profile = profiles[0];
+        if (profile?.dateOfBirth) {
+          const age = calculateAgeFromDOB(profile.dateOfBirth);
+          if (age >= 16) {
+            transitions.push({
+              orgClientId: client.id,
+              clientName: client.clientName,
+              dateOfBirth: profile.dateOfBirth,
+            });
+          }
+        }
+      }
+
+      res.json({ transitions });
+    } catch (error: any) {
+      console.error("[ORG] Failed to get birthday transitions:", error);
+      res.status(500).json({ error: "Failed to get birthday transitions" });
+    }
+  });
+
+  // Upgrade a safeguarding seat to a check-in seat (when client turns 16)
+  app.post("/api/org/clients/:orgClientId/upgrade-to-checkin", requireOrganization, async (req, res) => {
+    try {
+      const { orgClientId } = req.params;
+      const { clientPhone } = req.body;
+
+      if (!clientPhone || clientPhone.length < 10) {
+        return res.status(400).json({ error: "Valid phone number is required to upgrade to check-in seat" });
+      }
+
+      const orgClient = await organizationStorage.getClientById(orgClientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      if (orgClient.seatType !== "safeguarding") {
+        return res.status(400).json({ error: "Client is already a check-in seat" });
+      }
+
+      const org = await storage.getUserById(req.userId!);
+      if (!org) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+
+      const db = await ensureDb();
+      await db.update(organizationClients)
+        .set({
+          seatType: "check_in",
+          clientPhone,
+          checkInIntervalHours: 24,
+          registrationStatus: "pending_sms",
+        })
+        .where(eq(organizationClients.id, orgClientId));
+
+      const smsResult = await sendAppInviteSMS(clientPhone, orgClient.referenceCode!, org.name, orgClient.supervisorName || undefined);
+
+      if (smsResult.success) {
+        await organizationStorage.updateClientRegistrationStatus(orgClientId, "pending_registration");
+      }
+
+      res.json({
+        success: true,
+        seatType: "check_in",
+        smsSent: smsResult.success,
+        smsError: smsResult.error,
+      });
+    } catch (error: any) {
+      console.error("[ORG] Failed to upgrade client to check-in:", error);
+      res.status(500).json({ error: "Failed to upgrade client" });
+    }
+  });
+
+  // Dismiss birthday upgrade notification for a safeguarding client
+  app.post("/api/org/clients/:orgClientId/dismiss-birthday-upgrade", requireOrganization, async (req, res) => {
+    try {
+      const { orgClientId } = req.params;
+
+      const orgClient = await organizationStorage.getClientById(orgClientId);
+      if (!orgClient || orgClient.organizationId !== req.userId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      const db = await ensureDb();
+      await db.update(organizationClients)
+        .set({ birthdayUpgradeDismissed: true })
+        .where(eq(organizationClients.id, orgClientId));
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[ORG] Failed to dismiss birthday upgrade:", error);
+      res.status(500).json({ error: "Failed to dismiss notification" });
     }
   });
 

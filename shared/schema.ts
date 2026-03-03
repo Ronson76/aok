@@ -640,6 +640,10 @@ export type BundleStatus = typeof bundleStatuses[number];
 export const orgClientStatuses = ["active", "paused", "terminated"] as const;
 export type OrgClientStatus = typeof orgClientStatuses[number];
 
+// Organization client seat types
+export const orgClientSeatTypes = ["check_in", "safeguarding"] as const;
+export type OrgClientSeatType = typeof orgClientSeatTypes[number];
+
 // Organization bundles table (subscription packages for organizations)
 export const organizationBundles = pgTable("organization_bundles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -698,6 +702,7 @@ export const organizationClients = pgTable("organization_clients", {
   bundleId: varchar("bundle_id").references(() => organizationBundles.id, { onDelete: "set null" }),
   nickname: text("nickname"),
   clientOrdinal: integer("client_ordinal").notNull().default(0),
+  seatType: text("seat_type").notNull().$type<OrgClientSeatType>().default("check_in"),
   status: text("status").notNull().$type<OrgClientStatus>().default("active"),
   registrationStatus: text("registration_status").notNull().$type<OrgClientRegistrationStatus>().default("pending_sms"),
   referenceCode: varchar("reference_code", { length: 8 }).unique(),
@@ -725,6 +730,7 @@ export const organizationClients = pgTable("organization_clients", {
   supervisorPhone: text("supervisor_phone"),
   supervisorEmail: text("supervisor_email"),
   emergencyNotes: text("emergency_notes"),
+  birthdayUpgradeDismissed: boolean("birthday_upgrade_dismissed").notNull().default(false),
   // Soft-delete / archive fields
   archivedAt: timestamp("archived_at"),
   archivedBy: text("archived_by"),
@@ -738,13 +744,14 @@ export const insertOrganizationClientSchema = createInsertSchema(organizationCli
   registrationStatus: true,
   referenceCode: true,
   clientId: true,
+  birthdayUpgradeDismissed: true,
 });
 
 // Schema for org to register a new client
 export const registerOrgClientSchema = z.object({
   clientName: z.string().min(1, "Client name is required"),
-  clientPhone: z.string().min(10, "Valid phone number is required"),
-  dateOfBirth: z.string().optional(),
+  clientPhone: z.string().optional(),
+  dateOfBirth: z.string().min(1, "Date of birth is required"),
   bundleId: z.string().optional(),
   scheduleStartTime: z.string().optional(),
   checkInIntervalHours: z.number().min(1).max(48).default(24),

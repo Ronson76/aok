@@ -202,6 +202,11 @@ const PROGRAMMES: Record<Programme, ProgrammeData> = {
     ],
     whereAokFits: [
       {
+        label: "Registering young people as Safeguarding Seats",
+        aokFeature: "Safeguarding Seats (Under-16s)",
+        description: "Staff register young people under 16 on AOK as Safeguarding Seats using their date of birth. These are dashboard-only profiles with no SMS or app access - staff log welfare concerns, track engagement, and maintain auditable safeguarding records. When a young person turns 16, AOK automatically prompts staff to upgrade them to a full Check-in Seat with SMS welfare monitoring.",
+      },
+      {
         label: "Auditing safeguarding actions taken by staff",
         aokFeature: "Safeguarding Hub",
         description: "When a mentor or facilitator encounters a disclosure or concern, they log it through AOK. This creates a tamper-evident record of what was disclosed, when, by whom, and what action was taken - the audit trail schools and trustees require.",
@@ -217,7 +222,7 @@ const PROGRAMMES: Record<Programme, ProgrammeData> = {
         description: "Schools and funders want to see programme impact. AOK's Funding Dashboard generates reports showing engagement data, safeguarding compliance, and programme delivery metrics.",
       },
     ],
-    honestNote: "AOK is a 16+ platform, so it does not monitor the young people directly. Where AOK helps is in digitally auditing the safeguarding actions taken by Off The Fence staff - logging disclosures, evidencing governance, and generating the compliance records schools, Ofsted, and trustees need.",
+    honestNote: "AOK now supports under-16s through dedicated Safeguarding Seats - dashboard-only profiles where staff register young people with their date of birth, log welfare concerns, and maintain auditable records without sending SMS or app access. When a young person turns 16, AOK prompts staff to upgrade them to a full Check-in Seat with SMS welfare monitoring. This means AOK helps both by tracking the young people through safeguarding records and by digitally auditing the actions taken by Off The Fence staff - logging disclosures, evidencing governance, and generating the compliance records schools, Ofsted, and trustees need.",
     scenarios: [
       {
         title: "A disclosure during a WYHA session",
