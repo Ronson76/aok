@@ -15,9 +15,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import {
   ClipboardList, AlertTriangle, Clock, Users, ArrowLeft,
   MapPin, CheckCircle, Shield, Plus, Loader2, Search,
-  User, AlertOctagon
+  User, AlertOctagon, UserPlus, Phone
 } from "lucide-react";
-import type { HomelessInteraction, InteractionProgramme, InteractionContactType, RiskTier, RiskIndicator, InteractionAction } from "@shared/schema";
+import type { HomelessInteraction, InteractionProgramme, InteractionContactType, RiskTier, RiskIndicator, InteractionAction, OrganizationBundle } from "@shared/schema";
 
 const PROGRAMME_LABELS: Record<InteractionProgramme, string> = {
   outreach: "Outreach",
@@ -60,6 +60,12 @@ const ACTION_LABELS: Record<InteractionAction, string> = {
   follow_up_planned: "Follow-up Planned",
 };
 
+const COUNTRY_CODES = [
+  { code: "+44", label: "+44 UK" },
+  { code: "+353", label: "+353 IE" },
+  { code: "+1", label: "+1 US" },
+];
+
 type Tab = "log" | "recent" | "overdue" | "lost";
 
 interface ClientOption {
@@ -95,16 +101,27 @@ interface Stats {
 
 interface LookupResult {
   found: boolean;
-  isNew: boolean;
   client: ClientOption;
   profile: { dateOfBirth: string } | null;
   recentInteractions: any[];
+}
+
+type PageStep = "identify" | "register" | "interaction";
+
+function calculateAge(dob: string): number {
+  const d = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - d.getFullYear();
+  const m = today.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+  return age;
 }
 
 export default function DataCapturePage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<Tab>("log");
+  const [step, setStep] = useState<PageStep>("identify");
   const [showFollowUpDialog, setShowFollowUpDialog] = useState(false);
   const [followUpInteractionId, setFollowUpInteractionId] = useState<string | null>(null);
   const [followUpNotes, setFollowUpNotes] = useState("");
@@ -113,6 +130,18 @@ export default function DataCapturePage() {
   const [lookupDob, setLookupDob] = useState("");
   const [resolvedClient, setResolvedClient] = useState<LookupResult | null>(null);
   const [selectedClient, setSelectedClient] = useState("");
+
+  const [regCountryCode, setRegCountryCode] = useState("+44");
+  const [regPhone, setRegPhone] = useState("");
+  const [regScheduleStart, setRegScheduleStart] = useState("");
+  const [regInterval, setRegInterval] = useState("24");
+  const [regBundleId, setRegBundleId] = useState("");
+  const [regSupervisorName, setRegSupervisorName] = useState("");
+  const [regSupervisorEmail, setRegSupervisorEmail] = useState("");
+  const [regSupervisorCountryCode, setRegSupervisorCountryCode] = useState("+44");
+  const [regSupervisorPhone, setRegSupervisorPhone] = useState("");
+  const [regEmergencyNotes, setRegEmergencyNotes] = useState("");
+
   const [staffName, setStaffName] = useState("");
   const [programme, setProgramme] = useState<InteractionProgramme | "">("");
   const [contactType, setContactType] = useState<InteractionContactType | "">("");
@@ -129,6 +158,11 @@ export default function DataCapturePage() {
 
   const { data: clientsData } = useQuery<{ clients: ClientOption[] }>({
     queryKey: ["/api/org/interactions/clients-list"],
+    refetchInterval: 5000,
+  });
+
+  const { data: dashData } = useQuery<{ bundles: OrganizationBundle[] }>({
+    queryKey: ["/api/org/dashboard"],
     refetchInterval: 5000,
   });
 
@@ -152,35 +186,80 @@ export default function DataCapturePage() {
     refetchInterval: 5000,
   });
 
+  const activeBundles = dashData?.bundles?.filter((b: any) => b.status === "active") || [];
+
   const lookupMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/org/interactions/lookup-or-create", {
+      const response = await apiRequest("POST", "/api/org/interactions/lookup", {
         clientName: lookupName.trim(),
         dateOfBirth: lookupDob,
       });
-      return response.json() as Promise<LookupResult>;
+      return response.json();
     },
     onSuccess: (data) => {
-      setResolvedClient(data);
-      setSelectedClient(data.client.id);
-      if (data.isNew) {
-        toast({ title: "New Client Registered", description: `${data.client.clientName} added to your organisation (ref: ${data.client.referenceCode})` });
-        queryClient.invalidateQueries({ queryKey: ["/api/org/interactions/clients-list"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
-      } else {
-        toast({ title: "Client Found", description: `${data.client.clientName} - ${data.client.referenceCode}` });
-        if (data.recentInteractions.length > 0) {
+      if (data.found) {
+        setResolvedClient(data as LookupResult);
+        setSelectedClient(data.client.id);
+        if (data.recentInteractions?.length > 0) {
           const last = data.recentInteractions[0];
           setRiskTier(last.riskTier);
           if (last.riskIndicators?.length) {
             setSelectedIndicators(last.riskIndicators);
           }
         }
+        toast({ title: "Client Found", description: `${data.client.clientName} - ${data.client.referenceCode}` });
+        setStep("interaction");
+      } else {
+        toast({ title: "New Individual", description: "Not found in system. Please complete registration." });
+        setStep("register");
       }
     },
     onError: (error: any) => {
-      toast({ title: "Lookup Failed", description: error.message || "Could not find or create client", variant: "destructive" });
+      toast({ title: "Lookup Failed", description: error.message || "Could not search for client", variant: "destructive" });
+    },
+  });
+
+  const isUnder16 = lookupDob ? calculateAge(lookupDob) < 16 : false;
+
+  const registerMutation = useMutation({
+    mutationFn: async () => {
+      const clientPhone = isUnder16 ? undefined : `${regCountryCode}${regPhone}`;
+      const response = await apiRequest("POST", "/api/org/clients/register", {
+        clientName: lookupName.trim(),
+        clientPhone,
+        dateOfBirth: lookupDob,
+        bundleId: regBundleId || undefined,
+        scheduleStartTime: isUnder16 ? undefined : (regScheduleStart || undefined),
+        checkInIntervalHours: isUnder16 ? 24 : parseInt(regInterval),
+        supervisorName: regSupervisorName,
+        supervisorPhone: `${regSupervisorCountryCode}${regSupervisorPhone}`,
+        supervisorEmail: regSupervisorEmail,
+        emergencyNotes: regEmergencyNotes || undefined,
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: "Client Registered", description: `${lookupName.trim()} has been registered and synced to the org dashboard` });
+      setSelectedClient(data.orgClient?.id || data.id || "");
+      setResolvedClient({
+        found: true,
+        client: {
+          id: data.orgClient?.id || data.id || "",
+          clientName: lookupName.trim(),
+          referenceCode: data.orgClient?.referenceCode || data.referenceCode || "",
+          seatType: isUnder16 ? "safeguarding" : "check_in",
+          dateOfBirth: lookupDob,
+        },
+        profile: { dateOfBirth: lookupDob },
+        recentInteractions: [],
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/interactions/clients-list"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org/clients"] });
+      setStep("interaction");
+    },
+    onError: (error: any) => {
+      toast({ title: "Registration Failed", description: error.message || "Could not register client", variant: "destructive" });
     },
   });
 
@@ -206,7 +285,7 @@ export default function DataCapturePage() {
       return response.json();
     },
     onSuccess: () => {
-      toast({ title: "Interaction Logged", description: "Record saved to audit trail" });
+      toast({ title: "Interaction Logged", description: "Record saved to audit trail and synced to org dashboard" });
       resetForm();
       queryClient.invalidateQueries({ queryKey: ["/api/org/interactions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/org/interactions/stats"] });
@@ -241,6 +320,15 @@ export default function DataCapturePage() {
     setLookupDob("");
     setResolvedClient(null);
     setSelectedClient("");
+    setStep("identify");
+    setRegPhone("");
+    setRegScheduleStart("");
+    setRegInterval("24");
+    setRegBundleId("");
+    setRegSupervisorName("");
+    setRegSupervisorEmail("");
+    setRegSupervisorPhone("");
+    setRegEmergencyNotes("");
     setProgramme("");
     setContactType("");
     setRiskTier("");
@@ -286,6 +374,10 @@ export default function DataCapturePage() {
   }, [lookupName, clientsData]);
 
   const canLookup = lookupName.trim().length >= 2 && lookupDob;
+
+  const canRegister = regSupervisorName && regSupervisorEmail && regSupervisorPhone.length >= 7 &&
+    (isUnder16 || regPhone.length >= 7);
+
   const canSubmit =
     selectedClient && staffName && programme && contactType && riskTier && actionTaken &&
     !(actionTaken === "referral_made" && !referralAgency) &&
@@ -382,13 +474,13 @@ export default function DataCapturePage() {
       <div className="flex-1 overflow-y-auto p-4">
         {activeTab === "log" && (
           <div className="space-y-4 max-w-lg mx-auto pb-20">
-            {!resolvedClient ? (
+            {step === "identify" && (
               <Card className="border-primary/30">
                 <CardContent className="p-4 space-y-4">
                   <div className="text-center mb-2">
                     <User className="h-8 w-8 mx-auto mb-1 text-primary" />
                     <h2 className="text-base font-bold">Identify Individual</h2>
-                    <p className="text-xs text-muted-foreground">Enter name and date of birth. If they exist in the system, their data will be pulled. If new, they will be registered automatically.</p>
+                    <p className="text-xs text-muted-foreground">Enter name and date of birth. If they exist in the system, their data will be pulled from the org dashboard. If new, you will be asked to register them.</p>
                   </div>
 
                   <div className="space-y-2">
@@ -440,29 +532,214 @@ export default function DataCapturePage() {
                     ) : (
                       <Search className="h-4 w-4 mr-2" />
                     )}
-                    Find or Register
+                    Find Individual
                   </Button>
                 </CardContent>
               </Card>
-            ) : (
+            )}
+
+            {step === "register" && (
+              <Card className="border-green-500/50">
+                <CardContent className="p-4 space-y-4">
+                  <div className="text-center mb-2">
+                    <UserPlus className="h-8 w-8 mx-auto mb-1 text-green-600" />
+                    <h2 className="text-base font-bold">Register New Client</h2>
+                    <p className="text-xs text-muted-foreground">
+                      {isUnder16
+                        ? "Under 16 - will be registered as a Safeguarding Seat (dashboard only, no SMS/app)"
+                        : "Client will receive an SMS with a link to the app and their reference code"
+                      }
+                    </p>
+                    {isUnder16 && (
+                      <Badge className="mt-2 bg-amber-500 text-white">Safeguarding Seat (Under 16)</Badge>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold">Full Name</Label>
+                      <Input value={lookupName} disabled className="bg-muted" data-testid="reg-name" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold">Date of Birth</Label>
+                      <Input value={lookupDob} disabled className="bg-muted" data-testid="reg-dob" />
+                    </div>
+                  </div>
+
+                  {!isUnder16 && (
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold">Mobile Number *</Label>
+                      <div className="flex gap-2">
+                        <Select value={regCountryCode} onValueChange={setRegCountryCode}>
+                          <SelectTrigger className="w-28" data-testid="reg-country-code">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COUNTRY_CODES.map((cc) => (
+                              <SelectItem key={cc.code} value={cc.code}>{cc.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          placeholder="7XXX XXXXXX"
+                          value={regPhone}
+                          onChange={(e) => setRegPhone(e.target.value.replace(/[^0-9]/g, ""))}
+                          data-testid="reg-phone"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {!isUnder16 && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold">Schedule Start Time</Label>
+                        <Input
+                          type="time"
+                          value={regScheduleStart}
+                          onChange={(e) => setRegScheduleStart(e.target.value)}
+                          data-testid="reg-schedule"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold">Check-in Interval (hours)</Label>
+                        <Select value={regInterval} onValueChange={setRegInterval}>
+                          <SelectTrigger data-testid="reg-interval">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[1, 2, 4, 6, 8, 12, 24, 48].map((h) => (
+                              <SelectItem key={h} value={String(h)}>Every {h} hours</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeBundles.length > 0 && (
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold">Bundle</Label>
+                      <Select value={regBundleId} onValueChange={setRegBundleId}>
+                        <SelectTrigger data-testid="reg-bundle">
+                          <SelectValue placeholder="Select a bundle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {activeBundles.map((b: any) => (
+                            <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <div className="border-t pt-3 mt-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <Label className="text-sm font-semibold">Supervisor (Primary Contact/Carer) *</Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-3">The supervisor is the primary contact/carer and will be notified of missed check-ins.</p>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold">Name *</Label>
+                        <Input
+                          placeholder="Jane Doe"
+                          value={regSupervisorName}
+                          onChange={(e) => setRegSupervisorName(e.target.value)}
+                          data-testid="reg-supervisor-name"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold">Email *</Label>
+                        <Input
+                          placeholder="supervisor@example.com"
+                          type="email"
+                          value={regSupervisorEmail}
+                          onChange={(e) => setRegSupervisorEmail(e.target.value)}
+                          data-testid="reg-supervisor-email"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 mt-3">
+                      <Label className="text-xs font-semibold">Mobile *</Label>
+                      <div className="flex gap-2">
+                        <Select value={regSupervisorCountryCode} onValueChange={setRegSupervisorCountryCode}>
+                          <SelectTrigger className="w-28" data-testid="reg-supervisor-country-code">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COUNTRY_CODES.map((cc) => (
+                              <SelectItem key={cc.code} value={cc.code}>{cc.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          placeholder="7XXX XXXXXX"
+                          value={regSupervisorPhone}
+                          onChange={(e) => setRegSupervisorPhone(e.target.value.replace(/[^0-9]/g, ""))}
+                          data-testid="reg-supervisor-phone"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Emergency Notes</Label>
+                    <p className="text-[10px] text-muted-foreground">These notes will be included in all alert messages sent to contacts (e.g. medical conditions, access instructions).</p>
+                    <Textarea
+                      placeholder="e.g. Client has diabetes and uses insulin. Key safe code: 1234."
+                      value={regEmergencyNotes}
+                      onChange={(e) => setRegEmergencyNotes(e.target.value)}
+                      rows={3}
+                      maxLength={1000}
+                      data-testid="reg-emergency-notes"
+                    />
+                    <p className="text-[10px] text-right text-muted-foreground">{regEmergencyNotes.length}/1000</p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setStep("identify")}
+                      data-testid="button-back-identify"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-1" /> Back
+                    </Button>
+                    <Button
+                      className="flex-1 py-5"
+                      disabled={!canRegister || registerMutation.isPending}
+                      onClick={() => registerMutation.mutate()}
+                      data-testid="button-register-client"
+                    >
+                      {registerMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <UserPlus className="h-4 w-4 mr-2" />
+                      )}
+                      {isUnder16 ? "Register Safeguarding Seat" : "Register & Send SMS"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {step === "interaction" && resolvedClient && (
               <>
-                <Card className={resolvedClient.isNew ? "border-green-500/50 bg-green-50/50 dark:bg-green-950/20" : "border-primary/30"}>
+                <Card className="border-primary/30">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <p className="font-bold text-sm" data-testid="text-resolved-name">{resolvedClient.client.clientName}</p>
                         <p className="text-xs text-muted-foreground">Ref: {resolvedClient.client.referenceCode}</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {resolvedClient.isNew && (
-                          <Badge className="bg-green-600 text-white text-xs">New</Badge>
-                        )}
-                        <Badge variant="outline" className="text-xs">
-                          {resolvedClient.client.seatType === "safeguarding" ? "Safeguarding" : "Check-in"} Seat
-                        </Badge>
-                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {resolvedClient.client.seatType === "safeguarding" ? "Safeguarding" : "Check-in"} Seat
+                      </Badge>
                     </div>
-                    {resolvedClient.recentInteractions.length > 0 && (
+                    {resolvedClient.recentInteractions?.length > 0 && (
                       <div className="mt-2 pt-2 border-t">
                         <p className="text-xs font-medium text-muted-foreground mb-1">Last interaction:</p>
                         <div className="text-xs text-muted-foreground">
@@ -480,7 +757,7 @@ export default function DataCapturePage() {
                       variant="ghost"
                       size="sm"
                       className="mt-2 text-xs"
-                      onClick={() => { setResolvedClient(null); setSelectedClient(""); }}
+                      onClick={() => resetForm()}
                       data-testid="button-change-client"
                     >
                       Change individual
@@ -824,6 +1101,7 @@ export default function DataCapturePage() {
                         setLookupName(contact.clientName || "");
                         setResolvedClient(null);
                         setSelectedClient("");
+                        setStep("identify");
                         setActiveTab("log");
                       }}
                       data-testid={`button-log-contact-${contact.id}`}
