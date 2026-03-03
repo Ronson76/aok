@@ -4456,6 +4456,7 @@ export function registerOrganizationRoutes(app: Express) {
         clientName: organizationClients.clientName,
         referenceCode: organizationClients.referenceCode,
         status: organizationClients.status,
+        seatType: organizationClients.seatType,
       })
         .from(organizationClients)
         .where(and(
@@ -4464,10 +4465,136 @@ export function registerOrganizationRoutes(app: Express) {
         ))
         .orderBy(asc(organizationClients.clientName));
 
-      res.json({ clients });
+      const clientsWithDob = await Promise.all(
+        clients.map(async (c) => {
+          const [profile] = await db.select({ dateOfBirth: organizationClientProfiles.dateOfBirth })
+            .from(organizationClientProfiles)
+            .where(eq(organizationClientProfiles.organizationClientId, c.id))
+            .limit(1);
+          return { ...c, dateOfBirth: profile?.dateOfBirth || null };
+        })
+      );
+
+      res.json({ clients: clientsWithDob });
     } catch (error) {
       console.error("[DATA CAPTURE] Clients list error:", error);
       res.status(500).json({ error: "Failed to load clients" });
+    }
+  });
+
+  app.post("/api/org/interactions/lookup-or-create", requireOrganization, async (req, res) => {
+    try {
+      const db = ensureDb();
+      const { clientName, dateOfBirth } = z.object({
+        clientName: z.string().min(1),
+        dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      }).parse(req.body);
+
+      const existingClients = await db.select({
+        id: organizationClients.id,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+        status: organizationClients.status,
+        seatType: organizationClients.seatType,
+      })
+        .from(organizationClients)
+        .innerJoin(organizationClientProfiles, eq(organizationClientProfiles.organizationClientId, organizationClients.id))
+        .where(and(
+          eq(organizationClients.organizationId, req.userId!),
+          eq(organizationClientProfiles.dateOfBirth, dateOfBirth)
+        ));
+
+      const nameNorm = clientName.trim().toLowerCase();
+      const matched = existingClients.find((c) =>
+        c.clientName?.trim().toLowerCase() === nameNorm
+      );
+
+      if (matched) {
+        const [profile] = await db.select()
+          .from(organizationClientProfiles)
+          .where(eq(organizationClientProfiles.organizationClientId, matched.id))
+          .limit(1);
+
+        const interactions = await db.select({
+          id: homelessInteractions.id,
+          riskTier: homelessInteractions.riskTier,
+          riskIndicators: homelessInteractions.riskIndicators,
+          actionTaken: homelessInteractions.actionTaken,
+          contactType: homelessInteractions.contactType,
+          programme: homelessInteractions.programme,
+          createdAt: homelessInteractions.createdAt,
+          staffName: homelessInteractions.staffName,
+          followUpRequired: homelessInteractions.followUpRequired,
+          followUpDate: homelessInteractions.followUpDate,
+          followUpCompleted: homelessInteractions.followUpCompleted,
+        })
+          .from(homelessInteractions)
+          .where(and(
+            eq(homelessInteractions.orgClientId, matched.id),
+            eq(homelessInteractions.archived, false)
+          ))
+          .orderBy(desc(homelessInteractions.createdAt))
+          .limit(10);
+
+        return res.json({
+          found: true,
+          isNew: false,
+          client: matched,
+          profile: profile || null,
+          recentInteractions: interactions,
+        });
+      }
+
+      const age = calculateAgeFromDOB(dateOfBirth);
+      const seatType = age >= 16 ? "check_in" : "safeguarding";
+
+      let referenceCode = generateReferenceCode();
+      let attempts = 0;
+      while (await organizationStorage.getClientByReferenceCode(referenceCode) && attempts < 10) {
+        referenceCode = generateReferenceCode();
+        attempts++;
+      }
+
+      const orgClient = await organizationStorage.createPendingClient({
+        organizationId: req.userId!,
+        bundleId: null,
+        clientName: clientName.trim(),
+        clientPhone: null,
+        referenceCode,
+        seatType,
+        scheduleStartTime: null,
+        checkInIntervalHours: null,
+        supervisorName: null,
+        supervisorPhone: null,
+        supervisorEmail: null,
+      });
+
+      await db.insert(organizationClientProfiles).values({
+        organizationClientId: orgClient.id,
+        dateOfBirth,
+      });
+
+      console.log(`[DATA CAPTURE] Auto-registered new client "${clientName}" (${seatType} seat, ref: ${referenceCode})`);
+
+      res.json({
+        found: true,
+        isNew: true,
+        client: {
+          id: orgClient.id,
+          clientName: orgClient.clientName,
+          referenceCode: orgClient.referenceCode,
+          status: orgClient.status,
+          seatType: orgClient.seatType,
+        },
+        profile: { dateOfBirth },
+        recentInteractions: [],
+      });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Name and date of birth are required" });
+      }
+      console.error("[DATA CAPTURE] Lookup/create error:", error);
+      res.status(500).json({ error: "Failed to look up or create client" });
     }
   });
 
