@@ -227,10 +227,6 @@ export default function Onboarding() {
       setCurrentStep(16);
       return;
     }
-    if (data.billingCycle === "basic" && currentStep === 8) {
-      setCurrentStep(10);
-      return;
-    }
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     }
@@ -239,10 +235,6 @@ export default function Onboarding() {
   const handleBack = () => {
     if (isStaffFlow && currentStep === 16) {
       setCurrentStep(13);
-      return;
-    }
-    if (data.billingCycle === "basic" && currentStep === 10) {
-      setCurrentStep(8);
       return;
     }
     if (currentStep > 1) {
@@ -960,9 +952,7 @@ function Step6ContactName({ data, setData }: { data: OnboardingData; setData: (d
         <CardContent className="p-4 sm:p-6">
           <h1 className="text-xl sm:text-2xl font-bold mb-2" data-testid="text-contact-title">Who are your {labels.plural}?</h1>
           <p className="text-muted-foreground mb-6">
-            {data.billingCycle === "basic"
-              ? "Your Basic plan includes 1 primary and 1 secondary contact."
-              : "Enter their names. You can add up to 5 contacts."}
+            Enter their names. You can add up to 5 contacts.
           </p>
           
           <div className="space-y-3">
@@ -995,7 +985,7 @@ function Step6ContactName({ data, setData }: { data: OnboardingData; setData: (d
             ))}
           </div>
           
-          {data.billingCycle !== "basic" && data.contacts.length < 5 && (
+          {data.contacts.length < 5 && (
             <Button
               variant="outline"
               onClick={addContact}
