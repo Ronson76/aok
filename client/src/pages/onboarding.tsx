@@ -2205,7 +2205,9 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
     try {
       const response = await apiRequest("POST", "/api/stripe/create-subscription-checkout", {
         email,
-        priceId: data.billingCycle === "yearly" ? "price_1StV4qPFr1sLOzVcfhR3xxWe" : "price_1StV4pPFr1sLOzVc1gw1I4Kt",
+        priceId: data.billingCycle === "yearly" 
+          ? (import.meta.env.VITE_STRIPE_YEARLY_PRICE_ID || import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID) 
+          : import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID,
         successUrl: `${window.location.origin}/register?onboarded=true&email=${encodeURIComponent(email)}`,
         cancelUrl: `${window.location.origin}/onboarding`,
         trialDays: 7,
