@@ -102,22 +102,6 @@ export default function LandingIndividual() {
 
   const pricingPlans = [
     {
-      name: "7 Day Free Trial",
-      description: "Try every feature free for 7 days. No commitment.",
-      monthlyPrice: 0,
-      yearlyPrice: 0,
-      features: [
-        { text: "Full access to all features", icon: Check },
-        { text: "No payment details required upfront", icon: Lock },
-        { text: "Cancel anytime during trial", icon: Clock },
-      ],
-      cta: "Start Free Trial",
-      ctaLink: "/onboarding",
-      highlight: false,
-      isTrial: true,
-      trialNote: `After your trial, you'll automatically move onto the Complete Wellbeing plan at £${TIER2_MONTHLY_PRICE.toFixed(2)}/month until you cancel or switch plan.`,
-    },
-    {
       name: "Basic",
       description: "Essential safety check-ins with email alerts.",
       monthlyPrice: BASIC_MONTHLY_PRICE,
@@ -170,10 +154,11 @@ export default function LandingIndividual() {
         { text: "Wellbeing AI (Exclusive)", icon: Sparkles },
         { text: "Activities tracker", icon: MapPin },
       ],
-      cta: "Get Started",
+      cta: "Start 7-Day Free Trial",
       ctaLink: "/onboarding",
       highlight: true,
-      badge: "Most Popular",
+      badge: "7-Day Free Trial",
+      trialNote: `Try free for 7 days — then £${TIER2_MONTHLY_PRICE.toFixed(2)}/month. Cancel anytime.`,
       launchNote: "Launch pricing - Lock in today's rate forever",
       priceProtected: true,
     },
@@ -798,7 +783,7 @@ export default function LandingIndividual() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {pricingPlans.map((plan, index) => (
               <Card
                 key={index}
@@ -806,8 +791,8 @@ export default function LandingIndividual() {
                 data-testid={`card-plan-${plan.name.toLowerCase().replace(/\s+/g, '-')}`}
               >
                 {plan.badge && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2" data-testid="badge-most-popular">
-                    {plan.badge}
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 text-sm" data-testid="badge-most-popular">
+                    {(plan as any).trialNote ? "⭐ " : ""}{plan.badge}
                   </Badge>
                 )}
                 <CardHeader>
@@ -815,9 +800,7 @@ export default function LandingIndividual() {
                     {plan.name}
                   </CardTitle>
                   <div className="mt-4">
-                    {(plan as any).isTrial ? (
-                      <div className="text-4xl font-bold">Free<span className="text-lg font-normal text-muted-foreground"> for 7 days</span></div>
-                    ) : (plan as any).isOrganisation ? (
+                    {(plan as any).isOrganisation ? (
                       <div className="text-2xl font-bold">Contact us<span className="text-lg font-normal text-muted-foreground block">for bundles & packages</span></div>
                     ) : (
                       <div className="text-4xl font-bold">
