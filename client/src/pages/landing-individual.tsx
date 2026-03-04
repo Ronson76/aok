@@ -102,9 +102,8 @@ export default function LandingIndividual() {
 
   const pricingPlans = [
     {
-      name: "7 Day Trial",
-      description: "Try all features free for 7 days. No commitment required.",
-      note: "After your trial ends, you'll automatically continue unless you cancel.",
+      name: "7 Day Free Trial",
+      description: "Try every feature free for 7 days. No commitment.",
       monthlyPrice: 0,
       yearlyPrice: 0,
       features: [
@@ -116,6 +115,7 @@ export default function LandingIndividual() {
       ctaLink: "/onboarding",
       highlight: false,
       isTrial: true,
+      trialNote: `After your trial, you'll automatically move onto the Complete Wellbeing plan at £${TIER2_MONTHLY_PRICE.toFixed(2)}/month until you cancel or switch plan.`,
     },
     {
       name: "Basic",
@@ -815,9 +815,9 @@ export default function LandingIndividual() {
                     {plan.name}
                   </CardTitle>
                   <div className="mt-4">
-                    {plan.isTrial ? (
+                    {(plan as any).isTrial ? (
                       <div className="text-4xl font-bold">Free<span className="text-lg font-normal text-muted-foreground"> for 7 days</span></div>
-                    ) : plan.isOrganisation ? (
+                    ) : (plan as any).isOrganisation ? (
                       <div className="text-2xl font-bold">Contact us<span className="text-lg font-normal text-muted-foreground block">for bundles & packages</span></div>
                     ) : (
                       <div className="text-4xl font-bold">
@@ -850,6 +850,11 @@ export default function LandingIndividual() {
                         </li>
                       ))}
                     </ul>
+                  )}
+                  {(plan as any).trialNote && (
+                    <div className="bg-muted/50 border border-border rounded-lg p-3 mt-4">
+                      <p className="text-xs text-muted-foreground">{(plan as any).trialNote}</p>
+                    </div>
                   )}
                 </CardContent>
                 <CardFooter>
@@ -896,8 +901,9 @@ export default function LandingIndividual() {
                 Is aok free to use?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-1">
-                The app gives you 7 days free. After that, plans start from just £{BASIC_MONTHLY_PRICE.toFixed(2)} per month for Basic,
-                £{TIER1_MONTHLY_PRICE.toFixed(2)} per month for Essential, or £{TIER2_MONTHLY_PRICE.toFixed(2)} per month for Complete Wellbeing with wellness, AI, and more.
+                Start with a 7-day free trial on the Complete Wellbeing plan — full access to every feature.
+                After your trial, it continues at £{TIER2_MONTHLY_PRICE.toFixed(2)} per month, or you can switch to Basic from £{BASIC_MONTHLY_PRICE.toFixed(2)} per month
+                or Essential at £{TIER1_MONTHLY_PRICE.toFixed(2)} per month. Cancel anytime.
               </AccordionContent>
             </AccordionItem>
 
