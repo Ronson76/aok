@@ -178,7 +178,7 @@ export default function Contacts() {
   const { data: planData } = useQuery<{ tier: string; features: { maxActiveContacts: number } }>({
     queryKey: ["/api/plan"],
   });
-  const maxActiveContacts = planData?.features?.maxActiveContacts ?? 5;
+  const maxActiveContacts = planData?.features?.maxActiveContacts ?? 2;
   const contactsOverLimit = contacts.length > maxActiveContacts;
 
   const createMutation = useMutation({

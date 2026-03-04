@@ -12,46 +12,40 @@ export default function Pricing() {
 
   const plans = [
     {
-      name: "7 Day Trial",
-      description: "Try all features free for 7 days. No commitment required.",
-      note: "After your trial ends, you'll automatically continue unless you cancel.",
-      monthlyPrice: 0,
-      yearlyPrice: 0,
-      features: [
-        { text: "Full access to all features", icon: Check },
-        { text: "No payment details required upfront", icon: Lock },
-        { text: "Cancel anytime during trial", icon: Clock },
-      ],
-      cta: "Start Free Trial",
-      ctaLink: "/onboarding",
-      highlight: false,
-      isTrial: true,
-    },
-    {
-      name: "Essential",
-      description: "Core check-in and alert tools for peace of mind.",
-      monthlyPrice: 9.99,
-      yearlyPrice: 99.99,
+      name: "Basic",
+      description: "Essential safety check-ins with email alerts.",
+      monthlyPrice: 2.99,
+      yearlyPrice: 29.99,
       features: [
         { text: "Flexible check-in timer (1 hour to 48 hours)", icon: Clock },
-        { text: "Up to 5 emergency contacts", icon: Users },
+        { text: "1 primary + 1 secondary contact", icon: Users },
         { text: "Email alerts for missed check-ins", icon: Mail },
-        { text: "SMS text message alerts", icon: Smartphone },
-        { text: "Automated voice call alerts", icon: Phone },
-        { text: "Emergency alert button with one-tap activation", icon: AlertTriangle },
-        { text: "Shake to SOS", icon: Smartphone },
-        { text: "GPS location sharing with what3words", icon: MapPin },
-        { text: "Push notifications & SMS reminders", icon: Bell },
-        { text: "Primary contact/carer updates on every check-in", icon: Heart },
+        { text: "SOS emergency alerts (email, SMS & voice)", icon: AlertTriangle },
+        { text: "GPS location sharing in emergencies", icon: MapPin },
         { text: "Privacy protection with auto session timeout", icon: Lock },
         { text: "Offline emergency overlay", icon: Shield },
-        { text: "Offline SMS check-in backup", icon: Smartphone },
       ],
       cta: "Get Started",
       ctaLink: "/onboarding",
       highlight: false,
-      launchNote: "Launch pricing - Lock in today's special rate forever",
-      priceProtected: true,
+    },
+    {
+      name: "Essential",
+      description: "Full alert channels and advanced safety features.",
+      monthlyPrice: 9.99,
+      yearlyPrice: 99.99,
+      features: [
+        { text: "Everything in Basic", icon: Check },
+        { text: "Up to 5 emergency contacts", icon: Users },
+        { text: "SMS & voice call alerts for missed check-ins", icon: Phone },
+        { text: "Shake to SOS", icon: Smartphone },
+        { text: "Push notifications & SMS reminders", icon: Bell },
+        { text: "Offline SMS check-in backup", icon: Smartphone },
+        { text: "Primary contact/carer updates on every check-in", icon: Heart },
+      ],
+      cta: "Get Started",
+      ctaLink: "/onboarding",
+      highlight: false,
     },
     {
       name: "Complete Wellbeing",
@@ -65,14 +59,13 @@ export default function Pricing() {
         { text: "Pet protection profiles with vet info", icon: PawPrint },
         { text: "Important document storage (travel insurance, wills & more)", icon: Scroll },
         { text: "Wellbeing AI chat with voice mode", icon: Headphones },
+        { text: "Activities tracker", icon: MapPin },
         { text: "Tree planted via Ecologi on signup", icon: TreePine },
       ],
       cta: "Get Started",
       ctaLink: "/onboarding",
       highlight: true,
       badge: "Most Popular",
-      launchNote: "Launch pricing - Lock in today's special rate forever",
-      priceProtected: true,
     },
     {
       name: "Organisations",
@@ -88,7 +81,7 @@ export default function Pricing() {
         { text: "Lone worker monitoring", icon: MapPin },
         { text: "Per-client feature toggles", icon: TrendingUp },
         { text: "Emergency alerts & missed check-in reports", icon: FileText },
-        { text: "Call Supervisor -  clients ring their supervisor directly", icon: Phone },
+        { text: "Call Supervisor — clients ring their supervisor directly", icon: Phone },
         { text: "In-dashboard help centre", icon: Headphones },
         { text: "Volume discounts on seat bundles", icon: TrendingUp },
       ],
@@ -100,31 +93,34 @@ export default function Pricing() {
   ];
 
   const comparisonFeatures = [
-    { name: "Check-in timer (1 hour to 48 hours)", trial: true, essential: true, complete: true, org: true },
-    { name: "Up to 5 emergency contacts", trial: true, essential: true, complete: true, org: true },
-    { name: "Email alerts", trial: true, essential: true, complete: true, org: true },
-    { name: "SMS text alerts", trial: true, essential: true, complete: true, org: true },
-    { name: "Automated voice calls", trial: true, essential: true, complete: true, org: true },
-    { name: "Emergency alert button", trial: true, essential: true, complete: true, org: true },
-    { name: "Shake to SOS", trial: true, essential: true, complete: true, org: true },
-    { name: "GPS + what3words location", trial: true, essential: true, complete: true, org: true },
-    { name: "SMS check-in reminders", trial: true, essential: true, complete: true, org: true },
-    { name: "Offline emergency overlay", trial: true, essential: true, complete: true, org: true },
-    { name: "Primary contact/carer notifications", trial: true, essential: true, complete: true, org: true },
-    { name: "Emergency recording (opt-in)", trial: true, essential: false, complete: true, org: true },
-    { name: "Mood & wellness tracking", trial: true, essential: false, complete: true, org: true },
-    { name: "Pet protection profiles", trial: true, essential: false, complete: true, org: true },
-    { name: "Important document storage", trial: true, essential: false, complete: true, org: true },
-    { name: "Wellbeing AI chat + voice mode", trial: true, essential: false, complete: true, org: true },
-    { name: "Ecologi tree planting + net zero certificates", trial: false, essential: false, complete: true, org: true },
-    { name: "Organisation dashboard", trial: false, essential: false, complete: false, org: true },
-    { name: "Bulk client management", trial: false, essential: false, complete: false, org: true },
-    { name: "Staff roles & team management", trial: false, essential: false, complete: false, org: true },
-    { name: "Safeguarding hub", trial: false, essential: false, complete: false, org: true },
-    { name: "Lone worker monitoring", trial: false, essential: false, complete: false, org: true },
-    { name: "Per-client feature controls", trial: false, essential: false, complete: false, org: true },
-    { name: "Call Supervisor (one-tap calling)", trial: false, essential: false, complete: false, org: true },
-    { name: "Reports & analytics", trial: false, essential: false, complete: false, org: true },
+    { name: "Check-in timer (1 hour to 48 hours)", basic: true, essential: true, complete: true, org: true },
+    { name: "Emergency contacts", basic: "2", essential: "5", complete: "5", org: "Unlimited" },
+    { name: "Email alerts for missed check-ins", basic: true, essential: true, complete: true, org: true },
+    { name: "SMS alerts for missed check-ins", basic: false, essential: true, complete: true, org: true },
+    { name: "Voice call alerts for missed check-ins", basic: false, essential: true, complete: true, org: true },
+    { name: "SOS emergency alerts (all channels)", basic: true, essential: true, complete: true, org: true },
+    { name: "Emergency alert button", basic: true, essential: true, complete: true, org: true },
+    { name: "Shake to SOS", basic: false, essential: true, complete: true, org: true },
+    { name: "GPS + what3words location", basic: true, essential: true, complete: true, org: true },
+    { name: "Push notifications", basic: false, essential: true, complete: true, org: true },
+    { name: "Offline SMS check-in backup", basic: false, essential: true, complete: true, org: true },
+    { name: "Offline emergency overlay", basic: true, essential: true, complete: true, org: true },
+    { name: "Primary contact/carer notifications", basic: false, essential: true, complete: true, org: true },
+    { name: "Emergency recording (opt-in)", basic: false, essential: false, complete: true, org: true },
+    { name: "Mood & wellness tracking", basic: false, essential: false, complete: true, org: true },
+    { name: "Pet protection profiles", basic: false, essential: false, complete: true, org: true },
+    { name: "Important document storage", basic: false, essential: false, complete: true, org: true },
+    { name: "Wellbeing AI chat + voice mode", basic: false, essential: false, complete: true, org: true },
+    { name: "Activities tracker", basic: false, essential: false, complete: true, org: true },
+    { name: "Ecologi tree planting", basic: false, essential: false, complete: true, org: true },
+    { name: "Organisation dashboard", basic: false, essential: false, complete: false, org: true },
+    { name: "Bulk client management", basic: false, essential: false, complete: false, org: true },
+    { name: "Staff roles & team management", basic: false, essential: false, complete: false, org: true },
+    { name: "Safeguarding hub", basic: false, essential: false, complete: false, org: true },
+    { name: "Lone worker monitoring", basic: false, essential: false, complete: false, org: true },
+    { name: "Per-client feature controls", basic: false, essential: false, complete: false, org: true },
+    { name: "Call Supervisor (one-tap calling)", basic: false, essential: false, complete: false, org: true },
+    { name: "Reports & analytics", basic: false, essential: false, complete: false, org: true },
   ];
 
   return (
@@ -151,7 +147,7 @@ export default function Pricing() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4" data-testid="text-pricing-title">Simple, Transparent Pricing</h1>
           <p className="text-xl text-muted-foreground mb-4">Get Peace of Mind Today</p>
-          <p className="text-muted-foreground">Start with a 7-day free trial. Cancel anytime. No hidden fees.</p>
+          <p className="text-muted-foreground">Choose the plan that's right for you. Cancel anytime. No hidden fees.</p>
         </div>
 
         <div className="flex items-center justify-center gap-4 mb-8">
@@ -196,9 +192,7 @@ export default function Pricing() {
                   {plan.name}
                 </CardTitle>
                 <div className="mt-4">
-                  {plan.isTrial ? (
-                    <div className="text-4xl font-bold">Free<span className="text-lg font-normal text-muted-foreground"> for 7 days</span></div>
-                  ) : plan.isOrganisation ? (
+                  {plan.isOrganisation ? (
                     <div className="text-2xl font-bold">Contact us<span className="text-lg font-normal text-muted-foreground block">for bundles & packages</span></div>
                   ) : (
                     <div className="text-4xl font-bold">
@@ -209,19 +203,7 @@ export default function Pricing() {
                 </div>
               </CardHeader>
               <CardContent className="flex-1">
-                {plan.launchNote && (
-                  <p className="text-sm text-primary mb-4">{plan.launchNote}</p>
-                )}
-                {plan.priceProtected && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                    <Lock className="h-4 w-4" />
-                    Price-protected for life
-                  </div>
-                )}
                 <CardDescription className="mb-4">{plan.description}</CardDescription>
-                {plan.note && (
-                  <p className="text-sm text-muted-foreground mb-4">{plan.note}</p>
-                )}
                 {plan.features.length > 0 && (
                   <ul className="space-y-3">
                     {plan.features.map((feature, featureIndex) => (
@@ -269,14 +251,25 @@ export default function Pricing() {
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-3 px-4 font-medium">Feature</th>
-                      <th className="text-center py-3 px-4 font-medium">7 Day Trial</th>
+                      <th className="text-center py-3 px-4 font-medium">Basic</th>
                       <th className="text-center py-3 px-4 font-medium">Essential</th>
                       <th className="text-center py-3 px-4 font-medium text-primary">Complete Wellbeing</th>
                       <th className="text-center py-3 px-4 font-medium">Organisations</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {comparisonFeatures.map((feature, i) => (
+                    {comparisonFeatures.map((feature, i) => {
+                      const renderCell = (value: boolean | string) => {
+                        if (typeof value === "string") {
+                          return <span className="text-sm font-medium">{value}</span>;
+                        }
+                        return value ? (
+                          <Check className="h-4 w-4 text-green-600 mx-auto" />
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        );
+                      };
+                      return (
                       <tr key={i} className={i % 2 === 0 ? "bg-muted/30" : ""}>
                         <td className="py-3 px-4">
                           <span className="flex items-center gap-2 flex-wrap">
@@ -284,35 +277,20 @@ export default function Pricing() {
                           </span>
                         </td>
                         <td className="text-center py-3 px-4">
-                          {feature.trial ? (
-                            <Check className="h-4 w-4 text-green-600 mx-auto" />
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
+                          {renderCell(feature.basic)}
                         </td>
                         <td className="text-center py-3 px-4">
-                          {feature.essential ? (
-                            <Check className="h-4 w-4 text-green-600 mx-auto" />
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
+                          {renderCell(feature.essential)}
                         </td>
                         <td className="text-center py-3 px-4">
-                          {feature.complete ? (
-                            <Check className="h-4 w-4 text-green-600 mx-auto" />
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
+                          {renderCell(feature.complete)}
                         </td>
                         <td className="text-center py-3 px-4">
-                          {feature.org ? (
-                            <Check className="h-4 w-4 text-green-600 mx-auto" />
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
+                          {renderCell(feature.org)}
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -324,12 +302,13 @@ export default function Pricing() {
           <h2 className="text-2xl font-bold text-center mb-8" data-testid="text-faq-title">Frequently Asked Questions</h2>
           <div className="space-y-4">
             {[
-              { q: "What happens after my free trial?", a: "After 7 days, choose from Essential at £9.99/month (£99.99/year) or Complete Wellbeing at £16.99/month (£169.99/year). You can cancel anytime during the trial without being charged." },
+              { q: "What's the difference between the plans?", a: "Basic gives you core check-in safety with email alerts and 2 contacts. Essential adds SMS & voice call alerts, shake to SOS, push notifications, and up to 5 contacts. Complete Wellbeing adds everything including mood tracking, pet protection, document storage, Wellbeing AI, and emergency recording." },
+              { q: "Can I upgrade or downgrade?", a: "Yes, you can change your plan at any time from Settings. When you upgrade, the new plan takes effect on your next billing cycle." },
               { q: "Can I cancel at any time?", a: "Yes, you can cancel your subscription at any time from Settings. Your account stays active until the end of your current billing period." },
               { q: "What payment methods do you accept?", a: "We accept all major debit and credit cards, Apple Pay, and Google Pay for quick and easy payment." },
               { q: "How does the organisation plan work?", a: "Organisations purchase bundles of seats and manage clients through a dedicated dashboard. Contact us for custom pricing based on your team size." },
-              { q: "Is my data safe?", a: "Absolutely. We use encryption for all data, location is only shared during emergencies, AI conversations are never stored, and emergency contacts must give consent before receiving alerts. Our IP Ownership Agreement and NDA protect all confidential information. View our full legal documents including Privacy Policy, EULA, IP Ownership Agreement, and NDA from the footer links." },
-              { q: "How am I helping the environment by using aok?", a: "Every aok subscription contributes to verified tree planting and carbon offsetting through our partnership with Ecologi. For organisations, this means auditable environmental impact certificates suitable for board-level ESG reporting and funder submissions -  demonstrating measurable progress towards net zero targets. It's a tangible way to show your commitment to sustainability while protecting your people." },
+              { q: "Is my data safe?", a: "Absolutely. We use encryption for all data, location is only shared during emergencies, AI conversations are never stored, and emergency contacts must give consent before receiving alerts. View our full legal documents including Privacy Policy, EULA, and NDA from the footer links." },
+              { q: "Do SOS emergency alerts work on all plans?", a: "Yes. SOS emergency alerts always use all channels — email, SMS, and voice calls — regardless of your plan. This is a safety feature that is never restricted." },
             ].map((faq, i) => (
               <Card key={i}>
                 <CardContent className="py-4">

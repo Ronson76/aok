@@ -77,35 +77,34 @@ export function BottomNav() {
       path: "/app/mood", 
       icon: TrendingUp, 
       label: "Mood Tracking", 
-      enabled: features?.featureMoodTracking !== false && isRegistrationComplete 
+      enabled: features?.featureMoodTracking === true && isRegistrationComplete 
     },
     { 
       path: "/app/pets", 
       icon: PawPrint, 
       label: "Pet Protection", 
-      enabled: features?.featurePetProtection !== false && isRegistrationComplete 
+      enabled: features?.featurePetProtection === true && isRegistrationComplete 
     },
     { 
       path: "/app/documents", 
       icon: FileText, 
       label: "Documents", 
-      enabled: features?.featureDigitalWill !== false && isRegistrationComplete 
+      enabled: features?.featureDigitalWill === true && isRegistrationComplete 
     },
     { 
       path: "/app/errands", 
       icon: MapPin, 
       label: "Activities", 
-      enabled: features?.featureFitnessTracking !== false && isRegistrationComplete 
+      enabled: features?.featureFitnessTracking === true && isRegistrationComplete 
     },
   ];
   
   const isMoreActive = wellnessFeatures.some(f => location === f.path);
 
-  // Check if any wellness features are enabled (including Wellbeing AI)
   const hasAnyWellnessFeatures = wellnessFeatures.some(f => f.enabled) || 
-    (features?.featureWellbeingAi !== false && isRegistrationComplete);
+    (features?.featureWellbeingAi === true && isRegistrationComplete);
 
-  const showMoreMenu = !isOrganization && !isStaff && (!isOrgManagedClient || hasAnyWellnessFeatures);
+  const showMoreMenu = !isOrganization && !isStaff && hasAnyWellnessFeatures;
 
   return (
     <nav role="navigation" aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 bg-card border-t border-card-border z-50" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
@@ -187,8 +186,7 @@ export function BottomNav() {
                 }
               })}
               
-              {/* Wellbeing-ai internal link - shown when feature is enabled */}
-              {isRegistrationComplete && features?.featureWellbeingAi !== false ? (
+              {isRegistrationComplete && features?.featureWellbeingAi === true ? (
                 <DropdownMenuItem asChild>
                   <Link
                     href="/app/wellbeing-ai"
