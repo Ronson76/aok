@@ -53,6 +53,7 @@ VITE_STRIPE_PUBLISHABLE_KEY = "pk_test_51T7ERE7Vazo8P81naoVF2mCl2iG9DG8msEqXyxyh
 VITE_STRIPE_MONTHLY_PRICE_ID = "price_1T7EgO7Vazo8P81nyR4yQd7T"
 VITE_STRIPE_ESSENTIAL_PRICE_ID = "price_1T7EnW7Vazo8P81nEf2knemA"
 VITE_STRIPE_COMPLETE_PRICE_ID = "price_1T7EoF7Vazo8P81nMrissXQ5"
+VITE_STRIPE_BASIC_PRICE_ID = "price_1T7EgO7Vazo8P81nyR4yQd7T"
 
 [userenv.production]
 APP_URL = "https://check-mate--ronnieghuman.replit.app"

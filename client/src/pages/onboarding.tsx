@@ -155,6 +155,10 @@ export default function Onboarding() {
       setLocation(`/register?staff=${staffCode}`);
       return;
     }
+    const planParam = urlParams.get("plan");
+    if (planParam && ["basic", "essential", "complete"].includes(planParam)) {
+      setData(prev => ({ ...prev, billingCycle: planParam }));
+    }
   }, []);
 
   const isStaffFlow = !!staffInviteCode;
@@ -223,6 +227,10 @@ export default function Onboarding() {
       setCurrentStep(16);
       return;
     }
+    if (data.billingCycle === "basic" && currentStep === 8) {
+      setCurrentStep(10);
+      return;
+    }
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     }
@@ -231,6 +239,10 @@ export default function Onboarding() {
   const handleBack = () => {
     if (isStaffFlow && currentStep === 16) {
       setCurrentStep(13);
+      return;
+    }
+    if (data.billingCycle === "basic" && currentStep === 10) {
+      setCurrentStep(8);
       return;
     }
     if (currentStep > 1) {
@@ -947,14 +959,18 @@ function Step6ContactName({ data, setData }: { data: OnboardingData; setData: (d
       <Card className="border-0 shadow-lg">
         <CardContent className="p-4 sm:p-6">
           <h1 className="text-xl sm:text-2xl font-bold mb-2" data-testid="text-contact-title">Who are your {labels.plural}?</h1>
-          <p className="text-muted-foreground mb-6">Enter their names. You can add a second contact if you wish.</p>
+          <p className="text-muted-foreground mb-6">
+            {data.billingCycle === "basic"
+              ? "Your Basic plan includes 1 primary and 1 secondary contact."
+              : "Enter their names. You can add up to 5 contacts."}
+          </p>
           
           <div className="space-y-3">
             {data.contacts.map((contact, index) => (
               <div key={index} className="flex gap-2 items-center">
                 <div className="flex-1">
                   <label className="text-sm text-muted-foreground mb-1 block">
-                    {index === 0 ? "Primary contact/carer" : `Contact ${index + 1}`}
+                    {index === 0 ? "Primary contact" : `Contact ${index + 1}`}
                   </label>
                   <Input
                     value={contact.name}
@@ -979,7 +995,7 @@ function Step6ContactName({ data, setData }: { data: OnboardingData; setData: (d
             ))}
           </div>
           
-          {data.contacts.length < 5 && (
+          {data.billingCycle !== "basic" && data.contacts.length < 5 && (
             <Button
               variant="outline"
               onClick={addContact}
@@ -2114,70 +2130,132 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
             {formatContactNames(data.contacts, "They")} will be alerted if you ever need help.
           </p>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={() => setData({ ...data, billingCycle: "basic" })}
+              className={`p-3 rounded-lg border text-center transition-all ${
+                data.billingCycle === "basic" ? "border-emerald-500 bg-emerald-500/5 ring-2 ring-emerald-500/20" : "border-border hover-elevate"
+              }`}
+              data-testid="option-plan-basic"
+            >
+              <div className="text-xs font-semibold text-muted-foreground">Basic</div>
+              <div className="text-lg font-bold">£2.99<span className="text-xs font-normal">/mo</span></div>
+            </button>
             <button
               onClick={() => setData({ ...data, billingCycle: "essential" })}
-              className={`p-4 rounded-lg border text-center transition-all ${
+              className={`p-3 rounded-lg border text-center transition-all ${
                 data.billingCycle === "essential" ? "border-emerald-500 bg-emerald-500/5 ring-2 ring-emerald-500/20" : "border-border hover-elevate"
               }`}
               data-testid="option-plan-essential"
             >
-              <div className="text-sm font-semibold text-emerald-600">Essential</div>
-              <div className="text-2xl font-bold">£9.99<span className="text-sm font-normal">/mo</span></div>
+              <div className="text-xs font-semibold text-emerald-600">Essential</div>
+              <div className="text-lg font-bold">£9.99<span className="text-xs font-normal">/mo</span></div>
             </button>
             <button
               onClick={() => setData({ ...data, billingCycle: "complete" })}
-              className={`p-4 rounded-lg border text-center transition-all relative ${
+              className={`p-3 rounded-lg border text-center transition-all relative ${
                 data.billingCycle === "complete" ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border hover-elevate"
               }`}
               data-testid="option-plan-complete"
             >
-              <span className="absolute -top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
-                Recommended
+              <span className="absolute -top-2 right-2 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full">
+                Popular
               </span>
-              <div className="text-sm font-semibold text-primary">Complete</div>
-              <div className="text-2xl font-bold">£16.99<span className="text-sm font-normal">/mo</span></div>
+              <div className="text-xs font-semibold text-primary">Complete</div>
+              <div className="text-lg font-bold">£16.99<span className="text-xs font-normal">/mo</span></div>
             </button>
           </div>
 
           <div className="mt-6 p-4 border rounded-lg bg-muted/30">
             <div className="font-semibold mb-3">
-              {data.billingCycle === "complete" ? "Complete" : "Essential"} plan includes:
+              {data.billingCycle === "complete" ? "Complete Wellbeing" : data.billingCycle === "essential" ? "Essential" : "Basic"} plan includes:
             </div>
             <ul className="space-y-2 text-sm">
-              <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-500" />
-                <span data-testid="text-plan-feature-1">Daily check-in reminders</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-500" />
-                <span data-testid="text-plan-feature-2">Multi-channel alerts to {formatContactNames(data.contacts, "your contacts")}</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-500" />
-                <span data-testid="text-plan-feature-3">GPS location sharing in an emergency</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-500" />
-                <span data-testid="text-plan-feature-4">Mood tracking and journaling</span>
-              </li>
+              {data.billingCycle === "basic" && (
+                <>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-1">1 primary + 1 secondary contact</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-2">Email check-in alerts</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-3">SOS with email, SMS & call alerts</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-4">GPS location in emergencies</span>
+                  </li>
+                </>
+              )}
+              {data.billingCycle === "essential" && (
+                <>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-1">Up to 5 emergency contacts</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-2">Email, SMS & voice call alerts</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-3">Shake to Alert - instant emergency help</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-4">Flexible check-in timer (1hr to 48hrs)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-5">GPS location with what3words</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-6">Push notifications</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-7">Primary contact updates</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-8">Offline SMS check-in backup</span>
+                  </li>
+                </>
+              )}
               {data.billingCycle === "complete" && (
                 <>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500" />
-                    <span data-testid="text-plan-feature-5">AI wellbeing companion</span>
+                    <span className="font-medium" data-testid="text-plan-feature-1">Everything in Essential</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500" />
-                    <span data-testid="text-plan-feature-6">Errand mode for lone outings</span>
+                    <span data-testid="text-plan-feature-2">Emergency recording (opt-in)</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500" />
-                    <span data-testid="text-plan-feature-7">Voice-to-text check-ins</span>
+                    <span data-testid="text-plan-feature-3">Mood & wellness tracking</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500" />
-                    <span data-testid="text-plan-feature-8">Priority support</span>
+                    <span data-testid="text-plan-feature-4">Pet protection profiles</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-5">Important document storage</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-6">Wellbeing AI (Exclusive)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-7">Activities tracker</span>
                   </li>
                 </>
               )}
@@ -2192,7 +2270,7 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
         <p className="text-sm">
           You won't be charged until <strong>{getTrialEndDate()}</strong>
         </p>
-        <p className="text-sm text-emerald-100">Then {data.billingCycle === "complete" ? "£16.99" : "£9.99"}/month</p>
+        <p className="text-sm text-emerald-100">Then {data.billingCycle === "complete" ? "£16.99" : data.billingCycle === "essential" ? "£9.99" : "£2.99"}/month ({data.billingCycle === "complete" ? "Complete Wellbeing" : data.billingCycle === "essential" ? "Essential" : "Basic"})</p>
       </div>
     </div>
   );
@@ -2232,7 +2310,9 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
         email,
         priceId: data.billingCycle === "complete"
           ? import.meta.env.VITE_STRIPE_COMPLETE_PRICE_ID
-          : import.meta.env.VITE_STRIPE_ESSENTIAL_PRICE_ID,
+          : data.billingCycle === "essential"
+          ? import.meta.env.VITE_STRIPE_ESSENTIAL_PRICE_ID
+          : import.meta.env.VITE_STRIPE_BASIC_PRICE_ID,
         successUrl: `${window.location.origin}/register?onboarded=true&email=${encodeURIComponent(email)}`,
         cancelUrl: `${window.location.origin}/onboarding`,
         trialDays: 7,
@@ -2266,7 +2346,7 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
           You won't be charged until <strong>{getTrialEndDate()}</strong>
         </p>
         <p className="text-sm text-emerald-100">
-          Then {data.billingCycle === "complete" ? "£16.99" : "£9.99"}/month ({data.billingCycle === "complete" ? "Complete" : "Essential"})
+          Then {data.billingCycle === "complete" ? "£16.99" : data.billingCycle === "essential" ? "£9.99" : "£2.99"}/month ({data.billingCycle === "complete" ? "Complete Wellbeing" : data.billingCycle === "essential" ? "Essential" : "Basic"})
         </p>
       </div>
 
