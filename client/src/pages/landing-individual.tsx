@@ -1023,7 +1023,30 @@ export default function LandingIndividual() {
                   </table>
                 </div>
                 
-                <p>Your primary contact or carer is kept informed with every successful check-in, so they always know you're safe. All your contacts are alerted during missed check-ins and emergencies.</p>
+                <p className="mb-4">Your primary contact or carer is kept informed with every successful check-in, so they always know you're safe. All your contacts are alerted during missed check-ins and emergencies.</p>
+                
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
+                  <p className="font-semibold text-foreground mb-2">On the Basic plan (£2.99/month)</p>
+                  <ul className="space-y-1.5 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 font-medium mt-px">✓</span>
+                      <span>1 primary contact + 1 secondary contact</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 font-medium mt-px">✓</span>
+                      <span>Check-in alerts via <strong>email only</strong></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 font-medium mt-px">✓</span>
+                      <span>SOS emergency alerts via <strong>email, SMS & voice call</strong></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 font-medium mt-px">✓</span>
+                      <span>GPS location shared in emergencies</span>
+                    </li>
+                  </ul>
+                  <p className="text-xs text-muted-foreground mt-3">Upgrade to Essential or Complete for up to 5 contacts, SMS/voice check-in alerts, wellness tracking, and more.</p>
+                </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
