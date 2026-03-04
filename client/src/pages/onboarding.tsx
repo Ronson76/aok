@@ -386,7 +386,7 @@ export default function Onboarding() {
               <ChevronLeft className="h-4 w-4" />
             </Button>
           )}
-          {currentStep < TOTAL_STEPS && (
+          {currentStep < TOTAL_STEPS && currentStep !== 15 && (
             <Button 
               onClick={handleNext}
               disabled={!canProceed()}
@@ -529,7 +529,7 @@ function Step1Terms({ accepted, setAccepted, onComplete }: { accepted: boolean; 
           
           <section>
             <h3 className="font-semibold text-foreground mb-2">5. Subscription</h3>
-            <p>After your 7-day free trial, your subscription will automatically renew unless cancelled. You can cancel anytime in your settings.</p>
+            <p>Your subscription will automatically renew unless cancelled. You can cancel anytime in your settings.</p>
           </section>
           
           <section>
@@ -2255,12 +2255,12 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
       </Card>
 
       <div className="bg-emerald-500 text-white rounded-xl p-6 text-center">
-        <h2 className="text-xl sm:text-2xl font-bold mb-1" data-testid="text-trial-title">Try free for 7 days</h2>
-        <p className="text-emerald-100 mb-3">Cancel anytime</p>
-        <p className="text-sm">
-          You won't be charged until <strong>{getTrialEndDate()}</strong>
+        <h2 className="text-xl sm:text-2xl font-bold mb-1" data-testid="text-plan-selected-title">
+          {data.billingCycle === "complete" ? "Complete Wellbeing" : data.billingCycle === "essential" ? "Essential" : "Basic"} plan
+        </h2>
+        <p className="text-emerald-100">
+          £{data.billingCycle === "complete" ? "16.99" : data.billingCycle === "essential" ? "9.99" : "2.99"}/month
         </p>
-        <p className="text-sm text-emerald-100">Then {data.billingCycle === "complete" ? "£16.99" : data.billingCycle === "essential" ? "£9.99" : "£2.99"}/month ({data.billingCycle === "complete" ? "Complete Wellbeing" : data.billingCycle === "essential" ? "Essential" : "Basic"})</p>
       </div>
     </div>
   );
@@ -2273,7 +2273,7 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
   const { toast } = useToast();
   const email = data.email; // Email already collected on page 1
 
-  const handleStartTrial = async () => {
+  const handleSubscribe = async () => {
     // Check if promo code is entered - if valid, skip payment and go to terms
     if (testCode.trim()) {
       if (testCode.trim().toUpperCase() === "NG1") {
@@ -2305,7 +2305,7 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
           : import.meta.env.VITE_STRIPE_BASIC_PRICE_ID,
         successUrl: `${window.location.origin}/register?onboarded=true&email=${encodeURIComponent(email)}`,
         cancelUrl: `${window.location.origin}/onboarding`,
-        trialDays: 7,
+        trialDays: 0,
       });
 
       const result = await response.json();
@@ -2330,14 +2330,10 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
   return (
     <div className="space-y-4">
       <div className="bg-emerald-500 text-white rounded-xl p-6 text-center">
-        <h2 className="text-xl sm:text-2xl font-bold mb-1" data-testid="text-payment-trial-title">Try free for 7 days</h2>
-        <p className="text-emerald-100 mb-3">Cancel anytime</p>
-        <p className="text-sm">
-          You won't be charged until <strong>{getTrialEndDate()}</strong>
-        </p>
-        <p className="text-sm text-emerald-100">
-          Then {data.billingCycle === "complete" ? "£16.99" : data.billingCycle === "essential" ? "£9.99" : "£2.99"}/month ({data.billingCycle === "complete" ? "Complete Wellbeing" : data.billingCycle === "essential" ? "Essential" : "Basic"})
-        </p>
+        <h2 className="text-xl sm:text-2xl font-bold mb-1" data-testid="text-payment-title">
+          {data.billingCycle === "complete" ? "Complete Wellbeing" : data.billingCycle === "essential" ? "Essential" : "Basic"} — £{data.billingCycle === "complete" ? "16.99" : data.billingCycle === "essential" ? "9.99" : "2.99"}/month
+        </h2>
+        <p className="text-emerald-100">Set up your subscription to get started</p>
       </div>
 
       <Card className="border-0 shadow-lg">
@@ -2376,10 +2372,10 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
             </div>
 
             <Button 
-              onClick={handleStartTrial}
+              onClick={handleSubscribe}
               disabled={isLoading}
               className="w-full text-lg py-6"
-              data-testid="button-complete-trial"
+              data-testid="button-subscribe"
             >
               {isLoading ? (
                 <>
@@ -2387,7 +2383,7 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
                   Redirecting to checkout...
                 </>
               ) : (
-                "Start Free Trial"
+                "Subscribe & Continue"
               )}
             </Button>
 
@@ -2407,19 +2403,19 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
 
       <Card className="border-0 shadow-lg">
         <CardContent className="p-4 sm:p-6">
-          <h3 className="font-semibold mb-3" data-testid="text-after-trial-title">What happens after the trial?</h3>
+          <h3 className="font-semibold mb-3" data-testid="text-subscription-info-title">Your subscription</h3>
           <ul className="space-y-2 text-sm">
-            <li className="flex items-start gap-2" data-testid="text-after-trial-1">
+            <li className="flex items-start gap-2" data-testid="text-subscription-info-1">
               <span className="text-primary mt-0.5">•</span>
-              We'll email you 24 hours before your trial ends
+              Cancel anytime from your settings — no questions asked
             </li>
-            <li className="flex items-start gap-2" data-testid="text-after-trial-2">
+            <li className="flex items-start gap-2" data-testid="text-subscription-info-2">
               <span className="text-primary mt-0.5">•</span>
-              Cancel anytime from your settings - no questions asked
+              Upgrade or downgrade your plan whenever you like
             </li>
-            <li className="flex items-start gap-2" data-testid="text-after-trial-3">
+            <li className="flex items-start gap-2" data-testid="text-subscription-info-3">
               <span className="text-primary mt-0.5">•</span>
-              Your protection continues seamlessly if you stay
+              Your protection continues seamlessly
             </li>
           </ul>
         </CardContent>
@@ -2428,9 +2424,3 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
   );
 }
 
-function getTrialEndDate(): string {
-  const date = new Date();
-  date.setDate(date.getDate() + 7);
-  const options: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' };
-  return date.toLocaleDateString('en-GB', options);
-}
