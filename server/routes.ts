@@ -10,7 +10,7 @@ import { randomBytes } from "crypto";
 import * as OTPAuth from "otpauth";
 import QRCode from "qrcode";
 import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification, sendContactRemovedNotification, sendWelcomeEmail, makeVoiceCall } from "./notifications";
-import { registerAdminRoutes } from "./adminRoutes";
+import { registerAdminRoutes, adminAuthMiddleware } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
 import { registerOrgMemberRoutes } from "./orgMemberRoutes";
 import { registerWellbeingAIRoutes } from "./wellbeingAI";
@@ -21,6 +21,7 @@ import { stripeService } from "./stripeService";
 import { getEcologiImpact, plantTreeForNewSubscriber, isTestMode as isEcologiTestMode } from "./ecologiService";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 import { loginRateLimiter, passwordResetRateLimiter } from "./security";
+import { z } from "zod";
 
 // Helper function to render a simple HTML confirmation page
 function renderConfirmationPage(success: boolean, message: string): string {
@@ -463,18 +464,27 @@ export async function registerRoutes(
     }
   });
 
+  const checkoutSchema = z.object({
+    priceId: z.string().min(1).startsWith("price_"),
+    email: z.string().email(),
+    successUrl: z.string().url().optional(),
+    cancelUrl: z.string().url().optional(),
+    trialDays: z.number().int().min(0).max(30).optional().default(7),
+  });
+
   app.post("/api/stripe/create-subscription-checkout", async (req, res) => {
     try {
-      const { priceId, email: bodyEmail, successUrl, cancelUrl, trialDays = 7 } = req.body;
-      
-      let email = bodyEmail;
+      const parsed = checkoutSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "A valid priceId and email are required" });
+      }
+
+      let email = parsed.data.email;
+      const { priceId, successUrl, cancelUrl, trialDays } = parsed.data;
+
       if (req.userId) {
         const user = await storage.getUserById(req.userId);
         if (user?.email) email = user.email;
-      }
-      
-      if (!priceId || !email || typeof email !== "string" || !email.includes("@")) {
-        return res.status(400).json({ error: "A valid priceId and email are required" });
       }
 
       const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
@@ -3027,10 +3037,7 @@ export async function registerRoutes(
   });
 
   // Diagnose Twilio credentials (no SMS sent) - admin only
-  app.get("/api/diagnose-twilio", authMiddleware, async (req, res) => {
-    if ((req.user as any)?.accountType !== "organization") {
-      return res.status(403).json({ error: "Admin access required" });
-    }
+  app.get("/api/diagnose-twilio", adminAuthMiddleware, async (req, res) => {
     try {
       const result = await diagnoseTwilioCredentials();
       res.json(result);
@@ -3040,13 +3047,10 @@ export async function registerRoutes(
   });
 
   // Test SMS endpoint - admin only
-  app.post("/api/test-sms", authMiddleware, async (req, res) => {
-    if ((req.user as any)?.accountType !== "organization") {
-      return res.status(403).json({ error: "Admin access required" });
-    }
+  app.post("/api/test-sms", adminAuthMiddleware, async (req, res) => {
     try {
       const { phoneNumber } = req.body;
-      if (!phoneNumber) {
+      if (!phoneNumber || typeof phoneNumber !== "string") {
         return res.status(400).json({ error: "Phone number required" });
       }
       
@@ -3071,14 +3075,11 @@ export async function registerRoutes(
   });
 
   // Test email endpoint - admin only
-  app.post("/api/test-email", authMiddleware, async (req, res) => {
-    if ((req.user as any)?.accountType !== "organization") {
-      return res.status(403).json({ error: "Admin access required" });
-    }
+  app.post("/api/test-email", adminAuthMiddleware, async (req, res) => {
     try {
       const { email } = req.body;
-      if (!email) {
-        return res.status(400).json({ error: "Email address required" });
+      if (!email || typeof email !== "string" || !email.includes("@")) {
+        return res.status(400).json({ error: "Valid email address required" });
       }
       
       console.log(`[TEST EMAIL ENDPOINT] Testing email to ${email}`);
