@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/auth-context";
 import type { Settings as SettingsType, EmergencyRecording } from "@shared/schema";
 import { TwoFactorSetup } from "@/components/two-factor-setup";
 import { UpgradeBanner } from "@/components/upgrade-banner";
+import { CollapsibleCard } from "@/components/collapsible-card";
 import { useState, useEffect, useCallback } from "react";
 
 // Allowed interval values: 1-48 hours
@@ -861,17 +862,12 @@ export default function Settings() {
       </p>
 
       {pushSupported && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Smartphone className="h-4 w-4 text-muted-foreground" />
-              Push Notifications
-            </CardTitle>
-            <CardDescription>
-              Get notified on your phone when check-ins are due.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <CollapsibleCard
+          title="Push Notifications"
+          description="Get notified on your phone when check-ins are due."
+          icon={<Smartphone className="h-4 w-4 text-muted-foreground" />}
+          testId="card-push-notifications"
+        >
             <div className="flex items-center justify-between gap-4">
               <div className="space-y-0.5">
                 <Label htmlFor="push-enabled" className="font-medium">
@@ -896,21 +892,16 @@ export default function Settings() {
                 When enabled, you'll receive a notification on this device when your check-in becomes overdue.
               </p>
             </div>
-          </CardContent>
-        </Card>
+        </CollapsibleCard>
       )}
 
-      <Card className={features && features.featureContinuousTracking !== true ? "opacity-75" : settings?.redAlertEnabled ? "border-emerald-500 dark:border-emerald-600" : ""}>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <MapPin className={`h-4 w-4 ${settings?.redAlertEnabled && features?.featureContinuousTracking === true ? "text-emerald-500" : "text-muted-foreground"}`} />
-            Continuous Location Sharing
-          </CardTitle>
-          <CardDescription>
-            Continuously share your location every 5 minutes during emergency alerts.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <CollapsibleCard
+        title="Continuous Location Sharing"
+        description="Continuously share your location every 5 minutes during emergency alerts."
+        icon={<MapPin className={`h-4 w-4 ${settings?.redAlertEnabled && features?.featureContinuousTracking === true ? "text-emerald-500" : "text-muted-foreground"}`} />}
+        className={features && features.featureContinuousTracking !== true ? "opacity-75" : settings?.redAlertEnabled ? "border-emerald-500 dark:border-emerald-600" : ""}
+        testId="card-location-sharing"
+      >
           {features && features.featureContinuousTracking !== true ? (
             <UpgradeBanner feature="Continuous Location Sharing" compact />
           ) : (
@@ -946,20 +937,15 @@ export default function Settings() {
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
+      </CollapsibleCard>
 
-      <Card className={features && features.featureShakeToAlert !== true ? "opacity-75" : settings?.shakeToSOSEnabled ? "border-orange-500 dark:border-orange-600" : ""}>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Vibrate className={`h-4 w-4 ${settings?.shakeToSOSEnabled && features?.featureShakeToAlert === true ? "text-orange-500" : "text-muted-foreground"}`} />
-            Shake-to-SOS
-          </CardTitle>
-          <CardDescription>
-            Shake your phone to manually trigger an emergency alert.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <CollapsibleCard
+        title="Shake-to-SOS"
+        description="Shake your phone to manually trigger an emergency alert."
+        icon={<Vibrate className={`h-4 w-4 ${settings?.shakeToSOSEnabled && features?.featureShakeToAlert === true ? "text-orange-500" : "text-muted-foreground"}`} />}
+        className={features && features.featureShakeToAlert !== true ? "opacity-75" : settings?.shakeToSOSEnabled ? "border-orange-500 dark:border-orange-600" : ""}
+        testId="card-shake-to-sos"
+      >
           {features && features.featureShakeToAlert !== true ? (
             <UpgradeBanner feature="Shake-to-SOS" compact />
           ) : !ShakeDetector.isSupported() ? (
@@ -1016,20 +1002,15 @@ export default function Settings() {
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
+      </CollapsibleCard>
 
-      <Card className={features && features.featureEmergencyRecording !== true ? "opacity-75" : settings?.emergencyRecordingEnabled ? "border-red-500 dark:border-red-600" : ""}>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Video className={`h-4 w-4 ${settings?.emergencyRecordingEnabled && features?.featureEmergencyRecording === true ? "text-red-500" : "text-muted-foreground"}`} />
-            Emergency Recording
-          </CardTitle>
-          <CardDescription>
-            Record audio and video for documentation during user-initiated emergencies.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <CollapsibleCard
+        title="Emergency Recording"
+        description="Record audio and video for documentation during user-initiated emergencies."
+        icon={<Video className={`h-4 w-4 ${settings?.emergencyRecordingEnabled && features?.featureEmergencyRecording === true ? "text-red-500" : "text-muted-foreground"}`} />}
+        className={features && features.featureEmergencyRecording !== true ? "opacity-75" : settings?.emergencyRecordingEnabled ? "border-red-500 dark:border-red-600" : ""}
+        testId="card-emergency-recording"
+      >
           {features && features.featureEmergencyRecording !== true ? (
             <UpgradeBanner feature="Emergency Recording" compact />
           ) : (
@@ -1077,20 +1058,15 @@ export default function Settings() {
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
+      </CollapsibleCard>
 
-      <Card className={settings?.lowBatteryAlertEnabled ? "border-amber-500 dark:border-amber-600" : ""}>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <BatteryLow className={`h-4 w-4 ${settings?.lowBatteryAlertEnabled ? "text-amber-500" : "text-muted-foreground"}`} />
-            Low Battery Alert
-          </CardTitle>
-          <CardDescription>
-            Notify your primary contact/carer when your device battery drops below 20%.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <CollapsibleCard
+        title="Low Battery Alert"
+        description="Notify your primary contact/carer when your device battery drops below 20%."
+        icon={<BatteryLow className={`h-4 w-4 ${settings?.lowBatteryAlertEnabled ? "text-amber-500" : "text-muted-foreground"}`} />}
+        className={settings?.lowBatteryAlertEnabled ? "border-amber-500 dark:border-amber-600" : ""}
+        testId="card-low-battery"
+      >
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-0.5">
               <Label htmlFor="low-battery-alert-enabled" className="font-medium">
@@ -1118,21 +1094,15 @@ export default function Settings() {
               <p>This alert is sent at most once every 4 hours to avoid repeated notifications.</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+      </CollapsibleCard>
 
       {settings?.emergencyRecordingEnabled && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <FileVideo className="h-4 w-4 text-muted-foreground" />
-              Saved Recordings
-            </CardTitle>
-            <CardDescription>
-              Emergency recordings are stored securely for 90 days.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <CollapsibleCard
+          title="Saved Recordings"
+          description="Emergency recordings are stored securely for 90 days."
+          icon={<FileVideo className="h-4 w-4 text-muted-foreground" />}
+          testId="card-saved-recordings"
+        >
             {recordingsLoading ? (
               <div className="flex items-center justify-center py-6">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -1215,8 +1185,7 @@ export default function Settings() {
                 Recordings are encrypted and only accessible by you and your confirmed emergency contacts. They are automatically deleted after 90 days.
               </p>
             </div>
-          </CardContent>
-        </Card>
+        </CollapsibleCard>
       )}
 
       <Dialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
@@ -1295,17 +1264,13 @@ export default function Settings() {
         </DialogContent>
       </Dialog>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-            Two-Factor Authentication
-          </CardTitle>
-          <CardDescription>
-            Add an extra layer of security to your account.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <CollapsibleCard
+        title="Two-Factor Authentication"
+        description="Add an extra layer of security to your account."
+        icon={<ShieldCheck className="h-4 w-4 text-muted-foreground" />}
+        headerExtra={<Badge variant={user?.twoFactorEnabled ? "default" : "secondary"} className="text-xs">{user?.twoFactorEnabled ? "On" : "Off"}</Badge>}
+        testId="card-2fa"
+      >
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-0.5">
               <Label className="font-medium">Status</Label>
@@ -1326,8 +1291,7 @@ export default function Settings() {
             <ShieldCheck className="h-4 w-4 mr-2" />
             {user?.twoFactorEnabled ? "Manage 2FA" : "Set Up 2FA"}
           </Button>
-        </CardContent>
-      </Card>
+      </CollapsibleCard>
 
       <TwoFactorSetup
         isOpen={show2FADialog}
@@ -1335,8 +1299,12 @@ export default function Settings() {
         isEnabled={user?.twoFactorEnabled || false}
       />
 
-      <Card>
-        <CardContent className="pt-6">
+      <CollapsibleCard
+        title="Dark Mode"
+        description="Toggle dark mode on or off."
+        icon={<SettingsIcon className="h-4 w-4 text-muted-foreground" />}
+        testId="card-dark-mode"
+      >
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-0.5">
               <Label className="font-medium">Dark Mode</Label>
@@ -1346,21 +1314,18 @@ export default function Settings() {
             </div>
             <ThemeToggle />
           </div>
-        </CardContent>
-      </Card>
+      </CollapsibleCard>
 
       {!(user as any)?.isStaffMember && <SubscriptionCard />}
 
       {!(user as any)?.isStaffMember && !isOrganization && <UpgradeBanner />}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Account</CardTitle>
-          <CardDescription>
-            {user?.email}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <CollapsibleCard
+        title="Account"
+        description={user?.email}
+        icon={<LogOut className="h-4 w-4 text-muted-foreground" />}
+        testId="card-account"
+      >
           <Button
             variant="destructive"
             onClick={handleLogoutClick}
@@ -1370,8 +1335,7 @@ export default function Settings() {
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out
           </Button>
-        </CardContent>
-      </Card>
+      </CollapsibleCard>
 
       <Dialog open={showIntervalPasswordDialog} onOpenChange={(open) => {
         if (!open) handleCancelIntervalChange();
@@ -1629,17 +1593,12 @@ export default function Settings() {
         </DialogContent>
       </Dialog>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Shield className="h-4 w-4 text-muted-foreground" />
-            Your Data &amp; Privacy
-          </CardTitle>
-          <CardDescription>
-            Manage your personal data under UK GDPR. You have the right to access, export, and delete your data at any time.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <CollapsibleCard
+        title="Your Data & Privacy"
+        description="Manage your personal data under UK GDPR."
+        icon={<Shield className="h-4 w-4 text-muted-foreground" />}
+        testId="card-data-privacy"
+      >
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-0.5">
               <Label className="font-medium">Download Your Data</Label>
@@ -1689,8 +1648,7 @@ export default function Settings() {
               <p>Under UK GDPR you have the right to access, correct, export, and delete your personal data. For any data requests, you can also contact us at <strong>help@aok.care</strong>.</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+      </CollapsibleCard>
 
       <div className="p-3 rounded-lg bg-muted/50 text-center" data-testid="text-service-limitation">
         <p className="text-xs text-muted-foreground">
