@@ -1,8 +1,16 @@
 import Stripe from 'stripe';
 
-let connectionSettings: any;
+function getDirectCredentials() {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  const publishableKey = process.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
-async function getCredentials() {
+  if (secretKey && publishableKey) {
+    return { secretKey, publishableKey };
+  }
+  return null;
+}
+
+async function getConnectorCredentials() {
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? 'repl ' + process.env.REPL_IDENTITY
@@ -10,8 +18,8 @@ async function getCredentials() {
       ? 'depl ' + process.env.WEB_REPL_RENEWAL
       : null;
 
-  if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
+  if (!xReplitToken || !hostname) {
+    return null;
   }
 
   const connectorName = 'stripe';
@@ -23,32 +31,47 @@ async function getCredentials() {
   url.searchParams.set('connector_names', connectorName);
   url.searchParams.set('environment', targetEnvironment);
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      'Accept': 'application/json',
-      'X_REPLIT_TOKEN': xReplitToken
+  try {
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Accept': 'application/json',
+        'X_REPLIT_TOKEN': xReplitToken
+      }
+    });
+
+    const data = await response.json();
+    const connectionSettings = data.items?.[0];
+
+    if (connectionSettings?.settings?.publishable && connectionSettings?.settings?.secret) {
+      return {
+        publishableKey: connectionSettings.settings.publishable,
+        secretKey: connectionSettings.settings.secret,
+      };
     }
-  });
-
-  const data = await response.json();
-  
-  connectionSettings = data.items?.[0];
-
-  if (!connectionSettings || (!connectionSettings.settings.publishable || !connectionSettings.settings.secret)) {
-    throw new Error(`Stripe ${targetEnvironment} connection not found`);
+  } catch (error) {
+    console.log('[STRIPE] Connector not available, using direct credentials');
   }
 
-  return {
-    publishableKey: connectionSettings.settings.publishable,
-    secretKey: connectionSettings.settings.secret,
-  };
+  return null;
+}
+
+async function getCredentials() {
+  const direct = getDirectCredentials();
+  if (direct) return direct;
+
+  const connector = await getConnectorCredentials();
+  if (connector) return connector;
+
+  throw new Error(
+    'Stripe credentials not found. Set STRIPE_SECRET_KEY and VITE_STRIPE_PUBLISHABLE_KEY environment variables, ' +
+    'or configure the Stripe integration in Replit.'
+  );
 }
 
 export async function getUncachableStripeClient() {
   const { secretKey } = await getCredentials();
-
   return new Stripe(secretKey, {
-    apiVersion: '2025-11-17.clover',
+    apiVersion: '2025-11-17.clover' as any,
   });
 }
 
