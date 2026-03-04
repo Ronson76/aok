@@ -802,9 +802,9 @@ export default function Demo() {
                 </Button>
               </a>
             ) : (
-              <Link href="/onboarding">
+              <Link href="/individual#pricing">
                 <Button size="sm" data-testid="button-demo-get-started">
-                  Get Started Free
+                  Get Started
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </Link>
