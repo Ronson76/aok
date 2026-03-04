@@ -952,161 +952,103 @@ export default function Landing() {
       </section>
 
       <section id="pricing" className="py-20 px-4">
-        <div className="container mx-auto max-w-3xl">
+        <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-pricing-title">Pricing</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Tailored to your organisation. No one-size-fits-all.
+              Simple pricing for individuals. Tailored packages for organisations.
             </p>
           </div>
 
-          <Card className="border-primary shadow-lg" data-testid="card-pricing-contact">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl">Contact Us for Pricing</CardTitle>
-              <CardDescription className="text-base mt-2">
-                Organisation pricing depends on the number of clients, staff, and the features your service requires. We'll work with you to build a package that fits your organisation and budget.
+          <div className="grid md:grid-cols-2 gap-8 mb-8">
+          <Card className="border-emerald-500 shadow-lg relative" data-testid="card-pricing-individual">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
+              7-day free trial
+            </div>
+            <CardHeader className="text-center pb-2">
+              <CardTitle className="text-2xl">Individual</CardTitle>
+              <CardDescription className="text-base mt-1">
+                Personal safety for you and your loved ones
               </CardDescription>
+              <div className="mt-4">
+                <span className="text-4xl font-bold" data-testid="text-individual-price">£9.99</span>
+                <span className="text-muted-foreground">/month</span>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <div>
-                  <p className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <Check className="h-4 w-4 text-primary" />
-                    Core Platform
-                  </p>
-                  <ul className="space-y-3 ml-6">
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                      <span className="text-sm">Flexible pricing based on organisation size</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                      <span className="text-sm">Custom bundle allocations and seat packages</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                      <span className="text-sm">Volume discounts for larger organisations</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                      <span className="text-sm">Dedicated onboarding, training, and account management</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                      <span className="text-sm">Full access to safeguarding, audit trails, and compliance tools</span>
-                    </li>
-                  </ul>
-                </div>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">Daily check-in reminders</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">Multi-channel alerts to your emergency contacts</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">GPS location sharing in an emergency</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">AI wellbeing companion</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">Mood tracking and journaling</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">Errand mode for lone outings</span>
+                </li>
+              </ul>
+            </CardContent>
+            <CardFooter>
+              <a href="/onboarding" className="w-full">
+                <Button className="w-full bg-emerald-500 hover:bg-emerald-600" size="lg" data-testid="button-start-trial">
+                  Start Free Trial
+                </Button>
+              </a>
+            </CardFooter>
+          </Card>
 
-                <div className="border-t pt-4">
-                  <p className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <FileCheck className="h-4 w-4 text-indigo-500" />
-                    Funder Ready
-                  </p>
-                  <ul className="space-y-3 ml-6">
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-indigo-500" />
-                      <span className="text-sm">Tamper-evident audit trails with hash-chain verification</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-indigo-500" />
-                      <span className="text-sm">Exportable PDF and CSV compliance reports for funders and regulators</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-indigo-500" />
-                      <span className="text-sm">Measurable outcomes and evidence of safeguarding impact</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="border-t pt-4">
-                  <p className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-emerald-500" />
-                    Assurance Dashboard
-                  </p>
-                  <ul className="space-y-3 ml-6">
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
-                      <span className="text-sm">Real-time assurance scoring across your client base</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
-                      <span className="text-sm">Board-level reporting with RAG status indicators</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
-                      <span className="text-sm">Trend analysis and early-warning indicators for at-risk clients</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="border-t pt-4">
-                  <p className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <ClipboardCheck className="h-4 w-4 text-blue-500" />
-                    GRC (Governance, Risk & Compliance)
-                  </p>
-                  <ul className="space-y-3 ml-6">
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-500" />
-                      <span className="text-sm">Role-based access control with 8-tier permission hierarchy</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-500" />
-                      <span className="text-sm">Full security audit logging with PII redaction</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-500" />
-                      <span className="text-sm">UK GDPR-compliant data handling and retention policies</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-500" />
-                      <span className="text-sm">Two-factor authentication (TOTP) for all accounts</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="border-t pt-4">
-                  <p className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <Leaf className="h-4 w-4 text-green-600" />
-                    Environmental Impact & Net Zero
-                  </p>
-                  <ul className="space-y-3 ml-6">
-                    <li className="flex items-start gap-2">
-                      <TreeDeciduous className="h-4 w-4 mt-0.5 flex-shrink-0 text-green-600" />
-                      <span className="text-sm">Verified tree planting and carbon offsetting via Ecologi for every account</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-green-600" />
-                      <span className="text-sm">Board-ready environmental impact certificates for ESG and funder reporting</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-green-600" />
-                      <span className="text-sm">Demonstrate measurable progress towards your organisation's net zero targets</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="border-t pt-4">
-                  <p className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-primary" />
-                    Infrastructure
-                  </p>
-                  <ul className="space-y-3 ml-6">
-                    <li className="flex items-start gap-2">
-                      <Shield className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                      <span className="text-sm">ISO 27001-compliant, UK GDPR-ready infrastructure</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                      <span className="text-sm">External API access available for integration with existing systems</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                      <span className="text-sm">Circuit breaker resilience with multi-provider notification fallback</span>
-                    </li>
-                  </ul>
-                </div>
+          <Card className="border-primary shadow-lg" data-testid="card-pricing-contact">
+            <CardHeader className="text-center pb-2">
+              <CardTitle className="text-2xl">Organisation</CardTitle>
+              <CardDescription className="text-base mt-1">
+                Tailored to your service size and needs
+              </CardDescription>
+              <div className="mt-4">
+                <span className="text-4xl font-bold" data-testid="text-org-price">Custom</span>
               </div>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Everything in Individual, plus:</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Kiosk check-in and real-time data capture</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Safeguarding audit trails and compliance reports</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Lone worker monitoring</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Role-based access and GRC controls</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">Dedicated onboarding and account management</span>
+                </li>
+              </ul>
             </CardContent>
             <CardFooter className="flex flex-col gap-3">
               <a href="mailto:help@aok.care?subject=Organisation%20Pricing%20Enquiry" className="w-full">
@@ -1116,10 +1058,11 @@ export default function Landing() {
                 </Button>
               </a>
               <p className="text-xs text-muted-foreground text-center">
-                Email help@aok.care or use the button above. We typically respond within 24 hours.
+                We typically respond within 24 hours.
               </p>
             </CardFooter>
           </Card>
+          </div>
         </div>
       </section>
 

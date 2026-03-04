@@ -2132,31 +2132,9 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
             </ul>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mt-6">
-            <button
-              onClick={() => setData({ ...data, billingCycle: "monthly" })}
-              className={`p-4 rounded-lg border text-center transition-all ${
-                data.billingCycle === "monthly" ? "border-primary bg-primary/5" : "border-border hover-elevate"
-              }`}
-              data-testid="option-billing-monthly"
-            >
-              <div className="text-sm text-muted-foreground">Monthly</div>
-              <div className="text-xl font-bold">£9.99<span className="text-sm font-normal">/mo</span></div>
-            </button>
-            <button
-              onClick={() => setData({ ...data, billingCycle: "yearly" })}
-              className={`p-4 rounded-lg border text-center transition-all relative ${
-                data.billingCycle === "yearly" ? "border-primary bg-primary/5" : "border-border hover-elevate"
-              }`}
-              data-testid="option-billing-yearly"
-            >
-              <span className="absolute -top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
-                2 months free
-              </span>
-              <div className="text-sm text-muted-foreground">Yearly</div>
-              <div className="text-xl font-bold">£8.33<span className="text-sm font-normal">/mo</span></div>
-              <div className="text-xs text-muted-foreground">billed £99.99/year</div>
-            </button>
+          <div className="mt-6 p-4 rounded-lg border border-primary bg-primary/5 text-center" data-testid="text-plan-price">
+            <div className="text-sm text-muted-foreground">Monthly</div>
+            <div className="text-2xl font-bold">£9.99<span className="text-sm font-normal">/mo</span></div>
           </div>
         </CardContent>
       </Card>
@@ -2205,9 +2183,7 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
     try {
       const response = await apiRequest("POST", "/api/stripe/create-subscription-checkout", {
         email,
-        priceId: data.billingCycle === "yearly" 
-          ? (import.meta.env.VITE_STRIPE_YEARLY_PRICE_ID || import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID) 
-          : import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID,
+        priceId: import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID,
         successUrl: `${window.location.origin}/register?onboarded=true&email=${encodeURIComponent(email)}`,
         cancelUrl: `${window.location.origin}/onboarding`,
         trialDays: 7,

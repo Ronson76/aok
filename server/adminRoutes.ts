@@ -24,7 +24,7 @@ declare global {
   }
 }
 
-async function adminAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+export async function adminAuthMiddleware(req: Request, res: Response, next: NextFunction) {
   const sessionId = req.cookies?.[ADMIN_SESSION_COOKIE];
   
   if (!sessionId) {
