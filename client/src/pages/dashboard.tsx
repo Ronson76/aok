@@ -245,6 +245,42 @@ function getStatusLabel(status: StatusData["status"]) {
   }
 }
 
+function CallPrimaryContactCard() {
+  const { user } = useAuth();
+  const isOrgManaged = !!user?.referenceId;
+
+  const { data: contacts = [] } = useQuery<{ id: string; name: string; phone: string | null; isPrimary: boolean; confirmedAt: string | null }[]>({
+    queryKey: ["/api/contacts"],
+    enabled: !isOrgManaged,
+  });
+
+  const primaryContact = contacts.find(c => c.isPrimary && c.confirmedAt && c.phone);
+
+  if (isOrgManaged || !primaryContact) return null;
+
+  return (
+    <Card className="border-primary/30">
+      <CardContent className="py-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Phone className="h-5 w-5 text-primary" />
+          <span className="font-medium text-sm">Call Primary Contact</span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Call {primaryContact.name} directly from your phone.
+        </p>
+        <a href={`tel:${primaryContact.phone}`} className="block">
+          <Button
+            className="w-full"
+            data-testid="button-call-primary-contact"
+          >
+            <Phone className="h-4 w-4 mr-2" /> Call {primaryContact.name}
+          </Button>
+        </a>
+      </CardContent>
+    </Card>
+  );
+}
+
 function CallSupervisorCard() {
   const { toast } = useToast();
   const [showConfirm, setShowConfirm] = useState(false);
