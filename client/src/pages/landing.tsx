@@ -960,18 +960,15 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-border shadow-lg relative" data-testid="card-pricing-essential">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
-              7-day free trial
-            </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="border-border shadow-lg" data-testid="card-pricing-basic">
             <CardHeader className="text-center pb-2">
-              <CardTitle className="text-2xl">Essential</CardTitle>
+              <CardTitle className="text-2xl">Basic</CardTitle>
               <CardDescription className="text-base mt-1">
-                Personal safety and daily check-ins
+                Simple safety check-ins
               </CardDescription>
               <div className="mt-4">
-                <span className="text-4xl font-bold" data-testid="text-essential-price">£9.99</span>
+                <span className="text-4xl font-bold" data-testid="text-basic-price">£2.99</span>
                 <span className="text-muted-foreground">/month</span>
               </div>
             </CardHeader>
@@ -979,26 +976,83 @@ export default function Landing() {
               <ul className="space-y-3">
                 <li className="flex items-start gap-2">
                   <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
-                  <span className="text-sm">Daily check-in reminders</span>
+                  <span className="text-sm">1 primary + 1 secondary contact</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
-                  <span className="text-sm">Multi-channel alerts to your emergency contacts</span>
+                  <span className="text-sm">Email check-in alerts</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
-                  <span className="text-sm">GPS location sharing in an emergency</span>
+                  <span className="text-sm">SOS with email, SMS & call alerts</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
-                  <span className="text-sm">Mood tracking and journaling</span>
+                  <span className="text-sm">GPS location in emergencies</span>
                 </li>
               </ul>
             </CardContent>
             <CardFooter>
-              <a href="/onboarding" className="w-full">
-                <Button className="w-full bg-emerald-500 hover:bg-emerald-600" size="lg" data-testid="button-start-trial-essential">
+              <a href="/onboarding?plan=basic" className="w-full">
+                <Button className="w-full" variant="outline" size="lg" data-testid="button-start-trial-basic">
                   Start Free Trial
+                </Button>
+              </a>
+            </CardFooter>
+          </Card>
+
+          <Card className="border-border shadow-lg relative" data-testid="card-pricing-essential">
+            <CardHeader className="text-center pb-2">
+              <CardTitle className="text-2xl">Essential</CardTitle>
+              <CardDescription className="text-base mt-1">
+                Core check-in and alert tools
+              </CardDescription>
+              <div className="mt-4">
+                <span className="text-4xl font-bold" data-testid="text-essential-price">£9.99</span>
+                <span className="text-muted-foreground">/month</span>
+              </div>
+              <p className="text-xs text-emerald-500 mt-2 font-medium">Price-protected for life</p>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">Up to 5 emergency contacts</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">Email, SMS & voice call alerts</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">Shake to Alert - instant emergency help</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">Flexible check-in timer (1hr to 48hrs)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">GPS location with what3words</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">Push notifications</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">Primary contact updates</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">Offline SMS check-in backup</span>
+                </li>
+              </ul>
+            </CardContent>
+            <CardFooter>
+              <a href="/onboarding?plan=essential" className="w-full">
+                <Button className="w-full bg-emerald-500 hover:bg-emerald-600" size="lg" data-testid="button-start-trial-essential">
+                  Get Started
                 </Button>
               </a>
             </CardFooter>
@@ -1009,43 +1063,52 @@ export default function Landing() {
               Most popular
             </div>
             <CardHeader className="text-center pb-2">
-              <CardTitle className="text-2xl">Complete</CardTitle>
+              <CardTitle className="text-2xl">Complete Wellbeing</CardTitle>
               <CardDescription className="text-base mt-1">
-                Full protection with AI wellbeing support
+                Everything in Essential plus wellness, AI, and more
               </CardDescription>
               <div className="mt-4">
                 <span className="text-4xl font-bold" data-testid="text-complete-price">£16.99</span>
                 <span className="text-muted-foreground">/month</span>
               </div>
+              <p className="text-xs text-emerald-500 mt-2 font-medium">Price-protected for life</p>
             </CardHeader>
             <CardContent>
               <ul className="space-y-3">
                 <li className="flex items-start gap-2">
                   <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
-                  <span className="text-sm">Everything in Essential, plus:</span>
+                  <span className="text-sm font-medium">Everything in Essential</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
-                  <span className="text-sm">AI wellbeing companion</span>
+                  <span className="text-sm">Emergency recording (opt-in)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
-                  <span className="text-sm">Errand mode for lone outings</span>
+                  <span className="text-sm">Mood & wellness tracking</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
-                  <span className="text-sm">Voice-to-text check-ins</span>
+                  <span className="text-sm">Pet protection profiles</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
-                  <span className="text-sm">Priority support</span>
+                  <span className="text-sm">Important document storage</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">Wellbeing AI (Exclusive)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                  <span className="text-sm">Activities tracker</span>
                 </li>
               </ul>
             </CardContent>
             <CardFooter>
-              <a href="/onboarding" className="w-full">
+              <a href="/onboarding?plan=complete" className="w-full">
                 <Button className="w-full" size="lg" data-testid="button-start-trial-complete">
-                  Start Free Trial
+                  Get Started
                 </Button>
               </a>
             </CardFooter>
