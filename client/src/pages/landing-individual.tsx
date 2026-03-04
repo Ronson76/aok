@@ -32,6 +32,8 @@ import checkInVideo from "@assets/generated_videos/safety_check-in_confirmation_
 import alertsVideo from "@assets/generated_videos/english_sms_alert_notification.mp4";
 import isoBadgeImg from "@/assets/images/iso-27001-badge.png";
 
+const BASIC_MONTHLY_PRICE = 2.99;
+const BASIC_YEARLY_PRICE = 29.99;
 const TIER1_MONTHLY_PRICE = 9.99;
 const TIER1_YEARLY_PRICE = 99.99;
 const TIER2_MONTHLY_PRICE = 16.99;
@@ -116,19 +118,36 @@ export default function LandingIndividual() {
       isTrial: true,
     },
     {
+      name: "Basic",
+      description: "Essential safety check-ins with email alerts.",
+      monthlyPrice: BASIC_MONTHLY_PRICE,
+      yearlyPrice: BASIC_YEARLY_PRICE,
+      features: [
+        { text: "Flexible check-in timer (1 hour to 48 hours)", icon: Clock },
+        { text: "1 primary + 1 secondary contact", icon: Users },
+        { text: "Email alerts for missed check-ins", icon: Mail },
+        { text: "SOS emergency alerts (all channels)", icon: AlertTriangle },
+        { text: "Emergency alert button", icon: AlertTriangle },
+        { text: "Primary contact/carer updates", icon: Heart },
+      ],
+      cta: "Get Started",
+      ctaLink: "/onboarding",
+      highlight: false,
+      launchNote: "Launch pricing - Lock in today's rate forever",
+      priceProtected: true,
+    },
+    {
       name: "Essential",
       description: "Core check-in and alert tools for peace of mind.",
       monthlyPrice: TIER1_MONTHLY_PRICE,
       yearlyPrice: TIER1_YEARLY_PRICE,
       features: [
+        { text: "Everything in Basic", icon: Check },
         { text: "Shake to Alert - instant emergency help", icon: Zap },
-        { text: "Flexible check-in timer (1 hour to 48 hours)", icon: Clock },
         { text: "Up to 5 emergency contacts", icon: Users },
         { text: "Email, SMS & voice call alerts", icon: Bell },
-        { text: "Emergency alert button", icon: AlertTriangle },
         { text: "GPS location with what3words", icon: MapPin },
         { text: "Push notifications", icon: Smartphone },
-        { text: "Primary contact/carer updates", icon: Heart },
         { text: "Offline SMS check-in backup", icon: MessageSquare },
       ],
       cta: "Get Started",
@@ -779,7 +798,7 @@ export default function LandingIndividual() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {pricingPlans.map((plan, index) => (
               <Card
                 key={index}
@@ -877,8 +896,8 @@ export default function LandingIndividual() {
                 Is aok free to use?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-1">
-                The app gives you 7 days free. After that, our Essential plan starts at £{TIER1_MONTHLY_PRICE.toFixed(2)} per month,
-                or upgrade to Complete Wellbeing at £{TIER2_MONTHLY_PRICE.toFixed(2)} per month for wellness, AI, and more.
+                The app gives you 7 days free. After that, plans start from just £{BASIC_MONTHLY_PRICE.toFixed(2)} per month for Basic,
+                £{TIER1_MONTHLY_PRICE.toFixed(2)} per month for Essential, or £{TIER2_MONTHLY_PRICE.toFixed(2)} per month for Complete Wellbeing with wellness, AI, and more.
               </AccordionContent>
             </AccordionItem>
 

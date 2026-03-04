@@ -23,16 +23,25 @@ interface PlanData {
 }
 
 const PLAN_DETAILS = {
+  basic: {
+    name: "Basic",
+    price: "£2.99",
+    highlights: [
+      "Check-in timer (1–48 hours)",
+      "1 primary + 1 secondary contact",
+      "Email alerts for missed check-ins",
+      "SOS emergency alerts (all channels)",
+    ],
+  },
   essential: {
     name: "Essential",
     price: "£9.99",
     highlights: [
+      "Everything in Basic",
       "Up to 5 emergency contacts",
       "SMS & voice call alerts for check-ins",
       "Shake to Alert",
       "GPS with what3words",
-      "Mood tracking & pet protection",
-      "Digital documents",
       "Push notifications",
     ],
   },
@@ -64,13 +73,15 @@ export function UpgradeBanner({ feature, compact = false }: UpgradeBannerProps) 
 
   if (!plan || plan.tier === "complete") return null;
 
-  const nextTier = plan.tier === "basic" || plan.tier === "free" ? "essential" : "complete";
+  const nextTier = plan.tier === "free" ? "basic" : plan.tier === "basic" ? "essential" : "complete";
   const details = PLAN_DETAILS[nextTier as keyof typeof PLAN_DETAILS];
 
   const handleUpgrade = async (targetTier: string) => {
     setUpgrading(targetTier);
     try {
-      const priceId = targetTier === "essential"
+      const priceId = targetTier === "basic"
+        ? import.meta.env.VITE_STRIPE_BASIC_PRICE_ID
+        : targetTier === "essential"
         ? import.meta.env.VITE_STRIPE_ESSENTIAL_PRICE_ID
         : import.meta.env.VITE_STRIPE_COMPLETE_PRICE_ID;
 
@@ -136,6 +147,33 @@ export function UpgradeBanner({ feature, compact = false }: UpgradeBannerProps) 
         </p>
 
         <div className="space-y-4">
+          {plan.tier === "free" && (
+            <div className="border border-border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="font-semibold">Basic</p>
+                  <p className="text-sm text-muted-foreground">£2.99/month</p>
+                </div>
+                <Button
+                  onClick={() => handleUpgrade("basic")}
+                  disabled={!!upgrading}
+                  variant="outline"
+                  data-testid="button-upgrade-basic"
+                >
+                  {upgrading === "basic" ? "Processing..." : "Get Started"}
+                </Button>
+              </div>
+              <ul className="space-y-1.5">
+                {PLAN_DETAILS.basic.highlights.map((h) => (
+                  <li key={h} className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Check className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+                    {h}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {(plan.tier === "basic" || plan.tier === "free") && (
             <div className="border border-border rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
