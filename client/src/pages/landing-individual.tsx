@@ -117,8 +117,6 @@ export default function LandingIndividual() {
       cta: "Get Started",
       ctaLink: "/onboarding",
       highlight: false,
-      launchNote: "Launch pricing - Lock in today's rate forever",
-      priceProtected: true,
     },
     {
       name: "Essential",
@@ -137,8 +135,6 @@ export default function LandingIndividual() {
       cta: "Get Started",
       ctaLink: "/onboarding",
       highlight: false,
-      launchNote: "Launch pricing - Lock in today's rate forever",
-      priceProtected: true,
     },
     {
       name: "Complete Wellbeing",
@@ -159,8 +155,6 @@ export default function LandingIndividual() {
       highlight: true,
       badge: "7-Day Free Trial",
       trialNote: `Try free for 7 days — then £${TIER2_MONTHLY_PRICE.toFixed(2)}/month. Cancel anytime.`,
-      launchNote: "Launch pricing - Lock in today's rate forever",
-      priceProtected: true,
     },
   ];
 
@@ -811,15 +805,6 @@ export default function LandingIndividual() {
                   </div>
                 </CardHeader>
                 <CardContent className="flex-1">
-                  {plan.launchNote && (
-                    <p className="text-sm text-primary mb-4">{plan.launchNote}</p>
-                  )}
-                  {plan.priceProtected && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                      <Lock className="h-4 w-4" />
-                      Price-protected for life
-                    </div>
-                  )}
                   <CardDescription className="mb-4">{plan.description}</CardDescription>
                   {plan.note && (
                     <p className="text-sm text-muted-foreground mb-4">{plan.note}</p>
