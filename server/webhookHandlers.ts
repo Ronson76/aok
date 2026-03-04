@@ -16,7 +16,7 @@ export class WebhookHandlers {
     
     try {
       const stripe = await getUncachableStripeClient();
-      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || process.env.stripetestkeymarch;
       
       if (webhookSecret) {
         const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
