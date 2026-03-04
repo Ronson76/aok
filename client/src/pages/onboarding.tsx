@@ -200,7 +200,7 @@ export default function Onboarding() {
     scheduleEnabled: true,
     intervalHours: 24,
     planType: "base",
-    billingCycle: "monthly",
+    billingCycle: "essential",
   });
 
   const getDisplayStep = () => {
@@ -2132,9 +2132,30 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
             </ul>
           </div>
 
-          <div className="mt-6 p-4 rounded-lg border border-primary bg-primary/5 text-center" data-testid="text-plan-price">
-            <div className="text-sm text-muted-foreground">Monthly</div>
-            <div className="text-2xl font-bold">£9.99<span className="text-sm font-normal">/mo</span></div>
+          <div className="grid grid-cols-2 gap-3 mt-6">
+            <button
+              onClick={() => setData({ ...data, billingCycle: "essential" })}
+              className={`p-4 rounded-lg border text-center transition-all ${
+                data.billingCycle === "essential" ? "border-emerald-500 bg-emerald-500/5" : "border-border hover-elevate"
+              }`}
+              data-testid="option-plan-essential"
+            >
+              <div className="text-sm font-semibold text-emerald-600">Essential</div>
+              <div className="text-2xl font-bold">£9.99<span className="text-sm font-normal">/mo</span></div>
+            </button>
+            <button
+              onClick={() => setData({ ...data, billingCycle: "complete" })}
+              className={`p-4 rounded-lg border text-center transition-all relative ${
+                data.billingCycle === "complete" ? "border-primary bg-primary/5" : "border-border hover-elevate"
+              }`}
+              data-testid="option-plan-complete"
+            >
+              <span className="absolute -top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
+                Recommended
+              </span>
+              <div className="text-sm font-semibold text-primary">Complete</div>
+              <div className="text-2xl font-bold">£16.99<span className="text-sm font-normal">/mo</span></div>
+            </button>
           </div>
         </CardContent>
       </Card>
@@ -2145,7 +2166,7 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
         <p className="text-sm">
           You won't be charged until <strong>{getTrialEndDate()}</strong>
         </p>
-        <p className="text-sm text-emerald-100">Then £9.99/month</p>
+        <p className="text-sm text-emerald-100">Then {data.billingCycle === "complete" ? "£16.99" : "£9.99"}/month</p>
       </div>
     </div>
   );
@@ -2183,7 +2204,9 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
     try {
       const response = await apiRequest("POST", "/api/stripe/create-subscription-checkout", {
         email,
-        priceId: import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID,
+        priceId: data.billingCycle === "complete"
+          ? import.meta.env.VITE_STRIPE_COMPLETE_PRICE_ID
+          : import.meta.env.VITE_STRIPE_ESSENTIAL_PRICE_ID,
         successUrl: `${window.location.origin}/register?onboarded=true&email=${encodeURIComponent(email)}`,
         cancelUrl: `${window.location.origin}/onboarding`,
         trialDays: 7,
@@ -2216,7 +2239,9 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
         <p className="text-sm">
           You won't be charged until <strong>{getTrialEndDate()}</strong>
         </p>
-        <p className="text-sm text-emerald-100">Then £9.99/month</p>
+        <p className="text-sm text-emerald-100">
+          Then {data.billingCycle === "complete" ? "£16.99" : "£9.99"}/month ({data.billingCycle === "complete" ? "Complete" : "Essential"})
+        </p>
       </div>
 
       <Card className="border-0 shadow-lg">
