@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 
 function getDirectCredentials() {
-  const secretKey = process.env.STRIPE_SECRET_KEY || process.env.stripetestkey2;
+  const secretKey = process.env.STRIPE_SECRET_KEY || process.env.SLACK_TEST_API_KEY;
   const publishableKey = process.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
   if (secretKey && publishableKey) {
