@@ -2982,7 +2982,7 @@ export async function sendWelcomeEmail(
         </div>
       </div>
 
-      <p style="margin: 0 0 16px 0;"><strong>Need help?</strong> Visit our FAQ section or reach out to our support team at any time.</p>
+      <p style="margin: 0 0 16px 0;"><strong>Need help?</strong> Visit our FAQ section or email us at <a href="mailto:help@aok.care" style="color: #16a34a; text-decoration: underline;">help@aok.care</a> - we're always happy to help.</p>
       
       <p style="margin: 0;">Best regards!</p>
     `,
@@ -3010,7 +3010,7 @@ DOWNLOAD THE AOK APP:
 - Apple App Store: https://apps.apple.com/app/aok-safety/id0000000000
 - Google Play Store: https://play.google.com/store/apps/details?id=care.aok.app
 
-Need help? Visit our FAQ section or reach out to our support team at any time.
+Need help? Visit our FAQ section or email us at help@aok.care - we're always happy to help.
 
 Best regards,
 
