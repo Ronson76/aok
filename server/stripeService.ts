@@ -30,7 +30,7 @@ export class StripeService {
       subscription_data: {
         trial_period_days: trialDays,
       },
-      payment_method_collection: 'if_required',
+      payment_method_collection: 'always',
     };
 
     if (customerId) {

@@ -2113,9 +2113,37 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
           <p className="text-muted-foreground mb-6">
             {formatContactNames(data.contacts, "They")} will be alerted if you ever need help.
           </p>
-          
-          <div className="p-4 border rounded-lg bg-muted/30 mb-6">
-            <div className="font-semibold mb-3">Your protection plan includes:</div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setData({ ...data, billingCycle: "essential" })}
+              className={`p-4 rounded-lg border text-center transition-all ${
+                data.billingCycle === "essential" ? "border-emerald-500 bg-emerald-500/5 ring-2 ring-emerald-500/20" : "border-border hover-elevate"
+              }`}
+              data-testid="option-plan-essential"
+            >
+              <div className="text-sm font-semibold text-emerald-600">Essential</div>
+              <div className="text-2xl font-bold">£9.99<span className="text-sm font-normal">/mo</span></div>
+            </button>
+            <button
+              onClick={() => setData({ ...data, billingCycle: "complete" })}
+              className={`p-4 rounded-lg border text-center transition-all relative ${
+                data.billingCycle === "complete" ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border hover-elevate"
+              }`}
+              data-testid="option-plan-complete"
+            >
+              <span className="absolute -top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
+                Recommended
+              </span>
+              <div className="text-sm font-semibold text-primary">Complete</div>
+              <div className="text-2xl font-bold">£16.99<span className="text-sm font-normal">/mo</span></div>
+            </button>
+          </div>
+
+          <div className="mt-6 p-4 border rounded-lg bg-muted/30">
+            <div className="font-semibold mb-3">
+              {data.billingCycle === "complete" ? "Complete" : "Essential"} plan includes:
+            </div>
             <ul className="space-y-2 text-sm">
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-500" />
@@ -2127,35 +2155,33 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-500" />
-                <span data-testid="text-plan-feature-3">GPS alert in an emergency</span>
+                <span data-testid="text-plan-feature-3">GPS location sharing in an emergency</span>
               </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-emerald-500" />
+                <span data-testid="text-plan-feature-4">Mood tracking and journaling</span>
+              </li>
+              {data.billingCycle === "complete" && (
+                <>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-5">AI wellbeing companion</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-6">Errand mode for lone outings</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-7">Voice-to-text check-ins</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    <span data-testid="text-plan-feature-8">Priority support</span>
+                  </li>
+                </>
+              )}
             </ul>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 mt-6">
-            <button
-              onClick={() => setData({ ...data, billingCycle: "essential" })}
-              className={`p-4 rounded-lg border text-center transition-all ${
-                data.billingCycle === "essential" ? "border-emerald-500 bg-emerald-500/5" : "border-border hover-elevate"
-              }`}
-              data-testid="option-plan-essential"
-            >
-              <div className="text-sm font-semibold text-emerald-600">Essential</div>
-              <div className="text-2xl font-bold">£9.99<span className="text-sm font-normal">/mo</span></div>
-            </button>
-            <button
-              onClick={() => setData({ ...data, billingCycle: "complete" })}
-              className={`p-4 rounded-lg border text-center transition-all relative ${
-                data.billingCycle === "complete" ? "border-primary bg-primary/5" : "border-border hover-elevate"
-              }`}
-              data-testid="option-plan-complete"
-            >
-              <span className="absolute -top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
-                Recommended
-              </span>
-              <div className="text-sm font-semibold text-primary">Complete</div>
-              <div className="text-2xl font-bold">£16.99<span className="text-sm font-normal">/mo</span></div>
-            </button>
           </div>
         </CardContent>
       </Card>
