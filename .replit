@@ -49,6 +49,7 @@ RESEND_API_KEY = "re_CvWGZtpF_HwRSetj8RaLWj9vzbv5hLBsH"
 VAPID_PUBLIC_KEY = "BPGwQLVVht7e8JtDeceUQcbziC8gHd8CWwnh0jyrI-_KKhdoqg8QtvDNrJjSdpVB3uIIYkuJiA4aGFSzVIIbdJY"
 VAPID_PRIVATE_KEY = "GrzjTQqk6ispv_pgiUZScEmU-XE9F9qfa5f665gaJzE"
 SENDGRID_FROM_EMAIL = "noreply@aok.care"
+VITE_STRIPE_PUBLISHABLE_KEY = "pk_test_51T7ERE7Vazo8P81naoVF2mCl2iG9DG8msEqXyxyhEEossvj4yq4t6Fa4JAMPOunb75lD6iuAll7wyuOYaeYg0JAB00DYsPmaGe"
 
 [userenv.production]
 APP_URL = "https://check-mate--ronnieghuman.replit.app"
