@@ -239,7 +239,8 @@ export default function Contacts() {
   });
 
   const primaryContactCount = contacts.filter(c => c.isPrimary).length;
-  const maxPrimariesReached = primaryContactCount >= 3;
+  const maxPrimaries = maxActiveContacts;
+  const maxPrimariesReached = primaryContactCount >= maxPrimaries;
   
   const setPrimaryMutation = useMutation({
     mutationFn: (id: string) => apiRequest("POST", `/api/contacts/${id}/primary`),
@@ -256,10 +257,10 @@ export default function Contacts() {
     },
     onError: (error: any) => {
       const message = error?.message || "";
-      if (message.includes("Maximum of 3")) {
+      if (message.includes("Maximum of")) {
         toast({
           title: "Maximum primary contacts/carers reached",
-          description: "You can have up to 3 primary contacts/carers. Remove one to add another.",
+          description: `You can have up to ${maxActiveContacts} contacts on your current plan. Upgrade to add more.`,
           variant: "destructive",
         });
       } else {
@@ -519,7 +520,7 @@ export default function Contacts() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Primary contacts/carers (up to 3) receive notifications for successful check-ins and missed check-in alerts. 
+        Primary contacts/carers (up to {maxActiveContacts}) receive notifications for successful check-ins and missed check-in alerts. 
         Non-primary contacts only receive emergency SOS alerts. New contacts must confirm via email 
         before they become active.
       </p>
@@ -531,10 +532,10 @@ export default function Contacts() {
       {contacts.length > 0 && (
         <div className="flex items-center gap-2 text-sm">
           <span className={`font-medium ${maxPrimariesReached ? "text-amber-600" : "text-muted-foreground"}`}>
-            Primary contacts/carers: {primaryContactCount}/3
+            Primary contacts/carers: {primaryContactCount}/{maxActiveContacts}
           </span>
           {maxPrimariesReached && (
-            <span className="text-xs text-amber-600">(maximum reached)</span>
+            <span className="text-xs text-amber-600">(maximum reached — upgrade for more)</span>
           )}
         </div>
       )}
