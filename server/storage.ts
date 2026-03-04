@@ -531,30 +531,31 @@ class DatabaseStorage implements IStorage {
   }
 
   async setPrimaryContact(userId: string, contactId: string): Promise<Contact | undefined> {
-    // First, verify the contact exists and belongs to this user
     const existingContact = await this.getContact(userId, contactId);
     if (!existingContact) {
       return undefined;
     }
     
-    // Toggle the isPrimary status
     const newPrimaryStatus = !existingContact.isPrimary;
     
     const allContacts = await this.getContacts(userId);
     const primaryContacts = allContacts.filter(c => c.isPrimary);
     
-    // If turning OFF primary, ensure at least one other contact remains primary
     if (!newPrimaryStatus) {
-      // If this is the only primary contact, don't allow turning it off
       if (primaryContacts.length === 1 && primaryContacts[0].id === contactId) {
-        return existingContact; // Return unchanged - at least one must remain primary
+        return existingContact;
       }
     }
     
-    // If turning ON primary, ensure max 3 primary contacts
     if (newPrimaryStatus) {
-      if (primaryContacts.length >= 3) {
-        throw new Error("Maximum of 3 primary contacts/carers allowed");
+      const user = await this.getUserById(userId);
+      let maxContacts = 2;
+      if (user) {
+        const planFeatures = await stripeService.getUserPlanFeatures(user.email);
+        maxContacts = planFeatures.maxActiveContacts;
+      }
+      if (primaryContacts.length >= maxContacts) {
+        throw new Error(`Maximum of ${maxContacts} primary contacts/carers allowed on your current plan`);
       }
     }
     

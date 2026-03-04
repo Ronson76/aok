@@ -322,10 +322,14 @@ function AppLayout() {
     enabled: isAuthenticated,
   });
 
-  // Fetch settings for shake-to-SOS
   const { data: settings } = useQuery<SettingsType>({
     queryKey: ["/api/settings"],
     enabled: isAuthenticated,
+  });
+
+  const { data: featureFlags } = useQuery<{ featureWellbeingAi: boolean }>({
+    queryKey: ["/api/features"],
+    enabled: isAuthenticated && !isOrganization,
   });
 
   // Shake-to-SOS state
@@ -496,33 +500,37 @@ function AppLayout() {
             </Link>
             {!isOrgManagedClient && (
               <>
-                <div className="h-8 w-px bg-muted-foreground/30" />
-                {user?.termsAcceptedAt ? (
-                  <Link 
-                    href="/app/wellbeing-ai"
-                    className="flex flex-col items-center hover:opacity-80 transition-opacity"
-                    data-testid="link-wellbeing-ai"
-                  >
-                    <div className="relative h-6 w-6 flex items-center justify-center">
-                      <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
-                      <div className="w-1.5 h-5 bg-green-600 absolute rounded-sm" />
-                      <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
-                    </div>
-                    <span className="text-[10px] font-medium text-green-600 mt-0.5">Wellbeing AI</span>
-                  </Link>
-                ) : (
-                  <div 
-                    className="flex flex-col items-center cursor-not-allowed"
-                    title="Complete registration to access"
-                    data-testid="link-wellbeing-ai-disabled"
-                  >
-                    <div className="relative h-6 w-6 flex items-center justify-center">
-                      <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
-                      <div className="w-1.5 h-5 bg-green-600 absolute rounded-sm" />
-                      <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
-                    </div>
-                    <span className="text-[10px] font-medium text-green-600 mt-0.5">Wellbeing AI</span>
-                  </div>
+                {featureFlags?.featureWellbeingAi === true && (
+                  <>
+                    <div className="h-8 w-px bg-muted-foreground/30" />
+                    {user?.termsAcceptedAt ? (
+                      <Link 
+                        href="/app/wellbeing-ai"
+                        className="flex flex-col items-center hover:opacity-80 transition-opacity"
+                        data-testid="link-wellbeing-ai"
+                      >
+                        <div className="relative h-6 w-6 flex items-center justify-center">
+                          <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
+                          <div className="w-1.5 h-5 bg-green-600 absolute rounded-sm" />
+                          <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
+                        </div>
+                        <span className="text-[10px] font-medium text-green-600 mt-0.5">Wellbeing AI</span>
+                      </Link>
+                    ) : (
+                      <div 
+                        className="flex flex-col items-center cursor-not-allowed"
+                        title="Complete registration to access"
+                        data-testid="link-wellbeing-ai-disabled"
+                      >
+                        <div className="relative h-6 w-6 flex items-center justify-center">
+                          <div className="w-5 h-1.5 bg-green-600 absolute rounded-sm" />
+                          <div className="w-1.5 h-5 bg-green-600 absolute rounded-sm" />
+                          <Heart className="h-2.5 w-2.5 text-green-600 absolute -bottom-1 -right-1" fill="currentColor" />
+                        </div>
+                        <span className="text-[10px] font-medium text-green-600 mt-0.5">Wellbeing AI</span>
+                      </div>
+                    )}
+                  </>
                 )}
                 <div className="h-8 w-px bg-muted-foreground/30" />
                 <Link 
