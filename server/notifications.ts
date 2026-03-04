@@ -2968,7 +2968,7 @@ export async function sendWelcomeEmail(
         <ol style="margin: 0; padding-left: 20px; color: #15803d;">
           <li style="margin-bottom: 12px;"><strong>Set your check-in schedule</strong> - Choose how often you'd like to check in (1-48 hours)</li>
           <li style="margin-bottom: 12px;"><strong>Add your emergency contacts</strong> - They'll be notified if you miss a check-in or trigger an SOS</li>
-          <li style="margin-bottom: 12px;"><strong>Mark up to 3 as Primary</strong> - Primary contacts/carers receive every successful check-in notification</li>
+          <li style="margin-bottom: 12px;"><strong>Mark up to 3 as Primary</strong> - Primary contacts receive every successful check-in notification</li>
           <li style="margin-bottom: 0;"><strong>Complete your first check-in</strong> - Just tap the check-in button when prompted</li>
         </ol>
       </div>
@@ -2987,8 +2987,8 @@ export async function sendWelcomeEmail(
       <p style="margin: 0;">Best regards!</p>
     `,
     ctaButton: {
-      text: 'Open aok Dashboard',
-      url: 'https://aok.care/app'
+      text: 'Log in to aok',
+      url: 'https://aok.care/login/individual'
     },
     customFooterNote: "We're here to help you stay connected and protected."
   });
@@ -3003,7 +3003,7 @@ HERE'S HOW TO GET STARTED:
 
 1. Set your check-in schedule - Choose how often you'd like to check in (1-48 hours)
 2. Add your emergency contacts - They'll be notified if you miss a check-in or trigger an SOS
-3. Mark up to 3 as Primary - Primary contacts/carers receive every successful check-in notification
+3. Mark up to 3 as Primary - Primary contacts receive every successful check-in notification
 4. Complete your first check-in - Just tap the check-in button when prompted
 
 DOWNLOAD THE AOK APP:
@@ -3015,7 +3015,7 @@ Need help? Visit our FAQ section or reach out to our support team at any time.
 Best regards,
 
 - The aok Team
-https://aok.care/app`;
+https://aok.care/login/individual`;
 
   try {
     await sendEmail(email, subject, plainBody, htmlEmail);
