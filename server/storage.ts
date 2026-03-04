@@ -32,6 +32,8 @@ import { eq, ne, desc, asc, and, isNull, isNotNull, lt, gt, lte, gte, count, sql
 import { randomUUID, randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
 import { sendMissedCheckInAlert, sendPushNotification } from "./notifications";
+import { stripeService } from "./stripeService";
+import type { PlanFeatures } from "./stripeService";
 
 // Get database instance at runtime (not at import time)
 function getDb() {
@@ -961,7 +963,23 @@ class DatabaseStorage implements IStorage {
     // Non-primary contacts only receive emergency alerts
     const primaryContacts = allContacts.filter(c => c.isPrimary && !!c.confirmedAt);
     const alertsEnabled = row.alertsEnabled;
-    const contactsToAlert = alertsEnabled ? primaryContacts : [];
+
+    // Get user's plan to determine alert channels and contact limits
+    let planFeatures: PlanFeatures | null = null;
+    if (user.email && !user.referenceId && user.accountType !== "organization") {
+      try {
+        planFeatures = await stripeService.getUserPlanFeatures(user.email);
+      } catch (err) {
+        console.error("[ALERT] Failed to get plan features, defaulting to full alerts:", err);
+      }
+    }
+
+    let contactsToAlert = alertsEnabled ? primaryContacts : [];
+    const emailOnlyAlerts = planFeatures ? !planFeatures.checkInAlertChannels.includes("sms") : false;
+
+    if (planFeatures && contactsToAlert.length > planFeatures.maxActiveContacts) {
+      contactsToAlert = contactsToAlert.slice(0, planFeatures.maxActiveContacts);
+    }
     
     const contactNames = contactsToAlert.map(c => c.name);
     let alertSent = false;
@@ -991,11 +1009,11 @@ class DatabaseStorage implements IStorage {
           }
         }
 
-        // Send email and SMS alerts
         const { emailsSent, emailsFailed, smsSent, smsFailed } = await sendMissedCheckInAlert(
           contactsToAlert, 
           user,
-          enrichedAdditionalInfo
+          enrichedAdditionalInfo,
+          { emailOnly: emailOnlyAlerts }
         );
         
         // Send push notifications to user's devices

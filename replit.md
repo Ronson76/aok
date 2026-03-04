@@ -54,6 +54,7 @@ Database rule: When clearing or modifying data, it must be done via the applicat
 - **Enterprise RBAC**: 8 tiers of organization member roles with granular permission-based middleware.
 - **Legal Agreements**: Comprehensive suite of legal documents including EULA, DPA, Privacy Policy, and Terms.
 - **Organisation Pricing**: Contact-based (no self-serve). Pricing card includes Core Platform, Funder Ready, Assurance Dashboard, GRC, and Infrastructure sections.
+- **Individual Plan Gating**: Three-tier subscription pricing (Basic £2.99, Essential £9.99, Complete £16.99) with plan-aware feature gating. Plan detection via `stripeService.getUserPlanTier(email)` which maps Stripe `unit_amount` to tier. `/api/plan` returns tier and feature map. `/api/features` now returns plan-gated feature flags. Alert channels gated: Basic gets email-only check-in alerts (SMS/voice skipped), SOS always uses all channels. Contact limits: Basic allows 2 active contacts, Essential/Complete allow 5. Upgrade flow: `POST /api/stripe/upgrade-subscription` updates existing Stripe subscription price with proration. `UpgradeBanner` component (`client/src/components/upgrade-banner.tsx`) shows upgrade prompts in settings and contacts. Bottom nav locked features link to settings upgrade section. All users complete identical onboarding regardless of plan.
 
 ### Native App (Capacitor)
 - **Configuration**: Capacitor 8 with `capacitor.config.ts`.

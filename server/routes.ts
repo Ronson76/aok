@@ -17,7 +17,8 @@ import { registerWellbeingAIRoutes } from "./wellbeingAI";
 import { registerReportingRoutes } from "./reportingRoutes";
 import { registerFundingRoutes } from "./fundingRoutes";
 import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
-import { stripeService } from "./stripeService";
+import { stripeService, getPlanFeatures, tierFromAmount } from "./stripeService";
+import type { PlanTier, PlanFeatures } from "./stripeService";
 import { getEcologiImpact, plantTreeForNewSubscriber, isTestMode as isEcologiTestMode } from "./ecologiService";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 import { loginRateLimiter, passwordResetRateLimiter } from "./security";
@@ -658,6 +659,63 @@ export async function registerRoutes(
     }
   });
   
+  const ALLOWED_PRICE_IDS = [
+    process.env.VITE_STRIPE_BASIC_PRICE_ID,
+    process.env.VITE_STRIPE_ESSENTIAL_PRICE_ID,
+    process.env.VITE_STRIPE_COMPLETE_PRICE_ID,
+  ].filter(Boolean);
+
+  app.post("/api/stripe/upgrade-subscription", authMiddleware, async (req, res) => {
+    try {
+      const { newPriceId } = req.body;
+      if (!newPriceId || typeof newPriceId !== "string" || !newPriceId.startsWith("price_")) {
+        return res.status(400).json({ error: "Valid price ID is required" });
+      }
+
+      if (ALLOWED_PRICE_IDS.length > 0 && !ALLOWED_PRICE_IDS.includes(newPriceId)) {
+        return res.status(400).json({ error: "Invalid plan selected" });
+      }
+
+      const user = await storage.getUserById(req.userId!);
+      if (!user?.email) {
+        return res.status(400).json({ error: "User not found" });
+      }
+
+      const subscription = await stripeService.getSubscriptionByCustomerEmail(user.email) as any;
+
+      if (subscription) {
+        const stripe = await getUncachableStripeClient();
+        const items = typeof subscription.items === 'string' ? JSON.parse(subscription.items) : subscription.items;
+        const currentItemId = items?.data?.[0]?.id;
+
+        if (!currentItemId) {
+          return res.status(400).json({ error: "Could not determine current subscription item" });
+        }
+
+        await stripe.subscriptions.update(String(subscription.id), {
+          items: [{ id: currentItemId, price: newPriceId }],
+          proration_behavior: 'create_prorations',
+        });
+
+        res.json({ success: true, message: "Subscription upgraded successfully" });
+      } else {
+        const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+        const session = await stripeService.createSubscriptionCheckoutSession(
+          null,
+          newPriceId,
+          `${appUrl}/app/settings?upgraded=true`,
+          `${appUrl}/app/settings`,
+          user.email,
+          0
+        );
+        res.json({ url: session.url, sessionId: session.id });
+      }
+    } catch (error: any) {
+      console.error("[STRIPE UPGRADE] Failed:", error.message);
+      res.status(500).json({ error: "Failed to upgrade subscription" });
+    }
+  });
+
   app.get("/promo-org.mp4", (_req, res) => {
     const videoPath = path.resolve(process.cwd(), "attached_assets/generated_videos/organization_dashboard_monitoring.mp4");
     if (fs.existsSync(videoPath)) {
@@ -1739,6 +1797,7 @@ export async function registerRoutes(
   app.use("/api/mood", authMiddleware);
   app.use("/api/pets", authMiddleware);
   app.use("/api/documents", authMiddleware);
+  app.use("/api/plan", authMiddleware);
   app.use("/api/features", authMiddleware);
   app.use("/api/stripe/subscription", authMiddleware);
   app.use("/api/stripe/payment-status", authMiddleware);
@@ -2782,6 +2841,25 @@ export async function registerRoutes(
   });
 
   // Get feature settings for current user (to check what features are enabled)
+  app.get("/api/plan", async (req, res) => {
+    try {
+      const user = await storage.getUserById(req.userId!);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      if (user.accountType === "organization" || user.referenceId) {
+        return res.json({ tier: "complete" as PlanTier, features: getPlanFeatures("complete") });
+      }
+
+      const planFeatures = await stripeService.getUserPlanFeatures(user.email);
+      res.json({ tier: planFeatures.tier, features: planFeatures });
+    } catch (error) {
+      console.error("[API] Failed to get plan:", error);
+      res.status(500).json({ error: "Failed to get plan information" });
+    }
+  });
+
   app.get("/api/features", async (req, res) => {
     try {
       const user = await storage.getUserById(req.userId!);
@@ -2789,7 +2867,6 @@ export async function registerRoutes(
         return res.status(404).json({ error: "User not found" });
       }
 
-      // If user is an organization, they cannot access wellness features
       if (user.accountType === "organization") {
         return res.json({
           isOrgAccount: true,
@@ -2801,11 +2878,9 @@ export async function registerRoutes(
         });
       }
 
-      // Check if user is managed by an organization
       const features = await organizationStorage.getClientFeaturesByUserId(req.userId!);
       
       if (features) {
-        // User is an org client - return their enabled features
         return res.json({
           isOrgAccount: false,
           isOrgClient: true,
@@ -2813,15 +2888,22 @@ export async function registerRoutes(
         });
       }
 
-      // Regular individual user - return their actual feature settings from the database
+      const planFeatures = await stripeService.getUserPlanFeatures(user.email);
+
       res.json({
         isOrgAccount: false,
         isOrgClient: false,
-        featureWellbeingAi: user.featureWellbeingAi ?? true,
-        featureMoodTracking: user.featureWellness ?? true,
-        featurePetProtection: user.featurePetProtection ?? true,
-        featureDigitalWill: user.featureDigitalWill ?? true,
-        featureFitnessTracking: (user as any).featureFitnessTracking ?? true,
+        planTier: planFeatures.tier,
+        featureWellbeingAi: planFeatures.wellbeingAi,
+        featureMoodTracking: planFeatures.moodTracking,
+        featurePetProtection: planFeatures.petProtection,
+        featureDigitalWill: planFeatures.digitalDocuments,
+        featureFitnessTracking: planFeatures.activities,
+        featureShakeToAlert: planFeatures.shakeToAlert,
+        featureContinuousTracking: planFeatures.continuousTracking,
+        featureEmergencyRecording: planFeatures.emergencyRecording,
+        featurePushNotifications: planFeatures.pushNotifications,
+        maxActiveContacts: planFeatures.maxActiveContacts,
       });
     } catch (error) {
       console.error("[API] Failed to get features:", error);
