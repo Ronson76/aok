@@ -694,7 +694,7 @@ export async function registerRoutes(
 
         await stripe.subscriptions.update(String(subscription.id), {
           items: [{ id: currentItemId, price: newPriceId }],
-          proration_behavior: 'create_prorations',
+          proration_behavior: 'none',
         });
 
         res.json({ success: true, message: "Subscription upgraded successfully" });

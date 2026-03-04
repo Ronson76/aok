@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, AlertTriangle, Smartphone, Eye, EyeOff, ExternalLink, CreditCard, AlertCircle, MapPin, Vibrate, Video, Trash2, Download, Play, FileVideo, Shield, ShieldCheck, BatteryLow } from "lucide-react";
+import { Settings as SettingsIcon, Clock, Bell, Loader2, Info, LogOut, AlertTriangle, Smartphone, Eye, EyeOff, ExternalLink, CreditCard, AlertCircle, MapPin, Vibrate, Video, Trash2, Download, Play, FileVideo, Shield, ShieldCheck, BatteryLow, ArrowUpCircle, Sparkles } from "lucide-react";
 import ShakeDetector from "@/lib/shake-detector";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -74,11 +74,26 @@ interface SubscriptionData {
   interval: string;
 }
 
+function getPlanName(unitAmount: number, status: string): string {
+  if (status === 'trialing') return 'Complete Wellbeing (Trial)';
+  if (unitAmount <= 299) return 'Basic';
+  if (unitAmount <= 999) return 'Essential';
+  return 'Complete Wellbeing';
+}
+
+function getPlanTier(unitAmount: number): string {
+  if (unitAmount <= 299) return 'basic';
+  if (unitAmount <= 999) return 'essential';
+  return 'complete';
+}
+
 function SubscriptionCard() {
   const { toast } = useToast();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelPassword, setCancelPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
+  const [upgrading, setUpgrading] = useState<string | null>(null);
 
   const { data: subscriptionData, isLoading } = useQuery<{ subscription: SubscriptionData | null }>({
     queryKey: ["/api/stripe/subscription"],
@@ -135,6 +150,36 @@ function SubscriptionCard() {
       });
     },
   });
+
+  const handleUpgrade = async (targetTier: string) => {
+    setUpgrading(targetTier);
+    try {
+      const priceId = targetTier === "essential"
+        ? import.meta.env.VITE_STRIPE_ESSENTIAL_PRICE_ID
+        : targetTier === "basic"
+        ? import.meta.env.VITE_STRIPE_BASIC_PRICE_ID
+        : import.meta.env.VITE_STRIPE_COMPLETE_PRICE_ID;
+
+      const res = await apiRequest("POST", "/api/stripe/upgrade-subscription", {
+        newPriceId: priceId,
+      });
+      const data = await res.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else if (data.success) {
+        queryClient.invalidateQueries({ queryKey: ["/api/stripe/subscription"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/plan"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/features"] });
+        setShowUpgradeOptions(false);
+        toast({ title: "Plan updated!", description: "Your new plan takes effect from your next billing date." });
+      }
+    } catch (error) {
+      toast({ title: "Upgrade failed", description: "Please try again or contact help@aok.care", variant: "destructive" });
+    } finally {
+      setUpgrading(null);
+    }
+  };
 
   const subscription = subscriptionData?.subscription;
 
@@ -215,7 +260,13 @@ function SubscriptionCard() {
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Plan</span>
               <span className="font-medium" data-testid="text-subscription-plan">
-                {subscription.status === 'trialing' ? 'Complete Wellbeing (Trial)' : 'Complete Wellbeing'}
+                {getPlanName(subscription.unitAmount, subscription.status)}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Price</span>
+              <span className="font-medium" data-testid="text-subscription-price">
+                {formatPrice(subscription.unitAmount, subscription.currency)}/{subscription.interval}
               </span>
             </div>
             {subscription.status === 'trialing' && subscription.trialEnd && (
@@ -237,6 +288,63 @@ function SubscriptionCard() {
               </div>
             )}
           </div>
+
+          {!subscription.cancelAtPeriodEnd && getPlanTier(subscription.unitAmount) !== 'complete' && subscription.status !== 'trialing' && (
+            <>
+              {!showUpgradeOptions ? (
+                <Button
+                  variant="default"
+                  onClick={() => setShowUpgradeOptions(true)}
+                  className="w-full bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-600 hover:to-emerald-600 text-white"
+                  data-testid="button-show-upgrade"
+                >
+                  <ArrowUpCircle className="h-4 w-4 mr-2" />
+                  Upgrade Plan
+                </Button>
+              ) : (
+                <div className="space-y-3 border border-amber-500/30 rounded-lg p-3 bg-amber-500/5">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-amber-500" />
+                    Choose your new plan
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Your new plan starts from your next billing date — no extra charge today.
+                  </p>
+                  {getPlanTier(subscription.unitAmount) === 'basic' && (
+                    <Button
+                      variant="outline"
+                      onClick={() => handleUpgrade("essential")}
+                      disabled={!!upgrading}
+                      className="w-full justify-between"
+                      data-testid="button-upgrade-essential"
+                    >
+                      <span>Essential — £9.99/month</span>
+                      {upgrading === "essential" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpCircle className="h-4 w-4" />}
+                    </Button>
+                  )}
+                  <Button
+                    variant="default"
+                    onClick={() => handleUpgrade("complete")}
+                    disabled={!!upgrading}
+                    className="w-full justify-between bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-600 hover:to-emerald-600 text-white"
+                    data-testid="button-upgrade-complete"
+                  >
+                    <span>Complete Wellbeing — £16.99/month</span>
+                    {upgrading === "complete" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowUpgradeOptions(false)}
+                    className="w-full text-muted-foreground"
+                    data-testid="button-cancel-upgrade"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
 
           {subscription.cancelAtPeriodEnd ? (
             <Button
