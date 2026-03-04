@@ -4,6 +4,19 @@ import { db } from "./db";
 import { moodEntries, users } from "@shared/schema";
 import { eq, desc, gte, and } from "drizzle-orm";
 import { storage } from "./storage";
+import { z } from "zod";
+
+const ttsSchema = z.object({
+  text: z.string().min(1).max(2000),
+});
+
+const chatSchema = z.object({
+  message: z.string().min(1).max(5000),
+  conversationHistory: z.array(z.object({
+    role: z.enum(["user", "assistant"]),
+    content: z.string(),
+  })).max(20).optional().default([]),
+});
 
 async function wellbeingAuthMiddleware(req: Request, res: import("express").Response, next: import("express").NextFunction) {
   const sessionId = (req as any).cookies?.session;
@@ -140,13 +153,12 @@ Start by acknowledging their feelings and asking how you can support them today.
 export function registerWellbeingAIRoutes(app: Express): void {
   app.post("/api/wellbeing-ai/tts", wellbeingAuthMiddleware, async (req: Request, res: Response) => {
     try {
-      const { text } = req.body;
-      if (!text || typeof text !== "string") {
-        return res.status(400).json({ error: "Text is required" });
+      const parsed = ttsSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Valid text is required (1-2000 characters)" });
       }
 
-      // Limit text length to prevent abuse
-      const truncatedText = text.slice(0, 2000);
+      const truncatedText = parsed.data.text;
 
       const mp3Response = await openaiWhisper.audio.speech.create({
         model: "tts-1",
@@ -257,10 +269,11 @@ export function registerWellbeingAIRoutes(app: Express): void {
     try {
       const userId = (req as any).userId;
 
-      const { message, conversationHistory = [] } = req.body;
-      if (!message || typeof message !== "string") {
-        return res.status(400).json({ error: "Message is required" });
+      const parsed = chatSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Valid message is required" });
       }
+      const { message, conversationHistory } = parsed.data;
 
       const [user] = await db.select().from(users).where(eq(users.id, userId));
       const userName = user?.name?.split(" ")[0] || "there";
