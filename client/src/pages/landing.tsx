@@ -1174,12 +1174,42 @@ export default function Landing() {
           </div>
           
           <Accordion type="single" collapsible className="space-y-4">
+            <AccordionItem value="item-0" className="bg-card rounded-lg border px-6" data-testid="faq-item-0">
+              <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-0">
+                What do I get with the Basic plan?
+              </AccordionTrigger>
+              <AccordionContent data-testid="text-faq-answer-0">
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
+                  <p className="font-semibold text-foreground mb-3">Basic plan — £2.99/month</p>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                      <span><strong>1 primary contact + 1 secondary contact</strong></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                      <span><strong>Email alerts</strong> for daily check-ins</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                      <span><strong>SOS emergency alerts</strong> via email, SMS & voice call</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-500" />
+                      <span><strong>GPS location</strong> shared in emergencies (no continuous tracking)</span>
+                    </li>
+                  </ul>
+                  <p className="text-xs text-muted-foreground mt-3">The Basic plan does not include wellness features, activities, or multi-channel check-in alerts. Upgrade to Essential or Complete for the full experience.</p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
             <AccordionItem value="item-1" className="bg-card rounded-lg border px-6" data-testid="faq-item-1">
               <AccordionTrigger className="text-left font-semibold" data-testid="button-faq-1">
                 How much does aok cost for organisations?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-1">
-                Organisation pricing is tailored to your needs -  it depends on the number of clients, staff members, 
+                Organisation pricing is tailored to your needs — it depends on the number of clients, staff members, 
                 and features you require. Contact us at help@aok.care for a personalised quote.
               </AccordionContent>
             </AccordionItem>
