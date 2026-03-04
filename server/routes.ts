@@ -463,15 +463,18 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/stripe/create-subscription-checkout", authMiddleware, async (req, res) => {
+  app.post("/api/stripe/create-subscription-checkout", async (req, res) => {
     try {
-      const { priceId, successUrl, cancelUrl, trialDays = 7 } = req.body;
+      const { priceId, email: bodyEmail, successUrl, cancelUrl, trialDays = 7 } = req.body;
       
-      const user = await storage.getUserById(req.userId!);
-      const email = user?.email;
+      let email = bodyEmail;
+      if (req.userId) {
+        const user = await storage.getUserById(req.userId);
+        if (user?.email) email = user.email;
+      }
       
-      if (!priceId || !email) {
-        return res.status(400).json({ error: "priceId is required and user must have an email" });
+      if (!priceId || !email || typeof email !== "string" || !email.includes("@")) {
+        return res.status(400).json({ error: "A valid priceId and email are required" });
       }
 
       const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
