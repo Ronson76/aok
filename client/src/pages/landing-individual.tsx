@@ -278,12 +278,12 @@ export default function LandingIndividual() {
                 Personal check-ins and emergency alerts that give you and your family peace of mind. Set your own schedule, add trusted contacts, and know that help is always just a tap away.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                <Link href="/onboarding">
+                <a href="#pricing">
                   <Button size="lg" className="w-full sm:w-auto gap-2" data-testid="button-get-started">
-                    Get Started Free
+                    Get Started
                     <ChevronRight className="h-4 w-4" />
                   </Button>
-                </Link>
+                </a>
                 <Link href="/demo?type=individual">
                   <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2" data-testid="button-view-demo">
                     See Demo
@@ -1071,11 +1071,11 @@ export default function LandingIndividual() {
             It takes less than 2 minutes to set up. Give yourself and your loved ones peace of mind.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/onboarding">
+            <a href="#pricing">
               <Button size="lg" variant="secondary" className="w-full sm:w-auto" data-testid="button-start-now">
-                Create Account
+                Get Started
               </Button>
-            </Link>
+            </a>
           </div>
         </div>
       </section>
