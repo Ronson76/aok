@@ -486,12 +486,18 @@ export default function Settings() {
     queryKey: ["/api/settings"],
   });
 
-  // Fetch feature availability (for org clients)
   const { data: features } = useQuery<{
     featureWellbeingAi: boolean;
     featureMoodTracking: boolean;
     featurePetProtection: boolean;
     featureDigitalWill: boolean;
+    featureShakeToAlert: boolean;
+    featureContinuousTracking: boolean;
+    featureEmergencyRecording: boolean;
+    featurePushNotifications: boolean;
+    featureFitnessTracking: boolean;
+    maxActiveContacts: number;
+    planTier: string;
     isOrgAccount: boolean;
     isOrgClient: boolean;
   }>({
@@ -894,53 +900,59 @@ export default function Settings() {
         </Card>
       )}
 
-      <Card className={settings?.redAlertEnabled ? "border-emerald-500 dark:border-emerald-600" : ""}>
+      <Card className={features && features.featureContinuousTracking !== true ? "opacity-75" : settings?.redAlertEnabled ? "border-emerald-500 dark:border-emerald-600" : ""}>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <MapPin className={`h-4 w-4 ${settings?.redAlertEnabled ? "text-emerald-500" : "text-muted-foreground"}`} />
-            Location Sharing
+            <MapPin className={`h-4 w-4 ${settings?.redAlertEnabled && features?.featureContinuousTracking === true ? "text-emerald-500" : "text-muted-foreground"}`} />
+            Continuous Location Sharing
           </CardTitle>
           <CardDescription>
-            Share your location with emergency contacts during alerts.
+            Continuously share your location every 5 minutes during emergency alerts.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="space-y-0.5">
-              <Label htmlFor="red-alert-enabled" className="font-medium">
-                Enable Location Sharing
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Include your location in emergency and missed check-in alerts
-              </p>
-            </div>
-            <Switch
-              id="red-alert-enabled"
-              checked={settings?.redAlertEnabled ?? false}
-              onCheckedChange={handleRedAlertToggle}
-              disabled={updateMutation.isPending}
-              data-testid="switch-red-alert-enabled"
-            />
-          </div>
+          {features && features.featureContinuousTracking !== true ? (
+            <UpgradeBanner feature="Continuous Location Sharing" compact />
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-0.5">
+                  <Label htmlFor="red-alert-enabled" className="font-medium">
+                    Enable Location Sharing
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Include your location in emergency and missed check-in alerts
+                  </p>
+                </div>
+                <Switch
+                  id="red-alert-enabled"
+                  checked={settings?.redAlertEnabled ?? false}
+                  onCheckedChange={handleRedAlertToggle}
+                  disabled={updateMutation.isPending}
+                  data-testid="switch-red-alert-enabled"
+                />
+              </div>
 
-          <div className="flex items-start gap-2 p-3 rounded-md bg-emerald-50 dark:bg-emerald-950/30">
-            <MapPin className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-muted-foreground space-y-2">
-              <p><strong>When enabled:</strong></p>
-              <ul className="list-disc list-inside space-y-1 ml-1">
-                <li>Your what3words location will be included in all emergency alerts</li>
-                <li>Missed check-in alerts will include your last known location</li>
-                <li>Emergency button sends your location every 5 minutes until deactivated</li>
-              </ul>
-            </div>
-          </div>
+              <div className="flex items-start gap-2 p-3 rounded-md bg-emerald-50 dark:bg-emerald-950/30">
+                <MapPin className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <p><strong>When enabled:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 ml-1">
+                    <li>Your what3words location will be included in all emergency alerts</li>
+                    <li>Missed check-in alerts will include your last known location</li>
+                    <li>Emergency button sends your location every 5 minutes until deactivated</li>
+                  </ul>
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
-      <Card className={settings?.shakeToSOSEnabled ? "border-orange-500 dark:border-orange-600" : ""}>
+      <Card className={features && features.featureShakeToAlert !== true ? "opacity-75" : settings?.shakeToSOSEnabled ? "border-orange-500 dark:border-orange-600" : ""}>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Vibrate className={`h-4 w-4 ${settings?.shakeToSOSEnabled ? "text-orange-500" : "text-muted-foreground"}`} />
+            <Vibrate className={`h-4 w-4 ${settings?.shakeToSOSEnabled && features?.featureShakeToAlert === true ? "text-orange-500" : "text-muted-foreground"}`} />
             Shake-to-SOS
           </CardTitle>
           <CardDescription>
@@ -948,7 +960,9 @@ export default function Settings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!ShakeDetector.isSupported() ? (
+          {features && features.featureShakeToAlert !== true ? (
+            <UpgradeBanner feature="Shake-to-SOS" compact />
+          ) : !ShakeDetector.isSupported() ? (
             <div className="flex items-start gap-2 p-3 rounded-md bg-muted">
               <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
               <p className="text-sm text-muted-foreground">
@@ -980,7 +994,6 @@ export default function Settings() {
                         });
                         return;
                       }
-                      // Store permission in localStorage so the hook knows permission was granted
                       localStorage.setItem('motionPermission', 'granted');
                     }
                     updateMutation.mutate({ shakeToSOSEnabled: checked });
@@ -1006,10 +1019,10 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      <Card className={settings?.emergencyRecordingEnabled ? "border-red-500 dark:border-red-600" : ""}>
+      <Card className={features && features.featureEmergencyRecording !== true ? "opacity-75" : settings?.emergencyRecordingEnabled ? "border-red-500 dark:border-red-600" : ""}>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Video className={`h-4 w-4 ${settings?.emergencyRecordingEnabled ? "text-red-500" : "text-muted-foreground"}`} />
+            <Video className={`h-4 w-4 ${settings?.emergencyRecordingEnabled && features?.featureEmergencyRecording === true ? "text-red-500" : "text-muted-foreground"}`} />
             Emergency Recording
           </CardTitle>
           <CardDescription>
@@ -1017,47 +1030,53 @@ export default function Settings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="space-y-0.5">
-              <Label htmlFor="emergency-recording-enabled" className="font-medium">
-                Enable Emergency Recording
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Capture audio and video for documentation when you trigger an emergency alert
-              </p>
-            </div>
-            <Switch
-              id="emergency-recording-enabled"
-              checked={settings?.emergencyRecordingEnabled ?? false}
-              onCheckedChange={(checked) => {
-                updateMutation.mutate({ emergencyRecordingEnabled: checked });
-              }}
-              disabled={updateMutation.isPending}
-              data-testid="switch-emergency-recording-enabled"
-            />
-          </div>
+          {features && features.featureEmergencyRecording !== true ? (
+            <UpgradeBanner feature="Emergency Recording" compact />
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-0.5">
+                  <Label htmlFor="emergency-recording-enabled" className="font-medium">
+                    Enable Emergency Recording
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Capture audio and video for documentation when you trigger an emergency alert
+                  </p>
+                </div>
+                <Switch
+                  id="emergency-recording-enabled"
+                  checked={settings?.emergencyRecordingEnabled ?? false}
+                  onCheckedChange={(checked) => {
+                    updateMutation.mutate({ emergencyRecordingEnabled: checked });
+                  }}
+                  disabled={updateMutation.isPending}
+                  data-testid="switch-emergency-recording-enabled"
+                />
+              </div>
 
-          <div className="flex items-start gap-2 p-3 rounded-md bg-amber-50 dark:bg-amber-950/30">
-            <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-muted-foreground">
-              By enabling this feature, you consent to audio/video recording during emergencies for documentation purposes only. Recordings are not monitored in real time.
-            </p>
-          </div>
+              <div className="flex items-start gap-2 p-3 rounded-md bg-amber-50 dark:bg-amber-950/30">
+                <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  By enabling this feature, you consent to audio/video recording during emergencies for documentation purposes only. Recordings are not monitored in real time.
+                </p>
+              </div>
 
-          <div className="flex items-start gap-2 p-3 rounded-md bg-red-50 dark:bg-red-950/30">
-            <Video className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-muted-foreground space-y-2">
-              <p><strong>How it works:</strong></p>
-              <ul className="list-disc list-inside space-y-1 ml-1">
-                <li>When you trigger an emergency alert, your phone's camera and microphone activate</li>
-                <li>A visible indicator shows when recording is active</li>
-                <li>Recordings are stored securely and encrypted for documentation</li>
-                <li>Accessed only by authorised parties according to your settings</li>
-                <li>This is not monitored in real time</li>
-                <li>You maintain full control and can disable at any time</li>
-              </ul>
-            </div>
-          </div>
+              <div className="flex items-start gap-2 p-3 rounded-md bg-red-50 dark:bg-red-950/30">
+                <Video className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <p><strong>How it works:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 ml-1">
+                    <li>When you trigger an emergency alert, your phone's camera and microphone activate</li>
+                    <li>A visible indicator shows when recording is active</li>
+                    <li>Recordings are stored securely and encrypted for documentation</li>
+                    <li>Accessed only by authorised parties according to your settings</li>
+                    <li>This is not monitored in real time</li>
+                    <li>You maintain full control and can disable at any time</li>
+                  </ul>
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
