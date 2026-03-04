@@ -1143,7 +1143,8 @@ function formatAdditionalInfo(additionalInfoJson: string | null): string {
 export async function sendMissedCheckInAlert(
   contacts: Contact[],
   user: User,
-  additionalInfo?: string | null
+  additionalInfo?: string | null,
+  options?: { emailOnly?: boolean }
 ): Promise<{ emailsSent: number; emailsFailed: number; smsSent: number; smsFailed: number; whatsappSent: number; whatsappFailed: number }> {
   const isOrganization = user.accountType === "organization" && !!user.referenceId;
   const displayName = getUserDisplayName(user);
@@ -1279,8 +1280,8 @@ Please try to reach out to ensure their safety.
       console.error(`[ALERT] Failed to send email to ${contact.email}:`, error);
     }
     
-    // Send SMS if contact has a mobile phone
-    if (contact.phone && contact.phoneType === 'mobile') {
+    // Send SMS if contact has a mobile phone (skip for email-only plans like Basic)
+    if (contact.phone && contact.phoneType === 'mobile' && !options?.emailOnly) {
       const smsLocationInfo = what3wordsAddress 
         ? `Location: ///${what3wordsAddress}` 
         : (user.latitude && user.longitude 

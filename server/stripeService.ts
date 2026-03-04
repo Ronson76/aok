@@ -2,6 +2,103 @@ import { getUncachableStripeClient } from './stripeClient';
 import { db } from './db';
 import { sql } from 'drizzle-orm';
 
+export type PlanTier = "free" | "basic" | "essential" | "complete";
+
+export interface PlanFeatures {
+  tier: PlanTier;
+  maxActiveContacts: number;
+  checkInAlertChannels: ("email" | "sms" | "voice")[];
+  sosAlertChannels: ("email" | "sms" | "voice")[];
+  shakeToAlert: boolean;
+  continuousTracking: boolean;
+  emergencyRecording: boolean;
+  moodTracking: boolean;
+  petProtection: boolean;
+  digitalDocuments: boolean;
+  activities: boolean;
+  wellbeingAi: boolean;
+  pushNotifications: boolean;
+  offlineSmsBackup: boolean;
+}
+
+const PLAN_FEATURES: Record<PlanTier, PlanFeatures> = {
+  free: {
+    tier: "free",
+    maxActiveContacts: 2,
+    checkInAlertChannels: ["email"],
+    sosAlertChannels: ["email", "sms", "voice"],
+    shakeToAlert: false,
+    continuousTracking: false,
+    emergencyRecording: false,
+    moodTracking: false,
+    petProtection: false,
+    digitalDocuments: false,
+    activities: false,
+    wellbeingAi: false,
+    pushNotifications: false,
+    offlineSmsBackup: false,
+  },
+  basic: {
+    tier: "basic",
+    maxActiveContacts: 2,
+    checkInAlertChannels: ["email"],
+    sosAlertChannels: ["email", "sms", "voice"],
+    shakeToAlert: false,
+    continuousTracking: false,
+    emergencyRecording: false,
+    moodTracking: false,
+    petProtection: false,
+    digitalDocuments: false,
+    activities: false,
+    wellbeingAi: false,
+    pushNotifications: false,
+    offlineSmsBackup: false,
+  },
+  essential: {
+    tier: "essential",
+    maxActiveContacts: 5,
+    checkInAlertChannels: ["email", "sms", "voice"],
+    sosAlertChannels: ["email", "sms", "voice"],
+    shakeToAlert: true,
+    continuousTracking: true,
+    emergencyRecording: false,
+    moodTracking: true,
+    petProtection: true,
+    digitalDocuments: true,
+    activities: true,
+    wellbeingAi: false,
+    pushNotifications: true,
+    offlineSmsBackup: true,
+  },
+  complete: {
+    tier: "complete",
+    maxActiveContacts: 5,
+    checkInAlertChannels: ["email", "sms", "voice"],
+    sosAlertChannels: ["email", "sms", "voice"],
+    shakeToAlert: true,
+    continuousTracking: true,
+    emergencyRecording: true,
+    moodTracking: true,
+    petProtection: true,
+    digitalDocuments: true,
+    activities: true,
+    wellbeingAi: true,
+    pushNotifications: true,
+    offlineSmsBackup: true,
+  },
+};
+
+export function getPlanFeatures(tier: PlanTier): PlanFeatures {
+  return PLAN_FEATURES[tier];
+}
+
+export function tierFromAmount(unitAmount: number | null): PlanTier {
+  if (!unitAmount) return "free";
+  if (unitAmount <= 299) return "basic";
+  if (unitAmount <= 999) return "essential";
+  return "complete";
+}
+
 export class StripeService {
   async createCustomer(email: string, userId?: string) {
     const stripe = await getUncachableStripeClient();
@@ -140,6 +237,17 @@ export class StripeService {
       `
     );
     return result.rows[0] || null;
+  }
+
+  async getUserPlanTier(email: string): Promise<PlanTier> {
+    const subscription = await this.getSubscriptionByCustomerEmail(email) as any;
+    if (!subscription) return "free";
+    return tierFromAmount(subscription.unit_amount);
+  }
+
+  async getUserPlanFeatures(email: string): Promise<PlanFeatures> {
+    const tier = await this.getUserPlanTier(email);
+    return getPlanFeatures(tier);
   }
 
   async cancelSubscription(subscriptionId: string, cancelAtPeriodEnd: boolean = true) {

@@ -27,7 +27,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Mail, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall, ShieldAlert, Pencil, Clock, Eye, EyeOff } from "lucide-react";
+import { Plus, Mail, Trash2, Users, Loader2, UserPlus, Star, Smartphone, PhoneCall, ShieldAlert, Pencil, Clock, Eye, EyeOff, ArrowUpCircle } from "lucide-react";
+import { UpgradeBanner } from "@/components/upgrade-banner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useForm, useWatch } from "react-hook-form";
@@ -173,6 +174,12 @@ export default function Contacts() {
   const { data: contacts = [], isLoading } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
   });
+
+  const { data: planData } = useQuery<{ tier: string; features: { maxActiveContacts: number } }>({
+    queryKey: ["/api/plan"],
+  });
+  const maxActiveContacts = planData?.features?.maxActiveContacts ?? 5;
+  const contactsOverLimit = contacts.length > maxActiveContacts;
 
   const createMutation = useMutation({
     mutationFn: (data: InsertContact) => apiRequest("POST", "/api/contacts", data),
@@ -516,6 +523,10 @@ export default function Contacts() {
         Non-primary contacts only receive emergency SOS alerts. New contacts must confirm via email 
         before they become active.
       </p>
+
+      {contactsOverLimit && (
+        <UpgradeBanner feature={`More than ${maxActiveContacts} contacts`} compact />
+      )}
 
       {contacts.length > 0 && (
         <div className="flex items-center gap-2 text-sm">

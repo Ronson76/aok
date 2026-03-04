@@ -17,6 +17,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
 import type { Settings as SettingsType, EmergencyRecording } from "@shared/schema";
 import { TwoFactorSetup } from "@/components/two-factor-setup";
+import { UpgradeBanner } from "@/components/upgrade-banner";
 import { useState, useEffect, useCallback } from "react";
 
 // Allowed interval values: 1-48 hours
@@ -1222,6 +1223,8 @@ export default function Settings() {
       </Card>
 
       {!(user as any)?.isStaffMember && <SubscriptionCard />}
+
+      {!(user as any)?.isStaffMember && !isOrganization && <UpgradeBanner />}
 
       <Card>
         <CardHeader>

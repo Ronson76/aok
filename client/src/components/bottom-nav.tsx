@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, Users, History, Settings, Building2, TrendingUp, PawPrint, FileText, Heart, Lock, Shield, MapPin } from "lucide-react";
+import { Home, Users, History, Settings, Building2, TrendingUp, PawPrint, FileText, Heart, Lock, Shield, MapPin, ArrowUpCircle } from "lucide-react";
 
 import { useAuth } from "@/contexts/auth-context";
 import { useQuery } from "@tanstack/react-query";
@@ -35,11 +35,17 @@ const orgManagedClientNavItems = [
 
 interface FeatureFlags {
   isOrgClient: boolean;
+  planTier?: string;
   featureWellbeingAi: boolean;
   featureMoodTracking: boolean;
   featurePetProtection: boolean;
   featureDigitalWill: boolean;
   featureFitnessTracking: boolean;
+  featureShakeToAlert?: boolean;
+  featureContinuousTracking?: boolean;
+  featureEmergencyRecording?: boolean;
+  featurePushNotifications?: boolean;
+  maxActiveContacts?: number;
 }
 
 export function BottomNav() {
@@ -89,7 +95,7 @@ export function BottomNav() {
       path: "/app/errands", 
       icon: MapPin, 
       label: "Activities", 
-      enabled: isRegistrationComplete 
+      enabled: features?.featureFitnessTracking !== false && isRegistrationComplete 
     },
   ];
   
@@ -165,15 +171,17 @@ export function BottomNav() {
                   );
                 } else {
                   return (
-                    <DropdownMenuItem 
-                      key={feature.path} 
-                      disabled 
-                      className="flex items-center gap-3 text-muted-foreground opacity-50"
-                      data-testid={`nav-wellbeing-${feature.label.toLowerCase()}-disabled`}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{feature.label}</span>
-                      <Lock className="h-3 w-3 ml-auto" />
+                    <DropdownMenuItem key={feature.path} asChild>
+                      <Link
+                        href="/app/settings?upgrade=true"
+                        className="flex items-center gap-3 cursor-pointer text-muted-foreground opacity-60"
+                        onClick={() => setMoreOpen(false)}
+                        data-testid={`nav-wellbeing-${feature.label.toLowerCase()}-locked`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{feature.label}</span>
+                        <ArrowUpCircle className="h-3 w-3 ml-auto text-amber-500" />
+                      </Link>
                     </DropdownMenuItem>
                   );
                 }
@@ -196,17 +204,20 @@ export function BottomNav() {
                   </Link>
                 </DropdownMenuItem>
               ) : !isOrgManagedClient ? (
-                <DropdownMenuItem 
-                  disabled 
-                  className="flex items-center gap-3 opacity-50"
-                  data-testid="nav-wellbeing-ai-disabled"
-                >
-                  <div className="relative h-4 w-4 flex items-center justify-center">
-                    <div className="w-3 h-1 bg-muted-foreground absolute rounded-sm" />
-                    <div className="w-1 h-3 bg-muted-foreground absolute rounded-sm" />
-                  </div>
-                  <span>Wellbeing AI</span>
-                  <Lock className="h-3 w-3 ml-auto" />
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/app/settings?upgrade=true"
+                    className="flex items-center gap-3 cursor-pointer text-muted-foreground opacity-60"
+                    onClick={() => setMoreOpen(false)}
+                    data-testid="nav-wellbeing-ai-locked"
+                  >
+                    <div className="relative h-4 w-4 flex items-center justify-center">
+                      <div className="w-3 h-1 bg-muted-foreground absolute rounded-sm" />
+                      <div className="w-1 h-3 bg-muted-foreground absolute rounded-sm" />
+                    </div>
+                    <span>Wellbeing AI</span>
+                    <ArrowUpCircle className="h-3 w-3 ml-auto text-amber-500" />
+                  </Link>
                 </DropdownMenuItem>
               ) : null}
             </DropdownMenuContent>
