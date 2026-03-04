@@ -114,7 +114,7 @@ export class StripeService {
     successUrl: string,
     cancelUrl: string,
     customerEmail?: string,
-    trialDays: number = 7
+    trialDays: number = 0
   ) {
     const stripe = await getUncachableStripeClient();
     
@@ -124,11 +124,14 @@ export class StripeService {
       mode: 'subscription',
       success_url: successUrl,
       cancel_url: cancelUrl,
-      subscription_data: {
-        trial_period_days: trialDays,
-      },
       payment_method_collection: 'always',
     };
+
+    if (trialDays > 0) {
+      sessionParams.subscription_data = {
+        trial_period_days: trialDays,
+      };
+    }
 
     if (customerId) {
       sessionParams.customer = customerId;

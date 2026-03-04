@@ -470,7 +470,7 @@ export async function registerRoutes(
     email: z.string().email(),
     successUrl: z.string().url().optional(),
     cancelUrl: z.string().url().optional(),
-    trialDays: z.number().int().min(0).max(30).optional().default(7),
+    trialDays: z.number().int().min(0).max(30).optional().default(0),
   });
 
   app.post("/api/stripe/create-subscription-checkout", async (req, res) => {
