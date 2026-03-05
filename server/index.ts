@@ -17,6 +17,14 @@ app.set("trust proxy", 1);
 
 const httpServer = createServer(app);
 
+app.get("/api/heartbeat", (_req, res) => {
+  res.json({ ok: true, timestamp: Date.now(), serverTime: new Date().toISOString() });
+});
+
+app.get("/_health", (_req, res) => {
+  res.status(200).send("OK");
+});
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
