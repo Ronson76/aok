@@ -210,8 +210,8 @@ export default function Onboarding() {
   const getDisplayStep = () => {
     if (!isStaffFlow) return currentStep;
     if (currentStep <= 13) return currentStep;
-    if (currentStep === 16) return 14;
-    if (currentStep === 17) return 15;
+    if (currentStep === 15) return 14;
+    if (currentStep === 16) return 15;
     return currentStep;
   };
   const progress = Math.round((getDisplayStep() / effectiveSteps) * 100);
@@ -224,7 +224,7 @@ export default function Onboarding() {
 
   const handleNext = () => {
     if (isStaffFlow && currentStep === 13) {
-      setCurrentStep(16);
+      setCurrentStep(15);
       return;
     }
     if (currentStep < TOTAL_STEPS) {
@@ -233,7 +233,7 @@ export default function Onboarding() {
   };
 
   const handleBack = () => {
-    if (isStaffFlow && currentStep === 16) {
+    if (isStaffFlow && currentStep === 15) {
       setCurrentStep(13);
       return;
     }
@@ -296,9 +296,9 @@ export default function Onboarding() {
         );
       }
       case 14: return true;
-      case 15: return true;
-      case 16: return complianceConsents.fitness && complianceConsents.noReliance && complianceConsents.emergency;
-      case 17: return termsAccepted;
+      case 15: return complianceConsents.fitness && complianceConsents.noReliance && complianceConsents.emergency;
+      case 16: return termsAccepted;
+      case 17: return true;
       default: return true;
     }
   }, [currentStep, data, termsAccepted, complianceConsents]);
@@ -311,8 +311,8 @@ export default function Onboarding() {
         const target = event.target as HTMLElement;
         if (target.tagName === 'TEXTAREA') return;
         
-        // Check if we can proceed and not on payment or terms step
-        if (currentStep < 15 && canProceed()) {
+        // Check if we can proceed and not on terms or payment step
+        if (currentStep < 16 && canProceed()) {
           event.preventDefault();
           handleNext();
         }
@@ -339,9 +339,9 @@ export default function Onboarding() {
       case 12: return <Step13Time data={data} setData={setData} />;
       case 13: return <Step14ContactDetails data={data} setData={setData} />;
       case 14: return <Step15Plan data={data} setData={setData} />;
-      case 15: return <Step16Payment data={data} setData={setData} onNext={handleNext} />;
-      case 16: return <StepComplianceConsent consents={complianceConsents} setConsents={setComplianceConsents} />;
-      case 17: return <Step1Terms accepted={termsAccepted} setAccepted={setTermsAccepted} onComplete={handleComplete} />;
+      case 15: return <StepComplianceConsent consents={complianceConsents} setConsents={setComplianceConsents} />;
+      case 16: return <Step1Terms accepted={termsAccepted} setAccepted={setTermsAccepted} onComplete={isStaffFlow ? handleComplete : handleNext} />;
+      case 17: return <Step16Payment data={data} setData={setData} onNext={handleNext} onComplete={handleComplete} />;
       default: return null;
     }
   };
@@ -386,7 +386,7 @@ export default function Onboarding() {
               <ChevronLeft className="h-4 w-4" />
             </Button>
           )}
-          {currentStep < TOTAL_STEPS && currentStep !== 15 && (
+          {currentStep < TOTAL_STEPS && currentStep !== 16 && currentStep !== 17 && (
             <Button 
               onClick={handleNext}
               disabled={!canProceed()}
@@ -2266,7 +2266,7 @@ function Step15Plan({ data, setData }: { data: OnboardingData; setData: (d: Onbo
   );
 }
 
-function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setData: (d: OnboardingData) => void; onNext: () => void }) {
+function Step16Payment({ data, setData, onNext, onComplete }: { data: OnboardingData; setData: (d: OnboardingData) => void; onNext: () => void; onComplete: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const [testCode, setTestCode] = useState("");
   const [, setLocation] = useLocation();
@@ -2281,7 +2281,7 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
         const updatedData = { ...data, testMode: true };
         setData(updatedData);
         localStorage.setItem("onboardingData", JSON.stringify(updatedData));
-        onNext(); // Advance to Terms & Conditions step
+        onComplete();
         return;
       } else {
         toast({
@@ -2311,7 +2311,12 @@ function Step16Payment({ data, setData, onNext }: { data: OnboardingData; setDat
       const result = await response.json();
       
       if (result.url) {
-        localStorage.setItem("onboardingData", JSON.stringify(data));
+        const dataWithTerms = {
+          ...data,
+          termsAcceptedAt: new Date().toISOString(),
+          complianceConsentsAcceptedAt: new Date().toISOString(),
+        };
+        localStorage.setItem("onboardingData", JSON.stringify(dataWithTerms));
         window.location.href = result.url;
       } else {
         throw new Error("No checkout URL returned");
