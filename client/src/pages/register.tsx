@@ -154,6 +154,7 @@ export default function Register() {
   const referenceId = form.watch("referenceId");
   
   const [autoSubmitting, setAutoSubmitting] = useState(false);
+  const [autoSubmitFailed, setAutoSubmitFailed] = useState(false);
 
   // Pre-fill form from onboarding data
   useEffect(() => {
@@ -182,7 +183,7 @@ export default function Register() {
 
   // Auto-submit registration when coming from onboarding with complete data
   useEffect(() => {
-    if (fromOnboarding && onboardingData && !autoSubmitting && !registerMutation.isPending) {
+    if (fromOnboarding && onboardingData && !autoSubmitting && !autoSubmitFailed && !registerMutation.isPending) {
       const hasName = onboardingData.name?.trim();
       const hasEmail = onboardingData.email?.includes("@");
       const hasPassword = onboardingData.password?.length >= 8;
@@ -193,7 +194,7 @@ export default function Register() {
         }, 300);
       }
     }
-  }, [fromOnboarding, onboardingData, autoSubmitting]);
+  }, [fromOnboarding, onboardingData, autoSubmitting, autoSubmitFailed]);
   
   // Allow all users to register regardless of location permission
   // Location can be enabled later in settings if needed
@@ -431,8 +432,36 @@ export default function Register() {
         setLocation("/app");
       }, 100);
     },
-    onError: (error: Error) => {
+    onError: async (error: Error) => {
+      if (fromOnboarding && onboardingData && error.message?.includes("already exists")) {
+        try {
+          const loginRes = await apiRequest("POST", "/api/auth/login", {
+            email: onboardingData.email,
+            password: onboardingData.password,
+          });
+          if (loginRes.ok) {
+            try {
+              await apiRequest("POST", "/api/auth/accept-terms");
+            } catch (e) {
+              // terms may already be accepted
+            }
+            localStorage.removeItem("onboardingData");
+            queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+            toast({
+              title: "Welcome back",
+              description: "You're now signed in to your account.",
+            });
+            setTimeout(() => {
+              setLocation("/app");
+            }, 100);
+            return;
+          }
+        } catch (loginErr) {
+          // login failed, fall through to show error
+        }
+      }
       setAutoSubmitting(false);
+      setAutoSubmitFailed(true);
       toast({
         title: "Registration Failed",
         description: error.message,
@@ -487,7 +516,7 @@ export default function Register() {
     }
   };
 
-  if (autoSubmitting || (fromOnboarding && onboardingData && registerMutation.isPending)) {
+  if ((autoSubmitting && !autoSubmitFailed) || (fromOnboarding && onboardingData && registerMutation.isPending)) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <header className="container mx-auto px-4 py-4 flex items-center justify-center border-b">
