@@ -995,7 +995,7 @@ export default function Landing() {
             <CardFooter>
               <a href="/onboarding?plan=basic" className="w-full">
                 <Button className="w-full" variant="outline" size="lg" data-testid="button-start-trial-basic">
-                  Start Free Trial
+                  Get Started
                 </Button>
               </a>
             </CardFooter>

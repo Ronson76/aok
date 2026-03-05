@@ -150,11 +150,11 @@ export default function LandingIndividual() {
         { text: "Wellbeing AI (Exclusive)", icon: Sparkles },
         { text: "Activities tracker", icon: MapPin },
       ],
-      cta: "Start 7-Day Free Trial",
+      cta: "Get Started",
       ctaLink: "/onboarding",
       highlight: true,
-      badge: "7-Day Free Trial",
-      trialNote: `Try free for 7 days — then £${TIER2_MONTHLY_PRICE.toFixed(2)}/month. Cancel anytime.`,
+      badge: "Most Popular",
+      trialNote: `£${TIER2_MONTHLY_PRICE.toFixed(2)}/month. All features included. Cancel anytime.`,
     },
   ];
 
@@ -289,7 +289,7 @@ export default function LandingIndividual() {
                 <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 md:gap-6 text-xs md:text-base text-muted-foreground">
                   <div className="flex items-center gap-1 md:gap-2">
                     <CheckCircle className="h-3 w-3 md:h-5 md:w-5 text-green-500 flex-shrink-0" />
-                    <span className="md:font-medium">Free trial</span>
+                    <span className="md:font-medium">From £2.99/month</span>
                   </div>
                   <div className="flex items-center gap-1 md:gap-2">
                     <CheckCircle className="h-3 w-3 md:h-5 md:w-5 text-green-500 flex-shrink-0" />
@@ -748,7 +748,7 @@ export default function LandingIndividual() {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Start with a free trial. Choose the plan that works for you.
+              Choose the plan that works for you. No free trial — pay as you go.
             </p>
           </div>
 
@@ -869,9 +869,8 @@ export default function LandingIndividual() {
                 Is aok free to use?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground" data-testid="text-faq-answer-1">
-                Start with a 7-day free trial on the Complete Wellbeing plan — full access to every feature.
-                After your trial, it continues at £{TIER2_MONTHLY_PRICE.toFixed(2)} per month, or you can switch to Basic from £{BASIC_MONTHLY_PRICE.toFixed(2)} per month
-                or Essential at £{TIER1_MONTHLY_PRICE.toFixed(2)} per month. Cancel anytime.
+                aok has three plans: Basic at £{BASIC_MONTHLY_PRICE.toFixed(2)}/month, Essential at £{TIER1_MONTHLY_PRICE.toFixed(2)}/month, and Complete at £{TIER2_MONTHLY_PRICE.toFixed(2)}/month.
+                There is no free trial — you choose and pay for your plan when you sign up. You can upgrade or cancel anytime.
               </AccordionContent>
             </AccordionItem>
 

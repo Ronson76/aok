@@ -23,7 +23,7 @@ export default function SLA() {
           </CardHeader>
           <CardContent className="prose prose-sm dark:prose-invert max-w-none space-y-6">
             <p className="text-muted-foreground leading-relaxed font-medium">
-              This Service Level Agreement applies to paid subscription tiers only. No uptime guarantees are provided on free plans or during free trial periods.
+              This Service Level Agreement applies to all paid subscription tiers (Basic, Essential, and Complete).
             </p>
 
             <section>

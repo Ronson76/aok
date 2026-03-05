@@ -117,7 +117,7 @@ export default function Terms() {
                 aok offers subscription-based services with the following terms:
               </p>
               <ul className="list-disc pl-6 text-muted-foreground space-y-2 mt-2">
-                <li>A 7-day free trial is available for new users</li>
+                <li>Three subscription plans are available: Basic (£2.99/month), Essential (£9.99/month), and Complete (£16.99/month). There is no free trial</li>
                 <li>Subscriptions automatically renew unless cancelled</li>
                 <li>You may cancel your subscription at any time through your account settings</li>
                 <li>Refunds are handled in accordance with applicable consumer protection laws</li>
