@@ -271,6 +271,7 @@ function AppRoutes() {
 function AppLayout() {
   const { isAuthenticated, user, logout } = useAuth();
   const [location, setLocation] = useLocation();
+  const isOrganization = user?.accountType === "organization";
   const [alarmPlaying, setAlarmPlaying] = useState(false);
   const [showQRDialog, setShowQRDialog] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
