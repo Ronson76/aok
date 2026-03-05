@@ -53,7 +53,7 @@ const DEMO_STEPS_INDIVIDUAL = [
   {
     id: "contacts",
     title: "Add Emergency Contacts",
-    description: "Add the people you trust most. They'll receive alerts via email, SMS, and automated phone calls in an emergency.",
+    description: "Add the people you trust most. Depending on your plan, they'll receive alerts via email (Basic), or email, SMS, and automated phone calls (Essential & Complete).",
     phone: {
       bg: "bg-card",
       content: (
@@ -106,7 +106,7 @@ const DEMO_STEPS_INDIVIDUAL = [
             </div>
             <div className="h-6 w-px bg-gray-700" />
             <div className="text-center">
-              <p className="text-lg font-bold text-green-400">3</p>
+              <p className="text-lg font-bold text-green-400">5</p>
               <p className="text-[9px]">Contacts</p>
             </div>
           </div>
@@ -117,7 +117,7 @@ const DEMO_STEPS_INDIVIDUAL = [
   {
     id: "emergency",
     title: "Emergency? We've Got You",
-    description: "Hit the emergency button or just shake your phone. Your GPS location is instantly shared with all contacts via email, SMS, and phone calls.",
+    description: "Hit the emergency button or shake your phone (Essential+). Your GPS location is instantly shared with all contacts via email, SMS, and phone calls. SOS alerts always use all channels on every plan.",
     phone: {
       bg: "bg-black dark:bg-black",
       content: (
@@ -131,7 +131,7 @@ const DEMO_STEPS_INDIVIDUAL = [
             <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full animate-ping" />
           </div>
           <p className="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">Emergency Alert Active</p>
-          <p className="text-gray-500 text-[10px] text-center">Alerting 3 contacts...</p>
+          <p className="text-gray-500 text-[10px] text-center">Alerting your contacts...</p>
           <div className="mt-3 w-full space-y-1.5">
             <div className="flex items-center gap-2 px-2 py-1 bg-red-900/30 rounded">
               <Mail className="h-3 w-3 text-red-400" />
@@ -155,7 +155,7 @@ const DEMO_STEPS_INDIVIDUAL = [
   {
     id: "wellness",
     title: "Track Your Wellbeing",
-    description: "Log your mood, chat with the AI wellbeing assistant, and store important documents -  all in one place.",
+    description: "Log your mood, chat with the AI wellbeing assistant, and store important documents — all in one place. Wellness features are available on the Complete plan (£16.99/month).",
     phone: {
       bg: "bg-card",
       content: (
@@ -1070,7 +1070,7 @@ export default function Demo() {
           <p className="text-green-100 mb-8 max-w-lg mx-auto">
             {isOrgOrLoneWorker
               ? "Contact us to discuss your organisation's requirements. We'll build a package tailored to your needs."
-              : "Try aok free for 7 days. No payment details required. Set up in under 2 minutes."
+              : "Plans start from just £2.99/month. Choose Basic, Essential, or Complete — set up in under 2 minutes."
             }
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -1083,8 +1083,8 @@ export default function Demo() {
               </a>
             ) : (
               <Link href="/onboarding">
-                <Button size="lg" variant="secondary" className="w-full sm:w-auto gap-2" data-testid="button-demo-start-trial">
-                  Start Free Trial
+                <Button size="lg" variant="secondary" className="w-full sm:w-auto gap-2" data-testid="button-demo-get-started-cta">
+                  Get Started
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </Link>

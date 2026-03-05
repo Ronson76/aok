@@ -5221,7 +5221,7 @@ export default function OrganizationDashboard() {
             <DialogTitle>Emergency Contacts</DialogTitle>
             <DialogDescription>
               Manage emergency contacts for {emergencyContactsClient?.nickname || emergencyContactsClient?.clientName || `Client #${emergencyContactsClient?.clientOrdinal}`}. 
-              You can add up to 3 contacts who will be notified in emergencies.
+              You can add up to 5 contacts who will be notified in emergencies.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4 max-h-[50vh] overflow-y-auto">

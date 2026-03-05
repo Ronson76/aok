@@ -128,7 +128,7 @@ export default function AdminWorkflows() {
           <StepBox icon={CheckCircle} label="Account Created" sublabel="User record stored in database" />
           <StepBox icon={Users} label="Add Emergency Contacts" sublabel="Name, email, phone, relationship" />
           <StepBox icon={Mail} label="Contact Confirmation Emails" sublabel="10-minute expiry window via Resend" badge="Resend" />
-          <StepBox icon={CreditCard} label="Stripe Subscription" sublabel="7-day free trial, then monthly billing" badge="Stripe" />
+          <StepBox icon={CreditCard} label="Stripe Subscription" sublabel="Choose plan (Basic/Essential/Complete), monthly billing" badge="Stripe" />
         </WorkflowSection>
 
         <FlowArrow />
@@ -234,7 +234,7 @@ export default function AdminWorkflows() {
 
         <WorkflowSection icon={CreditCard} title="Subscription & Payment" description="Stripe billing and subscription management" color="purple">
           <StepBox icon={CreditCard} label="Checkout" sublabel="Stripe Checkout with Apple Pay / Google Pay" badge="Stripe" />
-          <StepBox icon={Clock} label="7-Day Free Trial" sublabel="Full access during trial period" />
+          <StepBox icon={Clock} label="Plan Selection" sublabel="Basic £2.99 / Essential £9.99 / Complete £16.99" />
           <StepBox icon={CreditCard} label="Monthly Billing" sublabel="Automatic recurring charges" badge="Stripe" />
           <StepBox icon={RefreshCw} label="Cancel / Reactivate" sublabel="Self-service subscription management" />
           <StepBox icon={Layers} label="Webhook Processing" sublabel="Real-time payment event handling" badge="Stripe" />

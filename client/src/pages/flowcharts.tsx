@@ -82,7 +82,7 @@ function IndividualFlowchart() {
         <FlowArrow label="After 5 minutes" />
         <FlowStep icon={MessageSquare} title="SMS check-in link sent" description="A text message with a one-tap check-in link is sent to the user's mobile number. No login needed." variant="action" />
         <FlowArrow label="After 5 minutes overdue" />
-        <FlowStep icon={Mail} title="Email + SMS to primary contacts/carers" description="Email and SMS alerts are sent to the user's primary contacts/carers (up to 3) with the user's name and overdue status. Non-primary contacts are not notified for missed check-ins." variant="alert" />
+        <FlowStep icon={Mail} title="Email + SMS to primary contacts/carers" description="Email and SMS alerts are sent to the user's primary contacts/carers (up to 2 on Basic, up to 5 on Essential/Complete) with the user's name and overdue status. Basic plan users receive email alerts only. Non-primary contacts are not notified for missed check-ins." variant="alert" />
         <FlowArrow label="Every 15 minutes" />
         <FlowStep icon={Bell} title="Repeat alerts (Email + SMS)" description="Email and SMS alerts repeat to primary contacts/carers every 15 minutes until the user checks in. No voice calls for missed check-ins." variant="alert" />
         <FlowArrow label="User checks in" />
@@ -133,7 +133,7 @@ function OrganisationFlowchart() {
         <FlowArrow label="After 5 minutes" />
         <FlowStep icon={MessageSquare} title="SMS check-in link sent" description="A text message with a one-tap check-in link is sent to the client's mobile." variant="action" />
         <FlowArrow label="After 5 minutes overdue" />
-        <FlowStep icon={Mail} title="Email + SMS to primary contacts/carers" description="Email and SMS alerts sent to the client's primary contacts/carers (up to 3). Non-primary contacts are not notified for missed check-ins. No voice calls." variant="alert" />
+        <FlowStep icon={Mail} title="Email + SMS to primary contacts/carers" description="Email and SMS alerts sent to the client's primary contacts/carers (up to 2 on Basic, up to 5 on Essential/Complete). Non-primary contacts are not notified for missed check-ins. No voice calls." variant="alert" />
         <FlowArrow label="Every 15 minutes" />
         <FlowStep icon={Bell} title="Repeat alerts (Email + SMS)" description="Email and SMS alerts repeat to primary contacts/carers every 15 minutes until the client checks in." variant="alert" />
         <FlowArrow />
@@ -316,7 +316,7 @@ function ActivityFlowchart() {
 
 function NotificationMatrix() {
   const rows = [
-    { section: "Primary Contacts/Carers (up to 3)", items: [
+    { section: "Primary Contacts/Carers (up to 2 on Basic, up to 5 on Essential/Complete)", items: [
       { type: "Successful Check-in", email: true, sms: false, voice: false },
       { type: "Missed Check-in", email: true, sms: true, voice: false },
       { type: "Emergency SOS", email: true, sms: true, voice: true },
@@ -333,7 +333,7 @@ function NotificationMatrix() {
       <div>
         <h3 className="text-base font-semibold mb-2 text-center">Who is contacted in an emergency?</h3>
         <p className="text-sm text-muted-foreground text-center mb-6">
-          You can designate up to 3 primary contacts/carers who receive more frequent updates. Here's how notifications work:
+          You can designate primary contacts/carers (up to 2 on Basic, up to 5 on Essential/Complete) who receive more frequent updates. Here's how notifications work:
         </p>
       </div>
 

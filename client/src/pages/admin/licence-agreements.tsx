@@ -782,7 +782,7 @@ export default function AdminLicenceAgreements() {
             Paid Tiers Only
           </h2>
           <p className="text-sm text-muted-foreground mb-3">
-            The SLA applies to paid subscription tiers only. No uptime guarantees are provided on free plans or during free trial periods.
+            The SLA applies to all paid subscription tiers (Basic, Essential, and Complete).
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <DocumentCard
@@ -803,7 +803,7 @@ export default function AdminLicenceAgreements() {
                 <div>
                   <p className="text-sm font-medium">Important: Never promise uptime on free plans</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    The SLA with 99.9% uptime target and service credits only applies to paying customers. Free tier users and users within their 7-day trial period are explicitly excluded from any uptime guarantees or service credit remedies.
+                    The SLA with 99.9% uptime target and service credits applies to all paying customers on Basic, Essential, or Complete plans.
                   </p>
                 </div>
               </div>
