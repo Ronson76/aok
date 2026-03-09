@@ -22,7 +22,6 @@ const rewardTypes = [
   "Supermarket vouchers",
   "Travel cards",
   "Phone credit",
-  "Council tax credit",
   "Rent discount after milestones",
 ];
 
