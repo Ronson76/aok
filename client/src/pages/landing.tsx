@@ -439,6 +439,26 @@ export default function Landing() {
                 </p>
               </CardContent>
             </Card>
+
+            <Link href="/rentscore">
+              <Card className="border-0 shadow-lg ring-2 ring-emerald-500/20 hover:ring-emerald-500/40 transition-all cursor-pointer" data-testid="card-rentscore">
+                <CardContent className="pt-6">
+                  <div className="flex items-start justify-between gap-2 mb-4">
+                    <div className="rounded-full bg-emerald-500/10 p-3 w-fit">
+                      <TrendingUp className="h-6 w-6 text-emerald-500" />
+                    </div>
+                    <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 hover:bg-emerald-100">New</Badge>
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">RentScore — Rewarding Responsible Tenancy</h3>
+                  <p className="text-muted-foreground text-sm mb-3">
+                    A digital trust and reward system for tenants paying rent reliably. Generates compliance data, behavioural insight, and tenant engagement metrics for housing associations and councils.
+                  </p>
+                  <span className="text-emerald-600 dark:text-emerald-400 text-sm font-medium inline-flex items-center gap-1">
+                    Learn More <ChevronRight className="h-4 w-4" />
+                  </span>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         </div>
       </section>
