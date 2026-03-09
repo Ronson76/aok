@@ -99,6 +99,7 @@ import LoneWorker from "@/pages/lone-worker";
 import Errands from "@/pages/errands";
 import Demo from "@/pages/demo";
 import DemoOTF from "@/pages/demo-otf";
+import RentScore from "@/pages/rentscore";
 import Security from "@/pages/security";
 import FunderReady from "@/pages/funder-ready";
 import { TermsModal } from "@/components/terms-modal";
@@ -762,6 +763,10 @@ function Router() {
 
   if (location === "/demo/otf") {
     return <DemoOTF />;
+  }
+
+  if (location === "/rentscore") {
+    return <RentScore />;
   }
 
   if (location === "/demo") {
