@@ -4837,5 +4837,40 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/whatsapp/incoming", async (req, res) => {
+    try {
+      const { From, Body, MessageSid } = req.body;
+      console.log(`[WHATSAPP INCOMING] From: ${From}, SID: ${MessageSid}, Body: ${Body?.substring(0, 100)}`);
+
+      const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Message>Thank you for your message. This is an automated aok safety system. If you need emergency help, please call 999.</Message></Response>`;
+      res.type('text/xml').send(twiml);
+    } catch (error) {
+      console.error("[WHATSAPP INCOMING] Error:", error);
+      res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+    }
+  });
+
+  app.post("/api/whatsapp/status", async (req, res) => {
+    try {
+      const { MessageSid, MessageStatus, To, ErrorCode, ErrorMessage } = req.body;
+      console.log(`[WHATSAPP STATUS] SID: ${MessageSid}, Status: ${MessageStatus}, To: ${To}${ErrorCode ? `, Error: ${ErrorCode} - ${ErrorMessage}` : ''}`);
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("[WHATSAPP STATUS] Error:", error);
+      res.sendStatus(200);
+    }
+  });
+
+  app.post("/api/whatsapp/fallback", async (req, res) => {
+    try {
+      const { From, Body, MessageSid, ErrorCode, ErrorMessage } = req.body;
+      console.error(`[WHATSAPP FALLBACK] From: ${From}, SID: ${MessageSid}, Error: ${ErrorCode} - ${ErrorMessage}`);
+      res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+    } catch (error) {
+      console.error("[WHATSAPP FALLBACK] Error:", error);
+      res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+    }
+  });
+
   return httpServer;
 }
