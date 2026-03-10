@@ -42,8 +42,9 @@ Database rule: When clearing or modifying data, it must be done via the applicat
 - **Notification Health Checks**: `/api/admin/notifications/health` endpoint for monitoring external service status.
 
 ### Core Features
-- **Check-in & Alert System**: User-defined check-in frequency, automated email and voice call alerts to emergency contacts.
-- **Emergency Features**: Emergency alert button with GPS, shake-to-SOS, offline emergency overlay, optional emergency recording.
+- **Check-in & Alert System**: User-defined check-in frequency, automated email, SMS, WhatsApp, and voice call alerts to emergency contacts.
+- **Emergency Features**: Emergency alert button with GPS, shake-to-SOS, offline emergency overlay, optional emergency recording. WhatsApp messaging for all alert types (check-in, emergency, activity overdue, lone worker, emergency confirmation/ended).
+- **WhatsApp Integration**: Twilio WhatsApp Business API with webhook endpoints (`/api/whatsapp/incoming`, `/api/whatsapp/status`, `/api/whatsapp/fallback`). WhatsApp messages sent alongside SMS for: missed check-in alerts, successful check-in notifications, emergency alerts, activity overdue alerts, lone worker alerts, emergency confirmation requests, and emergency ended notifications.
 - **Wellness Features**: Mood/Wellness Tracking, Pet Protection profiles, Important Document Storage, GPS Fitness Tracking, Route Planning, Activities Tracker, AI chat for wellbeing.
 - **Compliance**: Non-skippable onboarding with legal disclaimers and consent logging.
 - **Admin Dashboard**: Role-based access, user/organization management, license agreements, revenue tracking, feature permissions, security audit logging. Enterprise feature toggles (Organisation Dashboard, Assurance Dashboard, API Access) with optional expiry dates per organisation. Organisation-level subscription expiry date with 28-day warning alerts on the org dashboard.

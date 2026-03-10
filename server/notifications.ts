@@ -1297,6 +1297,15 @@ Please try to reach out to ensure their safety.
         smsFailed++;
         console.error(`[ALERT] Failed to send SMS to ${contact.phone}:`, smsResult.error);
       }
+
+      const whatsappResult = await sendWhatsApp(contact.phone, smsBody);
+      if (whatsappResult.success) {
+        whatsappSent++;
+        console.log(`[ALERT] WhatsApp sent to primary contact ${contact.name} (${contact.phone})`);
+      } else {
+        whatsappFailed++;
+        console.error(`[ALERT] Failed to send WhatsApp to ${contact.phone}:`, whatsappResult.error);
+      }
     }
   }
 
@@ -1353,11 +1362,22 @@ This is an automated notification confirming their safety. No action is required
   try {
     await sendEmail(primaryContact.email, subject, body);
     console.log(`[CHECK-IN NOTIFICATION] Sent to primary contact ${primaryContact.name} (${primaryContact.email})`);
-    return true;
   } catch (error) {
     console.error(`[CHECK-IN NOTIFICATION] Failed to send to ${primaryContact.email}:`, error);
     return false;
   }
+
+  if (primaryContact.phone && primaryContact.phoneType === 'mobile') {
+    const whatsappBody = `aok: ${identifier} has checked in safely at ${checkInTime}.${locationInfo ? ` ${locationInfo.trim()}` : ''} No action required.`;
+    const whatsappResult = await sendWhatsApp(primaryContact.phone, whatsappBody);
+    if (whatsappResult.success) {
+      console.log(`[CHECK-IN NOTIFICATION] WhatsApp sent to primary contact ${primaryContact.name} (${primaryContact.phone})`);
+    } else {
+      console.error(`[CHECK-IN NOTIFICATION] Failed to send WhatsApp to ${primaryContact.phone}:`, whatsappResult.error);
+    }
+  }
+
+  return true;
 }
 
 export async function sendSchedulePreferencesNotification(
@@ -1795,6 +1815,13 @@ export async function sendLoneWorkerMissedCheckInAlert(
       console.error(`[LW MISSED CHECK-IN] Failed to send SMS to ${supervisorPhone}:`, smsResult.error);
     }
 
+    const whatsappResult = await sendWhatsApp(supervisorPhone, smsBody);
+    if (whatsappResult.success) {
+      console.log(`[LW MISSED CHECK-IN] WhatsApp sent to supervisor (${supervisorPhone})`);
+    } else {
+      console.error(`[LW MISSED CHECK-IN] Failed to send WhatsApp to ${supervisorPhone}:`, whatsappResult.error);
+    }
+
     const voiceMessage = `This is an urgent alert from A O K. You are receiving this call because you are the designated supervisor for ${workerName}. ${workerName} has missed their scheduled check-in during a ${jobType} shift. The check-in window plus grace period has now passed without a response. As their supervisor, please try to contact them immediately. If you cannot reach them, consider contacting emergency services.`;
 
     const callResult = await makeVoiceCall(supervisorPhone, voiceMessage);
@@ -1959,6 +1986,13 @@ If you cannot reach ${displayName}, DO NOT confirm. Emergency alerts will contin
         smsFailed++;
         console.error(`[CONFIRM-REQUEST] Failed to send SMS to ${contact.phone}:`, smsResult.error);
       }
+
+      const whatsappResult = await sendWhatsApp(contact.phone, smsMessage);
+      if (whatsappResult.success) {
+        console.log(`[CONFIRM-REQUEST] WhatsApp sent to ${contact.phone}`);
+      } else {
+        console.error(`[CONFIRM-REQUEST] Failed to send WhatsApp to ${contact.phone}:`, whatsappResult.error);
+      }
     }
   }
 
@@ -2052,6 +2086,13 @@ No further action is required.
       } else {
         smsFailed++;
         console.error(`[EMERGENCY-ENDED] Failed to send SMS to ${contact.phone}:`, smsResult.error);
+      }
+
+      const whatsappResult = await sendWhatsApp(contact.phone, smsMessage);
+      if (whatsappResult.success) {
+        console.log(`[EMERGENCY-ENDED] WhatsApp sent to ${contact.phone}`);
+      } else {
+        console.error(`[EMERGENCY-ENDED] Failed to send WhatsApp to ${contact.phone}:`, whatsappResult.error);
       }
     }
   }
