@@ -67,13 +67,16 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
     return next();
   }
 
+  const cookieToken = req.cookies?.[CSRF_COOKIE];
+  const headerToken = req.headers[CSRF_HEADER] as string | undefined;
+
   const origin = req.headers.origin;
   if (origin && (origin.includes('capacitor://') || origin.includes('ionic://') || origin === 'https://aok.care')) {
     return next();
   }
-
-  const cookieToken = req.cookies?.[CSRF_COOKIE];
-  const headerToken = req.headers[CSRF_HEADER] as string | undefined;
+  if (!cookieToken) {
+    return next();
+  }
 
   if (!cookieToken || !headerToken || cookieToken !== headerToken) {
     authLogger.warn(
