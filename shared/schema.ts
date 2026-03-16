@@ -2322,6 +2322,45 @@ export const insertHomelessInteractionSchema = createInsertSchema(homelessIntera
 export type InsertHomelessInteraction = z.infer<typeof insertHomelessInteractionSchema>;
 export type HomelessInteraction = typeof homelessInteractions.$inferSelect;
 
+export const supportSignalLevels = ["im_ok", "need_support", "urgent_help"] as const;
+export type SupportSignalLevel = typeof supportSignalLevels[number];
+
+export const supportSignalStatuses = ["active", "acknowledged", "resolved"] as const;
+export type SupportSignalStatus = typeof supportSignalStatuses[number];
+
+export const supportSignals = pgTable("support_signals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  orgClientId: varchar("org_client_id").notNull().references(() => organizationClients.id, { onDelete: "cascade" }),
+  clientUserId: varchar("client_user_id").references(() => users.id, { onDelete: "set null" }),
+  level: text("level").notNull().$type<SupportSignalLevel>(),
+  notes: text("notes"),
+  preferStaffVisit: boolean("prefer_staff_visit").notNull().default(false),
+  requestLaterCheckin: boolean("request_later_checkin").notNull().default(false),
+  status: text("status").notNull().$type<SupportSignalStatus>().default("active"),
+  respondedByMemberId: varchar("responded_by_member_id").references(() => organizationMembers.id, { onDelete: "set null" }),
+  respondedByName: text("responded_by_name"),
+  respondedAt: timestamp("responded_at"),
+  resolvedAt: timestamp("resolved_at"),
+  escalationLevel: integer("escalation_level").notNull().default(0),
+  lastEscalatedAt: timestamp("last_escalated_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertSupportSignalSchema = createInsertSchema(supportSignals).omit({
+  id: true,
+  createdAt: true,
+  status: true,
+  respondedByMemberId: true,
+  respondedByName: true,
+  respondedAt: true,
+  resolvedAt: true,
+  escalationLevel: true,
+  lastEscalatedAt: true,
+});
+export type InsertSupportSignal = z.infer<typeof insertSupportSignalSchema>;
+export type SupportSignal = typeof supportSignals.$inferSelect;
+
 export const frontlineCategories = [
   "wellbeing_check", "support_conversation", "safeguarding_concern",
   "medication", "move_on_planning", "housing_support", "general_contact",

@@ -72,6 +72,7 @@ import FundingDashboard from "@/pages/org/funding-dashboard";
 import OrgKiosk from "@/pages/org/kiosk";
 import OrgDataCapture from "@/pages/org/data-capture";
 import OrgFrontline from "@/pages/org/frontline";
+import SupportSignal from "@/pages/support-signal";
 import PublicDataCapture from "@/pages/public-data-capture";
 import AdminTeam from "@/pages/admin/team";
 import AdminInvite from "@/pages/admin/invite";
@@ -263,6 +264,7 @@ function AppRoutes() {
       <Route path="/app/mood" component={() => <ProtectedRoute component={Mood} />} />
       <Route path="/app/pets" component={() => <ProtectedRoute component={Pets} />} />
       <Route path="/app/documents" component={() => <ProtectedRoute component={Documents} />} />
+      <Route path="/app/support-signal" component={() => <ProtectedRoute component={SupportSignal} />} />
 
       <Route path="/app/errands" component={() => <ProtectedRoute component={Errands} />} />
       <Route path="/app/wellbeing-ai" component={() => <ProtectedRoute component={WellbeingAI} />} />

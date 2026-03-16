@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, Users, History, Settings, Building2, TrendingUp, PawPrint, FileText, Heart, Lock, Shield, MapPin, ArrowUpCircle } from "lucide-react";
+import { Home, Users, History, Settings, Building2, TrendingUp, PawPrint, FileText, Heart, Lock, Shield, MapPin, ArrowUpCircle, HandHeart } from "lucide-react";
 
 import { useAuth } from "@/contexts/auth-context";
 import { useQuery } from "@tanstack/react-query";
@@ -31,6 +31,7 @@ const staffNavItems = [
 
 const orgManagedClientNavItems = [
   { path: "/app", icon: Home, label: "Home" },
+  { path: "/app/support-signal", icon: HandHeart, label: "Signal" },
 ];
 
 interface FeatureFlags {

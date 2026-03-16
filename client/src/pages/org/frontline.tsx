@@ -90,6 +90,13 @@ export default function OrgFrontline() {
     enabled: activeTab === "home",
   });
 
+  const signalsQuery = useQuery<any[]>({
+    queryKey: ["/api/org-member/frontline/signals", "active"],
+    queryFn: () => apiRequest("GET", "/api/org-member/frontline/signals?status=active").then(r => r.json()),
+    enabled: activeTab === "home",
+    refetchInterval: 15000,
+  });
+
   const clientsQuery = useQuery<any[]>({
     queryKey: ["/api/org-member/frontline/clients"],
     enabled: activeTab === "residents" || activeTab === "quicklog",
@@ -104,6 +111,30 @@ export default function OrgFrontline() {
   const managerQuery = useQuery<any>({
     queryKey: ["/api/org-member/frontline/manager-stats"],
     enabled: activeTab === "manager" && !!isManager,
+  });
+
+  const respondSignalMutation = useMutation({
+    mutationFn: async (signalId: string) => {
+      const res = await apiRequest("POST", `/api/org-member/frontline/signals/${signalId}/respond`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Responding", description: "You've acknowledged the signal" });
+      queryClient.invalidateQueries({ queryKey: ["/api/org-member/frontline/signals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org-member/frontline/dashboard"] });
+    },
+  });
+
+  const resolveSignalMutation = useMutation({
+    mutationFn: async ({ signalId, notes }: { signalId: string; notes?: string }) => {
+      const res = await apiRequest("POST", `/api/org-member/frontline/signals/${signalId}/resolve`, { notes });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Resolved", description: "Signal has been resolved" });
+      queryClient.invalidateQueries({ queryKey: ["/api/org-member/frontline/signals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org-member/frontline/dashboard"] });
+    },
   });
 
   const quickLogMutation = useMutation({
@@ -202,6 +233,7 @@ export default function OrgFrontline() {
             <HomeTab
               data={dashboardQuery.data}
               isLoading={dashboardQuery.isLoading}
+              signals={signalsQuery.data || []}
               onSelectClient={(client: any) => {
                 setSelectedClient(client);
                 setActiveTab("timeline");
@@ -210,6 +242,8 @@ export default function OrgFrontline() {
                 setQuickLogClient(client);
                 setActiveTab("quicklog");
               }}
+              onRespondSignal={(id: string) => respondSignalMutation.mutate(id)}
+              onResolveSignal={(id: string) => resolveSignalMutation.mutate({ signalId: id })}
             />
           </TabsContent>
 
@@ -276,12 +310,66 @@ export default function OrgFrontline() {
   );
 }
 
-function HomeTab({ data, isLoading, onSelectClient, onQuickLog }: any) {
+function HomeTab({ data, isLoading, signals, onSelectClient, onQuickLog, onRespondSignal, onResolveSignal }: any) {
   if (isLoading) return <LoadingState />;
   if (!data) return <EmptyState message="No dashboard data available" />;
 
+  const SIGNAL_LABELS: Record<string, { label: string; color: string }> = {
+    need_support: { label: "Needs Support", color: "border-amber-400 bg-amber-50 dark:bg-amber-900/20" },
+    urgent_help: { label: "URGENT HELP", color: "border-red-400 bg-red-50 dark:bg-red-900/20" },
+  };
+
   return (
     <div className="space-y-6">
+      {signals && signals.length > 0 && (
+        <Card className="border-2 border-red-400 shadow-lg animate-in fade-in">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-bold flex items-center gap-2 text-red-700 dark:text-red-400">
+              <Siren className="h-5 w-5 animate-pulse" />
+              Active Support Signals ({signals.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {signals.map((signal: any) => {
+                const config = SIGNAL_LABELS[signal.level] || SIGNAL_LABELS.need_support;
+                return (
+                  <div key={signal.id} className={`p-3 rounded-lg border ${config.color}`} data-testid={`signal-alert-${signal.id}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant={signal.level === "urgent_help" ? "destructive" : "secondary"} className="text-xs">
+                            {config.label}
+                          </Badge>
+                          {signal.escalationLevel > 0 && (
+                            <Badge variant="outline" className="text-xs border-red-300">Escalation {signal.escalationLevel}</Badge>
+                          )}
+                        </div>
+                        <p className="font-semibold text-sm">{signal.clientName || "Unknown"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {signal.referenceCode} · {formatTime(signal.createdAt)}
+                          {signal.preferStaffVisit && " · Prefers staff visit"}
+                          {signal.requestLaterCheckin && " · Requests later check-in"}
+                        </p>
+                        {signal.notes && <p className="text-xs mt-1 italic">"{signal.notes}"</p>}
+                      </div>
+                      <div className="flex gap-1 flex-shrink-0">
+                        <Button size="sm" variant="default" onClick={() => onRespondSignal(signal.id)} data-testid={`button-respond-signal-${signal.id}`}>
+                          Responding
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => onResolveSignal(signal.id)} data-testid={`button-resolve-signal-${signal.id}`}>
+                          Resolve
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard icon={Zap} label="Today" value={data.stats.todayInteractions} color="text-blue-600" />
         <StatCard icon={Activity} label="This Week" value={data.stats.weekInteractions} color="text-green-600" />
@@ -616,6 +704,7 @@ function TimelineItem({ item }: { item: any }) {
     data_capture: { label: "Data Capture", icon: ClipboardList, bgColor: "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300" },
     safeguarding: { label: "Safeguarding", icon: Shield, bgColor: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300" },
     kiosk_checkin: { label: "Kiosk Check-in", icon: CheckCircle, bgColor: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300" },
+    support_signal: { label: "Support Signal", icon: Heart, bgColor: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300" },
   };
 
   const config = typeConfig[item.type] || typeConfig.quick_log;
@@ -638,6 +727,7 @@ function TimelineItem({ item }: { item: any }) {
                   {item.type === "quick_log" ? (categoryConfig?.label || item.category) :
                    item.type === "data_capture" ? `${item.category || "Interaction"} (${item.riskTier || "N/A"} risk)` :
                    item.type === "safeguarding" ? `${item.category || "Concern"} — ${item.status}` :
+                   item.type === "support_signal" ? `Support Signal: ${item.category === "urgent_help" ? "Urgent Help" : item.category === "need_support" ? "Needs Support" : "I'm OK"}${item.respondedByName ? ` — responded by ${item.respondedByName}` : ""}` :
                    "Kiosk Check-in"}
                 </span>
               </div>
