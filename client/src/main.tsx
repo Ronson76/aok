@@ -6,6 +6,19 @@ import './lib/i18n';
 
 if (isNative()) {
   initializeNativeApp();
+
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+    let url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    if (url.startsWith('/')) {
+      url = `https://aok.care${url}`;
+    }
+    const newInit = { ...init };
+    if (newInit.credentials === 'include') {
+      newInit.credentials = 'omit';
+    }
+    return originalFetch(url, newInit);
+  };
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
