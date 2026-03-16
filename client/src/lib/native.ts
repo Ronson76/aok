@@ -360,7 +360,5 @@ export const initializeNativeApp = async () => {
     await statusBar.setStyle('light');
   }
   
-  await pushNotifications.register();
-  
   console.log('[Native] Native app initialized');
 };
