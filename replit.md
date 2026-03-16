@@ -50,6 +50,7 @@ Database rule: When clearing or modifying data, it must be done via the applicat
 - **Organization Features**: Client/staff management, monitoring, dynamic feature control, safeguarding hub, analytics, audit trail, exports. Age-based seat types (safeguarding/check_in). Kiosk Check-in Mode, Data Capture tool.
 - **Frontline Support**: Dedicated section for frontline services with Home Dashboard, Residents List, Quick Log, Unified Timeline, Manager Dashboard.
 - **Support Signal**: Resident-initiated support request system with "I'm OK", "Need Support", "Urgent Help" options, staff alerts, and escalation timers.
+- **Operations & Resilience** (`/org/resilience`): Board-presentable section with 4 tabs — Business Continuity (downtime protocols, reconciliation), Manual Fallback Pack (6 printable materials), Staff Training Framework (7 role-based modules with 3 pathways), Data Quality Assurance (8 built-in measures, regulatory alignment, single source of truth). Print-friendly. Green "Resilience" button on org dashboard.
 - **RentScore Landing Page**: Proof-of-concept for digital trust and reward system for tenants.
 - **Enterprise Add-ons**: Organisation Dashboard, Funding Assurance, Assurance Dashboard, API Access.
 - **GRC**: 8-tier RBAC, tamper-evident audit trails, security audit logging, UK GDPR-compliant, TOTP 2FA, 5-minute inactivity auto-logout.
