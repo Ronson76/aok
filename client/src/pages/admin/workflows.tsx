@@ -305,21 +305,62 @@ export default function AdminWorkflows() {
 
         <FlowArrow />
 
+        <WorkflowSection icon={Heart} title="Frontline Support" description="Support signal and interaction logging for vulnerable people" color="pink">
+          <StepBox icon={UserPlus} label="Resident Onboarding" sublabel="Org registers resident with reference number" />
+          <StepBox icon={Heart} label="Support Signal" sublabel="Resident taps to request support (urgent or routine)" />
+          <StepBox icon={Clock} label="Auto-Escalation" sublabel="Urgent: 2min/5min, routine: 5min/10min reminders" badge="Auto" />
+          <StepBox icon={Mail} label="Staff Notification" sublabel="Email/SMS alert to assigned staff members" badge="Resend" />
+          <StepBox icon={CheckCircle} label="Quick Log" sublabel="Staff logs interaction: type, mood, notes, follow-up" />
+          <StepBox icon={Activity} label="Unified Timeline" sublabel="All interactions, signals, check-ins in one view" />
+          <StepBox icon={Shield} label="Engagement RAG" sublabel="Green ≤3d, Amber 4-7d, Red 7d+ or open concern" badge="Auto" />
+          <StepBox icon={FileText} label="Evidence Reports" sublabel="Exportable safeguarding evidence for funders/regulators" />
+        </WorkflowSection>
+
+        <FlowArrow />
+
+        <WorkflowSection icon={Building2} title="Kiosk Mode" description="Tablet-based check-in for care settings" color="indigo">
+          <StepBox icon={Smartphone} label="Kiosk Setup" sublabel="Organisation enables kiosk mode on shared tablet" />
+          <StepBox icon={Users} label="Resident Selection" sublabel="Resident picks their name from the list" />
+          <StepBox icon={CheckCircle} label="Tap to Check In" sublabel="Simple one-tap check-in, no password needed" />
+          <StepBox icon={RefreshCw} label="Auto-Reset" sublabel="Screen returns to resident list after check-in" />
+          <StepBox icon={Shield} label="Audit Logged" sublabel="All kiosk check-ins recorded in audit trail" />
+        </WorkflowSection>
+
+        <FlowArrow />
+
         <WorkflowSection icon={Clock} title="Background Schedulers" description="Automated server-side processes" color="amber">
           <StepBox icon={AlertTriangle} label="Emergency Alert Scheduler" sublabel="Checks every 60 seconds for overdue alerts" badge="60s" />
           <StepBox icon={Bell} label="Push Notification Scheduler" sublabel="Checks every 30 seconds for pending notifications" badge="30s" />
           <StepBox icon={Mail} label="Contact Reminder Scheduler" sublabel="Checks every 5 minutes for unconfirmed contacts" badge="5m" />
           <StepBox icon={MessageSquare} label="SMS Check-in Scheduler" sublabel="Checks every 2 minutes for overdue check-ins" badge="2m" />
+          <StepBox icon={Heart} label="Signal Escalation Monitor" sublabel="Checks every 60 seconds for unresolved support signals" badge="60s" />
+          <StepBox icon={Timer} label="Errand Session Monitor" sublabel="Checks every 60 seconds for overdue activities" badge="60s" />
+          <StepBox icon={Radio} label="Lone Worker Monitor" sublabel="Checks every 30 seconds for unresponsive workers" badge="30s" />
+          <StepBox icon={Lock} label="Recording Retention" sublabel="Cleans up expired recordings every 24 hours" badge="24h" />
+          <StepBox icon={Shield} label="Audit Retention Cleanup" sublabel="Removes expired audit records every 24 hours" badge="24h" />
           <StepBox icon={RefreshCw} label="Data Cleanup" sublabel="Removes expired contacts and stale sessions" />
         </WorkflowSection>
 
         <FlowArrow />
 
-        <WorkflowSection icon={Smartphone} title="Native App Features" description="Capacitor-powered mobile capabilities" color="green">
-          <StepBox icon={Smartphone} label="Shake to SOS" sublabel="Motion detection triggers emergency" />
-          <StepBox icon={Bell} label="Push Notifications" sublabel="Native push via Capacitor" />
-          <StepBox icon={MapPin} label="Background Location" sublabel="GPS sharing during emergencies" />
-          <StepBox icon={Layers} label="PWA Support" sublabel="Service worker for offline access" />
+        <WorkflowSection icon={Smartphone} title="Native App (Android & iOS)" description="Capacitor-powered mobile app with Firebase" color="green">
+          <StepBox icon={Smartphone} label="Bundled Frontend" sublabel="Full UI packaged inside the app, loads instantly" />
+          <StepBox icon={Smartphone} label="Shake to SOS" sublabel="Motion detection triggers emergency alert" />
+          <StepBox icon={Bell} label="Firebase Push Notifications" sublabel="Native push via Firebase Cloud Messaging" badge="Firebase" />
+          <StepBox icon={MapPin} label="GPS Location" sublabel="Native geolocation during emergencies and activities" />
+          <StepBox icon={Activity} label="Haptic Feedback" sublabel="Vibration feedback on check-ins and alerts" />
+          <StepBox icon={Shield} label="Status Bar Control" sublabel="Native status bar styling and colour" />
+          <StepBox icon={Layers} label="API Connection" sublabel="All data synced with aok.care live server" badge="HTTPS" />
+          <StepBox icon={Lock} label="Secure Transport" sublabel="HTTPS-only, CORS-protected API calls" />
+        </WorkflowSection>
+
+        <FlowArrow />
+
+        <WorkflowSection icon={Shield} title="Operations & Resilience" description="Business continuity and training framework" color="teal">
+          <StepBox icon={AlertTriangle} label="Downtime Protocols" sublabel="3 severity levels with defined response procedures" />
+          <StepBox icon={FileText} label="Manual Fallback Pack" sublabel="6 downloadable materials for operating during outages" />
+          <StepBox icon={Users} label="Staff Training Framework" sublabel="7 role-based modules across 3 pathways" />
+          <StepBox icon={Shield} label="Data Quality Assurance" sublabel="8 built-in measures with regulatory alignment" />
         </WorkflowSection>
 
         <div className="py-6 text-center text-xs text-muted-foreground">

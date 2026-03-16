@@ -961,6 +961,80 @@ const GUIDE_TOPICS: GuideTopic[] = [
       "It's especially useful in places without street addresses.",
     ],
   },
+  {
+    id: "frontline-support",
+    title: "Frontline Support (organisations)",
+    content: [
+      "**Frontline Support** is designed for organisations working with vulnerable people -  housing associations, supported living, outreach teams, and care providers.",
+      "It provides a structured way to log interactions with residents, track engagement, and generate safeguarding evidence.",
+      "**Key features:**",
+      "**Support Signal** -  residents can tap a button to request help. Urgent signals escalate at 2 and 5 minutes, routine signals at 5 and 10 minutes.",
+      "**Quick Log** -  staff record interactions with residents including type (welfare check, medication, emotional support), mood assessment, notes, and follow-up actions.",
+      "**Unified Timeline** -  every interaction, signal, check-in, and safeguarding event appears in a single chronological view per resident.",
+      "**Engagement RAG** -  automatic red/amber/green status. Green = contact within 3 days, Amber = 4-7 days, Red = 7+ days or open safeguarding concern.",
+      "**Evidence Reports** -  exportable reports for funders, regulators, and board presentations showing interaction patterns and outcomes.",
+      "Access Frontline Support from the **Frontline** button on your organisation dashboard.",
+    ],
+  },
+  {
+    id: "support-signal",
+    title: "Support signal (residents)",
+    content: [
+      "If you're managed by an organisation using Frontline Support, you have access to the **Support Signal** button.",
+      "Tap the support signal to let staff know you need help. You can choose **urgent** or **routine**.",
+      "**Urgent** signals alert staff immediately and escalate at 2 minutes and 5 minutes if not acknowledged.",
+      "**Routine** signals are logged and escalate at 5 minutes and 10 minutes.",
+      "Staff will see your signal and respond as quickly as possible.",
+      "You don't need to explain what you need -  the signal tells staff you want to talk or need assistance.",
+    ],
+  },
+  {
+    id: "kiosk-mode",
+    title: "Kiosk mode (organisations)",
+    content: [
+      "Kiosk mode turns a shared tablet into a simple check-in station for residents or clients.",
+      "Residents select their name from a list and tap to check in -  no passwords needed.",
+      "The screen automatically resets after each check-in, ready for the next person.",
+      "All kiosk check-ins are logged in the audit trail with timestamps.",
+      "Set up kiosk mode from the **Kiosk** button on your organisation dashboard.",
+      "Kiosk mode is ideal for supported living, day centres, and sheltered accommodation where residents may not have their own devices.",
+    ],
+  },
+  {
+    id: "native-android-app",
+    title: "Native Android app",
+    content: [
+      "aok is available as a native Android app with the full interface built in.",
+      "The app includes **Firebase push notifications** so you receive alerts even when the app is closed.",
+      "**Shake to SOS** uses your phone's motion sensor to trigger an emergency by shaking firmly.",
+      "**Haptic feedback** provides vibration responses on check-ins, alerts, and interactions.",
+      "**GPS location** is shared natively during emergencies and activity tracking.",
+      "The app connects securely to aok.care for all your data, so your check-ins, contacts, and settings stay in sync.",
+      "Download the app from the Play Store or install the APK provided by your organisation.",
+    ],
+  },
+  {
+    id: "operations-resilience",
+    title: "Operations and resilience (organisations)",
+    content: [
+      "The **Operations & Resilience** page documents how aok handles system disruptions and ensures continuity of care.",
+      "**Business Continuity** -  three severity levels of downtime protocols with defined response procedures for each.",
+      "**Manual Fallback Pack** -  six downloadable materials for operating during outages (paper check-in sheets, contact lists, escalation procedures).",
+      "**Staff Training Framework** -  seven role-based training modules across three pathways, ensuring all staff are prepared.",
+      "**Data Quality Assurance** -  eight built-in measures including tamper-evident audit trails, RBAC, immutable records, and regulatory alignment.",
+      "Access it from the **Resilience** button on your organisation dashboard.",
+    ],
+  },
+  {
+    id: "interactive-demo",
+    title: "Interactive demo",
+    content: [
+      "Visit the **Frontline Support demo** at /demo/frontline to see the platform in action without creating an account.",
+      "The demo is an 11-step guided tour with realistic sample data.",
+      "It includes auto-play mode and covers all five views: Home, Residents, Quick Log, Timeline, and Manager.",
+      "No login or authentication is required to view the demo.",
+    ],
+  },
 ];
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
