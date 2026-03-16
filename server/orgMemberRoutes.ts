@@ -2,7 +2,7 @@ import { Express, Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
 import { orgMemberStorage, adminStorage, storage, organizationStorage } from "./storage";
 import { z } from "zod";
-import { OrgMemberRole, OrgMemberProfile, homelessInteractions, organizationClients, organizationClientProfiles, registerOrgClientSchema, frontlineInteractions, welfareConcerns, kioskCheckins } from "@shared/schema";
+import { OrgMemberRole, OrgMemberProfile, homelessInteractions, organizationClients, organizationClientProfiles, registerOrgClientSchema, frontlineInteractions, welfareConcerns, kioskCheckins, supportSignals } from "@shared/schema";
 import { sendTeamMemberInviteEmail, sendAppInviteSMS } from "./notifications";
 import { plantTreeForNewSubscriber } from "./ecologiService";
 import { calculateAgeFromDOB, generateReferenceCode, parseScheduleTime } from "./organizationRoutes";
@@ -1207,7 +1207,7 @@ export function registerOrgMemberRoutes(app: Express) {
       const orgId = req.orgId!;
       const { orgClientId } = req.params;
 
-      const [quickLogs, dataCaptureEvents, concerns, checkins] = await Promise.all([
+      const [quickLogs, dataCaptureEvents, concerns, checkins, signals] = await Promise.all([
         db.select().from(frontlineInteractions)
           .where(and(eq(frontlineInteractions.organizationId, orgId), eq(frontlineInteractions.orgClientId, orgClientId)))
           .orderBy(sql`${frontlineInteractions.createdAt} DESC`)
@@ -1223,6 +1223,10 @@ export function registerOrgMemberRoutes(app: Express) {
         db.select().from(kioskCheckins)
           .where(and(eq(kioskCheckins.organizationId, orgId), eq(kioskCheckins.orgClientId, orgClientId)))
           .orderBy(sql`${kioskCheckins.checkedInAt} DESC`)
+          .limit(50),
+        db.select().from(supportSignals)
+          .where(and(eq(supportSignals.organizationId, orgId), eq(supportSignals.orgClientId, orgClientId)))
+          .orderBy(sql`${supportSignals.createdAt} DESC`)
           .limit(50),
       ]);
 
@@ -1260,6 +1264,15 @@ export function registerOrgMemberRoutes(app: Express) {
           category: "kiosk_checkin",
           checkedInBy: ck.checkedInBy,
           timestamp: ck.checkedInAt,
+        })),
+        ...signals.map(s => ({
+          id: s.id,
+          type: "support_signal" as const,
+          category: s.level,
+          status: s.status,
+          notes: s.notes,
+          respondedByName: s.respondedByName,
+          timestamp: s.createdAt,
         })),
       ];
 
@@ -1476,6 +1489,127 @@ export function registerOrgMemberRoutes(app: Express) {
     } catch (error: any) {
       console.error("[FRONTLINE] Export error:", error);
       res.status(500).json({ error: "Failed to export data" });
+    }
+  });
+
+  app.get("/api/org-member/frontline/signals", orgMemberAuthMiddleware, requirePermission("frontline:read"), async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = req.orgId!;
+      const { status } = req.query;
+
+      const conditions = [eq(supportSignals.organizationId, orgId)];
+      if (status === "active") {
+        conditions.push(eq(supportSignals.status, "active"));
+      } else if (status === "acknowledged") {
+        conditions.push(eq(supportSignals.status, "acknowledged"));
+      }
+
+      const signals = await db.select({
+        id: supportSignals.id,
+        orgClientId: supportSignals.orgClientId,
+        level: supportSignals.level,
+        notes: supportSignals.notes,
+        preferStaffVisit: supportSignals.preferStaffVisit,
+        requestLaterCheckin: supportSignals.requestLaterCheckin,
+        status: supportSignals.status,
+        respondedByName: supportSignals.respondedByName,
+        respondedAt: supportSignals.respondedAt,
+        resolvedAt: supportSignals.resolvedAt,
+        escalationLevel: supportSignals.escalationLevel,
+        createdAt: supportSignals.createdAt,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+      }).from(supportSignals)
+        .innerJoin(organizationClients, eq(supportSignals.orgClientId, organizationClients.id))
+        .where(and(...conditions))
+        .orderBy(sql`${supportSignals.createdAt} DESC`)
+        .limit(50);
+
+      res.json(signals);
+    } catch (error: any) {
+      console.error("[FRONTLINE] Signals error:", error);
+      res.status(500).json({ error: "Failed to fetch signals" });
+    }
+  });
+
+  app.post("/api/org-member/frontline/signals/:signalId/respond", orgMemberAuthMiddleware, requirePermission("frontline:write"), async (req, res) => {
+    try {
+      const db = ensureDb();
+      const { signalId } = req.params;
+      const memberName = req.orgMember?.name || "Staff";
+      const memberId = req.orgMember?.id;
+
+      const [updated] = await db.update(supportSignals)
+        .set({
+          status: "acknowledged",
+          respondedByMemberId: memberId || null,
+          respondedByName: memberName,
+          respondedAt: new Date(),
+        })
+        .where(and(eq(supportSignals.id, signalId), eq(supportSignals.status, "active")))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ error: "Signal not found or already responded" });
+      }
+
+      await db.insert(frontlineInteractions).values({
+        organizationId: updated.organizationId,
+        orgClientId: updated.orgClientId,
+        staffId: memberId || null,
+        staffName: memberName,
+        category: "support_conversation",
+        notes: `Responding to ${updated.level === "urgent_help" ? "URGENT" : "support"} signal from resident`,
+      });
+
+      console.log(`[SUPPORT SIGNAL] ${memberName} responded to signal ${signalId}`);
+      res.json(updated);
+    } catch (error: any) {
+      console.error("[FRONTLINE] Signal respond error:", error);
+      res.status(500).json({ error: "Failed to respond to signal" });
+    }
+  });
+
+  app.post("/api/org-member/frontline/signals/:signalId/resolve", orgMemberAuthMiddleware, requirePermission("frontline:write"), async (req, res) => {
+    try {
+      const db = ensureDb();
+      const { signalId } = req.params;
+      const { notes } = req.body;
+      const memberName = req.orgMember?.name || "Staff";
+      const memberId = req.orgMember?.id;
+
+      const [updated] = await db.update(supportSignals)
+        .set({
+          status: "resolved",
+          resolvedAt: new Date(),
+          respondedByMemberId: memberId || null,
+          respondedByName: memberName,
+          respondedAt: sql`COALESCE(${supportSignals.respondedAt}, NOW())`,
+        })
+        .where(and(eq(supportSignals.id, signalId), sql`${supportSignals.status} IN ('active', 'acknowledged')`))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ error: "Signal not found or already resolved" });
+      }
+
+      if (notes) {
+        await db.insert(frontlineInteractions).values({
+          organizationId: updated.organizationId,
+          orgClientId: updated.orgClientId,
+          staffId: memberId || null,
+          staffName: memberName,
+          category: "support_conversation",
+          notes: `Signal resolved: ${notes}`,
+        });
+      }
+
+      console.log(`[SUPPORT SIGNAL] ${memberName} resolved signal ${signalId}`);
+      res.json(updated);
+    } catch (error: any) {
+      console.error("[FRONTLINE] Signal resolve error:", error);
+      res.status(500).json({ error: "Failed to resolve signal" });
     }
   });
 }

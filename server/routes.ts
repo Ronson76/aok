@@ -1,15 +1,16 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, organizationStorage, adminStorage } from "./storage";
-import { db } from "./db";
-import { sql } from "drizzle-orm";
+import { db, ensureDb } from "./db";
+import { sql, eq, and } from "drizzle-orm";
 import { insertContactSchema, updateContactSchema, updateSettingsSchema, insertUserSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, insertMoodEntrySchema, insertPetSchema, updatePetSchema, insertDigitalDocumentSchema, updateDigitalDocumentSchema, insertErrandSessionSchema, errandActivityTypes, insertPlannedRouteSchema } from "@shared/schema";
 import type { StatusData, UserProfile } from "@shared/schema";
+import { supportSignals, frontlineInteractions, organizationClients, organizationMembers, orgMemberClientAssignments } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { randomBytes } from "crypto";
 import * as OTPAuth from "otpauth";
 import QRCode from "qrcode";
-import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification, sendContactRemovedNotification, sendWelcomeEmail, makeVoiceCall } from "./notifications";
+import { sendContactAddedNotification, sendContactConfirmationEmail, sendPasswordResetEmail, sendSuccessfulCheckInNotification, sendEmergencyAlert, sendVoiceAlerts, sendLogoutNotification, sendSchedulePreferencesNotification, testSMSDelivery, diagnoseTwilioCredentials, sendTestEmail, sendPrimaryContactPromotionNotification, sendContactRemovedNotification, sendWelcomeEmail, makeVoiceCall, sendEmail, sendSMS } from "./notifications";
 import { registerAdminRoutes, adminAuthMiddleware } from "./adminRoutes";
 import { registerOrganizationRoutes } from "./organizationRoutes";
 import { registerOrgMemberRoutes } from "./orgMemberRoutes";
@@ -4869,6 +4870,148 @@ export async function registerRoutes(
     } catch (error) {
       console.error("[WHATSAPP FALLBACK] Error:", error);
       res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+    }
+  });
+
+  app.use("/api/support-signal", authMiddleware);
+
+  app.post("/api/support-signal", async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const { level, notes, preferStaffVisit, requestLaterCheckin } = req.body;
+
+      if (!["im_ok", "need_support", "urgent_help"].includes(level)) {
+        return res.status(400).json({ error: "Invalid signal level" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.referenceId) {
+        return res.status(403).json({ error: "Support signals are available for organisation clients only" });
+      }
+
+      const db = ensureDb();
+      const orgClient = await db.select().from(organizationClients)
+        .where(eq(organizationClients.referenceCode, user.referenceId))
+        .limit(1);
+
+      if (!orgClient.length) {
+        return res.status(404).json({ error: "Client record not found" });
+      }
+
+      const oc = orgClient[0];
+
+      const [signal] = await db.insert(supportSignals).values({
+        organizationId: oc.organizationId,
+        orgClientId: oc.id,
+        clientUserId: userId,
+        level,
+        notes: notes || null,
+        preferStaffVisit: preferStaffVisit || false,
+        requestLaterCheckin: requestLaterCheckin || false,
+      }).returning();
+
+      if (level === "im_ok") {
+        await db.insert(frontlineInteractions).values({
+          organizationId: oc.organizationId,
+          orgClientId: oc.id,
+          staffName: "System (Resident Signal)",
+          category: "wellbeing_check",
+          notes: `Resident signalled: I'm OK${notes ? ` — ${notes}` : ""}`,
+        });
+      }
+
+      if (level === "need_support" || level === "urgent_help") {
+        const assignedMembers = await db.select({
+          memberId: orgMemberClientAssignments.memberId,
+        }).from(orgMemberClientAssignments)
+          .where(eq(orgMemberClientAssignments.clientId, oc.id));
+
+        let staffToNotify: any[] = [];
+
+        if (assignedMembers.length > 0) {
+          const memberIds = assignedMembers.map(a => a.memberId);
+          staffToNotify = await db.select()
+            .from(organizationMembers)
+            .where(sql`${organizationMembers.id} IN (${sql.join(memberIds.map(id => sql`${id}`), sql`,`)})`);
+        }
+
+        if (staffToNotify.length === 0) {
+          staffToNotify = await db.select()
+            .from(organizationMembers)
+            .where(and(
+              eq(organizationMembers.organizationId, oc.organizationId),
+              eq(organizationMembers.status, "active"),
+              sql`${organizationMembers.role} IN ('owner', 'admin', 'manager', 'service_manager')`,
+            ));
+        }
+
+        const clientName = oc.clientName || user.name || "A resident";
+        const levelLabel = level === "urgent_help" ? "URGENT HELP" : "Needs Support";
+        const prefNote = preferStaffVisit ? " (Prefers staff visit)" : requestLaterCheckin ? " (Requests later check-in)" : "";
+
+        for (const member of staffToNotify) {
+          if (member.email) {
+            sendEmail(
+              member.email,
+              `A-OK Support Signal: ${levelLabel}`,
+              `<h2>Support Signal — ${levelLabel}</h2>
+              <p><strong>Resident:</strong> ${clientName}</p>
+              <p><strong>Reference:</strong> ${oc.referenceCode}</p>
+              <p><strong>Time:</strong> ${new Date().toLocaleTimeString("en-GB")}</p>
+              ${notes ? `<p><strong>Note:</strong> ${notes}</p>` : ""}
+              <p>${prefNote}</p>
+              <p>Please log into the Frontline dashboard to respond.</p>`
+            ).catch(err => console.error("[SUPPORT SIGNAL] Email error:", err));
+          }
+          if (member.phone) {
+            sendSMS(
+              member.phone,
+              `A-OK SUPPORT SIGNAL: ${levelLabel}\nResident: ${clientName} (${oc.referenceCode})\nTime: ${new Date().toLocaleTimeString("en-GB")}${notes ? `\nNote: ${notes}` : ""}${prefNote}\nPlease respond via the Frontline dashboard.`
+            ).catch(err => console.error("[SUPPORT SIGNAL] SMS error:", err));
+          }
+        }
+
+        await db.insert(frontlineInteractions).values({
+          organizationId: oc.organizationId,
+          orgClientId: oc.id,
+          staffName: "System (Resident Signal)",
+          category: level === "urgent_help" ? "crisis_intervention" : "support_conversation",
+          notes: `Resident signalled: ${levelLabel}${notes ? ` — ${notes}` : ""}${prefNote}`,
+        });
+      }
+
+      console.log(`[SUPPORT SIGNAL] ${level} signal from client ${oc.referenceCode} (org: ${oc.organizationId})`);
+      res.status(201).json({ id: signal.id, level: signal.level, status: signal.status });
+    } catch (error: any) {
+      console.error("[SUPPORT SIGNAL] Error:", error);
+      res.status(500).json({ error: "Failed to send support signal" });
+    }
+  });
+
+  app.get("/api/support-signal/active", async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const user = await storage.getUser(userId);
+      if (!user?.referenceId) return res.json(null);
+
+      const db = ensureDb();
+      const orgClient = await db.select().from(organizationClients)
+        .where(eq(organizationClients.referenceCode, user.referenceId))
+        .limit(1);
+      if (!orgClient.length) return res.json(null);
+
+      const active = await db.select().from(supportSignals)
+        .where(and(
+          eq(supportSignals.orgClientId, orgClient[0].id),
+          eq(supportSignals.status, "active"),
+        ))
+        .orderBy(sql`${supportSignals.createdAt} DESC`)
+        .limit(1);
+
+      res.json(active[0] || null);
+    } catch (error: any) {
+      console.error("[SUPPORT SIGNAL] Active check error:", error);
+      res.status(500).json({ error: "Failed to check signal status" });
     }
   });
 

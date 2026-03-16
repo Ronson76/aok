@@ -1,6 +1,9 @@
 import { storage } from "./storage";
-import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder, sendSmsCheckinLink, sendActivityOverdueAlert, sendActivityVoiceAlerts, sendLoneWorkerMissedCheckInAlert } from "./notifications";
+import { sendEmergencyAlert, sendVoiceAlerts, sendPushNotification, sendContactConfirmationReminder, sendSmsCheckinLink, sendActivityOverdueAlert, sendActivityVoiceAlerts, sendLoneWorkerMissedCheckInAlert, sendEmail, sendSMS } from "./notifications";
 import { ObjectStorageService } from "./replit_integrations/object_storage";
+import { supportSignals, organizationClients, organizationMembers } from "@shared/schema";
+import { eq, and, sql, lt } from "drizzle-orm";
+import { ensureDb } from "./db";
 
 let schedulerInterval: NodeJS.Timeout | null = null;
 let cleanupInterval: NodeJS.Timeout | null = null;
@@ -10,6 +13,7 @@ let recordingCleanupInterval: NodeJS.Timeout | null = null;
 let errandCheckInterval: NodeJS.Timeout | null = null;
 let auditRetentionInterval: NodeJS.Timeout | null = null;
 let loneWorkerCheckInterval: NodeJS.Timeout | null = null;
+let supportSignalEscalationInterval: NodeJS.Timeout | null = null;
 // Minimum interval between push notifications to same user (30 seconds)
 const PUSH_NOTIFICATION_COOLDOWN_MS = 30 * 1000;
 
@@ -326,6 +330,11 @@ export function startEmergencyScheduler(): void {
     await processOverdueLoneWorkerSessions();
   }, 30 * 1000);
 
+  console.log('[SIGNAL SCHEDULER] Starting support signal escalation monitor (checks every 60 seconds)');
+  supportSignalEscalationInterval = setInterval(async () => {
+    await processSupportSignalEscalations();
+  }, 60 * 1000);
+
   // Run initial checks
   processOverdueEmergencyAlerts();
   processOverduePushNotifications();
@@ -610,5 +619,98 @@ async function processOverdueErrandSessions(): Promise<void> {
     }
   } catch (error) {
     console.error('[ERRAND] Error processing overdue errand sessions:', error);
+  }
+}
+
+async function processSupportSignalEscalations(): Promise<void> {
+  try {
+    const db = ensureDb();
+    const now = new Date();
+
+    const activeSignals = await db.select({
+      id: supportSignals.id,
+      organizationId: supportSignals.organizationId,
+      orgClientId: supportSignals.orgClientId,
+      level: supportSignals.level,
+      notes: supportSignals.notes,
+      escalationLevel: supportSignals.escalationLevel,
+      lastEscalatedAt: supportSignals.lastEscalatedAt,
+      createdAt: supportSignals.createdAt,
+      clientName: organizationClients.clientName,
+      referenceCode: organizationClients.referenceCode,
+    }).from(supportSignals)
+      .innerJoin(organizationClients, eq(supportSignals.orgClientId, organizationClients.id))
+      .where(eq(supportSignals.status, "active"));
+
+    for (const signal of activeSignals) {
+      if (signal.level === "im_ok") continue;
+
+      const ageMinutes = (now.getTime() - new Date(signal.createdAt).getTime()) / 60000;
+      const isUrgent = signal.level === "urgent_help";
+      const escalateAt1 = isUrgent ? 2 : 5;
+      const escalateAt2 = isUrgent ? 5 : 10;
+
+      let shouldEscalate = false;
+      let newLevel = signal.escalationLevel;
+
+      if (signal.escalationLevel === 0 && ageMinutes >= escalateAt1) {
+        shouldEscalate = true;
+        newLevel = 1;
+      } else if (signal.escalationLevel === 1 && ageMinutes >= escalateAt2) {
+        shouldEscalate = true;
+        newLevel = 2;
+      }
+
+      if (!shouldEscalate) continue;
+
+      const rolesToNotify = newLevel === 1
+        ? ['owner', 'admin', 'manager', 'service_manager']
+        : ['owner', 'admin'];
+
+      const staffToNotify = await db.select()
+        .from(organizationMembers)
+        .where(and(
+          eq(organizationMembers.organizationId, signal.organizationId),
+          eq(organizationMembers.status, "active"),
+          sql`${organizationMembers.role} IN (${sql.join(rolesToNotify.map(r => sql`${r}`), sql`,`)})`,
+        ));
+
+      const levelLabel = isUrgent ? "URGENT HELP" : "Needs Support";
+      const escalationLabel = newLevel === 1 ? "ESCALATION (Level 1 — No Staff Response)" : "ESCALATION (Level 2 — No Staff Response)";
+      const clientName = signal.clientName || "A resident";
+
+      for (const member of staffToNotify) {
+        if (member.email) {
+          sendEmail(
+            member.email,
+            `A-OK ${escalationLabel}: ${levelLabel}`,
+            `<h2>${escalationLabel}</h2>
+            <p>No staff member has responded to a support signal.</p>
+            <p><strong>Resident:</strong> ${clientName} (${signal.referenceCode})</p>
+            <p><strong>Signal:</strong> ${levelLabel}</p>
+            <p><strong>Sent:</strong> ${new Date(signal.createdAt).toLocaleTimeString("en-GB")}</p>
+            <p><strong>Time without response:</strong> ${Math.round(ageMinutes)} minutes</p>
+            <p>Please log into the Frontline dashboard immediately to respond.</p>`
+          ).catch(err => console.error("[SIGNAL ESCALATION] Email error:", err));
+        }
+        if (member.phone) {
+          sendSMS(
+            member.phone,
+            `A-OK ${escalationLabel}\n${levelLabel}: ${clientName} (${signal.referenceCode})\nNo response for ${Math.round(ageMinutes)} minutes.\nPlease respond immediately via the Frontline dashboard.`
+          ).catch(err => console.error("[SIGNAL ESCALATION] SMS error:", err));
+        }
+      }
+
+      await db.update(supportSignals)
+        .set({
+          escalationLevel: newLevel,
+          lastEscalatedAt: now,
+        })
+        .where(eq(supportSignals.id, signal.id));
+
+      console.log(`[SIGNAL ESCALATION] Signal ${signal.id} escalated to level ${newLevel} (${clientName}, ${levelLabel})`);
+    }
+  } catch (error) {
+    console.error('[SIGNAL ESCALATION] Error processing escalations:', error);
   }
 }

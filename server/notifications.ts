@@ -602,7 +602,7 @@ async function sendEmailViaSendGrid(to: string, subject: string, body: string, h
   console.log(`[EMAIL] SendGrid sent to ${to}`);
 }
 
-async function sendEmail(to: string, subject: string, body: string, html?: string): Promise<void> {
+export async function sendEmail(to: string, subject: string, body: string, html?: string): Promise<void> {
   console.log(`[EMAIL] Sending to ${to}, subject: ${subject}`);
   
   await withFallback(
@@ -645,7 +645,7 @@ export async function sendVerificationSMS(to: string, body: string): Promise<{ s
   return sendSMS(to, body);
 }
 
-async function sendSMS(to: string, body: string): Promise<{ success: boolean; error?: string }> {
+export async function sendSMS(to: string, body: string): Promise<{ success: boolean; error?: string }> {
   const credentials = await getTwilioCredentials();
   
   if (!credentials) {
