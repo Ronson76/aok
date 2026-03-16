@@ -83,11 +83,12 @@ app.use((req, res, next) => {
   const allowedOrigins = [
     'https://aok.care',
     'capacitor://aok.care',
-    'https://aok.care',
-    'ionic://aok.care'
+    'ionic://aok.care',
+    'http://localhost',
+    'https://localhost'
   ];
-  if (origin && (allowedOrigins.includes(origin) || origin.includes('localhost'))) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+  if (!origin || allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('replit')) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-csrf-token, Authorization');

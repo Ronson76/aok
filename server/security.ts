@@ -58,6 +58,7 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
 
   if (
     req.path.startsWith("/api/stripe/webhook") ||
+    req.path.startsWith("/api/stripe/create-subscription-checkout") ||
     req.path.startsWith("/api/strava/webhook") ||
     req.path === "/api/confirm-safety" ||
     req.path === "/api/contacts/confirm" ||
