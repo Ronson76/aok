@@ -101,6 +101,7 @@ import LoneWorker from "@/pages/lone-worker";
 import Errands from "@/pages/errands";
 import Demo from "@/pages/demo";
 import DemoOTF from "@/pages/demo-otf";
+import DemoFrontline from "@/pages/demo-frontline";
 import RentScore from "@/pages/rentscore";
 import Security from "@/pages/security";
 import FunderReady from "@/pages/funder-ready";
@@ -767,6 +768,10 @@ function Router() {
 
   if (location === "/demo/otf") {
     return <DemoOTF />;
+  }
+
+  if (location === "/demo/frontline") {
+    return <DemoFrontline />;
   }
 
   if (location === "/rentscore") {
