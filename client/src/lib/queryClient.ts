@@ -42,11 +42,12 @@ export async function apiRequest(
     headers["x-csrf-token"] = csrfToken;
   }
 
+  const isNative = Capacitor.isNativePlatform();
   const res = await fetch(getFullUrl(url), {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
+    credentials: isNative ? "omit" : "include",
   });
 
   await throwIfResNotOk(res);
@@ -59,8 +60,9 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    const isNative = Capacitor.isNativePlatform();
     const res = await fetch(getFullUrl(queryKey.join("/") as string), {
-      credentials: "include",
+      credentials: isNative ? "omit" : "include",
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
