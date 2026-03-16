@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">aok</string>
+    <string name="title_activity_main">aok</string>
+    <string name="package_name">care.aok.app</string>
+    <string name="custom_url_scheme">care.aok.app</string>
+</resources>
