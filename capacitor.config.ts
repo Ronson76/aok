@@ -7,7 +7,9 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     iosScheme: 'https',
-    hostname: 'aok.care'
+    hostname: 'aok.care',
+    url: 'https://aok.care',
+    cleartext: false
   },
   ios: {
     contentInset: 'automatic',
@@ -19,7 +21,7 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: false,
     captureInput: true,
-    webContentsDebuggingEnabled: false,
+    webContentsDebuggingEnabled: true,
     backgroundColor: '#0f172a',
     buildOptions: {
       keystorePath: undefined,
