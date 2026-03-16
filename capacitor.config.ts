@@ -7,7 +7,8 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     iosScheme: 'https',
-    hostname: 'aok.care'
+    hostname: 'app.aok.local',
+    allowNavigation: ['aok.care', '*.stripe.com']
   },
   ios: {
     contentInset: 'automatic',

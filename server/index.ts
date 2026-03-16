@@ -84,10 +84,13 @@ app.use((req, res, next) => {
     'https://aok.care',
     'capacitor://aok.care',
     'ionic://aok.care',
+    'https://app.aok.local',
+    'capacitor://app.aok.local',
+    'ionic://app.aok.local',
     'http://localhost',
     'https://localhost'
   ];
-  if (!origin || allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('replit')) {
+  if (!origin || allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('replit') || origin.includes('aok.local')) {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
