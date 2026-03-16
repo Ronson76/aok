@@ -5,10 +5,10 @@ const config: CapacitorConfig = {
   appName: 'aok',
   webDir: 'dist/public',
   server: {
+    url: 'https://aok.care',
     androidScheme: 'https',
     iosScheme: 'https',
-    hostname: 'app.aok.local',
-    allowNavigation: ['aok.care', '*.stripe.com']
+    allowNavigation: ['aok.care', '*.stripe.com', '*.checkout.stripe.com']
   },
   ios: {
     contentInset: 'automatic',

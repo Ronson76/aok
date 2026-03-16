@@ -1,12 +1,4 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { Capacitor } from '@capacitor/core';
-
-const API_BASE_URL = Capacitor.isNativePlatform() ? 'https://aok.care' : '';
-
-function getFullUrl(url: string): string {
-  if (url.startsWith('http')) return url;
-  return `${API_BASE_URL}${url}`;
-}
 
 function getCsrfToken(): string | null {
   const match = document.cookie.match(/(?:^|;\s*)csrf-token=([^;]*)/);
@@ -42,12 +34,11 @@ export async function apiRequest(
     headers["x-csrf-token"] = csrfToken;
   }
 
-  const isNative = Capacitor.isNativePlatform();
-  const res = await fetch(getFullUrl(url), {
+  const res = await fetch(url, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
-    credentials: isNative ? "omit" : "include",
+    credentials: "include",
   });
 
   await throwIfResNotOk(res);
@@ -60,9 +51,8 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const isNative = Capacitor.isNativePlatform();
-    const res = await fetch(getFullUrl(queryKey.join("/") as string), {
-      credentials: isNative ? "omit" : "include",
+    const res = await fetch(queryKey.join("/") as string, {
+      credentials: "include",
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

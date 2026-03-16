@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation, Link } from "wouter";
-import { Capacitor } from '@capacitor/core';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -2310,7 +2309,6 @@ function Step16Payment({ data, setData, onNext, onComplete }: { data: Onboarding
     // No promo code - proceed to Stripe checkout
     setIsLoading(true);
     try {
-      const baseUrl = Capacitor.isNativePlatform() ? 'https://aok.care' : window.location.origin;
       const response = await apiRequest("POST", "/api/stripe/create-subscription-checkout", {
         email,
         priceId: data.billingCycle === "complete"
@@ -2318,8 +2316,8 @@ function Step16Payment({ data, setData, onNext, onComplete }: { data: Onboarding
           : data.billingCycle === "essential"
           ? import.meta.env.VITE_STRIPE_ESSENTIAL_PRICE_ID
           : import.meta.env.VITE_STRIPE_BASIC_PRICE_ID,
-        successUrl: `${baseUrl}/register?onboarded=true&email=${encodeURIComponent(email)}`,
-        cancelUrl: `${baseUrl}/onboarding`,
+        successUrl: `${window.location.origin}/register?onboarded=true&email=${encodeURIComponent(email)}`,
+        cancelUrl: `${window.location.origin}/onboarding`,
         trialDays: 0,
       });
 
@@ -2332,11 +2330,7 @@ function Step16Payment({ data, setData, onNext, onComplete }: { data: Onboarding
           complianceConsentsAcceptedAt: new Date().toISOString(),
         };
         localStorage.setItem("onboardingData", JSON.stringify(dataWithTerms));
-        if (Capacitor.isNativePlatform()) {
-          window.open(result.url, '_system');
-        } else {
-          window.location.href = result.url;
-        }
+        window.location.href = result.url;
       } else {
         throw new Error("No checkout URL returned");
       }
