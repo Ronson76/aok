@@ -360,5 +360,11 @@ export const initializeNativeApp = async () => {
     await statusBar.setStyle('light');
   }
   
+  try {
+    await pushNotifications.register();
+  } catch (e) {
+    console.log('[Native] Push notification registration skipped:', e);
+  }
+  
   console.log('[Native] Native app initialized');
 };

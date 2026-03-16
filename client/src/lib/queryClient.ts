@@ -1,4 +1,12 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { Capacitor } from '@capacitor/core';
+
+const API_BASE_URL = Capacitor.isNativePlatform() ? 'https://aok.care' : '';
+
+function getFullUrl(url: string): string {
+  if (url.startsWith('http')) return url;
+  return `${API_BASE_URL}${url}`;
+}
 
 function getCsrfToken(): string | null {
   const match = document.cookie.match(/(?:^|;\s*)csrf-token=([^;]*)/);
@@ -34,7 +42,7 @@ export async function apiRequest(
     headers["x-csrf-token"] = csrfToken;
   }
 
-  const res = await fetch(url, {
+  const res = await fetch(getFullUrl(url), {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
@@ -51,7 +59,7 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const res = await fetch(getFullUrl(queryKey.join("/") as string), {
       credentials: "include",
     });
 

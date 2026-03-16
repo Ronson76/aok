@@ -77,6 +77,26 @@ async function initStripe() {
   }
 }
 
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'https://aok.care',
+    'capacitor://aok.care',
+    'https://aok.care',
+    'ionic://aok.care'
+  ];
+  if (origin && (allowedOrigins.includes(origin) || origin.includes('localhost'))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-csrf-token, Authorization');
+  }
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
+
 app.use(cookieParser());
 
 app.post(
