@@ -1,0 +1,301 @@
+Ronnie, the missing screen is a Resident “Support Signal” screen — something that lets the client initiate support without feeling monitored.
+
+This directly solves the trauma-informed concern they raised about surveillance and intrusive welfare checks.
+
+Instead of the system asking “Are you OK?” all the time, the resident has a simple way to signal how they’re doing.
+
+The Missing Screen: Support Signal
+4
+
+The screen is extremely simple.
+
+Residents choose one option:
+
+I'm OK
+Need Support
+Urgent Help
+
+Optional extra:
+
+Prefer to speak to staff
+Request check-in later
+
+No forms.
+No typing required.
+
+Just one tap.
+
+Why This Solves Their Concern
+
+Their feedback said welfare check-ins feel:
+
+intrusive
+
+surveillance-like
+
+damaging to trust
+
+This flips the dynamic.
+
+Instead of monitoring residents, the platform allows residents to signal support needs voluntarily.
+
+That aligns perfectly with trauma-informed practice.
+
+The resident keeps control.
+
+What Happens When Someone Presses a Signal
+
+Example:
+
+Resident presses "Need Support"
+↓
+Staff dashboard alert
+↓
+Support worker checks in
+↓
+Interaction logged automatically
+
+That becomes part of the timeline.
+
+Example timeline entry:
+
+13:20 – Support request signal
+13:35 – Staff support conversation
+
+Now you have engagement evidence without surveillance.
+
+Why Services Will Like This
+
+It does three important things:
+
+Empowers residents
+
+They can ask for help without confrontation.
+
+Supports trauma-informed care
+
+No forced check-ins.
+
+Creates safeguarding evidence
+
+Staff responses are recorded.
+
+Why This Is Perfect for Homelessness Services
+
+Residents often:
+
+avoid formal processes
+
+distrust authority
+
+struggle to articulate needs
+
+A simple signal button makes help easier.
+
+It also works for:
+
+supported housing
+
+youth services
+
+care leavers
+
+student accommodation
+
+domestic abuse services
+
+What the Staff Dashboard Shows
+
+Example alert:
+
+Support Signal
+
+Resident: Sarah K
+Location: Hostel 3
+Time: 14:20
+
+Status: Needs support
+
+Staff then respond.
+
+This response is automatically logged.
+
+The Real Strategic Benefit
+
+This changes A-OK from:
+
+a system that monitors vulnerable people
+
+to:
+
+a system that enables vulnerable people to request support
+
+That difference matters hugely for adoption.
+
+The Simple Build for Your Demo
+
+Add a resident interface screen with:
+
+Three large buttons
+
+I'm OK
+Need Support
+Urgent Help
+
+Optional note field.
+
+That’s it.
+
+Keep it extremely simple.
+
+If You Include This in the Demo
+
+When you show the platform to organisations you can say:
+
+“Residents are never monitored. They can signal support when they want to.”
+
+That immediately addresses the trauma-informed objections.
+
+If you want, I can also show you something interesting:
+
+the single visual demo flow that would make A-OK instantly understandable to investors, charities, and housing associations in under 60 seconds.
+
+Right now the platform is powerful but slightly abstract — this would make it click instantly.
+
+yes i would like that but first tell me when someone signals for help unless someone is watching the dashboard how would they know?
+
+Good question. If someone presses “Need Support” or “Urgent Help”, relying on someone watching a dashboard is not acceptable for safeguarding. The system must actively push alerts.
+
+You need multi-channel escalation, not passive monitoring.
+
+1. Immediate Staff Notification (Primary Layer)
+
+When a resident sends a signal, the system instantly pushes alerts to the assigned staff.
+
+Channels:
+
+Push notification (staff mobile app)
+
+SMS
+
+Email
+
+Example alert staff receive:
+
+A-OK Support Signal
+
+Resident: Sarah K
+Location: Unit 12
+Status: Needs Support
+Time: 14:22
+
+Tap to respond
+
+Push notifications should be the main mechanism.
+
+2. Escalation Timer (If No One Responds)
+
+You must build response timers.
+
+Example flow:
+
+Resident presses "Need Support"
+↓
+Alert sent to assigned support worker
+↓
+If no response in 5 minutes
+↓
+Alert escalates to service manager
+↓
+If still no response in 10 minutes
+↓
+Alert escalates to on-call staff
+
+For Urgent Help, escalation should be faster.
+
+Example:
+
+Urgent Help pressed
+↓
+Instant alert to all on-site staff
+↓
+Escalation to manager within 2 minutes
+3. On-Site Visual Alert (Optional but Powerful)
+
+If this is a hostel or supported housing building, you can show a live alert panel.
+
+Example screen at reception:
+
+Active Alerts
+
+Sarah K – Needs Support – 14:22
+
+That ensures staff inside the building see it.
+
+4. Automatic Timeline Logging
+
+Every step must be recorded automatically.
+
+Example timeline:
+
+14:22 – Support signal triggered
+14:24 – Alert sent to staff
+14:26 – Staff responded
+14:28 – Support conversation logged
+
+This becomes safeguarding evidence.
+
+5. Staff Acknowledge the Alert
+
+Staff should tap “Responding”.
+
+This stops escalation.
+
+Example flow:
+
+Alert received
+↓
+Staff taps "Responding"
+↓
+Escalation stops
+↓
+Interaction logged after visit
+6. Offline or System Failure Backup
+
+You also need a fallback rule for safeguarding.
+
+Example protocol:
+
+If system unavailable
+↓
+Residents use staff desk / emergency number
+↓
+Staff log interaction later
+
+Services will ask this question during pilots.
+
+7. Why This Matters for Your Demo
+
+When you show the system, you must demonstrate this flow clearly:
+
+Resident presses "Need Support"
+↓
+Staff phone alert
+↓
+Staff responds
+↓
+Interaction logged
+↓
+Manager dashboard updated
+
+That shows the complete safeguarding loop.
+
+One Important Safeguarding Rule
+
+The system must never create false expectations.
+
+Meaning the resident interface should clearly say something like:
+
+“This is not an emergency service. If you are in immediate danger contact emergency services.”
+
+Most safeguarding systems include this.
