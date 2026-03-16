@@ -2322,5 +2322,33 @@ export const insertHomelessInteractionSchema = createInsertSchema(homelessIntera
 export type InsertHomelessInteraction = z.infer<typeof insertHomelessInteractionSchema>;
 export type HomelessInteraction = typeof homelessInteractions.$inferSelect;
 
+export const frontlineCategories = [
+  "wellbeing_check", "support_conversation", "safeguarding_concern",
+  "medication", "move_on_planning", "housing_support", "general_contact",
+  "key_worker_session", "crisis_intervention", "group_activity"
+] as const;
+export type FrontlineCategory = typeof frontlineCategories[number];
+
+export const frontlineInteractions = pgTable("frontline_interactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  orgClientId: varchar("org_client_id").notNull().references(() => organizationClients.id, { onDelete: "cascade" }),
+  staffId: varchar("staff_id").references(() => organizationMembers.id, { onDelete: "set null" }),
+  staffName: text("staff_name").notNull(),
+  category: text("category").notNull().$type<FrontlineCategory>(),
+  notes: text("notes"),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertFrontlineInteractionSchema = createInsertSchema(frontlineInteractions).omit({
+  id: true,
+  createdAt: true,
+  staffId: true,
+});
+export type InsertFrontlineInteraction = z.infer<typeof insertFrontlineInteractionSchema>;
+export type FrontlineInteraction = typeof frontlineInteractions.$inferSelect;
+
 // Re-export chat models for AI integrations (used by integration storage)
 export * from "./models/chat";

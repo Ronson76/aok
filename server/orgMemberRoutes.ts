@@ -2,11 +2,11 @@ import { Express, Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
 import { orgMemberStorage, adminStorage, storage, organizationStorage } from "./storage";
 import { z } from "zod";
-import { OrgMemberRole, OrgMemberProfile, homelessInteractions, organizationClients, organizationClientProfiles, registerOrgClientSchema } from "@shared/schema";
+import { OrgMemberRole, OrgMemberProfile, homelessInteractions, organizationClients, organizationClientProfiles, registerOrgClientSchema, frontlineInteractions, welfareConcerns, kioskCheckins } from "@shared/schema";
 import { sendTeamMemberInviteEmail, sendAppInviteSMS } from "./notifications";
 import { plantTreeForNewSubscriber } from "./ecologiService";
 import { calculateAgeFromDOB, generateReferenceCode, parseScheduleTime } from "./organizationRoutes";
-import { eq, and, desc, lt, sql, not } from "drizzle-orm";
+import { eq, and, desc, lt, sql, not, ne } from "drizzle-orm";
 import { ensureDb } from "./db";
 
 const ORG_MEMBER_SESSION_COOKIE = "org_member_session";
@@ -78,6 +78,9 @@ const orgMemberPermissions: Record<string, (OrgMemberRole | "owner")[]> = {
   "lone_worker:manage": ["owner", "manager"],
   "data_capture:read": ["owner", "admin", "safeguarding_lead", "service_manager", "manager", "staff", "trustee", "viewer"],
   "data_capture:write": ["owner", "admin", "safeguarding_lead", "service_manager", "manager", "staff"],
+  "frontline:read": ["owner", "admin", "safeguarding_lead", "service_manager", "manager", "staff", "trustee", "viewer"],
+  "frontline:write": ["owner", "admin", "safeguarding_lead", "service_manager", "manager", "staff"],
+  "frontline:manage": ["owner", "admin", "safeguarding_lead", "service_manager", "manager"],
 };
 
 export function requirePermission(permission: string) {
@@ -1068,6 +1071,411 @@ export function registerOrgMemberRoutes(app: Express) {
     } catch (error: any) {
       console.error("[ORG_MEMBER] Client registration error:", error);
       res.status(500).json({ error: error.message || "Failed to register client" });
+    }
+  });
+
+  app.get("/api/org-member/frontline/clients", orgMemberAuthMiddleware, requirePermission("frontline:read"), async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = req.orgId!;
+      const clients = await db.select({
+        id: organizationClients.id,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+        status: organizationClients.status,
+      }).from(organizationClients).where(and(eq(organizationClients.organizationId, orgId), ne(organizationClients.status, "removed")));
+
+      const clientIds = clients.map(c => c.id);
+      if (clientIds.length === 0) return res.json([]);
+
+      const now = new Date();
+      const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const recentFrontline = await db.select({
+        orgClientId: frontlineInteractions.orgClientId,
+        lastInteraction: sql<string>`max(${frontlineInteractions.createdAt})`,
+        totalCount: sql<number>`count(*)::int`,
+      }).from(frontlineInteractions)
+        .where(eq(frontlineInteractions.organizationId, orgId))
+        .groupBy(frontlineInteractions.orgClientId);
+
+      const recentDataCapture = await db.select({
+        orgClientId: homelessInteractions.orgClientId,
+        lastInteraction: sql<string>`max(${homelessInteractions.createdAt})`,
+      }).from(homelessInteractions)
+        .where(eq(homelessInteractions.organizationId, orgId))
+        .groupBy(homelessInteractions.orgClientId);
+
+      const openConcerns = await db.select({
+        clientId: welfareConcerns.clientId,
+        count: sql<number>`count(*)::int`,
+      }).from(welfareConcerns)
+        .where(and(eq(welfareConcerns.organizationId, orgId), sql`${welfareConcerns.status} IN ('open', 'in_progress')`))
+        .groupBy(welfareConcerns.clientId);
+
+      const frontlineMap = new Map(recentFrontline.map(r => [r.orgClientId, r]));
+      const dataCaptureMap = new Map(recentDataCapture.map(r => [r.orgClientId, r]));
+      const concernsMap = new Map(openConcerns.map(r => [r.clientId, r.count]));
+
+      const enriched = clients.map(client => {
+        const fl = frontlineMap.get(client.id);
+        const dc = dataCaptureMap.get(client.id);
+        const lastFL = fl?.lastInteraction ? new Date(fl.lastInteraction) : null;
+        const lastDC = dc?.lastInteraction ? new Date(dc.lastInteraction) : null;
+        const lastContact = lastFL && lastDC ? (lastFL > lastDC ? lastFL : lastDC) : (lastFL || lastDC);
+        const openConcernCount = concernsMap.get(client.id) || 0;
+
+        let engagementStatus: "green" | "amber" | "red" = "red";
+        if (lastContact) {
+          if (lastContact >= threeDaysAgo) engagementStatus = "green";
+          else if (lastContact >= sevenDaysAgo) engagementStatus = "amber";
+        }
+        if (openConcernCount > 0) engagementStatus = "red";
+
+        return {
+          ...client,
+          lastContact: lastContact?.toISOString() || null,
+          totalInteractions: fl?.totalCount || 0,
+          openConcerns: openConcernCount,
+          engagementStatus,
+        };
+      });
+
+      enriched.sort((a, b) => {
+        const order = { red: 0, amber: 1, green: 2 };
+        return order[a.engagementStatus] - order[b.engagementStatus];
+      });
+
+      res.json(enriched);
+    } catch (error: any) {
+      console.error("[FRONTLINE] Error fetching clients:", error);
+      res.status(500).json({ error: "Failed to fetch clients" });
+    }
+  });
+
+  app.post("/api/org-member/frontline/quick-log", orgMemberAuthMiddleware, requirePermission("frontline:write"), async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = req.orgId!;
+      const memberId = req.orgMember?.id;
+      const memberName = req.orgMember?.name || "Unknown Staff";
+      const { orgClientId, category, notes, latitude, longitude } = req.body;
+
+      if (!orgClientId || !category) {
+        return res.status(400).json({ error: "Client and category are required" });
+      }
+
+      const validCategories = ["wellbeing_check", "support_conversation", "safeguarding_concern", "medication", "move_on_planning", "housing_support", "general_contact", "key_worker_session", "crisis_intervention", "group_activity"];
+      if (!validCategories.includes(category)) {
+        return res.status(400).json({ error: "Invalid category" });
+      }
+
+      const [interaction] = await db.insert(frontlineInteractions).values({
+        organizationId: orgId,
+        orgClientId,
+        staffId: memberId || null,
+        staffName: memberName,
+        category,
+        notes: notes || null,
+        latitude: latitude || null,
+        longitude: longitude || null,
+      }).returning();
+
+      if (category === "safeguarding_concern") {
+        await db.insert(welfareConcerns).values({
+          organizationId: orgId,
+          clientId: orgClientId,
+          concernType: "welfare_concern",
+          description: notes || "Safeguarding concern flagged via frontline quick log",
+          status: "open",
+          source: "frontline",
+        });
+      }
+
+      console.log(`[FRONTLINE] ${memberName} logged ${category} for client ${orgClientId}`);
+      res.status(201).json(interaction);
+    } catch (error: any) {
+      console.error("[FRONTLINE] Quick log error:", error);
+      res.status(500).json({ error: "Failed to log interaction" });
+    }
+  });
+
+  app.get("/api/org-member/frontline/timeline/:orgClientId", orgMemberAuthMiddleware, requirePermission("frontline:read"), async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = req.orgId!;
+      const { orgClientId } = req.params;
+
+      const [quickLogs, dataCaptureEvents, concerns, checkins] = await Promise.all([
+        db.select().from(frontlineInteractions)
+          .where(and(eq(frontlineInteractions.organizationId, orgId), eq(frontlineInteractions.orgClientId, orgClientId)))
+          .orderBy(sql`${frontlineInteractions.createdAt} DESC`)
+          .limit(100),
+        db.select().from(homelessInteractions)
+          .where(and(eq(homelessInteractions.organizationId, orgId), eq(homelessInteractions.orgClientId, orgClientId), eq(homelessInteractions.archived, false)))
+          .orderBy(sql`${homelessInteractions.createdAt} DESC`)
+          .limit(100),
+        db.select().from(welfareConcerns)
+          .where(and(eq(welfareConcerns.organizationId, orgId), eq(welfareConcerns.clientId, orgClientId)))
+          .orderBy(sql`${welfareConcerns.createdAt} DESC`)
+          .limit(50),
+        db.select().from(kioskCheckins)
+          .where(and(eq(kioskCheckins.organizationId, orgId), eq(kioskCheckins.orgClientId, orgClientId)))
+          .orderBy(sql`${kioskCheckins.checkedInAt} DESC`)
+          .limit(50),
+      ]);
+
+      const timeline = [
+        ...quickLogs.map(ql => ({
+          id: ql.id,
+          type: "quick_log" as const,
+          category: ql.category,
+          staffName: ql.staffName,
+          notes: ql.notes,
+          timestamp: ql.createdAt,
+        })),
+        ...dataCaptureEvents.map(dc => ({
+          id: dc.id,
+          type: "data_capture" as const,
+          category: dc.contactType,
+          staffName: dc.staffName,
+          notes: dc.notes,
+          riskTier: dc.riskTier,
+          actionTaken: dc.actionTaken,
+          followUpRequired: dc.followUpRequired,
+          timestamp: dc.createdAt,
+        })),
+        ...concerns.map(c => ({
+          id: c.id,
+          type: "safeguarding" as const,
+          category: c.concernType,
+          status: c.status,
+          description: c.description,
+          timestamp: c.createdAt,
+        })),
+        ...checkins.map(ck => ({
+          id: ck.id,
+          type: "kiosk_checkin" as const,
+          category: "kiosk_checkin",
+          checkedInBy: ck.checkedInBy,
+          timestamp: ck.checkedInAt,
+        })),
+      ];
+
+      timeline.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      res.json(timeline);
+    } catch (error: any) {
+      console.error("[FRONTLINE] Timeline error:", error);
+      res.status(500).json({ error: "Failed to fetch timeline" });
+    }
+  });
+
+  app.get("/api/org-member/frontline/dashboard", orgMemberAuthMiddleware, requirePermission("frontline:read"), async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = req.orgId!;
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekStart = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const [todayInteractions, weekInteractions, openConcerns, totalClients, recentActivity] = await Promise.all([
+        db.select({ count: sql<number>`count(*)::int` }).from(frontlineInteractions)
+          .where(and(eq(frontlineInteractions.organizationId, orgId), sql`${frontlineInteractions.createdAt} >= ${todayStart}`)),
+        db.select({ count: sql<number>`count(*)::int` }).from(frontlineInteractions)
+          .where(and(eq(frontlineInteractions.organizationId, orgId), sql`${frontlineInteractions.createdAt} >= ${weekStart}`)),
+        db.select({ count: sql<number>`count(*)::int` }).from(welfareConcerns)
+          .where(and(eq(welfareConcerns.organizationId, orgId), sql`${welfareConcerns.status} IN ('open', 'in_progress')`)),
+        db.select({ count: sql<number>`count(*)::int` }).from(organizationClients)
+          .where(and(eq(organizationClients.organizationId, orgId), ne(organizationClients.status, "removed"))),
+        db.select({
+          id: frontlineInteractions.id,
+          category: frontlineInteractions.category,
+          staffName: frontlineInteractions.staffName,
+          orgClientId: frontlineInteractions.orgClientId,
+          createdAt: frontlineInteractions.createdAt,
+        }).from(frontlineInteractions)
+          .where(eq(frontlineInteractions.organizationId, orgId))
+          .orderBy(sql`${frontlineInteractions.createdAt} DESC`)
+          .limit(10),
+      ]);
+
+      const clientNames = new Map<string, string>();
+      if (recentActivity.length > 0) {
+        const clientIds = [...new Set(recentActivity.map(a => a.orgClientId))];
+        const clientData = await db.select({ id: organizationClients.id, clientName: organizationClients.clientName })
+          .from(organizationClients)
+          .where(sql`${organizationClients.id} IN (${sql.join(clientIds.map(id => sql`${id}`), sql`,`)})`);
+        clientData.forEach(c => clientNames.set(c.id, c.clientName || "Unknown"));
+      }
+
+      const overdueFollowups = await db.select({
+        id: homelessInteractions.id,
+        orgClientId: homelessInteractions.orgClientId,
+        followUpDate: homelessInteractions.followUpDate,
+        staffName: homelessInteractions.staffName,
+      }).from(homelessInteractions)
+        .where(and(
+          eq(homelessInteractions.organizationId, orgId),
+          eq(homelessInteractions.followUpRequired, true),
+          eq(homelessInteractions.followUpCompleted, false),
+          sql`${homelessInteractions.followUpDate} <= ${now.toISOString().split('T')[0]}`,
+        ))
+        .limit(20);
+
+      const needsContact = await db.select({
+        id: organizationClients.id,
+        clientName: organizationClients.clientName,
+      }).from(organizationClients)
+        .where(and(
+          eq(organizationClients.organizationId, orgId),
+          ne(organizationClients.status, "removed"),
+          sql`${organizationClients.id} NOT IN (
+            SELECT org_client_id FROM frontline_interactions 
+            WHERE organization_id = ${orgId} AND created_at >= ${weekStart}
+            UNION
+            SELECT org_client_id FROM homeless_interactions
+            WHERE organization_id = ${orgId} AND created_at >= ${weekStart}
+          )`,
+        ))
+        .limit(10);
+
+      res.json({
+        stats: {
+          todayInteractions: todayInteractions[0]?.count || 0,
+          weekInteractions: weekInteractions[0]?.count || 0,
+          openConcerns: openConcerns[0]?.count || 0,
+          totalClients: totalClients[0]?.count || 0,
+        },
+        recentActivity: recentActivity.map(a => ({
+          ...a,
+          clientName: clientNames.get(a.orgClientId) || "Unknown",
+        })),
+        overdueFollowups: overdueFollowups.map(f => ({
+          ...f,
+          clientName: clientNames.get(f.orgClientId) || "Unknown",
+        })),
+        needsContact,
+      });
+    } catch (error: any) {
+      console.error("[FRONTLINE] Dashboard error:", error);
+      res.status(500).json({ error: "Failed to fetch dashboard" });
+    }
+  });
+
+  app.get("/api/org-member/frontline/manager-stats", orgMemberAuthMiddleware, requirePermission("frontline:manage"), async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = req.orgId!;
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const [categoryBreakdown, staffActivity, weeklyTrend, riskDistribution, engagementRate] = await Promise.all([
+        db.select({
+          category: frontlineInteractions.category,
+          count: sql<number>`count(*)::int`,
+        }).from(frontlineInteractions)
+          .where(and(eq(frontlineInteractions.organizationId, orgId), sql`${frontlineInteractions.createdAt} >= ${thirtyDaysAgo}`))
+          .groupBy(frontlineInteractions.category),
+
+        db.select({
+          staffName: frontlineInteractions.staffName,
+          count: sql<number>`count(*)::int`,
+          lastActive: sql<string>`max(${frontlineInteractions.createdAt})`,
+        }).from(frontlineInteractions)
+          .where(and(eq(frontlineInteractions.organizationId, orgId), sql`${frontlineInteractions.createdAt} >= ${thirtyDaysAgo}`))
+          .groupBy(frontlineInteractions.staffName),
+
+        db.select({
+          day: sql<string>`date_trunc('day', ${frontlineInteractions.createdAt})::date`,
+          count: sql<number>`count(*)::int`,
+        }).from(frontlineInteractions)
+          .where(and(eq(frontlineInteractions.organizationId, orgId), sql`${frontlineInteractions.createdAt} >= ${thirtyDaysAgo}`))
+          .groupBy(sql`date_trunc('day', ${frontlineInteractions.createdAt})::date`)
+          .orderBy(sql`date_trunc('day', ${frontlineInteractions.createdAt})::date`),
+
+        db.select({
+          riskTier: homelessInteractions.riskTier,
+          count: sql<number>`count(*)::int`,
+        }).from(homelessInteractions)
+          .where(and(eq(homelessInteractions.organizationId, orgId), sql`${homelessInteractions.createdAt} >= ${thirtyDaysAgo}`))
+          .groupBy(homelessInteractions.riskTier),
+
+        (async () => {
+          const totalClients = await db.select({ count: sql<number>`count(*)::int` })
+            .from(organizationClients)
+            .where(and(eq(organizationClients.organizationId, orgId), ne(organizationClients.status, "removed")));
+          const contactedThisWeek = await db.select({ count: sql<number>`count(DISTINCT org_client_id)::int` })
+            .from(frontlineInteractions)
+            .where(and(eq(frontlineInteractions.organizationId, orgId), sql`${frontlineInteractions.createdAt} >= ${weekStart}`));
+          const total = totalClients[0]?.count || 0;
+          const contacted = contactedThisWeek[0]?.count || 0;
+          return { total, contacted, rate: total > 0 ? Math.round((contacted / total) * 100) : 0 };
+        })(),
+      ]);
+
+      res.json({
+        categoryBreakdown,
+        staffActivity,
+        weeklyTrend,
+        riskDistribution,
+        engagementRate,
+      });
+    } catch (error: any) {
+      console.error("[FRONTLINE] Manager stats error:", error);
+      res.status(500).json({ error: "Failed to fetch manager stats" });
+    }
+  });
+
+  app.get("/api/org-member/frontline/export", orgMemberAuthMiddleware, requirePermission("frontline:manage"), async (req, res) => {
+    try {
+      const db = ensureDb();
+      const orgId = req.orgId!;
+      const { from, to } = req.query;
+      const fromDate = from ? new Date(from as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const toDate = to ? new Date(to as string) : new Date();
+
+      const interactions = await db.select({
+        date: sql<string>`to_char(${frontlineInteractions.createdAt}, 'YYYY-MM-DD HH24:MI')`,
+        category: frontlineInteractions.category,
+        staffName: frontlineInteractions.staffName,
+        clientName: organizationClients.clientName,
+        referenceCode: organizationClients.referenceCode,
+        notes: frontlineInteractions.notes,
+      }).from(frontlineInteractions)
+        .innerJoin(organizationClients, eq(frontlineInteractions.orgClientId, organizationClients.id))
+        .where(and(
+          eq(frontlineInteractions.organizationId, orgId),
+          sql`${frontlineInteractions.createdAt} >= ${fromDate}`,
+          sql`${frontlineInteractions.createdAt} <= ${toDate}`,
+        ))
+        .orderBy(sql`${frontlineInteractions.createdAt} DESC`);
+
+      const categoryLabels: Record<string, string> = {
+        wellbeing_check: "Wellbeing Check",
+        support_conversation: "Support Conversation",
+        safeguarding_concern: "Safeguarding Concern",
+        medication: "Medication",
+        move_on_planning: "Move-on Planning",
+        housing_support: "Housing Support",
+        general_contact: "General Contact",
+        key_worker_session: "Key Worker Session",
+        crisis_intervention: "Crisis Intervention",
+        group_activity: "Group Activity",
+      };
+
+      const csvHeader = "Date,Category,Staff,Client Reference,Notes\n";
+      const csvRows = interactions.map(i =>
+        `"${i.date}","${categoryLabels[i.category] || i.category}","${i.staffName}","${i.referenceCode || ''}","${(i.notes || '').replace(/"/g, '""')}"`
+      ).join("\n");
+
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename=frontline-report-${fromDate.toISOString().split('T')[0]}-to-${toDate.toISOString().split('T')[0]}.csv`);
+      res.send(csvHeader + csvRows);
+    } catch (error: any) {
+      console.error("[FRONTLINE] Export error:", error);
+      res.status(500).json({ error: "Failed to export data" });
     }
   });
 }
