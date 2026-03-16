@@ -7,9 +7,7 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     iosScheme: 'https',
-    hostname: 'aok.care',
-    url: 'https://aok.care',
-    cleartext: false
+    url: 'https://aok.care'
   },
   ios: {
     contentInset: 'automatic',
@@ -22,11 +20,7 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
     captureInput: true,
     webContentsDebuggingEnabled: true,
-    backgroundColor: '#0f172a',
-    buildOptions: {
-      keystorePath: undefined,
-      keystoreAlias: undefined,
-    }
+    backgroundColor: '#0f172a'
   },
   plugins: {
     SplashScreen: {
@@ -38,27 +32,9 @@ const config: CapacitorConfig = {
       splashFullScreen: true,
       splashImmersive: true
     },
-    PushNotifications: {
-      presentationOptions: ['badge', 'sound', 'alert']
-    },
-    LocalNotifications: {
-      smallIcon: 'ic_stat_icon',
-      iconColor: '#16a34a',
-      sound: 'alarm.wav'
-    },
-    Geolocation: {
-      permissions: ['location', 'coarseLocation']
-    },
-    Haptics: {
-      selectionStart: true
-    },
     StatusBar: {
       style: 'DARK',
       backgroundColor: '#0f172a'
-    },
-    Keyboard: {
-      resize: 'body',
-      resizeOnFullScreen: true
     }
   }
 };
