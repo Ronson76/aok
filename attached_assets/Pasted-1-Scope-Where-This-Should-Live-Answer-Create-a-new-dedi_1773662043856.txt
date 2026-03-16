@@ -1,0 +1,158 @@
+1. Scope — Where This Should Live
+
+Answer:
+Create a new dedicated section.
+
+/org/frontline
+
+Do NOT bolt this into the existing data capture area. That system is for structured safeguarding records, not quick daily interactions.
+
+Architecture should look like:
+
+Org Dashboard
+│
+├── Data Capture (existing)
+├── Safeguarding Records
+├── Reports
+└── Frontline Support (/org/frontline)
+        ├── Home
+        ├── Residents
+        ├── Quick Log
+        ├── Timeline
+        └── Staff Safety
+
+Why:
+
+keeps the UX simple
+
+avoids breaking existing workflows
+
+allows frontline staff to move quickly
+
+2. Quick-Tap Logger vs Data Capture
+
+Answer:
+It must sit alongside, not replace.
+
+Replit’s instinct is correct.
+
+Use case split:
+
+Quick Log
+↓
+Daily interactions
+5-second entries
+
+Data Capture
+↓
+Formal safeguarding records
+risk assessments
+incident reports
+referrals
+
+Think of it like:
+
+Quick Log = daily diary
+Data Capture = official record
+
+Both feed the same timeline.
+
+3. Resident Timeline
+
+Answer:
+Yes — unify everything into one timeline.
+
+This is actually one of the most powerful parts of A-OK.
+
+Timeline should pull from:
+
+Quick interactions
+Data capture events
+Safeguarding concerns
+Kiosk check-ins
+Wellbeing signals
+Missed check-ins
+Staff interventions
+
+Example timeline:
+
+14:30 – Support conversation logged
+11:10 – Wellbeing check confirmed
+09:20 – Missed check-in flagged
+09:40 – Staff welfare visit completed
+Yesterday – Medication reminder
+
+This becomes the safeguarding audit trail.
+
+Funders love this.
+
+4. Manager Dashboard Access
+
+Answer:
+Replit is correct — role gated.
+
+Permissions:
+
+Staff
+• log interactions
+• see their residents
+• see alerts
+
+Service Manager
+• full resident timeline
+• engagement metrics
+• safeguarding alerts
+
+Admin / Owner
+• organisation-wide analytics
+• safeguarding assurance reports
+• exportable reports
+
+Staff should never see service-wide performance metrics.
+
+Managers should.
+
+5. Is This Enterprise or Standard?
+
+Answer:
+This should be standard for all organisations.
+
+Why:
+
+If you gate this behind enterprise pricing, adoption drops.
+
+Instead:
+
+Core Platform
+• frontline logging
+• timelines
+• staff safety
+• basic reports
+
+Enterprise
+• commissioner dashboards
+• advanced analytics
+• external API access
+• GRC integrations
+
+The Assurance Dashboard can stay enterprise.
+
+The Frontline system must be universal.
+
+Otherwise staff won't adopt it.
+
+The Final Instructions You Send Back to Replit
+
+Use something like this:
+
+Build this as a new dedicated section called /org/frontline.
+
+The quick-tap logger should sit alongside the existing Data Capture system, not replace it. Quick Log is for fast daily interaction logging, while Data Capture remains the structured safeguarding and incident recording system.
+
+Each resident should have a unified timeline pulling from all existing data sources including quick interactions, data capture events, safeguarding concerns, kiosk check-ins, and wellbeing signals.
+
+Role-based permissions should apply. Frontline staff see only their assigned residents and alerts, while service managers and admins can view aggregated engagement metrics and safeguarding activity across the organisation.
+
+The frontline support system should be available to all organisations as a core platform feature, while higher-level assurance dashboards and commissioner reporting remain enterprise features.
+
+That will keep the architecture clean and scalable.
