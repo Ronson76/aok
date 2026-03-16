@@ -25,7 +25,7 @@ app.get("/_health", (_req, res) => {
   res.status(200).send("OK");
 });
 
-app.get("/download-keystore", (_req, res) => {
+app.get("/api/download-keystore", (_req, res) => {
   const path = require("path");
   const fs = require("fs");
   const keystorePath = path.join(process.cwd(), "android/app/aok-release.keystore");
