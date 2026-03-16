@@ -226,20 +226,24 @@ export default function Onboarding() {
   const handleNext = () => {
     if (isStaffFlow && currentStep === 13) {
       setCurrentStep(15);
+      window.scrollTo({ top: 0, behavior: 'instant' });
       return;
     }
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
+      window.scrollTo({ top: 0, behavior: 'instant' });
     }
   };
 
   const handleBack = () => {
     if (isStaffFlow && currentStep === 15) {
       setCurrentStep(13);
+      window.scrollTo({ top: 0, behavior: 'instant' });
       return;
     }
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+      window.scrollTo({ top: 0, behavior: 'instant' });
     }
   };
 
