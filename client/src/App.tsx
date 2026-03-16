@@ -72,6 +72,7 @@ import FundingDashboard from "@/pages/org/funding-dashboard";
 import OrgKiosk from "@/pages/org/kiosk";
 import OrgDataCapture from "@/pages/org/data-capture";
 import OrgFrontline from "@/pages/org/frontline";
+import OrgResilience from "@/pages/org/resilience";
 import SupportSignal from "@/pages/support-signal";
 import PublicDataCapture from "@/pages/public-data-capture";
 import AdminTeam from "@/pages/admin/team";
@@ -257,6 +258,7 @@ function AppRoutes() {
       <Route path="/org/kiosk" component={() => <ProtectedRoute component={OrgKiosk} />} />
       <Route path="/org/data-capture" component={() => <ProtectedRoute component={OrgDataCapture} />} />
       <Route path="/org/frontline" component={() => <ProtectedRoute component={OrgFrontline} />} />
+      <Route path="/org/resilience" component={() => <ProtectedRoute component={OrgResilience} />} />
       <Route path="/org/missed-checkins" component={() => <ProtectedRoute component={OrgMissedCheckInsReport} />} />
       <Route path="/org/emergency-alerts" component={() => <ProtectedRoute component={OrgEmergencyAlertsReport} />} />
       <Route path="/app/contacts" component={() => <ProtectedRoute component={Contacts} />} />
@@ -876,7 +878,7 @@ function Router() {
   }
 
   // Org pages have their own layout/header, don't use AppLayout
-  if (location.startsWith("/org/dashboard") || location.startsWith("/org/safeguarding") || location.startsWith("/org/lone-worker") || location.startsWith("/org/team") || location.startsWith("/org/analytics") || location.startsWith("/org/assurance") || location.startsWith("/org/api-access") || location.startsWith("/org/missed-checkins") || location.startsWith("/org/emergency-alerts") || location.startsWith("/org/data-capture") || location.startsWith("/org/kiosk") || location.startsWith("/org/funding") || location.startsWith("/org/frontline")) {
+  if (location.startsWith("/org/dashboard") || location.startsWith("/org/safeguarding") || location.startsWith("/org/lone-worker") || location.startsWith("/org/team") || location.startsWith("/org/analytics") || location.startsWith("/org/assurance") || location.startsWith("/org/api-access") || location.startsWith("/org/missed-checkins") || location.startsWith("/org/emergency-alerts") || location.startsWith("/org/data-capture") || location.startsWith("/org/kiosk") || location.startsWith("/org/funding") || location.startsWith("/org/frontline") || location.startsWith("/org/resilience")) {
     return <AppRoutes />;
   }
 

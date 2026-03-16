@@ -1753,6 +1753,12 @@ export default function OrganizationDashboard() {
                 Frontline
               </Button>
             </Link>
+            <Link href="/org/resilience">
+              <Button variant="outline" size="sm" className="border-green-600 text-green-600 hover:bg-green-50" data-testid="button-resilience">
+                <ShieldCheck className="h-4 w-4 mr-2" />
+                Resilience
+              </Button>
+            </Link>
             <Button
               variant="outline"
               size="sm"
